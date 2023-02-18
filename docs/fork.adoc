@@ -22,7 +22,7 @@ This project is the new project. Make sure to describe here your project before
 commiting as well as chaning the name of project on the first line.
 EOF
 git init
-git commit --gpg-sign --message 'Initial commit' README.adoc
+git commit --gpg-sign --message 'Initial commit' README.md
 git checkout --branch dev
 ----
 

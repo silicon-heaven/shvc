@@ -27,20 +27,21 @@ build:
     - nix develop -c meson setup build -Doptimization=plain $SETUP_ARGS
     - nix develop -c meson compile -C build
   artifacts:
-    when: on_failure
-    expire_in: 1 week
+    when: always
     paths:
-    - 'build/meson-logs/'
+    - 'build/'
 
 build-werror:
   extends: build
+  needs:
+    - job: build
+      artifacts: false
   allow_failure: true
   variables:
     SETUP_ARGS: --werror
 
 nix:
   stage: build
-  allow_failure: true
   extends: .nix
   script:
     - nix build .?submodules=1
@@ -49,14 +50,16 @@ nix:
 tests:
   stage: test
   extends: .nix
+  needs:
+    - job: build
+      artifacts: false
   script:
-    - "nix develop -c meson setup build -Doptimization=plain"
+    - "nix develop -c meson setup build -Doptimization=plain -Db_coverage=true"
     - "nix develop -c meson test -C build"
   artifacts:
-    when: on_failure
-    expire_in: 1 week
+    when: always
     paths:
-      - 'build/meson-logs/'
+      - 'build/'
     reports:
       junit: 'build/meson-logs/testlog.junit.xml'
 
@@ -78,6 +81,9 @@ valgrind:drd:
 nix-check:
   stage: test
   extends: .nix
+  needs:
+    - job: nix
+      artifacts: false
   script:
     - nix flake check .?submodules=1
 
@@ -89,10 +95,11 @@ include:
 .linter:
   stage: lint
   extends: .nix
+  needs: []
   allow_failure: true
   script:
-    - nix develop -c meson setup build -Doptimization=plain
-    - nix develop -c meson compile -C build $COMPILE_ARG
+    - 'nix develop -c meson setup build -Doptimization=plain'
+    - 'nix develop -c meson compile -C build $COMPILE_ARG'
 
 cppcheck:
   extends: .linter
@@ -110,42 +117,38 @@ shellcheck:
     - "git ls-files '**.sh' | xargs nix develop -c shellcheck"
 
 ## Style stage #################################################################
-muon:
+.style:
   stage: style
   extends: .nix
+  needs: []
   allow_failure: true
+
+muon:
+  extends: .style
   script:
     - "git ls-files '**/meson.build' meson_options.txt | nix develop -c xargs -n 1 muon fmt -c .muon_fmt.ini -i"
     - "git diff --exit-code"
 
 clang-format:
-  stage: style
-  extends: .nix
-  allow_failure: true
+  extends: .style
   script:
     - "git ls-files '**.[ch]' | xargs nix develop -c clang-format -i"
     - "git diff --exit-code"
 
 shell-format:
-  stage: style
-  extends: .nix
-  allow_failure: true
+  extends: .style
   script:
     - "git ls-files '**.sh' '**.bats' | xargs nix develop -c shfmt --binary-next-line -w"
     - "git diff --exit-code"
 
 nixfmt:
-  stage: style
-  extends: .nix
-  allow_failure: true
+  extends: .style
   script:
     - "nix fmt"
     - "git diff --exit-code"
 
 editorconfig-checker:
-  stage: style
-  extends: .nix
-  allow_failure: true
+  extends: .style
   script:
     - "nix develop -c editorconfig-checker -disable-max-line-length"
 
@@ -153,11 +156,11 @@ editorconfig-checker:
 coverage:
   stage: coverage
   extends: .nix
-  needs: ["tests"]
+  needs:
+    - job: tests
+      artifacts: true
   script:
-    - "nix develop -c meson setup -Db_coverage=true -Doptimization=plain build"
-    - "nix develop -c meson test -C build"
-    - "nix develop -c ninja -C build coverage-html"
+    - "nix develop -c ninja -C build coverage-html coverage-xml"
     - "mv build/meson-logs/coveragereport ./"
   coverage: '/lines\.\.\.\.\.\.: (\d+.\d+%)/'
   artifacts:
@@ -165,12 +168,18 @@ coverage:
     expose_as: 'Code Coverage'
     paths:
     - 'coveragereport/'
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: 'build/meson-logs/coverage.xml'
 
 ## Release creation ############################################################
 dist:
   stage: release
   extends: .nix
-  needs: ["tests"]
+  needs:
+    - job: tests
+      artifacts: false
   script:
     - "nix develop -c meson setup build"
     - "nix develop -c meson dist -C build --formats xztar,gztar,zip"
@@ -192,6 +201,6 @@ release:
       artifacts: true
   before_script:
     - "apk update"
-    - "apk add bash curl"
+    - "apk add bash curl yq"
   script:
-    - "bash .release.sh shvtreec"
+    - "bash .release.sh"

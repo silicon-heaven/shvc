@@ -72,6 +72,7 @@
               editorconfig-checker
               valgrind
               lcov
+              gcovr
             ];
             inputsFrom = [self.packages.${system}.template-c];
             meta.platforms = platforms.linux;
