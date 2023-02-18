@@ -50,19 +50,16 @@
             pkgs = prev;
           };
       }
-      // eachDefaultSystem (system: {
+      // eachDefaultSystem (system: let
+        pkgs = nixpkgs.legacyPackages.${system};
+        pkgsSelf = self.packages.${system};
+      in {
         packages = packages {inherit system;};
-
-        legacyPackages = import nixpkgs {
-          # The legacyPackages imported as overlay allows us to use pkgsCross
-          inherit system;
-          overlays = [self.overlays.default];
-          crossOverlays = [self.overlays.default];
-        };
+        legacyPackages = pkgs.extend self.overlays.default;
 
         devShells = filterPackages system {
-          default = nixpkgs.legacyPackages.${system}.mkShell {
-            packages = with nixpkgs.legacyPackages.${system}; [
+          default = pkgs.mkShell {
+            packages = with pkgs; [
               cppcheck
               flawfinder
               clang-tools_14
@@ -74,13 +71,13 @@
               lcov
               gcovr
             ];
-            inputsFrom = [self.packages.${system}.template-c];
+            inputsFrom = [pkgsSelf.template-c];
             meta.platforms = platforms.linux;
           };
         };
 
         checks.default = self.packages.${system}.template-c;
 
-        formatter = nixpkgs.legacyPackages.${system}.alejandra;
+        formatter = pkgs.alejandra;
       });
 }
