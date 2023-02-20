@@ -30,12 +30,12 @@
               check-suite.packages.${system}.check-suite
             ];
             nativeBuildInputs = [
+              bash
+              bats
+              gperf
               meson
               ninja
               pkg-config
-              gperf
-              bash
-              bats
             ];
 
             doCheck = true;
@@ -60,16 +60,17 @@
         devShells = filterPackages system {
           default = pkgs.mkShell {
             packages = with pkgs; [
-              cppcheck
-              flawfinder
               clang-tools_14
-              shellcheck
-              muon
-              shfmt
+              cppcheck
               editorconfig-checker
-              valgrind
-              lcov
+              flawfinder
               gcovr
+              gitlint
+              lcov
+              muon
+              shellcheck
+              shfmt
+              valgrind
             ];
             inputsFrom = [pkgsSelf.template-c];
             meta.platforms = platforms.linux;

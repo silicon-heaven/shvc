@@ -152,6 +152,12 @@ editorconfig-checker:
   script:
     - "nix develop -c editorconfig-checker -disable-max-line-length"
 
+gitlint:
+  extends: .style
+  script:
+    - "git fetch"
+    - "nix develop -c gitlint --commits origin/master..$CI_COMMIT_SHA"
+
 ## Code Coverage stage #########################################################
 coverage:
   stage: coverage
