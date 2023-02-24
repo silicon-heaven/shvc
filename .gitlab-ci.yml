@@ -97,17 +97,20 @@ include:
   extends: .nix
   needs: []
   allow_failure: true
+
+.mesonlinter:
+  extends: .linter
   script:
     - 'nix develop -c meson setup build -Doptimization=plain'
     - 'nix develop -c meson compile -C build $COMPILE_ARG'
 
 cppcheck:
-  extends: .linter
+  extends: .mesonlinter
   variables:
     COMPILE_ARG: ./cppcheck
 
 flawfinder:
-  extends: .linter
+  extends: .mesonlinter
   variables:
     COMPILE_ARG: ./flawfinder
 
