@@ -29,3 +29,11 @@ binary_next_line = true
 [.gitlab-ci.yml]
 indent_style  = space
 indent_size = 2
+
+[*.nix]
+indent_style = space
+indent_size = 2
+
+[*.{diff,patch}]
+# Avoid to trim trailing whitespace
+trim_trailing_whitespace = false
