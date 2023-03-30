@@ -66,7 +66,6 @@
               flawfinder
               gcovr
               gitlint
-              lcov
               muon
               shellcheck
               shfmt

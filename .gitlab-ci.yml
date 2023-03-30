@@ -169,7 +169,7 @@ coverage:
     - job: tests
       artifacts: true
   script:
-    - "nix develop -c ninja -C build coverage-html coverage-xml"
+    - "nix develop -c ninja -j1 -C build coverage-html coverage-xml"
     - "mv build/meson-logs/coveragereport ./"
   coverage: '/lines\.\.\.\.\.\.: (\d+.\d+%)/'
   artifacts:
