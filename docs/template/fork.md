@@ -1,18 +1,19 @@
-= Forking
+Forking
+=======
 
 Before you start to develop your project you have to tweak the template to suit
 your needs. This is minimal checklist you want to follow to update the code to
 your needs.
 
 
-== 0. Git project preparation
+0. Git project preparation
+--------------------------
 
 The first step is to prepare empty git project. You want create empty directory,
 place bare-bone readme and add that to the new git repository. The following
 code should give you the idea of what you should do:
 
-[,sh]
-----
+```shell
 mkdir newproj
 cd newproj
 cat >README.md <<EOF
@@ -23,7 +24,7 @@ commiting as well as chaning the name of project on the first line.
 EOF
 git init --initial-branch=master
 git commit --gpg-sign --message 'Initial commit' README.md
-----
+```
 
 Now push `master` branch to the remote repository.
 
@@ -32,13 +33,12 @@ existing project.
 
 The next step is to merge the template to your new project.
 
-[,sh]
-----
+```shell
 git checkout -b dev
 git remote add template http://jessie.elektroline.cz/emb/template/c.git
 git fetch template
 git merge --allow-unrelated-historie template/master
-----
+```
 
 You have to resolve merge conflict in the `README.md` file to complete merge.
 
@@ -47,23 +47,24 @@ merge and as last step we squash all changes to the merge commit so our history
 starts nice and clean.
 
 
-== 1. Rename the project
+1. Rename the project
+---------------------
 
 The first step is for sure the project rename. The the template uses
 `template-c` name in various locations and this should be name of your project
 instead. You can use `grep -Rn template-c` to locate all occurrences of
 `template-c`. To rename all relevant code should be:
 
-[,sh]
-----
+```shell
 sed -i 's/template-c/newproj/g' meson.build flake.nix
-----
+```
 
 Note that the suggestion here might not be all so you should verify all usages
 of `template-c` string in the project on your own.
 
 
-== 2a. Remove library if not needed
+2a. Remove library if not needed
+--------------------------------
 
 You want to remove existing library framework if you plan to write only the
 application. To do so you have to remove library itself and its tests.
@@ -78,7 +79,8 @@ section from `tests/unit/meson.build`. The section you want to remove is
 the one building `unittests-libfoo`.
 
 
-== 2b. Replicate and rename libraries
+2b. Replicate and rename libraries
+----------------------------------
 
 The library rename have to be performed by not only renaming the `libfoo`
 directory but primarily by changing the content of `libfoo/meson.build` and code
@@ -94,11 +96,12 @@ relevant code where `libfoo` is being referenced (those are sections that have
 to be changed on library rename).
 
 The library uses gperf to showcase its usage. Feel free to read about
-link:./gperf.adoc[gperf in the template], that is not just about how to use it
+[gperf in the template](./gperf.md), that is not just about how to use it
 but also about how to remove it if you do not need it.
 
 
-== 3a. Remove application if not needed
+3a. Remove application if not needed
+------------------------------------
 
 You want to remove existing application `foo` if you plan to write library only
 project. You have to remove not only `foo` sources but also tests.
@@ -111,7 +114,7 @@ are unit tests that are stored in `tests/unit`. There you have to remove
 `config.c` file. You have to also remove an appropriate section from
 `/tests/unit/meson.build`. The second type of tests, integration tests, can be
 removed all together as they are used only for applications. Remove the whole
-directory `tests/run` and remove an appropriate _subdir_ from
+directory `tests/run` and remove an appropriate *subdir* from
 `tests/meson.build`. With integration tests missing you can also move unit tests
 one level higher for cleaner files tree.
 
@@ -120,7 +123,8 @@ top level `meson.build`. You most likely not going to need `argp` in your
 library so feel free to remove it.
 
 
-== 3b Replicate and rename applications
+3b Replicate and rename applications
+------------------------------------
 
 The application rename has to be performed as clearly you do not want to write
 application called `foo`. The rename has to be performed in the
@@ -144,24 +148,24 @@ referenced are tests. You have to rename binary used in `tests/run/foo.bats` and
 unit test name in `/tests/unit/meson.build`.
 
 
-== 4. Cleanup
+4. Cleanup
+----------
 
 Remove any template specific files. These are files such as this documentation.
 
-[,sh]
-----
+```shell
 rm -rf docs
-----
+```
 
 Do not forget to write your own documentation!
 
 
-== 5. Commit all changes as part of merge commit
+5. Commit all changes as part of merge commit
+---------------------------------------------
 
 The last step is to stage all changes you made and modify merge commit created at
 the beginning. This can be done by:
 
-[sh]
-----
+```shell
 git commit --amend -C HEAD .
-----
+```

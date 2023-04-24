@@ -39,6 +39,10 @@ $ meson compile -C builddir
 
 Subsequent installation can be done with `meson install -C builddir`.
 
+## Documentation
+
+The documentation can be built using `sphinx-build docs html`.
+
 
 ## Running tests
 
@@ -83,3 +87,13 @@ $ meson setup builddir
 $ meson compile -C builddir cppcheck
 $ meson compile -C builddir flawfinder
 ```
+
+## Using Nix development environment
+
+The build environment, that is all necessary software required to build, lint
+and test the project can be provided using Nix. To use it you have to install
+it, please refer to the [Nix's documentation for
+that](https://nixos.org/download.html).
+
+Once you have Nix you can use it to enter development environment. Navigate to
+the project's directory and run `nix develop`.

@@ -1,4 +1,5 @@
-= Integration tests
+Integration tests
+=================
 
 The most of the testing should be performed in unit tests but although we are
 sure that code segments work as expected we can't know if they are put together
@@ -11,7 +12,7 @@ well but thanks to library being tested as is we do not need anything else other
 than unit testing framework for that.
 
 We use here
-https://bats-core.readthedocs.io/en/stable/tutorial.html#your-first-test[Bats],
+[Bats](https://bats-core.readthedocs.io/en/stable/tutorial.html#your-first-test),
 the Bash testing framework, to implement integration tests.  The point is to
 have something that spawns and manages processes simply and produces TAP output
 (for integration with other testing frameworks). The shell is probably the

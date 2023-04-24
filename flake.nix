@@ -2,7 +2,7 @@
   description = "Project template for C";
 
   inputs = {
-    check-suite.url = "github:cynerd/check-suite/v1.0.1";
+    check-suite.url = "github:cynerd/check-suite";
   };
 
   outputs = {
@@ -14,20 +14,18 @@
     with builtins;
     with flake-utils.lib;
     with nixpkgs.lib; let
-      packages = {
-        system,
-        pkgs ? nixpkgs.legacyPackages.${system},
-      }: rec {
-        template-c = with pkgs;
-          stdenv.mkDerivation {
+      packages = pkgs: with pkgs; rec {
+        template-c = stdenv.mkDerivation {
             pname = "template-c";
-            version = readFile ./version;
-
-            src = ./.;
-
+            version = replaceStrings ["\n"] [""] (readFile ./version);
+            src = builtins.path {
+              path = ./.;
+              filter = path: type: ! hasSuffix ".nix" path;
+            };
+            outputs = ["out" "doc"];
             buildInputs = [
               check
-              check-suite.packages.${system}.check-suite
+              pkgs.check-suite
             ];
             nativeBuildInputs = [
               bash
@@ -36,42 +34,56 @@
               meson
               ninja
               pkg-config
+              sphinxHook
             ];
-
-            doCheck = true;
+            sphinxRoot = "docs";
           };
-        default = template-c;
       };
     in
       {
-        overlays.default = final: prev:
-          packages {
-            inherit (prev) system;
-            pkgs = prev;
-          };
+        overlays = {
+          template-c = final: prev: packages (id prev);
+          default = composeManyExtensions [
+            check-suite.overlays.default
+            self.overlays.template-c
+          ];
+        };
       }
       // eachDefaultSystem (system: let
-        pkgs = nixpkgs.legacyPackages.${system};
-        pkgsSelf = self.packages.${system};
+        pkgs = nixpkgs.legacyPackages.${system}.extend self.overlays.default;
       in {
-        packages = packages {inherit system;};
-        legacyPackages = pkgs.extend self.overlays.default;
+        packages = rec {
+          inherit (pkgs) template-c;
+          default = template-c;
+        };
+        legacyPackages = pkgs;
 
         devShells = filterPackages system {
           default = pkgs.mkShell {
             packages = with pkgs; [
+              # Linters and formaters
               clang-tools_14
               cppcheck
               editorconfig-checker
               flawfinder
-              gcovr
-              gitlint
               muon
               shellcheck
               shfmt
+              gitlint
+              # Testing and code coverage
               valgrind
+              gcovr
+              # Documentation
+              doxygen
+              (python3.withPackages (p: with p; [
+                sphinx
+                sphinx_rtd_theme
+                myst-parser
+                breathe
+                sphinx-autobuild
+              ]))
             ];
-            inputsFrom = [pkgsSelf.template-c];
+            inputsFrom = [self.packages.${system}.template-c];
             meta.platforms = platforms.linux;
           };
         };

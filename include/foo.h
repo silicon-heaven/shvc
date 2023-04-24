@@ -8,9 +8,9 @@
 #define _FOO_H_
 #include <stdio.h>
 
-/* Count number of foo lines in data read from provided file.
- * f: file object open for reading
- * Returns number of "foo:" prefix lines found in file.
+/*! Count number of foo lines in data read from provided file.
+ * @param f: file object open for reading
+ * @returns number of "foo:" prefix lines found in file.
  */
 unsigned count_foo(FILE *f) __attribute__((nonnull));
 
