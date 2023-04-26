@@ -14,8 +14,9 @@
     with builtins;
     with flake-utils.lib;
     with nixpkgs.lib; let
-      packages = pkgs: with pkgs; rec {
-        template-c = stdenv.mkDerivation {
+      packages = pkgs:
+        with pkgs; rec {
+          template-c = stdenv.mkDerivation {
             pname = "template-c";
             version = replaceStrings ["\n"] [""] (readFile ./version);
             src = builtins.path {
@@ -34,11 +35,18 @@
               meson
               ninja
               pkg-config
-              sphinxHook
+              doxygen
+              (sphinxHook.overrideAttrs (oldAttrs: {
+                propagatedBuildInputs = with python3Packages; [
+                  sphinx_rtd_theme
+                  myst-parser
+                  breathe
+                ];
+              }))
             ];
-            sphinxRoot = "docs";
+            sphinxRoot = "../docs";
           };
-      };
+        };
     in
       {
         overlays = {
@@ -74,14 +82,7 @@
               valgrind
               gcovr
               # Documentation
-              doxygen
-              (python3.withPackages (p: with p; [
-                sphinx
-                sphinx_rtd_theme
-                myst-parser
-                breathe
-                sphinx-autobuild
-              ]))
+              sphinx-autobuild
             ];
             inputsFrom = [self.packages.${system}.template-c];
             meta.platforms = platforms.linux;
