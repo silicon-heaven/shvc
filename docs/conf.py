@@ -41,5 +41,16 @@ myst_enable_extensions = [
 
 includedir = pathlib.Path("../include")
 files = [file.relative_to(includedir) for file in includedir.glob("**/*.h")]
-breathe_projects_source = {"public_api" : ("../include", files)}
+breathe_projects_source = {"public_api": ("../include", files)}
 breathe_default_project = "public_api"
+
+
+def build_finished_gitignore(app, exception):
+    """Create .gitignore file when build is finished."""
+    outpath = pathlib.Path(app.outdir)
+    if exception is None and outpath.is_dir():
+        (outpath / ".gitignore").write_text("**\n")
+
+
+def setup(app):
+    app.connect("build-finished", build_finished_gitignore)
