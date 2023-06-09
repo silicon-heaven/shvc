@@ -11,4 +11,5 @@ fork
 gperf
 unittests
 integration_tests
+docs
 ```

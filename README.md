@@ -43,6 +43,9 @@ Subsequent installation can be done with `meson install -C builddir`.
 
 The documentation can be built using `sphinx-build docs html`.
 
+When you are writing documentation it is handy to use
+[Sphinx-autobuild](https://pypi.org/project/sphinx-autobuild/).
+
 
 ## Running tests
 
