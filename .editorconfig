@@ -1,0 +1,39 @@
+# EditorConfig: https://EditorConfig.org
+root = true
+
+[*]
+encoding = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{c,h}]
+indent_style = tab
+tab_width = 4
+indent_size = 4
+max_line_length = 80
+curly_bracket_next_line = false
+indent_brace_style = K&R
+
+[meson.build]
+indent_style  = space
+indent_size = 2
+
+[*.{sh,bats}]
+indent_style = tab
+max_line_length = 80
+
+# shfmt
+binary_next_line = true
+
+[.gitlab-ci.yml]
+indent_style  = space
+indent_size = 2
+
+[*.nix]
+indent_style = space
+indent_size = 2
+
+[*.{diff,patch}]
+# Avoid to trim trailing whitespace
+trim_trailing_whitespace = false

@@ -1,0 +1,227 @@
+stages:
+  - build
+  - test
+  - lint
+  - style
+  - coverage
+  - release
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+
+variables:
+  GIT_DEPTH: 0
+  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_SUBMODULE_UPDATE_FLAGS: --jobs 2
+
+.nix:
+  image: nixos/nix
+  tags:
+    - docker
+  cache:
+    key: "nix"
+    paths:
+      - ".nix-cache"
+  before_script:
+    - echo "experimental-features = nix-command flakes" >>/etc/nix/nix.conf
+    - echo "extra-substituters = file://$PWD/.nix-cache" >>/etc/nix/nix.conf
+    - find /nix/store -maxdepth 1 ! -name \*.drv | sort >/nix/.before
+  after_script:
+    - find /nix/store -maxdepth 1 ! -name \*.drv | sort >/nix/.after
+    - comm -13 /nix/.before /nix/.after | xargs nix copy --to "file://$PWD/.nix-cache"
+
+## Build stage #################################################################
+build:
+  stage: build
+  extends: .nix
+  script:
+    - nix develop -c meson setup build -Doptimization=plain $SETUP_ARGS
+    - nix develop -c meson compile -C build
+  artifacts:
+    when: always
+    paths:
+    - 'build/'
+
+build-werror:
+  extends: build
+  needs:
+    - job: build
+      artifacts: false
+  allow_failure: true
+  variables:
+    SETUP_ARGS: --werror
+
+nix:
+  stage: build
+  extends: .nix
+  script:
+    - nix build .?submodules=1
+
+## Test stage ##################################################################
+tests:
+  stage: test
+  extends: .nix
+  needs:
+    - job: build
+      artifacts: false
+  script:
+    - "nix develop -c meson setup build -Doptimization=plain -Db_coverage=true"
+    - "nix develop -c meson test -C build"
+  artifacts:
+    when: always
+    paths:
+      - 'build/'
+    reports:
+      junit: 'build/meson-logs/testlog.junit.xml'
+
+valgrind:memcheck:
+  extends: tests
+  variables:
+    VALGRIND: memcheck
+
+valgrind:helgrind:
+  extends: tests
+  variables:
+    VALGRIND: helgrind
+
+valgrind:drd:
+  extends: tests
+  variables:
+    VALGRIND: drd
+
+nix-check:
+  stage: test
+  extends: .nix
+  needs:
+    - job: nix
+      artifacts: false
+  script:
+    - nix flake check .?submodules=1
+
+include:
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml
+
+## Linters #####################################################################
+.linter:
+  stage: lint
+  extends: .nix
+  needs: []
+  allow_failure: true
+
+.mesonlinter:
+  extends: .linter
+  script:
+    - 'nix develop -c meson setup build -Doptimization=plain'
+    - 'nix develop -c meson compile -C build $COMPILE_ARG'
+
+cppcheck:
+  extends: .mesonlinter
+  variables:
+    COMPILE_ARG: ./cppcheck
+
+flawfinder:
+  extends: .mesonlinter
+  variables:
+    COMPILE_ARG: ./flawfinder
+
+shellcheck:
+  extends: .linter
+  script:
+    - "git ls-files '**.sh' | xargs nix develop -c shellcheck"
+
+## Style stage #################################################################
+.style:
+  stage: style
+  extends: .nix
+  needs: []
+  allow_failure: true
+
+muon:
+  extends: .style
+  script:
+    - "git ls-files '**/meson.build' meson_options.txt | nix develop -c xargs -n 1 muon fmt -c .muon_fmt.ini -i"
+    - "git diff --exit-code"
+
+clang-format:
+  extends: .style
+  script:
+    - "git ls-files '**.[ch]' | xargs nix develop -c clang-format -i"
+    - "git diff --exit-code"
+
+shell-format:
+  extends: .style
+  script:
+    - "git ls-files '**.sh' '**.bats' | xargs nix develop -c shfmt --binary-next-line -w"
+    - "git diff --exit-code"
+
+nixfmt:
+  extends: .style
+  script:
+    - "nix fmt"
+    - "git diff --exit-code"
+
+editorconfig-checker:
+  extends: .style
+  script:
+    - "nix develop -c editorconfig-checker"
+
+gitlint:
+  extends: .style
+  script:
+    - "git fetch"
+    - "nix develop -c gitlint --commits origin/master..$CI_COMMIT_SHA"
+
+## Code Coverage stage #########################################################
+coverage:
+  stage: coverage
+  extends: .nix
+  needs:
+    - job: tests
+      artifacts: true
+  script:
+    - "nix develop -c ninja -j1 -C build coverage-html coverage-xml"
+    - "mv build/meson-logs/coveragereport ./"
+  coverage: '/lines\.\.\.\.\.\.: (\d+.\d+%)/'
+  artifacts:
+    expire_in: 1 month
+    expose_as: 'Code Coverage'
+    paths:
+    - 'coveragereport/'
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: 'build/meson-logs/coverage.xml'
+
+## Release creation ############################################################
+dist:
+  stage: release
+  extends: .nix
+  needs:
+    - job: tests
+      artifacts: false
+  script:
+    - "nix develop -c meson setup build"
+    - "nix develop -c meson dist -C build --formats xztar,gztar,zip"
+    - "mv build/meson-dist/* ./"
+  artifacts:
+    expire_in: 1 month
+    paths:
+      - "*.tar.xz"
+      - "*.tar.gz"
+      - "*.zip"
+
+release:
+  stage: release
+  image: "registry.gitlab.com/gitlab-org/release-cli:latest"
+  rules:
+    - if: '$CI_COMMIT_TAG'
+  needs:
+    - job: dist
+      artifacts: true
+  before_script:
+    - "apk update"
+    - "apk add bash curl yq"
+  script:
+    - "bash .release.sh"

@@ -1,0 +1,13 @@
+option(
+  'tests',
+  type: 'feature',
+  value: 'auto',
+  description: 'Expect tests to be build and check for their dependencies',
+)
+
+option(
+  'foo',
+  type: 'boolean',
+  value: true,
+  description: 'Build foo application.',
+)
