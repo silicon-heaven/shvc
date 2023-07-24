@@ -7,5 +7,5 @@ Table of contents
 ```{toctree}
 :maxdepth: 2
 
-api
+api/index
 ```

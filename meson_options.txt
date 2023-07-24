@@ -5,9 +5,20 @@ option(
   description: 'Expect tests to be build and check for their dependencies',
 )
 
+# libshvchainpack
+
+# libshvrpc
 option(
-  'foo',
-  type: 'boolean',
-  value: true,
-  description: 'Build foo application.',
+  'unpack_bufsiz',
+  type: 'integer',
+  min: 1,
+  value: 8,
+  description: 'Size of the buffer in bytes for the unpacker.',
+)
+option(
+  'pack_bufsiz',
+  type: 'integer',
+  min: 1,
+  value: 8,
+  description: 'Size of the buffer in bytes for the packer.',
 )

@@ -3,6 +3,7 @@
 
   inputs = {
     check-suite.url = "github:cynerd/check-suite";
+    shvapp.url = "git+https://github.com/silicon-heaven/shvapp.git?submodules=1";
   };
 
   outputs = {
@@ -10,6 +11,7 @@
     flake-utils,
     nixpkgs,
     check-suite,
+    shvapp,
   }:
     with builtins;
     with flake-utils.lib;
@@ -24,17 +26,17 @@
               filter = path: type: ! hasSuffix ".nix" path;
             };
             outputs = ["out" "doc"];
+            sphinxRoot = "../docs";
             buildInputs = [
-              check
-              pkgs.check-suite
+              uriparser
             ];
             nativeBuildInputs = [
-              bash
-              bats
-              gperf
+              # Build tools
               meson
               ninja
+              gperf
               pkg-config
+              # Documentation
               doxygen
               (sphinxHook.overrideAttrs (oldAttrs: {
                 propagatedBuildInputs = with python3Packages; [
@@ -44,7 +46,18 @@
                 ];
               }))
             ];
-            sphinxRoot = "../docs";
+            doCheck = true;
+            checkInputs = [
+              # Unit tests
+              check
+              pkgs.check-suite
+            ];
+            nativeCheckInputs = [
+              pkgs.shvapp
+              # Run tests
+              bash
+              bats
+            ];
           };
         };
     in
@@ -53,6 +66,7 @@
           shvc = final: prev: packages (id prev);
           default = composeManyExtensions [
             check-suite.overlays.default
+            shvapp.overlays.default
             self.overlays.shvc
           ];
         };

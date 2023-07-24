@@ -1,0 +1,36 @@
+%compare-lengths
+%compare-strncmp
+
+%pic
+%enum
+%readonly-tables
+%switch=1
+%language=ANSI-C
+
+%define hash-function-name gperf_rpcmsg_access_hash
+%define lookup-function-name gperf_rpcmsg_access
+%define string-pool-name gperf_rpcmsg_access_string
+%define constants-prefix GPERF_RPCMSG_ACCESS_
+%define slot-name offset
+
+%struct-type
+%{
+struct gperf_rpcmsg_access_match {
+    int offset;
+	enum rpcmsg_access acc;
+};
+%}
+
+struct gperf_rpcmsg_access_match;
+
+%%
+bws, RPCMSG_ACC_BROWSE
+rd, RPCMSG_ACC_READ
+wr, RPCMSG_ACC_WRITE
+cmd, RPCMSG_ACC_COMMAND
+cfg, RPCMSG_ACC_CONFIG
+srv, RPCMSG_ACC_SERVICE
+ssrv, RPCMSG_ACC_SUPER_SERVICE
+dev, RPCMSG_ACC_DEVEL
+su, RPCMSG_ACC_ADMIN
+%%

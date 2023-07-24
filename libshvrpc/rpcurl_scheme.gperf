@@ -1,0 +1,32 @@
+%compare-lengths
+%compare-strncmp
+
+%pic
+%enum
+%readonly-tables
+%switch=1
+%language=ANSI-C
+
+%define hash-function-name gperf_rpcurl_scheme_hash
+%define lookup-function-name gperf_rpcurl_scheme
+%define string-pool-name gperf_rpcurl_scheme_string
+%define constants-prefix GPERF_RPCURL_SCHEME_
+%define slot-name offset
+
+%struct-type
+%{
+struct gperf_rpcurl_scheme_match {
+    int offset;
+    enum rpc_protocol protocol;
+};
+%}
+
+struct gperf_rpcurl_scheme_match;
+
+%%
+tcp, RPC_PROTOCOL_TCP
+udp, RPC_PROTOCOL_UDP
+localsocket, RPC_PROTOCOL_LOCAL_SOCKET
+unix, RPC_PROTOCOL_LOCAL_SOCKET
+serialport, RPC_PROTOCOL_SERIAL_PORT
+%%

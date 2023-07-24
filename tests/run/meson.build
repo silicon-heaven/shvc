@@ -1,8 +1,6 @@
 bats = find_program('bats')
 
-bats_tests = [
-  'foo',
-]
+bats_tests = []
 
 foreach bats_test : bats_tests
   test(
@@ -15,7 +13,7 @@ foreach bats_test : bats_tests
       '--tap',
       join_paths(meson.current_source_dir(), bats_test + '.bats'),
     ],
-    env: ['TEST_FOO=' + foo.full_path()],
+    env: [],
     protocol: 'tap',
     depends: foo,
   )

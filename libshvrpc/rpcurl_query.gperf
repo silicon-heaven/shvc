@@ -1,0 +1,37 @@
+%compare-lengths
+%compare-strncmp
+
+%pic
+%enum
+%readonly-tables
+%switch=1
+%language=ANSI-C
+
+%define hash-function-name gperf_rpcurl_query_hash
+%define lookup-function-name gperf_rpcurl_query
+%define string-pool-name gperf_rpcurl_query_string
+%define constants-prefix GPERF_RPCURL_QUERY_
+%define slot-name offset
+
+%struct-type
+%{
+enum gperf_rpcurl_query {
+	GPERF_RPCURL_QUERY_SHAPASS,
+	GPERF_RPCURL_QUERY_PASSWORD,
+	GPERF_RPCURL_QUERY_DEVID,
+	GPERF_RPCURL_QUERY_DEVMOUNT,
+};
+struct gperf_rpcurl_query_match {
+    int offset;
+	enum gperf_rpcurl_query query;
+};
+%}
+
+struct gperf_rpcurl_query_match;
+
+%%
+shapass, GPERF_RPCURL_QUERY_SHAPASS
+password, GPERF_RPCURL_QUERY_PASSWORD
+devid, GPERF_RPCURL_QUERY_DEVID
+devmount, GPERF_RPCURL_QUERY_DEVMOUNT
+%%

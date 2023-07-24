@@ -1,0 +1,94 @@
+V0.0 {
+	global:
+		# cpcp.h
+		cpcp_error_string;
+
+		# cpcp_pack.h
+		cpcp_pack_context_init;
+		cpcp_pack_context_dry_run_init;
+		cpcp_pack_copy_byte;
+		cpcp_pack_copy_bytes;
+
+		# cpcp_unpack.h
+		cpcp_item_type_to_string;
+		cpcp_string_init;
+		cpcp_exponential_to_double;
+		cpcp_decimal_to_double;
+		cpcp_decimal_to_string;
+		cpcp_container_state_init;
+		cpcp_container_stack_init;
+		cpcp_unpack_context_init;
+		cpcp_unpack_context_push_container_state;
+		cpcp_unpack_context_top_container_state;
+		cpcp_unpack_context_parent_container_state;
+		cpcp_unpack_context_closed_container_state;
+		cpcp_unpack_context_pop_container_state;
+		cpcp_unpack_take_byte;
+		cpcp_unpack_peek_byte;
+
+		# chainpack.h
+		chainpack_packing_schema_name;
+		chainpack_pack_uint_data;
+		chainpack_pack_null;
+		chainpack_pack_boolean;
+		chainpack_pack_int;
+		chainpack_pack_uint;
+		chainpack_pack_double;
+		chainpack_pack_decimal;
+		chainpack_pack_date_time;
+		chainpack_pack_blob;
+		chainpack_pack_blob_start;
+		chainpack_pack_blob_cont;
+		chainpack_pack_string;
+		chainpack_pack_string_start;
+		chainpack_pack_string_cont;
+		chainpack_pack_cstring;
+		chainpack_pack_cstring_terminated;
+		chainpack_pack_cstring_start;
+		chainpack_pack_cstring_cont;
+		chainpack_pack_cstring_finish;
+		chainpack_pack_list_begin;
+		chainpack_pack_map_begin;
+		chainpack_pack_imap_begin;
+		chainpack_pack_meta_begin;
+		chainpack_pack_container_end;
+		chainpack_unpack_uint_data;
+		chainpack_unpack_uint_data2;
+		chainpack_unpack_next;
+
+		# cpon.h
+		cpon_timegm;
+		cpon_gmtime;
+		cpon_pack_null;
+		cpon_pack_boolean;
+		cpon_pack_int;
+		cpon_pack_uint;
+		cpon_pack_double;
+		cpon_pack_decimal;
+		cpon_pack_date_time;
+		cpon_pack_blob;
+		cpon_pack_blob_start;
+		cpon_pack_blob_cont;
+		cpon_pack_blob_finish;
+		cpon_pack_string;
+		cpon_pack_string_terminated;
+		cpon_pack_string_start;
+		cpon_pack_string_cont;
+		cpon_pack_string_finish;
+		cpon_pack_list_begin;
+		cpon_pack_list_end;
+		cpon_pack_map_begin;
+		cpon_pack_map_end;
+		cpon_pack_imap_begin;
+		cpon_pack_imap_end;
+		cpon_pack_meta_begin;
+		cpon_pack_meta_end;
+		cpon_pack_copy_str;
+		cpon_pack_field_delim;
+		cpon_pack_key_val_delim;
+		cpon_unpack_skip_insignificant;
+		cpon_unpack_next;
+		cpon_unpack_date_time;
+
+	local: *;
+};

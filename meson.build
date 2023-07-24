@@ -7,33 +7,39 @@ project(
   meson_version: '>=0.57.0',
 )
 cc = meson.get_compiler('c')
-isnuttx = cc.get_define('__NuttX__') != '' # Won't be defined outside NuttX
+isnuttx = (
+  cc.get_define('__NuttX__') != '' # Won't be defined outside NuttX
+)
 fs = import('fs')
 
 
 add_project_arguments('-D_GNU_SOURCE', language: 'c')
-add_project_arguments('-DPROJECT_VERSION="@0@"'.format(meson.project_version()), language: 'c')
+add_project_arguments('-fms-extensions', language: 'c')
+add_project_arguments(
+  '-DPROJECT_VERSION="@0@"'.format(meson.project_version()),
+  language: 'c',
+)
+add_project_arguments(
+  '-DSHV_UNPACK_BUFSIZ=' + get_option('unpack_bufsiz').to_string(),
+  language: 'c',
+)
+add_project_arguments(
+  '-DSHV_PACK_BUFSIZ=' + get_option('pack_bufsiz').to_string(),
+  language: 'c',
+)
 
-
-if not isnuttx
-  argp = cc.has_function('argp_parse') ? declare_dependency() : cc.find_library('argp')
-else
-  argp = declare_dependency()
-endif
 
 gperf = generator(find_program('gperf'),
   output: '@PLAINNAME@.h',
   arguments: ['@EXTRA_ARGS@', '--output-file=@OUTPUT@', '@INPUT@']
 )
 
+uriparser = dependency('liburiparser', version: '>= 0.9.0')
+
 
 subdir('include')
-subdir('libfoo')
-
-foo_opt = get_option('foo')
-if foo_opt
-  subdir('src')
-endif
+subdir('libshvchainpack')
+subdir('libshvrpc')
 
 
 test_buildtypes = ['debug', 'debugoptimized']
