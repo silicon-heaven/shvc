@@ -359,3 +359,39 @@ TEST(unpack, unpack_meta) {
 	ck_assert_int_eq(unpack.item.as.Int, 3);
 }
 END_TEST
+TEST(pack,pack_null_error) { // line 302
+	pack.err_no=CPCP_RC_LOGICAL_ERROR;
+	chainpack_pack_null(&pack);
+	ck_assert_ptr_eq(pack.start,pack.current);
+
+}
+END_TEST
+//TEST(pack,pack_true_error){ // TODO line 309-problem, implicit declaration of chainpack_pack_true
+//	pack.err_no=CPCP_RC_LOGICAL_ERROR;
+//	chainpack_pack_true(&pack);
+//	ck_assert_ptr_eq(pack.start,pack.current);
+//}
+//END_TEST
+TEST(pack,pack_bool_error){ // line 321
+	pack.err_no=CPCP_RC_LOGICAL_ERROR;
+	chainpack_pack_boolean(&pack,false);
+	ck_assert_ptr_eq(pack.start,pack.current);
+}
+END_TEST
+TEST(pack,pack_meta_error){ // line 348
+	pack.err_no=CPCP_RC_LOGICAL_ERROR;
+	chainpack_pack_meta_begin(&pack);
+	ck_assert_ptr_eq(pack.start,pack.current);
+}
+END_TEST
+TEST(pack,pack_list_error){ //line 330
+	pack.err_no=CPCP_RC_LOGICAL_ERROR;
+	chainpack_pack_list_begin(&pack);
+	ck_assert_ptr_eq(pack.start,pack.current);
+}
+TEST(pack,pack_map_error){
+	pack.err_no=CPCP_RC_LOGICAL_ERROR;
+	chainpack_pack_map_begin(&pack);
+	ck_assert_ptr_eq(pack.start,pack.current);
+}
+
