@@ -340,3 +340,20 @@ TEST(unpack, unpack_meta) {
 	ck_assert_int_eq(unpack.item.as.Int, 3);
 }
 END_TEST
+
+/* Packing function should not generate any output when pack context is in error */
+TEST(pack,pack_uint_error){ 
+	pack.err_no=CPCP_RC_LOGICAL_ERROR;
+	cpon_pack_uint(&pack,0);
+	ck_assert_ptr_eq(pack.start,pack.current);
+}
+TEST(pack,pack_int_error){
+	pack.err_no=CPCP_RC_LOGICAL_ERROR;
+	cpon_pack_int(&pack,0);
+	ck_assert_ptr_eq(pack.start,pack.current);
+}
+TEST(pack,pack_double_error){
+	pack.err_no=CPCP_RC_LOGICAL_ERROR;
+	cpon_pack_double(&pack,0);
+	ck_assert_ptr_eq(pack.start,pack.current);
+}
