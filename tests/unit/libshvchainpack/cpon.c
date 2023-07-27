@@ -347,13 +347,57 @@ TEST(pack,pack_uint_error){
 	cpon_pack_uint(&pack,0);
 	ck_assert_ptr_eq(pack.start,pack.current);
 }
+END_TEST
 TEST(pack,pack_int_error){
 	pack.err_no=CPCP_RC_LOGICAL_ERROR;
 	cpon_pack_int(&pack,0);
 	ck_assert_ptr_eq(pack.start,pack.current);
 }
+END_TEST
 TEST(pack,pack_double_error){
 	pack.err_no=CPCP_RC_LOGICAL_ERROR;
 	cpon_pack_double(&pack,0);
 	ck_assert_ptr_eq(pack.start,pack.current);
 }
+END_TEST
+static const void (*pack_error_simple_call_d[])(cpcp_pack_context*) = {
+	cpon_pack_null,
+	cpon_pack_list_begin,
+	cpon_pack_map_begin,
+	cpon_pack_imap_begin,
+	cpon_pack_meta_begin
+};
+ARRAY_TEST(pack, pack_error_simple_call) {
+	pack.err_no=CPCP_RC_LOGICAL_ERROR;
+	_d(&pack);
+	ck_assert_ptr_eq(pack.start,pack.current);
+}
+END_TEST
+static const void (*pack_error_bool_call_d[])(cpcp_pack_context*,bool) = {
+	cpon_pack_boolean,
+	cpon_pack_list_end,
+	cpon_pack_map_end,
+	cpon_pack_imap_end,
+	cpon_pack_meta_end
+};
+ARRAY_TEST(pack, pack_error_bool_call) {
+	pack.err_no=CPCP_RC_LOGICAL_ERROR;
+	_d(&pack,0);
+	ck_assert_ptr_eq(pack.start,pack.current);
+
+}
+END_TEST
+TEST(unpack,unpack_insig_error){
+	cpcp_unpack_context_init(&unpack,NULL,0,NULL,NULL);
+	cpon_unpack_skip_insignificant(&unpack);
+	ck_assert_ptr_eq(unpack.start,unpack.current);
+}
+END_TEST
+TEST(unpack,unpack_next_error){
+	cpcp_unpack_context_init(&unpack,NULL,0,NULL,NULL);
+	unpack.err_no=CPCP_RC_LOGICAL_ERROR;
+	cpon_unpack_next(&unpack);
+	ck_assert_ptr_eq(unpack.start,unpack.current);
+}
+END_TEST
+

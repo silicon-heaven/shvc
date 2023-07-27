@@ -435,4 +435,4 @@ TEST(unpack,unpack_next_blob_error){
 	chainpack_unpack_next(&unpack);
 	ck_assert_ptr_eq(unpack.start,unpack.current);
 }
-
+END_TEST
