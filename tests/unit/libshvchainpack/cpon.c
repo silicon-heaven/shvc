@@ -384,7 +384,21 @@ ARRAY_TEST(pack, pack_error_bool_call) {
 	pack.err_no=CPCP_RC_LOGICAL_ERROR;
 	_d(&pack,0);
 	ck_assert_ptr_eq(pack.start,pack.current);
-
+}
+END_TEST
+TEST(pack, pack_double_zero_test) {
+	cpon_pack_double(&pack,0);
+	ck_assert_str_eq(pack.start,"0.");
+}
+END_TEST
+TEST(pack,pack_double_pos_test){
+	cpon_pack_double(&pack,1000);
+	ck_assert_str_eq(pack.start,"1000.");
+}
+END_TEST
+TEST(pack,pack_double_neg_test){
+	cpon_pack_double(&pack,-1000);
+	ck_assert_str_eq(pack.start,"-1000.");
 }
 END_TEST
 TEST(unpack,unpack_insig_error){
@@ -400,4 +414,3 @@ TEST(unpack,unpack_next_error){
 	ck_assert_ptr_eq(unpack.start,unpack.current);
 }
 END_TEST
-
