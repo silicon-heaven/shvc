@@ -381,18 +381,21 @@ ARRAY_TEST(pack, pack_error_bool_call) {
 END_TEST
 
 TEST(pack, pack_double_zero_test) {
-	cpon_pack_double(&pack, 0);
-	ck_assert_stashstr("0.");
+	cpon_pack_double(&pack,0);
+	int is_same=strncmp(pack.start,"0.",2);
+	ck_assert_int_eq(0,is_same);
 }
 END_TEST
-TEST(pack, pack_double_pos_test) {
-	cpon_pack_double(&pack, 1000);
-	ck_assert_stashstr("1000.");
+TEST(pack,pack_double_pos_test){
+	cpon_pack_double(&pack,10000.5);
+	int is_same=strncmp(pack.start,"10000.5",7);
+	ck_assert_int_eq(0,is_same);
 }
 END_TEST
-TEST(pack, pack_double_neg_test) {
-	cpon_pack_double(&pack, -1000);
-	ck_assert_stashstr("-1000.");
+TEST(pack,pack_double_neg_test){
+	cpon_pack_double(&pack,-10000.5);
+	int is_same=strncmp(pack.start,"-10000.5",8);
+	ck_assert_int_eq(0,is_same);
 }
 END_TEST
 TEST(unpack, unpack_insig_error) {
