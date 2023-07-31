@@ -379,22 +379,46 @@ ARRAY_TEST(pack, pack_error_bool_call) {
 	ck_assert_ptr_eq(pack.start, pack.current);
 }
 END_TEST
-
+TEST(pack,pack_copy_test){
+	char * text="Testing function cpon_pack_copy_str.";
+	cpon_pack_copy_str(&pack,text);
+	int is_same=strncmp(pack.start,text,pack.bytes_written);
+	ck_assert_int_eq(0,is_same);
+}
 TEST(pack, pack_double_zero_test) {
 	cpon_pack_double(&pack,0);
-	int is_same=strncmp(pack.start,"0.",2);
+
+	int is_same=strncmp(pack.start,"0.",pack.bytes_written);
 	ck_assert_int_eq(0,is_same);
 }
 END_TEST
 TEST(pack,pack_double_pos_test){
 	cpon_pack_double(&pack,10000.5);
-	int is_same=strncmp(pack.start,"10000.5",7);
+	int is_same=strncmp(pack.start,"10000.5",pack.bytes_written);
 	ck_assert_int_eq(0,is_same);
 }
 END_TEST
 TEST(pack,pack_double_neg_test){
 	cpon_pack_double(&pack,-10000.5);
-	int is_same=strncmp(pack.start,"-10000.5",8);
+	int is_same=strncmp(pack.start,"-10000.5",pack.bytes_written);
+	ck_assert_int_eq(0,is_same);
+}
+END_TEST
+TEST(pack,pack_double_low_test){
+	cpon_pack_double(&pack,0.9);
+	int is_same=strncmp(pack.start,"0.9",pack.bytes_written);
+	ck_assert_int_eq(0,is_same);
+}
+END_TEST
+TEST(pack,pack_double_expo_test){
+	cpon_pack_double(&pack,10000000);
+	int is_same=strncmp(pack.start,"1e7",pack.bytes_written);
+	ck_assert_int_eq(0,is_same);
+}
+END_TEST
+TEST(pack,pack_double_expo_small_test){
+	cpon_pack_double(&pack,0.08);
+	int is_same=strncmp(pack.start,"8e-2",pack.bytes_written);
 	ck_assert_int_eq(0,is_same);
 }
 END_TEST
