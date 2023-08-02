@@ -384,34 +384,36 @@ TEST(pack,pack_copy_test){
 	cpon_pack_copy_str(&pack,text);
 	ck_assert_stashstr("Testing function cpon_pack_copy_str.");
 }
-TEST(pack, pack_double_zero_test){
-	cpon_pack_double(&pack,0);
-	ck_assert_stashstr("0.");
+END_TEST
+static const struct {
+	const double num;
+	const char *const str_num;
+}cpon_double_d[] = {{0., "0."}, {10000.5, "10000.5"},{-10000.5,"-10000.5"},
+	{0.9,"0.9"},{10000000,"1e7"},{0.08,"8e-2"}};
+ARRAY_TEST(pack, pack_double_d,cpon_double_d) {
+	cpon_pack_double(&pack,_d.num);
+	ck_assert_stashstr(_d.str_num);
 }
 END_TEST
-TEST(pack,pack_double_pos_test){
-	cpon_pack_double(&pack,10000.5);
-	ck_assert_stashstr("10000.5");
+TEST(pack,pack_string_start_err){
+	pack.err_no=CPCP_RC_LOGICAL_ERROR;
+	cpon_pack_string_start(&pack,"error",5);
+	ck_assert_ptr_eq(pack.start,pack.current);
 }
 END_TEST
-TEST(pack,pack_double_neg_test){
-	cpon_pack_double(&pack,-10000.5);
-	ck_assert_stashstr("-10000.5");
+TEST(pack,pack_string_start_test){
+	cpon_pack_string_start(&pack,"test: \0\n\t\b\r\\\"",13);
+	ck_assert_stashstr("\"test: \\0\\n\\t\\b\\r\\\\\\\"");
 }
 END_TEST
-TEST(pack,pack_double_low_test){
-	cpon_pack_double(&pack,0.9);
-	ck_assert_stashstr("0.9");
+TEST(pack,pack_string_cont_test){
+	cpon_pack_string_cont(&pack,"test: \0\n\t\b\r\\\"",13);
+	ck_assert_stashstr("test: \\0\\n\\t\\b\\r\\\\\\\"");
 }
 END_TEST
-TEST(pack,pack_double_expo_test){
-	cpon_pack_double(&pack,10000000);
-	ck_assert_stashstr("1e7");
-}
-END_TEST
-TEST(pack,pack_double_expo_small_test){
-	cpon_pack_double(&pack,0.08);
-	ck_assert_stashstr("8e-2");
+TEST(pack,pack_string_finish_test){
+	cpon_pack_string_finish(&pack);
+	ck_assert_stashstr("\"");
 }
 END_TEST
 TEST(unpack, unpack_insig_error) {
@@ -427,4 +429,15 @@ TEST(unpack, unpack_next_error) {
 	ck_assert_ptr_eq(unpack.start, unpack.current);
 }
 END_TEST
-
+TEST(unpack,unpack_skip_zero_test){
+	cpcp_unpack_context_init(&unpack,"",0,NULL,NULL);
+	cpon_unpack_skip_insignificant(&unpack);
+	ck_assert_ptr_eq(unpack.start,unpack.current);
+}
+END_TEST
+TEST(unpack,unpack_skip_neg_test){
+	cpcp_unpack_context_init(&unpack,"žttest",6,NULL,NULL);
+	cpon_unpack_skip_insignificant(&unpack);
+	ck_assert_str_eq("test",unpack.current);
+}
+END_TEST
