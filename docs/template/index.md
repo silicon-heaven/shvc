@@ -9,6 +9,7 @@ tasks.
 ```{toctree}
 fork
 gperf
+subprojects
 unittests
 integration_tests
 docs

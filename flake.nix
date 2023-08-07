@@ -14,39 +14,50 @@
     with builtins;
     with flake-utils.lib;
     with nixpkgs.lib; let
-      packages = pkgs:
-        with pkgs; rec {
-          template-c = stdenv.mkDerivation {
-            pname = "template-c";
-            version = replaceStrings ["\n"] [""] (readFile ./version);
-            src = builtins.path {
-              path = ./.;
-              filter = path: type: ! hasSuffix ".nix" path;
-            };
-            outputs = ["out" "doc"];
-            buildInputs = [
-              check
-              pkgs.check-suite
-            ];
-            nativeBuildInputs = [
-              bash
-              bats
-              gperf
-              meson
-              ninja
-              pkg-config
-              doxygen
-              (sphinxHook.overrideAttrs (oldAttrs: {
-                propagatedBuildInputs = with python3Packages; [
-                  sphinx_rtd_theme
-                  myst-parser
-                  breathe
-                ];
-              }))
-            ];
-            sphinxRoot = "../docs";
-          };
+      version = fileContents ./version;
+      src = builtins.path {
+        path = ./.;
+        filter = path: type: ! hasSuffix ".nix" path;
+      };
+      packages = pkgs: let
+        subprojects = import ./subprojects/.fetch.nix {
+          inherit pkgs src;
+          rev = self.rev or null;
+          hash = "sha256-GEUDy5crY09UTQ072NEvB50DjjgNv2BrLSwxLRNqEKM=";
         };
+      in {
+        template-c = pkgs.stdenv.mkDerivation {
+          pname = "template-c";
+          inherit version src;
+          outputs = ["out" "doc"];
+          buildInputs = with pkgs; [];
+          nativeBuildInputs = with pkgs; [
+            subprojects
+            gperf
+            meson
+            ninja
+            pkg-config
+            doxygen
+            (sphinxHook.overrideAttrs (oldAttrs: {
+              propagatedBuildInputs = with python3Packages; [
+                sphinx_rtd_theme
+                myst-parser
+                breathe
+              ];
+            }))
+          ];
+          checkInputs = with pkgs; [
+            check
+            pkgs.check-suite
+          ];
+          nativeCheckInputs = with pkgs; [
+            bash
+            bats
+          ];
+          doCheck = true;
+          sphinxRoot = "../docs";
+        };
+      };
     in
       {
         overlays = {
@@ -60,9 +71,9 @@
       // eachDefaultSystem (system: let
         pkgs = nixpkgs.legacyPackages.${system}.extend self.overlays.default;
       in {
-        packages = rec {
+        packages = {
           inherit (pkgs) template-c;
-          default = template-c;
+          default = pkgs.template-c;
         };
         legacyPackages = pkgs;
 

@@ -1,0 +1,4 @@
+*
+!.gitignore
+!.fetch.nix
+!.nix-setup-hook.sh
