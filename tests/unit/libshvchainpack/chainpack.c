@@ -359,3 +359,77 @@ TEST(unpack, unpack_meta) {
 	ck_assert_int_eq(unpack.item.as.Int, 3);
 }
 END_TEST
+
+/* Packing function should not generate any output when pack context is in error
+ */
+TEST(pack, pack_uint_error) {
+	pack.err_no = CPCP_RC_LOGICAL_ERROR;
+	chainpack_pack_uint(&pack, 0);
+	ck_assert_ptr_eq(pack.start, pack.current);
+}
+END_TEST
+TEST(pack, pack_int_error) {
+	pack.err_no = CPCP_RC_LOGICAL_ERROR;
+	chainpack_pack_int(&pack, 0);
+	ck_assert_ptr_eq(pack.start, pack.current);
+}
+END_TEST
+TEST(pack, pack_decimal_error) {
+	const static cpcp_decimal d = {0, 0};
+	pack.err_no = CPCP_RC_LOGICAL_ERROR;
+	chainpack_pack_decimal(&pack, &d);
+	ck_assert_ptr_eq(pack.start, pack.current);
+}
+END_TEST
+TEST(pack, pack_double_error) {
+	pack.err_no = CPCP_RC_LOGICAL_ERROR;
+	chainpack_pack_double(&pack, 0);
+	ck_assert_ptr_eq(pack.start, pack.current);
+}
+END_TEST
+TEST(pack, pack_date_error) {
+	static const cpcp_date_time time_er = {0, 0};
+	pack.err_no = CPCP_RC_LOGICAL_ERROR;
+	chainpack_pack_date_time(&pack, &time_er);
+	ck_assert_ptr_eq(pack.start, pack.current);
+}
+END_TEST
+static const void (*pack_error_simple_call_d[])(cpcp_pack_context *) = {
+	chainpack_pack_null, chainpack_pack_list_begin, chainpack_pack_map_begin,
+	chainpack_pack_imap_begin, chainpack_pack_meta_begin,
+	chainpack_pack_container_end};
+ARRAY_TEST(pack, pack_error_simple_call) {
+	pack.err_no = CPCP_RC_LOGICAL_ERROR;
+	_d(&pack);
+	ck_assert_ptr_eq(pack.start, pack.current);
+}
+END_TEST
+TEST(pack, pack_bool_error) {
+	pack.err_no = CPCP_RC_LOGICAL_ERROR;
+	chainpack_pack_boolean(&pack, 0);
+	ck_assert_ptr_eq(pack.start, pack.current);
+}
+END_TEST
+TEST(unpack, unpack_next_error) {
+	cpcp_unpack_context_init(&unpack, NULL, 0, NULL, NULL);
+	unpack.err_no = CPCP_RC_LOGICAL_ERROR;
+	chainpack_unpack_next(&unpack);
+	ck_assert_ptr_eq(unpack.start, unpack.current);
+}
+END_TEST
+TEST(unpack, unnpack_next_string_error) {
+	cpcp_unpack_context_init(&unpack, NULL, 0, NULL, NULL);
+	unpack.item.type = CPCP_ITEM_STRING;
+	unpack.item.as.String.last_chunk = 0;
+	chainpack_unpack_next(&unpack);
+	ck_assert_ptr_eq(unpack.start, unpack.current);
+}
+END_TEST
+TEST(unpack, unpack_next_blob_error) {
+	cpcp_unpack_context_init(&unpack, NULL, 0, NULL, NULL);
+	unpack.item.type = CPCP_ITEM_BLOB;
+	unpack.item.as.String.last_chunk = 0;
+	chainpack_unpack_next(&unpack);
+	ck_assert_ptr_eq(unpack.start, unpack.current);
+}
+END_TEST
