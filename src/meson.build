@@ -3,11 +3,11 @@ foo_dependencies = [libfoo_dep, argp]
 
 
 if isnuttx
-  shvtreecdemo_client = static_library(
+  foo = static_library(
     'foo',
     foo_sources + ['main.c'],
     dependencies: foo_dependencies,
-    install: not meson.is_subproject(),
+    install: true,
     c_args: '-Dmain=foo_main',
   )
 else
