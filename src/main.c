@@ -13,15 +13,16 @@
 
 
 int main(int argc, char **argv) {
-	struct config *conf = load_config(argc, argv);
+	struct config conf;
+	load_config(&conf, argc, argv);
 
 	FILE *f = stdin;
 	bool close = false;
-	if (conf->source_file != NULL && strcmp(conf->source_file, "-")) {
-		f = fopen(conf->source_file, "r");
+	if (conf.source_file != NULL && strcmp(conf.source_file, "-")) {
+		f = fopen(conf.source_file, "r");
 		if (f == NULL) {
 			fprintf(stderr, "Can't open input file '%s': %s\n",
-				conf->source_file, strerror(errno));
+				conf.source_file, strerror(errno));
 			return 1;
 		}
 	}

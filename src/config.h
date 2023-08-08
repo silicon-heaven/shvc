@@ -15,6 +15,7 @@ struct config {
 /* Parse arguments and load configuration file
  * Returned pointer is to statically allocated (do not call free on it).
  */
-struct config *load_config(int argc, char **argv) __attribute__((nonnull));
+void load_config(struct config *conf, int argc, char **argv)
+	__attribute__((nonnull));
 
 #endif

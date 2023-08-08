@@ -40,7 +40,8 @@ const struct {
 };
 
 ARRAY_TEST(arguments, parse_arguments, parse_arguments_data) {
-	struct config *conf = load_config(_d.argc, _d.argv);
-	ck_assert_pstr_eq(conf->source_file, _d.config.source_file);
+	struct config conf;
+	load_config(&conf, _d.argc, _d.argv);
+	ck_assert_pstr_eq(conf.source_file, _d.config.source_file);
 }
 END_TEST
