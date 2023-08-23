@@ -1,9 +1,9 @@
-#include "chainpack.h"
-#include "shv/cp.h"
+#include <shv/cp.h>
+#include <shv/chainpack.h>
 
 
-static size_t chainpack_unpack_int(FILE *f, int64_t *v, bool *ok);
-static size_t chainpack_unpack_buf(FILE *f, struct cpbuf *buf, bool *ok);
+static size_t chainpack_unpack_int(FILE *f, long long *v, bool *ok);
+static size_t chainpack_unpack_buf(FILE *f, struct cpitem *item, bool *ok);
 
 
 size_t chainpack_unpack(FILE *f, struct cpitem *item) {
@@ -18,16 +18,17 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) {
 		res++; \
 		__v; \
 	})
-#define READ(PTR, CNT, N) \
+#define READ(PTR, SIZ) \
 	do { \
-		ssize_t __v = fread((PTR), (CNT), (N), f); \
-		if (__v != (CNT) * (N)) { \
+		size_t __siz = SIZ; \
+		ssize_t __v = fread((PTR), 1, __siz, f); \
+		if (__v != __siz) { \
 			item->type = CP_ITEM_INVALID; \
 			if (__v > 0) \
 				res += __v; \
 			return res; \
 		} \
-		res += __v; \
+		res += __siz; \
 	} while (false)
 #define CALL(FUNC, ...) \
 	do { \
@@ -40,25 +41,27 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) {
 	} while (false)
 
 	/* Continue reading previous item */
-	if ((item->type == CP_ITEM_STRING || item->type == CP_ITEM_BLOB) &&
-		!item->as.String.last) {
+	if ((item->type == CP_ITEM_BLOB || item->type == CP_ITEM_STRING) &&
+		(item->as.Blob.eoff != 0 || !(item->as.Blob.flags & CPBI_F_LAST))) {
 		/* There is no difference between string and blob in data type and thus
 		 * we can write this code to serve them both.
 		 */
-		CALL(chainpack_unpack_buf, &item->as.String);
+		item->as.Blob.flags &= ~CPBI_F_FIRST;
+		CALL(chainpack_unpack_buf, item);
 		return res;
 	}
 
 	uint8_t scheme = GETC;
-	if (scheme < 0x80) {
-		if (scheme & 0x40) {
+	if (scheme < CPS_Null) {
+		if (chainpack_scheme_signed(scheme)) {
 			item->type = CP_ITEM_INT;
-			item->as.Int = scheme & 0x3f;
+			item->as.Int = chainpack_scheme_uint(scheme);
 		} else {
 			item->type = CP_ITEM_UINT;
-			item->as.UInt = scheme & 0x3f;
+			item->as.UInt = chainpack_scheme_uint(scheme);
 		}
 	} else {
+		unsigned long long ull;
 		switch (scheme) {
 			case CPS_Null:
 				item->type = CP_ITEM_NULL;
@@ -86,40 +89,44 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) {
 				for (ssize_t i = sizeof(double) - 1; i >= 0; i--)
 					b[i] = GETC;
 #else
-				READ(&item->as.Double, sizeof(double), 1);
+				READ(&item->as.Double, sizeof(double));
 #endif
 				break;
 			case CPS_Decimal:
 				item->type = CP_ITEM_DECIMAL;
 				CALL(chainpack_unpack_int, &item->as.Decimal.mantisa);
-				int64_t exp;
+				long long exp;
 				CALL(chainpack_unpack_int, &exp);
 				item->as.Decimal.exponent = exp;
 				break;
 			case CPS_Blob:
+			case CPS_BlobChain:
 				item->type = CP_ITEM_BLOB;
-				item->as.String.first = true;
-				item->as.String.last = false;
-				CALL(_chainpack_unpack_uint, (uint64_t *)&item->as.String.eoff);
-				CALL(chainpack_unpack_buf, &item->as.Blob);
+				CALL(_chainpack_unpack_uint, &ull);
+				// TODO check that we do not crop the value
+				item->as.String.eoff = ull;
+				item->as.Blob.flags = CPBI_F_FIRST;
+				if (scheme == CPS_BlobChain)
+					item->as.Blob.flags |= CPBI_F_STREAM;
+				CALL(chainpack_unpack_buf, item);
 				break;
 			case CPS_String:
-				item->type = CP_ITEM_STRING;
-				item->as.String.first = true;
-				item->as.String.last = false;
-				CALL(_chainpack_unpack_uint, (uint64_t *)&item->as.String.eoff);
-				CALL(chainpack_unpack_buf, &item->as.String);
-				break;
 			case CPS_CString:
 				item->type = CP_ITEM_STRING;
-				item->as.String.first = true;
-				item->as.String.last = false;
-				item->as.String.eoff = -1;
-				CALL(chainpack_unpack_buf, &item->as.String);
+				item->as.String.flags = CPBI_F_FIRST;
+				if (scheme == CPS_CString) {
+					item->as.String.eoff = 0;
+					item->as.String.flags |= CPBI_F_STREAM;
+				} else {
+					CALL(_chainpack_unpack_uint, &ull);
+					// TODO check that we do not crop the value
+					item->as.String.eoff = ull;
+				}
+				CALL(chainpack_unpack_buf, item);
 				break;
 			case CPS_DateTime:
 				item->type = CP_ITEM_DATETIME;
-				int64_t d;
+				long long d;
 				CALL(chainpack_unpack_int, &d);
 				int32_t offset = 0;
 				bool has_tz_offset = d & 1;
@@ -133,7 +140,7 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) {
 				}
 				if (has_not_msec)
 					d *= 1000;
-				d += chainpack_epoch_msec;
+				d += CHAINPACK_EPOCH_MSEC;
 				item->as.Datetime =
 					(struct cpdatetime){.msecs = d, .offutc = offset * 15};
 				break;
@@ -164,7 +171,7 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) {
 #undef CALL
 }
 
-size_t _chainpack_unpack_uint(FILE *f, uint64_t *v, bool *ok) {
+size_t _chainpack_unpack_uint(FILE *f, unsigned long long *v, bool *ok) {
 	ssize_t res = 0;
 
 	int head = getc(f);
@@ -175,24 +182,10 @@ size_t _chainpack_unpack_uint(FILE *f, uint64_t *v, bool *ok) {
 	}
 	res++;
 
-	*v = 0;
-	unsigned getcnt;
-	if (!(head & 0x80)) {
-		getcnt = 0;
-		*v = head & 0x7f;
-	} else if (!(head & 0x40)) {
-		getcnt = 1;
-		*v = head & 0x3f;
-	} else if (!(head & 0x20)) {
-		getcnt = 2;
-		*v = head & 0x1f;
-	} else if (!(head & 0x10)) {
-		getcnt = 3;
-		*v = head & 0x0f;
-	} else
-		getcnt = (head & 0xf) + 4;
+	unsigned bytes = chainpack_int_bytes(head);
 
-	for (unsigned i = 0; i < getcnt; ++i) {
+	*v = chainpack_uint_value1(head, bytes);
+	for (unsigned i = 1; i < bytes; i++) {
 		int r = getc(f);
 		if (r == EOF) {
 			if (ok)
@@ -200,18 +193,19 @@ size_t _chainpack_unpack_uint(FILE *f, uint64_t *v, bool *ok) {
 			return res;
 		}
 		res++;
-		*v = (*v << 8) + r;
-	};
+		*v = (*v << 8) | r;
+	}
+
 	if (ok)
 		*ok = true;
 	return res;
 }
 
-static size_t chainpack_unpack_int(FILE *f, int64_t *v, bool *ok) {
+static size_t chainpack_unpack_int(FILE *f, long long *v, bool *ok) {
 	bool ourok;
 	if (ok == NULL)
 		ok = &ourok;
-	size_t res = _chainpack_unpack_uint(f, (uint64_t *)v, ok);
+	size_t res = _chainpack_unpack_uint(f, (unsigned long long *)v, ok);
 
 	if (*ok) {
 		/* This is kind of magic that requires some explanation.
@@ -221,10 +215,10 @@ static size_t chainpack_unpack_int(FILE *f, int64_t *v, bool *ok) {
 		 * used to signal this. That applies for four initial bits.
 		 */
 		uint64_t sign_mask;
-		if (res <= 5)
-			sign_mask = 1 << ((8 * res) - res - 1);
+		if (res <= 4)
+			sign_mask = 1L << ((8 * res) - res - 1);
 		else
-			sign_mask = 1 << ((8 * (res - 1)) - 1);
+			sign_mask = 1L << ((8 * (res - 1)) - 1);
 		if (*v & sign_mask) {
 			*v &= ~sign_mask;
 			*v = -*v;
@@ -235,53 +229,67 @@ static size_t chainpack_unpack_int(FILE *f, int64_t *v, bool *ok) {
 }
 
 
-static size_t chainpack_unpack_buf(FILE *f, struct cpbuf *buf, bool *ok) {
-	if (buf->buf == NULL)
-		return 0; /* Nowhere to place data so just inform user about type */
-
+static size_t chainpack_unpack_buf(FILE *f, struct cpitem *item, bool *ok) {
+	bool ourok = true;
 	if (ok)
 		*ok = true;
+	else
+		ok = &ourok;
 
-	if (buf->eoff == -1) {
+	if (item->bufsiz == 0)
+		return 0; /* Nowhere to place data so just inform user about type */
+
+	if (item->as.Blob.flags & CPBI_F_STREAM && item->type == CP_ITEM_STRING) {
 		/* Handle C string */
-		size_t i = 0;
-		size_t res = 0;
-		bool escape = false;
-		while (i < buf->siz) {
+		size_t i;
+		for (i = 0; i < item->bufsiz; i++) {
 			int c = getc(f);
 			if (c == EOF) {
 				if (ok)
 					*ok = false;
 				return i;
 			}
-			res++;
-			if (escape) {
-				if (c == '0')
-					c = '\0';
-				buf->buf[i++] = c;
-				escape = false;
-			} else {
-				if (c == '\\')
-					escape = true;
-				else if (c == '\0') {
-					buf->last = true;
-					break;
-				} else
-					buf->buf[i++] = c;
+			if (c == '\0') {
+				item->as.Blob.flags |= CPBI_F_LAST;
+				item->as.Blob.len = i;
+				return i + 1;
 			}
+			if (item->buf)
+				item->buf[i] = c;
 		}
-		buf->len = i;
-		return res;
+		item->as.Blob.len = i;
+		return i;
 	}
 
-	size_t toread = buf->eoff > buf->siz ? buf->siz : buf->eoff;
-	ssize_t res = fread(buf->buf, toread, 1, f);
-	if (res < 0) {
-		if (ok)
+	/* Handle String, Blob and BlobChain */
+	size_t res = 0;
+	item->as.Blob.len = 0;
+	while (item->as.Blob.len < item->bufsiz) {
+		size_t toread = item->as.Blob.eoff > item->bufsiz ? item->bufsiz
+														  : item->as.Blob.eoff;
+		ssize_t rres = toread;
+		if (item->buf)
+			rres = fread(item->buf + item->as.Blob.len, 1, toread, f);
+		if (rres < 0) {
 			*ok = false;
-		return 0;
+			break;
+		}
+		// TODO what if we failed to read enough data due to EOF?
+		res += rres;
+		item->as.Blob.len = rres;
+		item->as.Blob.eoff -= rres;
+		if (item->as.Blob.flags & CPBI_F_STREAM && item->as.Blob.eoff == 0) {
+			unsigned long long ull;
+			res += _chainpack_unpack_uint(f, &ull, ok);
+			// TODO check that we do not crop the value
+			item->as.String.eoff = ull;
+			if (!*ok)
+				break;
+		}
+		if (item->as.Blob.eoff == 0) {
+			item->as.Blob.flags |= CPBI_F_LAST;
+			break;
+		}
 	}
-	buf->len = res;
-	buf->eoff -= res;
 	return res;
 }

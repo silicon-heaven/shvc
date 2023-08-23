@@ -1,18 +1,9 @@
-# Chainpack and CPON
+# Chainpack tools
 
-The serialization and deserialization of Chainpack and CPON data formats.
-
-## Common pack and unpack
-
-```{autodoxygenfile} cpcp.h
-```
-
-## Chainpack pack and unpack
+The basic utilities for working with Chainpack data. This provides definitions
+and simple operations you need to unpack and pack data in Chainpack format. This
+is not a most user friendly way to work with Chainpack. It is suggester rather
+to use [packer and unpacker](./cp.md) instead.
 
 ```{autodoxygenfile} chainpack.h
-```
-
-## CPON pack and unpack
-
-```{autodoxygenfile} cpon.h
 ```

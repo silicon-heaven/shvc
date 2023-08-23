@@ -1,59 +1,6 @@
-#include <shv/rpcmsg.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "rpcmsg_access.gperf.h"
-
-enum msgtags {
-	MSG_TAG_META_TYPE_ID = 1,
-	MSG_TAG_META_TYPE_NAMESPACE_ID,
-	MSG_TAG_REQUEST_ID = 8,
-	MSG_TAG_SHV_PATH,
-	MSG_TAG_METHOD,
-	MSG_TAG_CALLER_IDS,
-	MSG_TAG_REV_CALLER_IDS,
-	MSG_TAG_ACCESS_GRANT,
-	MSG_TAG_USER_ID,
-};
-
-enum msgkeys {
-	MSG_KEY_PARAMS = 1,
-	MSG_KEY_RESULT,
-	MSG_KEY_ERROR,
-};
 
 
-void rpcmsg_pack_request(cpcp_pack_context *pack, const char *path,
-	const char *method, int64_t rid) {
-	chainpack_pack_meta_begin(pack);
-	chainpack_pack_int(pack, MSG_TAG_META_TYPE_ID);
-	chainpack_pack_int(pack, 1);
-	chainpack_pack_int(pack, MSG_TAG_REQUEST_ID);
-	chainpack_pack_int(pack, rid);
-	chainpack_pack_int(pack, MSG_TAG_SHV_PATH);
-	chainpack_pack_cstring_terminated(pack, path);
-	chainpack_pack_int(pack, MSG_TAG_METHOD);
-	chainpack_pack_cstring_terminated(pack, method);
-	chainpack_pack_container_end(pack);
 
-	chainpack_pack_imap_begin(pack);
-	chainpack_pack_int(pack, MSG_KEY_PARAMS);
-}
-
-void rpcmsg_pack_signal(
-	cpcp_pack_context *pack, const char *path, const char *method) {
-	chainpack_pack_meta_begin(pack);
-	chainpack_pack_int(pack, MSG_TAG_META_TYPE_ID);
-	chainpack_pack_int(pack, 1);
-	chainpack_pack_int(pack, MSG_TAG_SHV_PATH);
-	chainpack_pack_cstring_terminated(pack, path);
-	chainpack_pack_int(pack, MSG_TAG_METHOD);
-	chainpack_pack_cstring_terminated(pack, method);
-	chainpack_pack_container_end(pack);
-
-	chainpack_pack_imap_begin(pack);
-	chainpack_pack_int(pack, MSG_KEY_PARAMS);
-}
 
 static size_t roundup2(size_t n) {
 	n--;
@@ -100,63 +47,7 @@ bool rpcmsg_str_truncated(const struct rpcmsg_str *str) {
 	return true;
 }
 
-bool rpcmsg_unpack_access(struct rpcclient_msg msg, enum rpcmsg_access *acc) {
-	const cpcp_item *i;
-	size_t off = 0;
-	char buf[4]; /* The maximum for known access levels is 4 characters */
 
-#define PARSE_ACCESS \
-	do { \
-		if (acc && off <= 4) { \
-			const struct gperf_rpcmsg_access_match *match = \
-				gperf_rpcmsg_access(buf, off); \
-			if (match) \
-				*acc = match->acc; \
-		} \
-	} while (false)
-
-	do {
-		i = rpcclient_next_item(msg);
-		if (i->type != CPCP_ITEM_STRING)
-			return false;
-		for (size_t p = 0; p < i->as.String.chunk_size; p++) {
-			char c = i->as.String.chunk_start[p];
-			if (c == ',') {
-				PARSE_ACCESS;
-				off = 0;
-			} else if (off < 4)
-				buf[off++] = c;
-		}
-	} while (!i->as.String.last_chunk);
-	PARSE_ACCESS;
-	return true;
-#undef PARSE_ACCESS
-}
-
-const char *rpcmsg_access_str(enum rpcmsg_access acc) {
-	switch (acc) {
-		case RPCMSG_ACC_BROWSE:
-			return "bws";
-		case RPCMSG_ACC_READ:
-			return "rd";
-		case RPCMSG_ACC_WRITE:
-			return "wr";
-		case RPCMSG_ACC_COMMAND:
-			return "cmd";
-		case RPCMSG_ACC_CONFIG:
-			return "cfg";
-		case RPCMSG_ACC_SERVICE:
-			return "srv";
-		case RPCMSG_ACC_SUPER_SERVICE:
-			return "ssrv";
-		case RPCMSG_ACC_DEVEL:
-			return "dev";
-		case RPCMSG_ACC_ADMIN:
-			return "su";
-		default:
-			return "";
-	}
-}
 
 static void ensure_rinfo(struct rpcmsg_request_info **rinfo, bool increase) {
 	size_t siz = (*rinfo)->cidscnt + (*rinfo)->rcidscnt + (increase ? 1 : 0);

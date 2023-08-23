@@ -1,3 +1,4 @@
+#include "shv/cp.h"
 #include <shv/rpcclient.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -14,103 +15,114 @@
 
 struct rpcclient_stream {
 	struct rpcclient c;
-	int rfd, wfd;
-	uint8_t unpackbuf[SHV_UNPACK_BUFSIZ];
-	cpcp_unpack_context unpack;
-	size_t msglen;
-	uint8_t packbuf[SHV_PACK_BUFSIZ];
-	cpcp_pack_context pack;
+	/* Read */
+	int rfd;
+	FILE *rf;
+	ssize_t rmsgoff;
+	/* Write */
+	int wfd;
+	FILE *fbuf;
+	char *buf;
+	size_t bufsiz;
 };
 
 
-static void overflow_handler(struct cpcp_pack_context *pack, size_t size_hint) {
-	struct rpcclient_stream *c = (struct rpcclient_stream *)(pack -
-		offsetof(struct rpcclient_stream, pack));
-
-	size_t to_send = pack->current - pack->start;
-	char *ptr_data = pack->start;
-	while (to_send > 0) {
-		ssize_t i = write(c->wfd, ptr_data, to_send);
-		if (i == -1) {
-			if (errno == EINTR)
-				continue;
-			printf("Overflow error: %s\n", strerror(errno));
-			pack->current = pack->end; /* signal error */
-			return;
-		}
-		ptr_data += i;
-		to_send -= i;
-	}
-	pack->current = pack->start;
-}
-
-static size_t underflow_handler(struct cpcp_unpack_context *unpack) {
-	struct rpcclient_stream *c = (struct rpcclient_stream *)(unpack -
-		offsetof(struct rpcclient_stream, unpack));
-
-	c->msglen -= unpack->end - unpack->start;
+ssize_t cookie_read(void *cookie, char *buf, size_t size) {
+	struct rpcclient_stream *c = (struct rpcclient_stream *)cookie;
+	if (c->rmsgoff < 0)
+		/* Read only byte by byte when receiving message length to not feed too
+		 * much bytes to the FILE.
+		 */
+		size = 1;
+	else if (c->rmsgoff < size)
+		/* Read up to the end of the message and then signal EOF by reading 0. */
+		size = c->rmsgoff;
 	ssize_t i;
 	do
-		i = read(c->rfd, (void *)unpack->start,
-			c->msglen >= 0 && c->msglen < SHV_UNPACK_BUFSIZ ? c->msglen
-															: SHV_UNPACK_BUFSIZ);
+		i = read(c->rfd, buf, size);
 	while (i == -1 && errno == EINTR);
-	if (i < 0) {
-		printf("Underflow error: %s\n", strerror(errno));
-		return 0;
-	}
-	unpack->current = unpack->start;
-	unpack->end = unpack->start + i;
+	c->rmsgoff -= i;
 	return i;
 }
 
-cpcp_unpack_context *nextmsg(struct rpcclient *client) {
-	struct rpcclient_stream *sclient = (struct rpcclient_stream *)client;
-	sclient->msglen = -1;
-	sclient->msglen = chainpack_unpack_uint_data(&sclient->unpack, NULL);
-	if (sclient->unpack.err_no != CPCP_RC_OK)
-		return NULL; // TODO error
-	return &sclient->unpack;
+static size_t cp_unpack_stream(void *ptr, struct cpitem *item) {
+	struct rpcclient_stream *c = ptr - offsetof(struct rpcclient, unpack);
+	// TODO log
+	return chainpack_unpack(c->rf, item);
 }
 
-cpcp_pack_context *packmsg(struct rpcclient *client, cpcp_pack_context *prev) {
-	struct rpcclient_stream *sclient = (struct rpcclient_stream *)client;
-	if (prev == NULL) {
-		cpcp_pack_context_dry_run_init(&sclient->pack);
-		return &sclient->pack;
+static bool nextmsg_stream(struct rpcclient *client) {
+	struct rpcclient_stream *c = (struct rpcclient_stream *)client;
+	c->rmsgoff = -1;
+	unsigned long long rmsgoff;
+	bool ok;
+	_chainpack_unpack_uint(c->rf, &rmsgoff, &ok);
+	/* Note: we use stack allocated variable here because cookie_read might be
+	 * called multiple times and we always want to have -1 in rmsgoff;
+	 */
+	c->rmsgoff = rmsgoff;
+	if (ok && fgetc(c->rf) != CP_ChainPack)
+		ok = false;
+	// TODO log lock
+	return ok;
+}
+
+static ssize_t cp_pack_stream(void *ptr, const struct cpitem *item) {
+	struct rpcclient_stream *c = ptr - offsetof(struct rpcclient, unpack);
+	// TODO log
+	return chainpack_pack(c->fbuf, item);
+}
+
+static bool sendmsg_stream(struct rpcclient *client) {
+	struct rpcclient_stream *c = (struct rpcclient_stream *)client;
+	fflush(c->fbuf);
+	size_t len = ftell(c->fbuf);
+	_chainpack_pack_uint(c->rf, len);
+	ssize_t i = 0;
+	while (i < len) {
+		ssize_t r = write(c->wfd, c->buf, len);
+		if (r == -1) {
+			if (errno == EINTR)
+				continue;
+			return false;
+		}
+		i += r;
 	}
-	if (prev->start == NULL) {
-		assert(prev == &sclient->pack);
-		size_t len = prev->bytes_written;
-		cpcp_pack_context_init(&sclient->pack, sclient->packbuf,
-			SHV_PACK_BUFSIZ, overflow_handler);
-		chainpack_pack_uint_data(&sclient->pack, len);
-		return &sclient->pack;
-	}
-	return NULL;
+	fseek(c->fbuf, 0, SEEK_SET);
+	return true;
 }
 
 static void disconnect(rpcclient_t client) {
-	struct rpcclient_stream *sclient = (struct rpcclient_stream *)client;
-	close(sclient->rfd);
-	if (sclient->rfd != sclient->wfd)
-		close(sclient->wfd);
-	free(sclient);
+	struct rpcclient_stream *c = (struct rpcclient_stream *)client;
+	fclose(c->rf);
+	fclose(c->fbuf);
+	close(c->rfd);
+	if (c->rfd != c->wfd)
+		close(c->wfd);
+	free(c);
 }
 
 rpcclient_t rpcclient_stream_new(int readfd, int writefd) {
+	// TODO check for allocation and open failures
 	struct rpcclient_stream *res = malloc(sizeof *res);
-	res->c = (struct rpcclient){
-		.nextmsg = nextmsg,
-		.packmsg = packmsg,
-		.disconnect = disconnect,
+	FILE *f = fopencookie(res, "r", (cookie_io_functions_t){.read = cookie_read});
+	*res = (struct rpcclient_stream){
+		.c =
+			(struct rpcclient){
+				.unpack = cp_unpack_stream,
+				.nextmsg = nextmsg_stream,
+				.pack = cp_pack_stream,
+				.sendmsg = sendmsg_stream,
+				.disconnect = disconnect,
+				.logger = NULL,
+			},
+		.rf = f,
+		.rfd = readfd,
+		.rmsgoff = 0,
+		.wfd = writefd,
+		.bufsiz = 0,
 	};
-	res->unpackbuf[0] = 0; /* Note: just to shut up warning */
-	cpcp_unpack_context_init(
-		&res->unpack, res->unpackbuf, 0, underflow_handler, NULL);
-	res->rfd = readfd;
-	res->wfd = writefd;
-	res->msglen = 0;
+	res->fbuf = open_memstream(&res->buf, &res->bufsiz);
 	return &res->c;
 }
 

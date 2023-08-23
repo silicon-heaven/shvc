@@ -1,5 +1,15 @@
 V0.0 {
 	global:
+		# shv/rpcmsg.h
+		rpcmsg_pack_request;
+		rpcmsg_pack_signal;
+		rpcmsg_access_str;
+		rpcmsg_access_extract;
+		rpcmsg_access_unpack;
+		rpcmsg_meta_unpack;
+		rpcmsg_pack_response;
+
+		# shv/rpcurl.h
 		rpcurl_parse;
 		rpcurl_free;
 		rpcurl_str;

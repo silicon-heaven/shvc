@@ -34,6 +34,7 @@
               # Build tools
               meson
               ninja
+              cmake
               gperf
               pkg-config
               # Documentation

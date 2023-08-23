@@ -1,7 +1,8 @@
+#include <shv/rpcurl.h>
+
 #define SUITE "rpcurl"
 #include <check_suite.h>
 
-#include <shv/rpcurl.h>
 
 TEST_CASE(parse){};
 

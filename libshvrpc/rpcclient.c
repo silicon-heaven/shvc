@@ -1,5 +1,4 @@
 #include <shv/rpcclient.h>
-#include <shv/cpon.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <sys/socket.h>
@@ -8,72 +7,25 @@
 #include <netinet/udp.h>
 
 
-struct rpcclient_msg rpcclient_next_message(rpcclient_t client) {
-	struct rpcclient_msg res = {
-		.ctx = client->nextmsg(client),
-	};
-	if (res.ctx) {
-		const char *t = cpcp_unpack_take_byte(res.ctx);
-		if (t)
-			res.format = *t;
-	}
-	return res;
-}
-
-const cpcp_item *rpcclient_next_item(struct rpcclient_msg msg) {
-	static const cpcp_item invalid = {.type = CPCP_ITEM_INVALID};
-	if (msg.ctx == NULL)
-		return &invalid;
-	switch (msg.format) {
-		case CPCP_ChainPack:
-			chainpack_unpack_next(msg.ctx);
-			break;
-		case CPCP_Cpon:
-			cpon_unpack_next(msg.ctx);
-			break;
-		default:
-			return &invalid;
-	}
-	if (msg.ctx->err_no != CPCP_RC_OK)
-		return &invalid;
-	return &msg.ctx->item;
-}
-
-bool rpcclient_skip_item(struct rpcclient_msg msg) {
-	unsigned depth = 0;
-	do {
-		const cpcp_item *i = rpcclient_next_item(msg);
-		switch (i->type) {
-			case CPCP_ITEM_STRING:
-			case CPCP_ITEM_BLOB:
-				while (!i->as.String.last_chunk) {
-					i = rpcclient_next_item(msg);
-					assert(i->type == CPCP_ITEM_STRING ||
-						i->type == CPCP_ITEM_BLOB);
-				}
-				break;
-			case CPCP_ITEM_LIST:
-			case CPCP_ITEM_MAP:
-			case CPCP_ITEM_IMAP:
-			case CPCP_ITEM_META:
-				depth++;
-				break;
-			case CPCP_ITEM_CONTAINER_END:
-				depth--;
-				break;
-			case CPCP_ITEM_INVALID:
-				return false;
-			default:
-				break;
-		}
-	} while (depth);
-	return true;
-}
-
-void rpcclient_disconnect(rpcclient_t client) {
-	if (client == NULL || client->disconnect == NULL)
+void rpcclient_log_lock(struct rpcclient_logger *logger, bool in) {
+	if (logger == NULL)
 		return;
-	client->disconnect(client);
+	// TODO signal interrupt
+	sem_wait(&logger->semaphore);
+	fputs(in ? "<= " : "=> ", logger->f);
+}
+
+void rpcclient_log_item(struct rpcclient_logger *logger, const struct cpitem *item) {
+	if (logger == NULL)
+		return;
+	cpon_pack(logger->f, &logger->cpon_state, item);
+}
+
+void rpcclient_log_unlock(struct rpcclient_logger *logger) {
+	if (logger == NULL)
+		return;
+	fputc('\n', logger->f);
+	sem_post(&logger->semaphore);
 }
 
 struct rpcclient *rpcclient_connect(const struct rpcurl *url) {

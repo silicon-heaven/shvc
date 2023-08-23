@@ -5,20 +5,16 @@ option(
   description: 'Expect tests to be build and check for their dependencies',
 )
 
-# libshvchainpack
-
-# libshvrpc
+# Applications
 option(
-  'unpack_bufsiz',
-  type: 'integer',
-  min: 1,
-  value: 8,
-  description: 'Size of the buffer in bytes for the unpacker.',
+  'cpconv',
+  type: 'boolean',
+  value: true,
+  description: 'Build cpconv tool that converts between Chainpack and Cpon.',
 )
 option(
-  'pack_bufsiz',
-  type: 'integer',
-  min: 1,
-  value: 8,
-  description: 'Size of the buffer in bytes for the packer.',
+  'shvbroker',
+  type: 'boolean',
+  value: true,
+  description: 'Build SHV RPC Broker standalone application.',
 )

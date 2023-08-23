@@ -11,6 +11,7 @@ isnuttx = (
   cc.get_define('__NuttX__') != '' # Won't be defined outside NuttX
 )
 fs = import('fs')
+cmake = import('cmake')
 
 
 add_project_arguments('-D_GNU_SOURCE', language: 'c')
@@ -19,14 +20,25 @@ add_project_arguments(
   '-DPROJECT_VERSION="@0@"'.format(meson.project_version()),
   language: 'c',
 )
-add_project_arguments(
-  '-DSHV_UNPACK_BUFSIZ=' + get_option('unpack_bufsiz').to_string(),
-  language: 'c',
-)
-add_project_arguments(
-  '-DSHV_PACK_BUFSIZ=' + get_option('pack_bufsiz').to_string(),
-  language: 'c',
-)
+
+
+if not isnuttx
+  m = cc.find_library('m', required : false)
+  argp = cc.has_function('argp_parse') ? declare_dependency() : cc.find_library('argp')
+  uriparser = dependency('liburiparser', version: '>= 0.9.0')
+else
+  m = declare_dependency()
+  argp = declare_dependency()
+  uriparser_var = cmake.subproject_options()
+  uriparser_var.add_cmake_defines({
+    'URIPARSER_BUILD_TESTS': false,
+    'URIPARSER_BUILD_DOCS': false,
+    'URIPARSER_BUILD_TOOLS': false,
+    'URIPARSER_BUILD_WCHAR_T': false,
+  })
+  uriparser_proj = cmake.subproject('uriparser', options: uriparser_var)
+  uriparser = uriparser_proj.dependency('uriparser')
+endif
 
 
 gperf = generator(find_program('gperf'),
@@ -34,12 +46,20 @@ gperf = generator(find_program('gperf'),
   arguments: ['@EXTRA_ARGS@', '--output-file=@OUTPUT@', '@INPUT@']
 )
 
-uriparser = dependency('liburiparser', version: '>= 0.9.0')
-
 
 subdir('include')
 subdir('libshvchainpack')
 subdir('libshvrpc')
+subdir('libshvbroker')
+
+cpconv_opt = get_option('cpconv')
+if cpconv_opt
+  subdir('cpconv')
+endif
+shvbroker_opt = get_option('shvbroker')
+if shvbroker_opt
+  subdir('shvbroker')
+endif
 
 
 test_buildtypes = ['debug', 'debugoptimized']

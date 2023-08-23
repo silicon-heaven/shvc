@@ -43,6 +43,10 @@ includedir = pathlib.Path("../include")
 files = [file.relative_to(includedir) for file in includedir.glob("**/*.h")]
 breathe_projects_source = {"public_api": ("../include", files)}
 breathe_default_project = "public_api"
+breathe_doxygen_config_options = {
+    "PREDEFINED": "__attribute__(...)=",
+    "MACRO_EXPANSION": "YES",
+}
 
 
 def build_finished_gitignore(app, exception):

@@ -10,5 +10,6 @@ unittests_env = [
   'CK_VERBOSITY=silent',
 ]
 
+subdir('utils')
 subdir('libshvchainpack')
 subdir('libshvrpc')
