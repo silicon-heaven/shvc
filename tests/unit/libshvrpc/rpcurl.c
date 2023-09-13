@@ -27,14 +27,14 @@ static struct urld url_d[] = {
 		(struct rpcurl){
 			.protocol = RPC_PROTOCOL_TCP,
 			.location = "localhost",
-			.username = "test",
+			.login.username = "test",
 			.port = 4242,
 		}},
 	{"udp://test@localhost:4242",
 		(struct rpcurl){
 			.protocol = RPC_PROTOCOL_UDP,
 			.location = "localhost",
-			.username = "test",
+			.login.username = "test",
 			.port = 4242,
 		}},
 	{"tcp://localhost:4242?devid=foo&devmount=/dev/null",
@@ -42,27 +42,27 @@ static struct urld url_d[] = {
 			.protocol = RPC_PROTOCOL_TCP,
 			.location = "localhost",
 			.port = 4242,
-			.device_id = "foo",
-			.device_mountpoint = "/dev/null",
+			.login.device_id = "foo",
+			.login.device_mountpoint = "/dev/null",
 		}},
 	{"tcp://localhost:4242?devid=foo&devmount=/dev/null&password=test",
 		(struct rpcurl){
 			.protocol = RPC_PROTOCOL_TCP,
 			.location = "localhost",
 			.port = 4242,
-			.password = "test",
-			.device_id = "foo",
-			.device_mountpoint = "/dev/null",
+			.login.password = "test",
+			.login.device_id = "foo",
+			.login.device_mountpoint = "/dev/null",
 		}},
 	{"tcp://localhost:4242?devid=foo&devmount=/dev/null&shapass=xxxxxxxx",
 		(struct rpcurl){
 			.protocol = RPC_PROTOCOL_TCP,
 			.location = "localhost",
 			.port = 4242,
-			.password = "xxxxxxxx",
-			.login_type = RPC_LOGIN_SHA1,
-			.device_id = "foo",
-			.device_mountpoint = "/dev/null",
+			.login.password = "xxxxxxxx",
+			.login.login_type = RPC_LOGIN_SHA1,
+			.login.device_id = "foo",
+			.login.device_mountpoint = "/dev/null",
 		}},
 	{"tcp://[::]:4242",
 		(struct rpcurl){
@@ -111,7 +111,7 @@ static struct urld parse_d[] = {
 			.protocol = RPC_PROTOCOL_TCP,
 			.location = "localhost",
 			.port = 3755,
-			.device_id = "foo",
+			.login.device_id = "foo",
 		}},
 };
 static void parse_test(struct urld _d) {
@@ -122,11 +122,11 @@ static void parse_test(struct urld _d) {
 	ck_assert_int_eq(url->protocol, _d.url.protocol);
 	ck_assert_pstr_eq(url->location, _d.url.location);
 	ck_assert_int_eq(url->port, _d.url.port);
-	ck_assert_pstr_eq(url->username, _d.url.username);
-	ck_assert_pstr_eq(url->password, _d.url.password);
-	ck_assert_int_eq(url->login_type, _d.url.login_type);
-	ck_assert_pstr_eq(url->device_id, _d.url.device_id);
-	ck_assert_pstr_eq(url->device_mountpoint, _d.url.device_mountpoint);
+	ck_assert_pstr_eq(url->login.username, _d.url.login.username);
+	ck_assert_pstr_eq(url->login.password, _d.url.login.password);
+	ck_assert_int_eq(url->login.login_type, _d.url.login.login_type);
+	ck_assert_pstr_eq(url->login.device_id, _d.url.login.device_id);
+	ck_assert_pstr_eq(url->login.device_mountpoint, _d.url.login.device_mountpoint);
 	rpcurl_free(url);
 }
 ARRAY_TEST(parse, parse_url, url_d) {

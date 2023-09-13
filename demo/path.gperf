@@ -1,0 +1,37 @@
+%compare-lengths
+%compare-strncmp
+
+%pic
+%enum
+%readonly-tables
+%switch=1
+%language=ANSI-C
+
+%define hash-function-name gperf_demo_path_hash
+%define lookup-function-name gperf_demo_path
+%define string-pool-name gperf_demo_path_string
+%define constants-prefix GPERF_DEMO_PATH_
+%define slot-name offset
+
+%struct-type
+%{
+enum gperf_demo_path {
+	GPERF_DEMO_PATH_ROOT,
+	GPERF_DEMO_PATH_PASSWORD,
+	GPERF_DEMO_PATH_DEVID,
+	GPERF_DEMO_PATH_DEVMOUNT,
+};
+struct gperf_demo_path_match {
+    int offset;
+	enum gperf_demo_path query;
+};
+%}
+
+struct gperf_demo_path_match;
+
+%%
+shapass, GPERF_DEMO_PATH_SHAPASS
+password, GPERF_DEMO_PATH_PASSWORD
+devid, GPERF_DEMO_PATH_DEVID
+devmount, GPERF_DEMO_PATH_DEVMOUNT
+%%

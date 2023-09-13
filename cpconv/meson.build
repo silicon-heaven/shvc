@@ -1,5 +1,5 @@
 cpconv_sources = files('opts.c')
-cpconv_dependencies = [libshvchainpack_dep, argp]
+cpconv_dependencies = [libshvchainpack_dep]
 
 
 if isnuttx

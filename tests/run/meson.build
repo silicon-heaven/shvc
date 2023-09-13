@@ -1,20 +1,33 @@
-bats = find_program('bats')
+python_pytest = python.find_installation(
+  'python',
+  modules: [
+    'pytest',
+    'pytest_tap',
+    'shv',
+  ],
+)
 
-bats_tests = []
+pytest_args = [
+  test_driver,
+  '-n',
+  python_pytest.path(),
+  '-m',
+  'pytest',
+  '--tap-stream',
+]
+pytest_depends = []
+if cpconv_opt
+  pytest_args += ['--cpconv=' + cpconv.full_path()]
+  pytest_depends += [cpconv]
+endif
+# TODO demo device and demo client and broker and so on
+pytest_args += [meson.current_source_dir()]
 
-foreach bats_test : bats_tests
-  test(
-    'runtest-' + bats_test,
-    bash,
-    args: [
-      test_driver,
-      '-n',
-      bats.full_path(),
-      '--tap',
-      join_paths(meson.current_source_dir(), bats_test + '.bats'),
-    ],
-    env: [],
-    protocol: 'tap',
-    depends: foo,
-  )
-endforeach
+test(
+  'run-pytest',
+  bash,
+  args: pytest_args,
+  protocol: 'tap',
+  timeout: 240,
+  depends: pytest_depends,
+)

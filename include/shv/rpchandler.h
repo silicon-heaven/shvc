@@ -1,35 +1,56 @@
 #ifndef SHV_RPCHANDLER_H
 #define SHV_RPCHANDLER_H
 
-#include "shv/rpcmsg.h"
 #include <stdbool.h>
+#include <pthread.h>
 #include <shv/rpcclient.h>
+#include <shv/rpcmsg.h>
 
 
-#define RPCH_F_KEEP_META
+typedef struct rpchandler *rpchandler_t;
+typedef struct rpcreceive *rpcreceive_t;
 
-struct rpchandler {
-	int flags;
-	void *(*init)(rpcclient_t);
-	void (*deinit)(void *cookie, rpcclient_t);
-	bool (*handle_request)(void *cookie, rpcclient_t, const char *path,
-		const char *method, const struct rpcmsg_request_info *info);
-	bool (*handle_response)(void *cookie, rpcclient_t, int64_t rid, bool error);
-	bool (*handle_signal)(
-		void *cookie, rpcclient_t, const char *path, const char *method);
+enum rpchandler_func_res {
+	RPCHFR_UNHANDLED,
+	RPCHFR_HANDLED,
+	RPCHFR_RECV_ERR,
+	RPCHFR_SEND_ERR,
 };
 
+typedef enum rpchandler_func_res (*rpchandler_func)(void *ptr, rpcreceive_t receive,
+	cp_unpack_t unpack, struct cpitem *item, const struct rpcmsg_meta *meta);
 
-bool rpchandler_loop(rpcclient_t, struct rpchandler *);
 
-typedef struct rpchandler_state *rpchandler_state_t;
+void rpchandler_destroy(rpchandler_t rpchandler);
 
-rpchandler_state_t rpchandler_new(rpcclient_t, struct rpchandler *);
+rpchandler_t rpchandler_new(rpcclient_t client, const rpchandler_func **funcs,
+	const struct rpcmsg_meta_limits *limits)
+	__attribute__((nonnull(1), malloc, malloc(rpchandler_destroy, 1)));
 
-bool rpchandler_next(rpchandler_state_t);
 
-void rpchandler_destroy(rpchandler_state_t);
+bool rpchandler_next(rpchandler_t rpchandler) __attribute__((nonnull));
 
+int rpchandler_spawn_thread(rpchandler_t rpchandler, pthread_t *restrict thread,
+	const pthread_attr_t *restrict attr) __attribute__((nonnull(1, 2)));
+
+
+int rpchandler_next_request_id(rpchandler_t rpchandler) __attribute__((nonnull));
+
+
+cp_pack_t rpchandler_msg_new(rpchandler_t rpchandler) __attribute__((nonnull));
+
+bool rpchandler_msg_send(rpchandler_t rpchandler) __attribute__((nonnull));
+
+bool rpchandler_msg_drop(rpchandler_t rpchandler) __attribute__((nonnull));
+
+
+bool rpcreceive_validmsg(rpcreceive_t receive) __attribute__((nonnull));
+
+cp_pack_t rpcreceive_response_new(rpcreceive_t receive) __attribute__((nonnull));
+
+bool rpcreceive_response_send(rpcreceive_t receive) __attribute__((nonnull));
+
+bool rpcreceive_response_drop(rpcreceive_t receive) __attribute__((nonnull));
 
 
 #endif

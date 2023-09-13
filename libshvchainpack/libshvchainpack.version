@@ -1,7 +1,7 @@
 V0.0 {
 	global:
 		# shv/cp.h
-		cp_item_type_str;
+		cpitem_type_str;
 		cpdectod;
 		cpdtodec;
 		cpdttotm;
@@ -21,10 +21,17 @@ V0.0 {
 		# shv/cp_unpack.h
 		cp_unpack_chainpack_init;
 		cp_unpack_cpon_init;
+		cp_unpack_drop;
 		cp_unpack_skip;
 		cp_unpack_finish;
 		cp_unpack_strdup;
+		cp_unpack_strndup;
+		cp_unpack_strdupo;
+		cp_unpack_strndupo;
 		cp_unpack_memdup;
+		cp_unpack_memndup;
+		cp_unpack_memdupo;
+		cp_unpack_memndupo;
 		cp_unpack_fopen;
 
 

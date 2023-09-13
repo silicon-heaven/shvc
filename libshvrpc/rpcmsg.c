@@ -18,7 +18,7 @@ bool rpcmsg_unpack_str(struct rpcclient_msg msg, struct rpcmsg_str **str) {
 	size_t off = 0;
 	do {
 		i = rpcclient_next_item(msg);
-		if (i->type != CPCP_ITEM_STRING)
+		if (i->type != CPCPITEM_STRING)
 			return false;
 		if (str) {
 			size_t chunk = i->as.String.chunk_size;
@@ -61,14 +61,14 @@ enum rpcmsg_type rpcmsg_unpack(struct rpcclient_msg msg, struct rpcmsg_str **pat
 	/* Unpack meta */
 	const cpcp_item *i;
 	i = rpcclient_next_item(msg);
-	if (i->type != CPCP_ITEM_META)
+	if (i->type != CPCPITEM_META)
 		return RPCMSG_T_INVALID;
 	bool has_rid = false, has_method = false;
 	do {
 		i = rpcclient_next_item(msg);
-		if (i->type == CPCP_ITEM_CONTAINER_END)
+		if (i->type == CPCPITEM_CONTAINER_END)
 			break;
-		if (i->type != CPCP_ITEM_INT)
+		if (i->type != CPCPITEM_INT)
 			return RPCMSG_T_INVALID;
 		switch (i->as.Int) {
 			/* Note: we intentionally do not check MSG_TAG_META_TYPE_ID right
@@ -77,7 +77,7 @@ enum rpcmsg_type rpcmsg_unpack(struct rpcclient_msg msg, struct rpcmsg_str **pat
 			case MSG_TAG_REQUEST_ID:
 				has_rid = true;
 				i = rpcclient_next_item(msg);
-				if (i->type != CPCP_ITEM_INT)
+				if (i->type != CPCPITEM_INT)
 					return RPCMSG_T_INVALID;
 				if (rinfo) {
 					ensure_rinfo(rinfo, false);
@@ -86,18 +86,18 @@ enum rpcmsg_type rpcmsg_unpack(struct rpcclient_msg msg, struct rpcmsg_str **pat
 				break;
 			case MSG_TAG_SHV_PATH:
 				i = rpcclient_next_item(msg);
-				if (i->type != CPCP_ITEM_STRING || !rpcmsg_unpack_str(msg, path))
+				if (i->type != CPCPITEM_STRING || !rpcmsg_unpack_str(msg, path))
 					return RPCMSG_T_INVALID;
 				break;
 			case MSG_TAG_METHOD:
 				has_method = true;
 				i = rpcclient_next_item(msg);
-				if (i->type != CPCP_ITEM_STRING || !rpcmsg_unpack_str(msg, method))
+				if (i->type != CPCPITEM_STRING || !rpcmsg_unpack_str(msg, method))
 					return RPCMSG_T_INVALID;
 				break;
 			case MSG_TAG_CALLER_IDS:
 				i = rpcclient_next_item(msg);
-				if (i->type != CPCP_ITEM_INT)
+				if (i->type != CPCPITEM_INT)
 					return RPCMSG_T_INVALID;
 				if (rinfo) {
 					ensure_rinfo(rinfo, true);
@@ -109,7 +109,7 @@ enum rpcmsg_type rpcmsg_unpack(struct rpcclient_msg msg, struct rpcmsg_str **pat
 				break;
 			case MSG_TAG_REV_CALLER_IDS:
 				i = rpcclient_next_item(msg);
-				if (i->type != CPCP_ITEM_INT)
+				if (i->type != CPCPITEM_INT)
 					return RPCMSG_T_INVALID;
 				if (rinfo) {
 					ensure_rinfo(rinfo, true);
@@ -135,11 +135,11 @@ enum rpcmsg_type rpcmsg_unpack(struct rpcclient_msg msg, struct rpcmsg_str **pat
 
 	/* Start unpacking imap */
 	i = rpcclient_next_item(msg);
-	if (i->type != CPCP_ITEM_IMAP)
+	if (i->type != CPCPITEM_IMAP)
 		return RPCMSG_T_INVALID;
 	i = rpcclient_next_item(msg);
-	if (i->type != CPCP_ITEM_INT)
-		return i->type == CPCP_ITEM_CONTAINER_END ? res : RPCMSG_T_INVALID;
+	if (i->type != CPCPITEM_INT)
+		return i->type == CPCPITEM_CONTAINER_END ? res : RPCMSG_T_INVALID;
 	switch (i->as.Int) {
 		case MSG_KEY_PARAMS:
 			return res != RPCMSG_T_RESPONSE ? res : RPCMSG_T_INVALID;

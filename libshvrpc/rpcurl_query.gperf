@@ -1,6 +1,3 @@
-%compare-lengths
-%compare-strncmp
-
 %pic
 %enum
 %readonly-tables
@@ -22,7 +19,7 @@ enum gperf_rpcurl_query {
 	GPERF_RPCURL_QUERY_DEVMOUNT,
 };
 struct gperf_rpcurl_query_match {
-    int offset;
+	int offset;
 	enum gperf_rpcurl_query query;
 };
 %}

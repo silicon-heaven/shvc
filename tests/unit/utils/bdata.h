@@ -14,4 +14,12 @@ struct bdata {
 		.len = sizeof((const uint8_t[]){__VA_ARGS__}), \
 	}
 
+#define ck_assert_bdata(BUF, LEN, BDATA) \
+	do { \
+		size_t __len = LEN; \
+		struct bdata __b = BDATA; \
+		ck_assert_int_eq(__len, __b.len); \
+		ck_assert_mem_eq(BUF, __b.v, __len); \
+	} while (false)
+
 #endif

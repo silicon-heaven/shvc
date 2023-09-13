@@ -2,6 +2,7 @@
 #include <shv/cp_unpack.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <sys/param.h>
 
 static size_t cp_unpack_chainpack_func(void *ptr, struct cpitem *item) {
 	struct cp_unpack_chainpack *p = ptr;
@@ -40,90 +41,161 @@ cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *unpack, FILE *f) {
 	return &unpack->func;
 }
 
-static size_t _cp_unpack_skip(
-	cp_unpack_t unpack, struct cpitem *item, unsigned depth) {
+size_t cp_unpack_drop(cp_unpack_t unpack, struct cpitem *item) {
 	size_t res = 0;
 	item->buf = NULL;
 	item->bufsiz = SIZE_MAX;
-	if ((item->type == CP_ITEM_STRING || item->type == CP_ITEM_BLOB) &&
-		!(item->as.Blob.flags & CPBI_F_LAST)) {
-		depth++;
-	}
+	while ((item->type == CPITEM_STRING || item->type == CPITEM_BLOB) &&
+		!(item->as.Blob.flags & CPBI_F_LAST))
+		res += cp_unpack(unpack, item);
+	item->bufsiz = 0;
+	return res;
+}
+
+size_t cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item) {
+	return cp_unpack_finish(unpack, item, 0);
+}
+
+size_t cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth) {
+	size_t res = 0;
+	cp_unpack_drop(unpack, item);
+	item->bufsiz = SIZE_MAX;
 	do {
 		res += cp_unpack(unpack, item);
 		switch (item->type) {
-			case CP_ITEM_BLOB:
-			case CP_ITEM_STRING:
+			case CPITEM_BLOB:
+			case CPITEM_STRING:
 				if (item->as.Blob.flags & CPBI_F_FIRST)
 					depth++;
 				if (item->as.Blob.flags & CPBI_F_LAST)
 					depth--;
 				break;
-			case CP_ITEM_LIST:
-			case CP_ITEM_MAP:
-			case CP_ITEM_IMAP:
-			case CP_ITEM_META:
+			case CPITEM_LIST:
+			case CPITEM_MAP:
+			case CPITEM_IMAP:
+			case CPITEM_META:
 				depth++;
 				break;
-			case CP_ITEM_CONTAINER_END:
+			case CPITEM_CONTAINER_END:
 				depth--;
 				break;
-			case CP_ITEM_INVALID:
+			case CPITEM_INVALID:
 				return false;
 			default:
 				break;
 		}
 	} while (depth);
+	item->bufsiz = 0;
 	return res;
 }
 
-size_t cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item) {
-	return _cp_unpack_skip(unpack, item, 0);
-}
-
-size_t cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item) {
-	return _cp_unpack_skip(unpack, item, 1);
-}
-
-static void *cp_unpack_dup(cp_unpack_t unpack, struct cpitem *item, size_t *size) {
-	item->bufsiz = 2;
-	uint8_t *res = malloc(item->bufsiz);
+static void *cp_unpack_dup(
+	cp_unpack_t unpack, struct cpitem *item, size_t *size, size_t len) {
+	uint8_t *res = NULL;
 	size_t off = 0;
-	item->buf = res;
-	while (true) {
+	do {
+		item->bufsiz = MAX(off, 4);
+		if (len < (item->bufsiz + off))
+			item->bufsiz = len - off;
+		res = realloc(res, off + item->bufsiz);
+		assert(res);
+		item->buf = res + off;
 		cp_unpack(unpack, item);
-		if (item->type != (size ? CP_ITEM_BLOB : CP_ITEM_STRING)) {
+		if (item->type != (size ? CPITEM_BLOB : CPITEM_STRING)) {
 			free(res);
 			return NULL;
 		}
-		if (item->as.Blob.flags & CPBI_F_LAST) {
-			off += item->as.Blob.len;
-			if (size) {
-				*size = off;
-				return realloc(res, off);
-			} else {
-				res = realloc(res, off + 1);
-				res[off] = '\0';
-				return res;
-			}
-		}
-		/* We expect here that all available bytes are used */
-		assert(item->as.Blob.len == item->bufsiz);
-		off += item->bufsiz;
-		item->bufsiz = off;
-		res = realloc(res, off * 2);
-		item->buf = res + off;
+		off += item->as.Blob.len;
+	} while (off < len && !(item->as.Blob.flags & CPBI_F_LAST));
+	if (size) {
+		*size = off;
+		return realloc(res, off);
+	} else {
+		res = realloc(res, off + 1);
+		res[off] = '\0';
+		return res;
 	}
-	return res;
 }
 
 char *cp_unpack_strdup(cp_unpack_t unpack, struct cpitem *item) {
-	return cp_unpack_dup(unpack, item, NULL);
+	return cp_unpack_dup(unpack, item, NULL, SIZE_MAX);
+}
+
+char *cp_unpack_strndup(cp_unpack_t unpack, struct cpitem *item, size_t len) {
+	return cp_unpack_dup(unpack, item, NULL, len);
 }
 
 void cp_unpack_memdup(
 	cp_unpack_t unpack, struct cpitem *item, uint8_t **buf, size_t *siz) {
-	*buf = cp_unpack_dup(unpack, item, siz);
+	*buf = cp_unpack_dup(unpack, item, siz, SIZE_MAX);
+}
+
+void cp_unpack_memndup(
+	cp_unpack_t unpack, struct cpitem *item, uint8_t **buf, size_t *siz) {
+	*buf = cp_unpack_dup(unpack, item, siz, *siz);
+}
+
+static void *cp_unpack_dupo(cp_unpack_t unpack, struct cpitem *item,
+	size_t *size, size_t len, struct obstack *obstack) {
+	int zeropad = 0;
+	do {
+		/* We are using here fast growing in a reverse way. We first store
+		 * data and only after that we grow object. We do this because we
+		 * do not know number of needed bytes upfront. This way we do not
+		 * have to use temporally buffer and copy data around. We copy it
+		 * directly to the obstack's buffer.
+		 */
+		if (obstack_room(obstack) == 0) {
+			obstack_1grow(obstack, '\0'); /* Force allocation of more room */
+			zeropad = 1;
+		}
+		item->chr = obstack_next_free(obstack);
+		size_t room = obstack_room(obstack) + zeropad;
+		size_t limit = len - obstack_object_size(obstack);
+		item->bufsiz = MIN(room, limit);
+		cp_unpack(unpack, item);
+		if (item->type != (size ? CPITEM_BLOB : CPITEM_STRING)) {
+			obstack_free(obstack, obstack_base(obstack));
+			item->bufsiz = 0;
+			return NULL;
+		}
+		if (item->as.Blob.len > 0) {
+			obstack_blank_fast(obstack, item->as.Blob.len - zeropad);
+			zeropad = 0;
+		}
+	} while (obstack_object_size(obstack) < len &&
+		!(item->as.Blob.flags & CPBI_F_LAST));
+	if (size)
+		*size = obstack_object_size(obstack) - zeropad;
+	else if (zeropad == 0)
+		obstack_1grow(obstack, '\0');
+	return obstack_finish(obstack);
+}
+
+char *cp_unpack_strdupo(
+	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack) {
+	return cp_unpack_dupo(unpack, item, NULL, SIZE_MAX, obstack);
+}
+
+char *cp_unpack_strndupo(cp_unpack_t unpack, struct cpitem *item, size_t len,
+	struct obstack *obstack) {
+	return cp_unpack_dupo(unpack, item, NULL, len, obstack);
+}
+
+void cp_unpack_memdupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
+	size_t *siz, struct obstack *obstack) {
+	*buf = cp_unpack_dupo(unpack, item, siz, SIZE_MAX, obstack);
+}
+
+void cp_unpack_memndupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
+	size_t *siz, struct obstack *obstack) {
+	*buf = cp_unpack_dupo(unpack, item, siz, *siz, obstack);
+}
+
+int cp_unpack_expect_str(
+	cp_unpack_t unpack, struct cpitem *item, const char **strings) {
+	// TODO
+	return -2;
 }
 
 
@@ -139,7 +211,7 @@ static ssize_t _read(void *cookie, char *buf, size_t size, bool blob) {
 	c->item->chr = buf;
 	c->item->bufsiz = size;
 	cp_unpack(c->unpack, c->item);
-	if (c->item->type != (blob ? CP_ITEM_BLOB : CP_ITEM_STRING))
+	if (c->item->type != (blob ? CPITEM_BLOB : CPITEM_STRING))
 		return -1;
 	return c->item->as.String.len;
 }
@@ -180,7 +252,7 @@ static const cookie_io_functions_t func_string = {
 FILE *cp_unpack_fopen(cp_unpack_t unpack, struct cpitem *item) {
 	item->bufsiz = 0;
 	cp_unpack(unpack, item);
-	if (item->type != CP_ITEM_BLOB && item->type != CP_ITEM_STRING)
+	if (item->type != CPITEM_BLOB && item->type != CPITEM_STRING)
 		return NULL;
 
 	struct cookie *cookie = malloc(sizeof *cookie);
@@ -189,5 +261,5 @@ FILE *cp_unpack_fopen(cp_unpack_t unpack, struct cpitem *item) {
 		.item = item,
 	};
 	return fopencookie(
-		cookie, "r", item->type == CP_ITEM_STRING ? func_string : func_blob);
+		cookie, "r", item->type == CPITEM_STRING ? func_string : func_blob);
 }

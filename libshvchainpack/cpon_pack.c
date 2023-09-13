@@ -4,65 +4,66 @@
 #include <inttypes.h>
 #include <assert.h>
 #include <time.h>
+#include "common.h"
 
 #define PUTC(V) \
 	do { \
 		if (f && fputc((V), f) != (V)) \
-			return -1; \
+			return 0; \
 		res++; \
 	} while (false)
 #define PUTS(V) \
 	do { \
 		const char *__v = (V); \
 		size_t __strlen = strlen(__v); \
-		if (f) { \
-			if (fwrite(__v, 1, __strlen, f) != __strlen) \
-				return -1; \
-		} \
+		if (f && fwrite(__v, 1, __strlen, f) != __strlen) \
+			return 0; \
 		res += __strlen; \
 	} while (false)
 #define PRINTF(...) \
 	do { \
-		ssize_t __cnt; \
+		size_t __cnt; \
 		if (f == NULL) \
 			__cnt = snprintf(NULL, 0, __VA_ARGS__); \
 		else \
 			__cnt = fprintf(f, __VA_ARGS__); \
 		if (__cnt < 0) \
-			return -1; \
+			return 0; \
 		res += __cnt; \
 	} while (false)
 #define CALL(FUNC, ...) \
 	do { \
-		ssize_t __cnt = FUNC(f, __VA_ARGS__); \
-		if (__cnt < 0) \
-			return -1; \
+		size_t __cnt = FUNC(f, __VA_ARGS__); \
+		if (__cnt == 0) \
+			return 0; \
 		res += __cnt; \
 	} while (false)
 
 
-static ssize_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec);
-static ssize_t cpon_pack_buf(FILE *f, const struct cpitem *item);
-static ssize_t ctxpush(
-	FILE *f, struct cpon_state *state, enum cp_item_type tp, const char *str);
-static enum cp_item_type ctxpop(struct cpon_state *state);
+static size_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec);
+static size_t cpon_pack_buf(FILE *f, const struct cpitem *item);
+static size_t ctxpush(
+	FILE *f, struct cpon_state *state, enum cpitem_type tp, const char *str);
+static enum cpitem_type ctxpop(struct cpon_state *state);
 
 
-ssize_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) {
-	ssize_t res = 0;
+size_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) {
+	size_t res = 0;
+	if (common_pack(&res, f, item))
+		return res;
 
 	if (state->depth <= state->cnt) {
-		if (state->depth > 0 && item->type != CP_ITEM_CONTAINER_END) {
+		if (state->depth > 0 && item->type != CPITEM_CONTAINER_END) {
 			struct cpon_state_ctx *ctx = &state->ctx[state->depth - 1];
 			if (!ctx->meta) {
 				switch (ctx->tp) {
-					case CP_ITEM_LIST:
+					case CPITEM_LIST:
 						if (!ctx->first)
 							PUTC(',');
 						break;
-					case CP_ITEM_MAP:
-					case CP_ITEM_IMAP:
-					case CP_ITEM_META:
+					case CPITEM_MAP:
+					case CPITEM_IMAP:
+					case CPITEM_META:
 						if (ctx->even) {
 							if (!ctx->first)
 								PUTC(',');
@@ -77,38 +78,41 @@ ssize_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) 
 				ctx->meta = false;
 		}
 		switch (item->type) {
-			/* We pack invalid as NULL to ensure that we pack at least
-			 * somethuing */
-			case CP_ITEM_INVALID:
-			case CP_ITEM_NULL:
+			case CPITEM_NULL:
 				PUTS("null");
 				break;
-			case CP_ITEM_BOOL:
+			case CPITEM_BOOL:
 				PUTS(item->as.Bool ? "true" : "false");
 				break;
-			case CP_ITEM_INT:
+			case CPITEM_INT:
 				PRINTF("%lld", item->as.Int);
 				break;
-			case CP_ITEM_UINT:
+			case CPITEM_UINT:
 				PRINTF("%lluu", item->as.UInt);
 				break;
-			case CP_ITEM_DOUBLE:
+			case CPITEM_DOUBLE:
 				PRINTF("%G", item->as.Double);
 				break;
-			case CP_ITEM_DECIMAL:
+			case CPITEM_DECIMAL:
 				CALL(cpon_pack_decimal, &item->as.Decimal);
 				break;
-			case CP_ITEM_BLOB:
+			case CPITEM_BLOB:
 				if (item->as.Blob.flags & CPBI_F_FIRST)
 					PUTS(item->as.Blob.flags & CPBI_F_HEX ? "x\"" : "b\"");
-				CALL(cpon_pack_buf, item);
+				if (item->as.Blob.len > 0)
+					CALL(cpon_pack_buf, item);
+				if (item->as.Blob.flags & CPBI_F_LAST)
+					PUTC('\"');
 				break;
-			case CP_ITEM_STRING:
+			case CPITEM_STRING:
 				if (item->as.Blob.flags & CPBI_F_FIRST)
 					PUTS("\"");
-				CALL(cpon_pack_buf, item);
+				if (item->as.String.len > 0)
+					CALL(cpon_pack_buf, item);
+				if (item->as.Blob.flags & CPBI_F_LAST)
+					PUTC('\"');
 				break;
-			case CP_ITEM_DATETIME:
+			case CPITEM_DATETIME:
 				struct tm tm = cpdttotm(item->as.Datetime);
 				PRINTF("d\"%d-%.2d-%.2dT%.2d:%.2d:%.2d.%.3d", tm.tm_year + 1900,
 					tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
@@ -120,28 +124,28 @@ ssize_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) 
 				else
 					PUTS("Z\"");
 				break;
-			case CP_ITEM_LIST:
-				CALL(ctxpush, state, CP_ITEM_LIST, "[");
+			case CPITEM_LIST:
+				CALL(ctxpush, state, CPITEM_LIST, "[");
 				break;
-			case CP_ITEM_MAP:
-				CALL(ctxpush, state, CP_ITEM_MAP, "{");
+			case CPITEM_MAP:
+				CALL(ctxpush, state, CPITEM_MAP, "{");
 				break;
-			case CP_ITEM_IMAP:
-				CALL(ctxpush, state, CP_ITEM_IMAP, "i{");
+			case CPITEM_IMAP:
+				CALL(ctxpush, state, CPITEM_IMAP, "i{");
 				break;
-			case CP_ITEM_META:
-				CALL(ctxpush, state, CP_ITEM_META, "<");
+			case CPITEM_META:
+				CALL(ctxpush, state, CPITEM_META, "<");
 				break;
-			case CP_ITEM_CONTAINER_END:
+			case CPITEM_CONTAINER_END:
 				switch (ctxpop(state)) {
-					case CP_ITEM_LIST:
+					case CPITEM_LIST:
 						PUTC(']');
 						break;
-					case CP_ITEM_MAP:
-					case CP_ITEM_IMAP:
+					case CPITEM_MAP:
+					case CPITEM_IMAP:
 						PUTC('}');
 						break;
-					case CP_ITEM_META:
+					case CPITEM_META:
 						PUTC('>');
 						if (state->depth > 0)
 							state->ctx[state->depth - 1].meta = true;
@@ -149,6 +153,9 @@ ssize_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) 
 					default:
 						break;
 				}
+				break;
+			default:
+				abort(); /* anything else should be handled in common_pack */
 				break;
 		}
 	} else if (state->depth == state->cnt && state->ctx[state->depth - 1].first) {
@@ -159,12 +166,12 @@ ssize_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) 
 	return res;
 }
 
-static ssize_t cpon_pack_buf(FILE *f, const struct cpitem *item) {
-	ssize_t res = 0;
+static size_t cpon_pack_buf(FILE *f, const struct cpitem *item) {
+	size_t res = 0;
 
 	for (size_t i = 0; i < item->as.Blob.len; i++) {
 		uint8_t b = item->rbuf[i];
-		if (item->type == CP_ITEM_BLOB && item->as.Blob.flags & CPBI_F_HEX)
+		if (item->type == CPITEM_BLOB && item->as.Blob.flags & CPBI_F_HEX)
 			PRINTF("%.2X", b);
 		else {
 #define ESCAPE(V) \
@@ -205,20 +212,18 @@ static ssize_t cpon_pack_buf(FILE *f, const struct cpitem *item) {
 					break;
 			}
 #undef ESCAPE
-			if (item->type == CP_ITEM_BLOB && (b < 32 || b >= 127))
+			if (item->type == CPITEM_BLOB && (b < 32 || b >= 127))
 				PRINTF("\\%.2X", b);
 			else
 				PUTC(b);
 		}
 	}
-	if (item->as.Blob.flags & CPBI_F_LAST)
-		PUTC('\"');
 
 	return res;
 }
 
-static ssize_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec) {
-	ssize_t res = 0;
+static size_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec) {
+	size_t res = 0;
 
 	if (dec->exponent <= 6 && dec->exponent >= -9) {
 		/* Pack in X.Y notation */
@@ -252,9 +257,9 @@ static ssize_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec) {
 	return res;
 }
 
-static ssize_t ctxpush(
-	FILE *f, struct cpon_state *state, enum cp_item_type tp, const char *str) {
-	ssize_t res = 0;
+static size_t ctxpush(
+	FILE *f, struct cpon_state *state, enum cpitem_type tp, const char *str) {
+	size_t res = 0;
 	if (state->depth == state->cnt && state->realloc)
 		state->realloc(state);
 	if (state->depth < state->cnt) {
@@ -270,10 +275,10 @@ static ssize_t ctxpush(
 	return res;
 }
 
-static enum cp_item_type ctxpop(struct cpon_state *state) {
+static enum cpitem_type ctxpop(struct cpon_state *state) {
 	assert(state->depth > 0);
 	state->depth--;
 	if (state->depth < state->cnt)
 		return state->ctx[state->depth].tp;
-	return CP_ITEM_INVALID;
+	return CPITEM_INVALID;
 }

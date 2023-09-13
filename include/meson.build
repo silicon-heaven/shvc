@@ -13,6 +13,4 @@ libshvrpc_headers = files(
   'shv/rpcmsg.h',
   'shv/rpcurl.h',
 )
-libshvbroker_headers = files(
-  'shv/rpcbroker.h'
-)
+libshvbroker_headers = files('shv/rpcbroker.h')

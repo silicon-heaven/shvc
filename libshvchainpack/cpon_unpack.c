@@ -1,7 +1,9 @@
 #include <shv/cp.h>
+#include <errno.h>
 #include <string.h>
 #include <inttypes.h>
 #include <assert.h>
+#include "common.h"
 
 
 #define GETC \
@@ -24,20 +26,34 @@
 	})
 
 
-static size_t cpon_unpack_buf(FILE *f, struct cpitem *item, bool *ok);
+static size_t cpon_unpack_buf(FILE *f, struct cpitem *item, enum cperror *err);
 
 
 // TODO use state
 size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 	size_t res = 0;
+	if (common_unpack(&res, f, item))
+		return res;
+#define ERR_IO \
+	do { \
+		item->type = CPITEM_INVALID; \
+		item->as.Error = feof(f) ? CPERR_EOF : CPERR_IO; \
+		return res; \
+	} while (false)
+#define ERR_INVALID \
+	do { \
+		item->type = CPITEM_INVALID; \
+		item->as.Error = CPERR_INVALID; \
+		return res; \
+	} while (false)
 #define EXPECT(V) \
 	do { \
 		char c = GETC; \
+		if (c == EOF) \
+			ERR_IO; \
 		if (c != (V)) { \
-			if (c != EOF) \
-				ungetc(c, f); \
-			item->type = CP_ITEM_INVALID; \
-			return res; \
+			UNGETC(V); \
+			ERR_INVALID; \
 		} \
 	} while (false)
 #define EXPECTS(V) \
@@ -48,32 +64,34 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 	} while (false)
 #define CALL(FUNC, ...) \
 	do { \
-		bool ok; \
-		res += FUNC(f, __VA_ARGS__, &ok); \
-		if (!ok) \
-			return res; \
+		enum cperror err = CPERR_NONE; \
+		res += FUNC(f, __VA_ARGS__, &err); \
+		if (err == CPERR_EOF) \
+			ERR_IO; \
+		else if (err == CPERR_INVALID) \
+			ERR_INVALID; \
 	} while (false)
 
 	/* Continue reading previous item */
-	if ((item->type == CP_ITEM_BLOB || item->type == CP_ITEM_STRING) &&
+	if ((item->type == CPITEM_BLOB || item->type == CPITEM_STRING) &&
 		(item->as.Blob.eoff != 0 || !(item->as.Blob.flags & CPBI_F_LAST))) {
 		item->as.Blob.flags &= ~CPBI_F_FIRST;
 		CALL(cpon_unpack_buf, item);
 		return res;
 	}
 
-	item->type = CP_ITEM_INVALID;
+	item->type = CPITEM_INVALID;
 	bool comment = false;
 	char c;
 	while (true) {
 		c = GETC;
 		if (c == EOF)
-			return res;
+			ERR_IO;
 		if (comment) {
 			if (c == '*') {
 				c = GETC;
 				if (c == EOF)
-					return res;
+					ERR_IO;
 				comment = c != '/';
 			}
 			continue;
@@ -93,34 +111,35 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 	switch (c) {
 		case 'n':
 			EXPECTS("ull");
-			item->type = CP_ITEM_NULL;
+			item->type = CPITEM_NULL;
 			break;
 		case 't':
 			EXPECTS("rue");
-			item->type = CP_ITEM_BOOL;
+			item->type = CPITEM_BOOL;
 			item->as.Bool = true;
 			break;
 		case 'f':
 			EXPECTS("alse");
-			item->type = CP_ITEM_BOOL;
+			item->type = CPITEM_BOOL;
 			item->as.Bool = false;
 			break;
 		case '-':
 		case '0' ... '9':
 			UNGETC(c);
 			if (SCANF("%lli", &item->as.Int) != 1)
-				return res;
-			item->type = CP_ITEM_INT;
+				ERR_IO;
+			item->type = CPITEM_INT;
 			bool has_sign = c == '-';
 			c = GETC;
 			if (!has_sign && c == 'u') {
-				item->type = CP_ITEM_UINT;
+				item->type = CPITEM_UINT;
 			} else if (c == 'e') {
-				item->type = CP_ITEM_DECIMAL;
+				item->type = CPITEM_DECIMAL;
 				item->as.Decimal.mantisa = item->as.Int;
+				item->as.Decimal.exponent = 0;
 				SCANF("%i", &item->as.Decimal.exponent);
 			} else if (c == '.') {
-				item->type = CP_ITEM_DECIMAL;
+				item->type = CPITEM_DECIMAL;
 				item->as.Decimal.mantisa = item->as.Int;
 				unsigned long long dec;
 				ssize_t rres = res;
@@ -148,7 +167,7 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 		case 'x':
 		case 'b':
 			EXPECT('"');
-			item->type = CP_ITEM_BLOB;
+			item->type = CPITEM_BLOB;
 			item->as.String.flags = CPBI_F_FIRST | CPBI_F_STREAM;
 			if (c == 'x')
 				item->as.String.flags |= CPBI_F_HEX;
@@ -158,9 +177,12 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 		case 'd':
 			struct tm tm = (struct tm){};
 			unsigned msecs;
-			if (SCANF("\"%u-%u-%uT%u:%u:%u.%u", &tm.tm_year, &tm.tm_mon,
-					&tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec, &msecs) != 7)
-				return res;
+			int sres = SCANF("\"%u-%u-%uT%u:%u:%u.%u", &tm.tm_year, &tm.tm_mon,
+				&tm.tm_mday, &tm.tm_hour, &tm.tm_min, &tm.tm_sec, &msecs);
+			if (sres == -1)
+				ERR_IO;
+			if (sres != 7)
+				ERR_INVALID;
 			tm.tm_year -= 1900;
 			tm.tm_mon -= 1;
 			c = GETC;
@@ -171,36 +193,36 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 				tm.tm_gmtoff *= c == '-' ? -1 : 1;
 			} else if (c != 'Z') {
 				UNGETC(c);
-				return res;
+				ERR_INVALID;
 			}
 			EXPECT('"');
-			item->type = CP_ITEM_DATETIME;
+			item->type = CPITEM_DATETIME;
 			item->as.Datetime = cptmtodt(tm);
 			item->as.Datetime.msecs += msecs;
 			break;
 		case '"':
-			item->type = CP_ITEM_STRING;
+			item->type = CPITEM_STRING;
 			item->as.String.flags = CPBI_F_FIRST | CPBI_F_STREAM;
 			item->as.String.eoff = 0;
 			CALL(cpon_unpack_buf, item);
 			break;
 		case '[':
-			item->type = CP_ITEM_LIST;
+			item->type = CPITEM_LIST;
 			break;
 		case '{':
-			item->type = CP_ITEM_MAP;
+			item->type = CPITEM_MAP;
 			break;
 		case 'i':
 			EXPECT('{');
-			item->type = CP_ITEM_IMAP;
+			item->type = CPITEM_IMAP;
 			break;
 		case '<':
-			item->type = CP_ITEM_META;
+			item->type = CPITEM_META;
 			break;
 		case '>':
 		case '}':
 		case ']':
-			item->type = CP_ITEM_CONTAINER_END;
+			item->type = CPITEM_CONTAINER_END;
 			break;
 		default:
 			UNGETC(c);
@@ -209,12 +231,11 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 	return res;
 }
 
-static size_t cpon_unpack_buf(FILE *f, struct cpitem *item, bool *ok) {
-	if (ok)
-		*ok = true;
-
-	if (item->bufsiz == 0)
+static size_t cpon_unpack_buf(FILE *f, struct cpitem *item, enum cperror *err) {
+	if (item->bufsiz == 0) {
+		item->as.Blob.len = 0;
 		return 0; /* Nowhere to place data so just inform user about type */
+	}
 
 	size_t i = 0;
 	size_t res = 0;
@@ -222,21 +243,20 @@ static size_t cpon_unpack_buf(FILE *f, struct cpitem *item, bool *ok) {
 	while (i < item->bufsiz) {
 		int c = getc(f);
 		if (c == EOF) {
-			if (ok)
-				*ok = false;
+			*err = CPERR_EOF;
 			return i;
 		}
 		res++;
-		if (item->type == CP_ITEM_BLOB && item->as.Blob.flags & CPBI_F_HEX) {
+		if (item->type == CPITEM_BLOB && item->as.Blob.flags & CPBI_F_HEX) {
 			if (c == '"') {
 				item->as.Blob.flags |= CPBI_F_LAST;
 				break;
 			}
 			UNGETC(c);
 			uint8_t byte;
-			if (SCANF("%2" SCNx8, &byte) != 1) {
-				if (ok)
-					*ok = false;
+			int sres = SCANF("%2" SCNx8, &byte);
+			if (sres != 1) {
+				*err = sres == -1 ? CPERR_EOF : CPERR_INVALID;
 				return i;
 			}
 			if (item->buf)
@@ -265,7 +285,7 @@ static size_t cpon_unpack_buf(FILE *f, struct cpitem *item, bool *ok) {
 					c = '\r';
 					break;
 			}
-			if (item->type == CP_ITEM_BLOB) {
+			if (item->type == CPITEM_BLOB) {
 				UNGETC(c);
 				SCANF("%X", (unsigned *)&c);
 			}

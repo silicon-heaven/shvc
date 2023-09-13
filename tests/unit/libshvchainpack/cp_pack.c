@@ -337,6 +337,7 @@ END_TEST
 
 static void pack_fopen_str(void) {
 	FILE *f = cp_pack_fopen(pack, true);
+	ck_assert_ptr_nonnull(f);
 	fputs("Num", f);
 	fprintf(f, ": %d", 42);
 	fclose(f);
@@ -355,6 +356,7 @@ END_TEST
 
 static void pack_fopen_blob(void) {
 	FILE *f = cp_pack_fopen(pack, false);
+	ck_assert_ptr_nonnull(f);
 	setvbuf(f, NULL, _IONBF, 0);
 	struct bdata v = B(0x42, 0x11);
 	for (size_t i = 0; i < v.len; i++)

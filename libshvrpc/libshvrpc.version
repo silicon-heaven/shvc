@@ -6,23 +6,48 @@ V0.0 {
 		rpcmsg_access_str;
 		rpcmsg_access_extract;
 		rpcmsg_access_unpack;
-		rpcmsg_meta_unpack;
+		rpcmsg_head_unpack;
 		rpcmsg_pack_response;
+		rpcmsg_pack_error;
+		rpcmsg_pack_ferror;
+		rpcmsg_pack_vferror;
 
 		# shv/rpcurl.h
 		rpcurl_parse;
 		rpcurl_free;
 		rpcurl_str;
 
+		# shv/rpcclient.h
 		rpcclient_connect;
-		rpcclient_new_stream;
-		rpcclient_new_datagram;
-		rpcclient_new_serial;
-		rpcclient_disconnect;
+		rpcclient_login;
+		rpcclient_stream_new;
+		rpcclient_stream_tcp_connect;
+		rpcclient_stream_unix_connect;
+		rpcclient_datagram_new;
+		rpcclient_datagram_udp_connect;
+		rpcclient_serial_new;
+		rpcclient_serial_connect;
+		rpcclient_logger_new;
+		rpcclient_logger_destroy;
 
-		rpcclient_next_message;
-		rpcclient_next_item;
-		rpcclient_pack_context;
+		# shv/rpchandler.h
+		rpchandler_destroy;
+		rpchandler_new;
+		rpchandler_next;
+		rpchandler_spawn_thread;
+		rpchandler_next_request_id;
+		rpchandler_msg_new;
+		rpchandler_msg_send;
+		rpchandler_msg_drop;
+		rpcreceive_validmsg;
+		rpcreceive_response_new;
+		rpcreceive_response_send;
+		rpcreceive_response_drop;
+
+		# shv/rpctoplevel.h
+		rpctoplevel_new;
+		rpctoplevel_destroy;
+		rpctoplevel_func;
 
 	local: *;
 };

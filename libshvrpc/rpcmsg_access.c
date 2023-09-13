@@ -48,7 +48,7 @@ enum rpcmsg_access rpcmsg_access_extract(const char *str) {
 
 enum rpcmsg_access rpcmsg_access_unpack(cp_unpack_t unpack, struct cpitem *item) {
 	FILE *f = cp_unpack_fopen(unpack, item);
-	if (item->type != CP_ITEM_STRING)
+	if (item->type != CPITEM_STRING)
 		goto error;
 	/* The longest access right is four characters. We load five to prevent
 	 * match on same prefix and need one more for null byte.

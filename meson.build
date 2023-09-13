@@ -3,7 +3,7 @@ project(
   'c',
   version: files('version'),
   license: 'GPL-3.0-or-later',
-  default_options: 'c_std=c17',
+  default_options: 'c_std=gnu17',
   meson_version: '>=0.57.0',
 )
 cc = meson.get_compiler('c')
@@ -12,6 +12,7 @@ isnuttx = (
 )
 fs = import('fs')
 cmake = import('cmake')
+python = import('python')
 
 
 add_project_arguments('-D_GNU_SOURCE', language: 'c')
@@ -24,11 +25,13 @@ add_project_arguments(
 
 if not isnuttx
   m = cc.find_library('m', required : false)
-  argp = cc.has_function('argp_parse') ? declare_dependency() : cc.find_library('argp')
+  inih = dependency('inih')
+  openssl = dependency('openssl', version: '>=3.0.0')
   uriparser = dependency('liburiparser', version: '>= 0.9.0')
 else
   m = declare_dependency()
-  argp = declare_dependency()
+  inih = declare_dependency()
+  openssl = declare_dependency()
   uriparser_var = cmake.subproject_options()
   uriparser_var.add_cmake_defines({
     'URIPARSER_BUILD_TESTS': false,
@@ -56,9 +59,17 @@ cpconv_opt = get_option('cpconv')
 if cpconv_opt
   subdir('cpconv')
 endif
-shvbroker_opt = get_option('shvbroker')
+shvc_opt = get_option('shvc')
+if shvc_opt
+  subdir('shvc')
+endif
+shvbroker_opt = get_option('shvcbroker')
 if shvbroker_opt
-  subdir('shvbroker')
+  subdir('shvcbroker')
+endif
+demo_opt = get_option('demo')
+if demo_opt
+  subdir('demo')
 endif
 
 

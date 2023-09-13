@@ -27,7 +27,10 @@ enum rpcmsg_keys {
 	RPCMSG_KEY_ERROR,
 };
 
-enum rpcmsg_error_key { RPCMSG_E_KEY_CODE = 1, RPCMSG_E_KEY_MESSAGE };
+enum rpcmsg_error_key {
+	RPCMSG_ERR_KEY_CODE = 1,
+	RPCMSG_ERR_KEY_MESSAGE,
+};
 
 /*! Pack request message meta and open imap. The followup packed data are
  * parameters provided to the method call request. The message needs to be
@@ -40,8 +43,37 @@ enum rpcmsg_error_key { RPCMSG_E_KEY_CODE = 1, RPCMSG_E_KEY_MESSAGE };
  * @param rid: request identifier. Thanks to this number you can associate
  * response with requests.
  */
-void rpcmsg_pack_request(cp_pack_t, const char *path, const char *method,
-	int64_t rid) __attribute__((nonnull));
+size_t rpcmsg_pack_request(cp_pack_t pack, const char *path, const char *method,
+	int rid) __attribute__((nonnull(1, 3)));
+
+/*! Pack request message with no parameters.
+ *
+ * This provides an easy way to just pack message without arguments. It calls
+ * `rpcmsg_pack_request` and packs additional `NULL` and `CONTAINER_END` to
+ * complete the message. Such message can be immediately sent.
+ *
+ * @param pack: pack context the meta should be written to.
+ * @param path: SHV path to the node the method we want to request is associated
+ * with.
+ * @param method: name of the method we request to call.
+ * @param rid: request identifier. Thanks to this number you can associate
+ * response with requests.
+ */
+__attribute__((nonnull(1, 3))) static inline size_t rpcmsg_pack_request_void(
+	cp_pack_t pack, const char *path, const char *method, int rid) {
+	size_t res = 0;
+#define RES(V) \
+	({ \
+		size_t __res = V; \
+		res += __res; \
+		__res; \
+	})
+	if (RES(rpcmsg_pack_request(pack, path, method, rid)) &&
+		RES(cp_pack_null(pack)) && RES(cp_pack_container_end(pack)))
+		return res;
+#undef RES
+	return 0;
+}
 
 /*! Pack signal message meta and open imap. The followup packed data are
  * signaled values. The message needs to be terminated with container end
@@ -51,8 +83,8 @@ void rpcmsg_pack_request(cp_pack_t, const char *path, const char *method,
  * @param path: SHV path to the node method is associated with.
  * @param method: name of the method signal is raised for.
  */
-void rpcmsg_pack_signal(cp_pack_t, const char *path, const char *method)
-	__attribute__((nonnull));
+size_t rpcmsg_pack_signal(cp_pack_t pack, const char *path, const char *method)
+	__attribute__((nonnull(1, 3)));
 
 /*! Pack value change signal message meta and open imap. The followup packed
  * data are signaled values. The message needs to be terminated with container
@@ -64,8 +96,9 @@ void rpcmsg_pack_signal(cp_pack_t, const char *path, const char *method)
  * @param pack: pack context the meta should be written to.
  * @param path: SHV path the value change signal is associated with.
  */
-static inline void rpcmsg_pack_chng(cp_pack_t pack, const char *path) {
-	rpcmsg_pack_signal(pack, path, "chng");
+__attribute__((nonnull(1))) static inline size_t rpcmsg_pack_chng(
+	cp_pack_t pack, const char *path) {
+	return rpcmsg_pack_signal(pack, path, "chng");
 }
 
 
@@ -118,6 +151,8 @@ enum rpcmsg_type {
 	RPCMSG_T_REQUEST,
 	/*! Message is response (`request_id` is valid). */
 	RPCMSG_T_RESPONSE,
+	/*! Message is response with error attached (`request_id` is valid). */
+	RPCMSG_T_ERROR,
 	/*! Message is signal (`method` is valid). */
 	RPCMSG_T_SIGNAL,
 };
@@ -145,6 +180,12 @@ struct rpcmsg_meta {
 	enum rpcmsg_access access_grant;
 	/*! Client IDs in Chainpack if message is request. */
 	struct rpcmsg_ptr cids;
+
+	struct rpcmsg_meta_extra {
+		int key;
+		struct rpcmsg_ptr ptr;
+		struct rpcmsg_meta_extra *next;
+	} * extra;
 };
 
 /*! Limits imposed on `struct rpcmsg_meta` fields.
@@ -172,12 +213,12 @@ struct rpcmsg_meta_limits {
 	 * supported path. It is to detect that this is too long path (because that
 	 * won't be signaled to you in any other way).
 	 */
-	size_t path;
+	ssize_t path;
 	/*! Limit on `method` size.
 	 *
 	 * The same suggestion applies here as for `path`.
 	 */
-	size_t method;
+	ssize_t method;
 	/*! Limit on `cids.ptr` buffer.
 	 *
 	 * It is highly suggested to set this to `-1` or some high number if you use
@@ -187,10 +228,17 @@ struct rpcmsg_meta_limits {
 	 * In case you do not use obstack then set buffer size of `cids.ptr` as
 	 * usual.
 	 */
-	size_t cids;
+	ssize_t cids;
+	/*! If extra parameters should be preserved or no.
+	 *
+	 * The default is that they are dropped (`false`). In most cases that is
+	 * what they are not needed. This is only essential for Broker that should
+	 * preserve all parameters not just those he knows.
+	 */
+	bool extra;
 };
 
-/*! Unpack meta of the RPC message.
+/*! Unpack meta and openning of iMap of the RPC message.
  *
  * The unpacking can be performed in two different modes. You can either provide
  * obstack and in such case data would be pushed to it (highly suggested). But
@@ -218,13 +266,15 @@ struct rpcmsg_meta_limits {
  * @returns `false` in case unpack reports error, if meta contains invalid value
  * for supported key, or when there is not enough space to store caller IDs. In
  * other cases `true` is returned. In short this return primarily signals if it
- * is possible to generate response to this message for request messages.
+ * is possible to generate response to this message for request messages and if
+ * it is possible to parameters, response or error for other message types.
  */
-bool rpcmsg_meta_unpack(cp_unpack_t unpack, struct cpitem *item,
+bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 	struct rpcmsg_meta *meta, struct rpcmsg_meta_limits *limits,
 	struct obstack *obstack);
 
-void rpcmsg_pack_response(cp_pack_t, struct rpcmsg_meta *meta)
+
+size_t rpcmsg_pack_response(cp_pack_t, const struct rpcmsg_meta *meta)
 	__attribute__((nonnull));
 
 enum rpcmsg_error {
@@ -241,97 +291,14 @@ enum rpcmsg_error {
 	RPCMSG_E_USER_CODE = 32,
 };
 
-void rpcmsg_pack_error(cp_pack_t, struct rpcmsg_meta *meta,
+size_t rpcmsg_pack_error(cp_pack_t, const struct rpcmsg_meta *meta,
 	enum rpcmsg_error error, const char *msg) __attribute__((nonnull(1, 2)));
 
-void rpcmsg_pack_ferror(cp_pack_t, struct rpcmsg_meta *meta,
+size_t rpcmsg_pack_ferror(cp_pack_t, const struct rpcmsg_meta *meta,
 	enum rpcmsg_error error, const char *fmt, ...) __attribute__((nonnull(1, 2)));
 
-void rpcmsg_pack_vferror(cp_pack_t, struct rpcmsg_meta *meta,
+size_t rpcmsg_pack_vferror(cp_pack_t, const struct rpcmsg_meta *meta,
 	enum rpcmsg_error error, const char *fmt, va_list args)
 	__attribute__((nonnull(1, 2)));
 
-
-#if 0
-
-/*! String handle that can be increased in size and reused for the future
- * strings. It is used by `rpcmsg_unpack_str` and by other functions that
- * internally call that function. It provides a growable string with known size
- * limitation.
- *
- * You should preferably allocate this using `malloc` because
- * `rpcmsg_unpack_str` will call `realloc` on it (with exception that is
- * described in the `siz` field description).
- */
-struct rpcclient_str {
-	/*! Size of the `str` in bytes. You can set this to a negative number to
-	 * prevent `rpcmsg_unpack_str` from reallocating. This provides you either
-	 * ceiling functionality or a way to pass non-malloc allocated memory.
-	 */
-	ssize_t siz;
-	/*! Actual characters of the string. */
-	char str[];
-};
-
-/*! Unpack string to `rpcmsg_str`.
- *
- */
-bool rpcclient_unpack_str(rpcclient_t, struct rpcclient_str **str);
-
-/*! Check if `rpcmsg_str` has truncated content.
- *
- * `rpcmsg_unpack_str` might not be able to store the whole string if you set
- * `siz` to some negative number as that prevents reallocation. In such case you
- * can end up with truncated string and this method detects it. You should
- * always use it before you call C string methods (that expect `NULL`
- * termination) to check validity.
- *
- * @param str: pointer to the `rpcmsg_str` that was previously passed to
- * `rpcmsg_unpack_str`.
- * @returns: `true` if string is truncated or otherwise invalid and `false`
- * otherwise.
- */
-bool rpcclient_str_truncated(const struct rpcclient_str *str)
-	__attribute__((nonnull));
-
-
-
-bool rpcmsg_unpack_access(rpcclient_t, enum rpcmsg_access *access);
-
-const char *rpcmsg_access_str(enum rpcmsg_access);
-
-struct rpcmsg_request_info {
-	/* Access level assigned by SHV Broker */
-	enum rpcmsg_access acc_grant;
-	/* Request ID */
-	int64_t rid;
-	/* Client IDs */
-	size_t cidscnt, rcidscnt;
-	// TODO ssize_t and allow no realloc trough it?
-	size_t cidssiz;
-	int64_t cids[];
-};
-
-/*! Unpack message meta and open imap. The followup data depend on type returned
- * by this function.
- *
- * @param unpack: unpack context the meta should be read from.
- * @param path: pointer to the variable where SHV path is stored.
- * @param method: name of the method signal is raised for.
- */
-enum rpcmsg_type {
-	/*! The message's meta is invalid or unpack is in error state. This is an
-	 * error state and you most likely want to perform reconnect or connection
-	 * reset.
-	 */
-	RPCMSG_T_INVALID,
-	RPCMSG_T_REQUEST,
-	RPCMSG_T_RESPONSE,
-	RPCMSG_T_ERROR,
-	RPCMSG_T_SIGNAL,
-} rpcmsg_unpack(rpcclient_t, struct rpcmsg_str **path,
-	struct rpcmsg_str **method, struct rpcmsg_request_info **rinfo);
-
-
-#endif
 #endif

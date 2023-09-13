@@ -3,7 +3,7 @@
 
   inputs = {
     check-suite.url = "github:cynerd/check-suite";
-    shvapp.url = "git+https://github.com/silicon-heaven/shvapp.git?submodules=1";
+    pyshv.url = "git+https://gitlab.com/elektroline-predator/pyshv.git?ref=urltweak";
   };
 
   outputs = {
@@ -11,7 +11,7 @@
     flake-utils,
     nixpkgs,
     check-suite,
-    shvapp,
+    pyshv,
   }:
     with builtins;
     with flake-utils.lib;
@@ -28,7 +28,9 @@
             outputs = ["out" "doc"];
             sphinxRoot = "../docs";
             buildInputs = [
+              inih
               uriparser
+              openssl
             ];
             nativeBuildInputs = [
               # Build tools
@@ -54,10 +56,16 @@
               pkgs.check-suite
             ];
             nativeCheckInputs = [
-              pkgs.shvapp
               # Run tests
               bash
               bats
+              # Run tests
+              (python3.withPackages (pypkgs:
+                with pypkgs; [
+                  pytest
+                  pytest-tap
+                  pypkgs.pyshv
+                ]))
             ];
           };
         };
@@ -67,7 +75,7 @@
           shvc = final: prev: packages (id prev);
           default = composeManyExtensions [
             check-suite.overlays.default
-            shvapp.overlays.default
+            pyshv.overlays.default
             self.overlays.shvc
           ];
         };

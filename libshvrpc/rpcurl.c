@@ -51,7 +51,7 @@ struct rpcurl *rpcurl_parse(const char *url, const char **error_pos) {
 	if (uri.userInfo.first != uri.userInfo.afterLast) {
 		res->username = strndup(
 			uri.userInfo.first, uri.userInfo.afterLast - uri.userInfo.first);
-		res->rpcurl.username = res->username;
+		res->rpcurl.login.username = res->username;
 	}
 
 	if (uri.hostText.first != uri.hostText.afterLast) {
@@ -109,25 +109,25 @@ struct rpcurl *rpcurl_parse(const char *url, const char **error_pos) {
 			switch (match->query) {
 				case GPERF_RPCURL_QUERY_SHAPASS:
 					free(res->password);
-					res->rpcurl.login_type = RPC_LOGIN_SHA1;
+					res->rpcurl.login.login_type = RPC_LOGIN_SHA1;
 					res->password = strdup(q->value);
-					res->rpcurl.password = res->password;
+					res->rpcurl.login.password = res->password;
 					break;
 				case GPERF_RPCURL_QUERY_PASSWORD:
 					free(res->password);
-					res->rpcurl.login_type = RPC_LOGIN_PLAIN;
+					res->rpcurl.login.login_type = RPC_LOGIN_PLAIN;
 					res->password = strdup(q->value);
-					res->rpcurl.password = res->password;
+					res->rpcurl.login.password = res->password;
 					break;
 				case GPERF_RPCURL_QUERY_DEVID:
 					free(res->device_id);
 					res->device_id = strdup(q->value);
-					res->rpcurl.device_id = res->device_id;
+					res->rpcurl.login.device_id = res->device_id;
 					break;
 				case GPERF_RPCURL_QUERY_DEVMOUNT:
 					free(res->device_mountpoint);
 					res->device_mountpoint = strdup(q->value);
-					res->rpcurl.device_mountpoint = res->device_mountpoint;
+					res->rpcurl.login.device_mountpoint = res->device_mountpoint;
 					break;
 			}
 			q = q->next;

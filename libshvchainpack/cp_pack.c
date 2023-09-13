@@ -40,31 +40,29 @@ cp_pack_t cp_pack_cpon_init(struct cp_pack_cpon *pack, FILE *f, const char *inde
 }
 
 
-// TODO test if ftell works or if we need to implement seek as well
-
 static ssize_t _write(void *cookie, const char *buf, size_t size, bool blob) {
 	cp_pack_t pack = cookie;
 	struct cpitem item;
-	item.type = blob ? CP_ITEM_BLOB : CP_ITEM_STRING;
+	item.type = blob ? CPITEM_BLOB : CPITEM_STRING;
 	item.rchr = buf;
 	item.as.Blob = (struct cpbufinfo){
 		.len = size,
 		.flags = CPBI_F_STREAM,
 	};
-	cp_pack(pack, &item);
-	return size;
+	ssize_t res = cp_pack(pack, &item);
+	return res >= 0 ? size : 0;
 }
 
 static int _close(void *cookie, bool blob) {
 	cp_pack_t pack = cookie;
 	struct cpitem item;
-	item.type = blob ? CP_ITEM_BLOB : CP_ITEM_STRING;
+	item.type = blob ? CPITEM_BLOB : CPITEM_STRING;
 	item.as.Blob = (struct cpbufinfo){
 		.len = 0,
 		.flags = CPBI_F_STREAM | CPBI_F_LAST,
 	};
-	cp_pack(pack, &item);
-	return 0;
+	ssize_t res = cp_pack(pack, &item);
+	return res >= 0 ? 0 : EOF;
 }
 
 static ssize_t write_blob(void *cookie, const char *buf, size_t size) {
@@ -96,11 +94,12 @@ static const cookie_io_functions_t func_string = {
 
 FILE *cp_pack_fopen(cp_pack_t pack, bool str) {
 	struct cpitem item;
-	item.type = str ? CP_ITEM_STRING : CP_ITEM_BLOB;
+	item.type = str ? CPITEM_STRING : CPITEM_BLOB;
 	item.as.Blob = (struct cpbufinfo){
 		.len = 0,
 		.flags = CPBI_F_FIRST | CPBI_F_STREAM,
 	};
-	cp_pack(pack, &item);
+	if (cp_pack(pack, &item) == 0)
+		return NULL;
 	return fopencookie(pack, "a", str ? func_string : func_blob);
 }

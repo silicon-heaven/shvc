@@ -1,5 +1,5 @@
-#ifndef _SHV_RPCURL_H
-#define _SHV_RPCURL_H
+#ifndef SHV_RPCURL_H
+#define SHV_RPCURL_H
 
 /*! Protocol used to connect client to the server or to listen for connection on
  */
@@ -21,11 +21,24 @@ enum rpc_protocol {
 };
 
 /*! The format of the password passed to the login process. */
-enum rpc_login_type {
+enum rpclogin_type {
 	/*! The password is in plain text */
 	RPC_LOGIN_PLAIN,
 	/*! Password is hashed with SHA1 password */
 	RPC_LOGIN_SHA1,
+};
+
+struct rpclogin_options {
+	/*! User name used to login client connection to the server */
+	const char *username;
+	/*! Password used to login client connection to the server */
+	const char *password;
+	/*! The format of the password */
+	enum rpclogin_type login_type;
+	/*! Device ID sent as part of login information to the server */
+	const char *device_id;
+	/*! Device's requested mount point on server */
+	const char *device_mountpoint;
 };
 
 /*! SHV RPC URL representation */
@@ -36,16 +49,8 @@ struct rpcurl {
 	const char *location;
 	/*! Port number used for TCP and UDP connections */
 	int port;
-	/*! User name used to login client connection to the server */
-	const char *username;
-	/*! Password used to login client connection to the server */
-	const char *password;
-	/*! The format of the password */
-	enum rpc_login_type login_type;
-	/*! Device ID sent as part of login information to the server */
-	const char *device_id;
-	/*! Device's requested mount point on server */
-	const char *device_mountpoint;
+	/*! Login options */
+	struct rpclogin_options login;
 };
 
 

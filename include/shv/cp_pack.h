@@ -2,10 +2,11 @@
 #define SHV_CP_PACK_H
 
 #include <shv/cp.h>
+#include <stdarg.h>
 #include <assert.h>
 #include <string.h>
 
-typedef ssize_t (*cp_pack_func_t)(void *ptr, const struct cpitem *item);
+typedef size_t (*cp_pack_func_t)(void *ptr, const struct cpitem *item);
 typedef cp_pack_func_t *cp_pack_t;
 
 
@@ -34,57 +35,57 @@ cp_pack_t cp_pack_cpon_init(struct cp_pack_cpon *pack, FILE *f,
 	})
 
 
-static inline ssize_t cp_pack_null(cp_pack_t pack) {
+static inline size_t cp_pack_null(cp_pack_t pack) {
 	struct cpitem i;
-	i.type = CP_ITEM_NULL;
+	i.type = CPITEM_NULL;
 	return cp_pack(pack, &i);
 }
 
-static inline ssize_t cp_pack_bool(cp_pack_t pack, bool v) {
+static inline size_t cp_pack_bool(cp_pack_t pack, bool v) {
 	struct cpitem i;
-	i.type = CP_ITEM_BOOL;
+	i.type = CPITEM_BOOL;
 	i.as.Bool = v;
 	return cp_pack(pack, &i);
 }
 
-static inline ssize_t cp_pack_int(cp_pack_t pack, int64_t v) {
+static inline size_t cp_pack_int(cp_pack_t pack, long long v) {
 	struct cpitem i;
-	i.type = CP_ITEM_INT;
+	i.type = CPITEM_INT;
 	i.as.Int = v;
 	return cp_pack(pack, &i);
 }
 
-static inline ssize_t cp_pack_uint(cp_pack_t pack, uint64_t v) {
+static inline size_t cp_pack_uint(cp_pack_t pack, unsigned long long v) {
 	struct cpitem i;
-	i.type = CP_ITEM_UINT;
+	i.type = CPITEM_UINT;
 	i.as.UInt = v;
 	return cp_pack(pack, &i);
 }
 
-static inline ssize_t cp_pack_double(cp_pack_t pack, double v) {
+static inline size_t cp_pack_double(cp_pack_t pack, double v) {
 	struct cpitem i;
-	i.type = CP_ITEM_DOUBLE;
+	i.type = CPITEM_DOUBLE;
 	i.as.Double = v;
 	return cp_pack(pack, &i);
 }
 
-static inline ssize_t cp_pack_decimal(cp_pack_t pack, struct cpdecimal v) {
+static inline size_t cp_pack_decimal(cp_pack_t pack, struct cpdecimal v) {
 	struct cpitem i;
-	i.type = CP_ITEM_DECIMAL;
+	i.type = CPITEM_DECIMAL;
 	i.as.Decimal = v;
 	return cp_pack(pack, &i);
 }
 
-static inline ssize_t cp_pack_datetime(cp_pack_t pack, struct cpdatetime v) {
+static inline size_t cp_pack_datetime(cp_pack_t pack, struct cpdatetime v) {
 	struct cpitem i;
-	i.type = CP_ITEM_DATETIME;
+	i.type = CPITEM_DATETIME;
 	i.as.Datetime = v;
 	return cp_pack(pack, &i);
 }
 
-static inline ssize_t cp_pack_blob(cp_pack_t pack, const uint8_t *buf, size_t len) {
+static inline size_t cp_pack_blob(cp_pack_t pack, const uint8_t *buf, size_t len) {
 	struct cpitem i;
-	i.type = CP_ITEM_BLOB;
+	i.type = CPITEM_BLOB;
 	i.rbuf = buf;
 	i.as.Blob = (struct cpbufinfo){
 		.len = len,
@@ -94,9 +95,9 @@ static inline ssize_t cp_pack_blob(cp_pack_t pack, const uint8_t *buf, size_t le
 	return cp_pack(pack, &i);
 }
 
-static inline ssize_t cp_pack_blob_size(
+static inline size_t cp_pack_blob_size(
 	cp_pack_t pack, struct cpitem *item, size_t siz) {
-	item->type = CP_ITEM_BLOB;
+	item->type = CPITEM_BLOB;
 	item->as.Blob = (struct cpbufinfo){
 		.len = 0,
 		.eoff = siz,
@@ -105,9 +106,9 @@ static inline ssize_t cp_pack_blob_size(
 	return cp_pack(pack, item);
 }
 
-static inline ssize_t cp_pack_blob_data(
+static inline size_t cp_pack_blob_data(
 	cp_pack_t pack, struct cpitem *item, const uint8_t *buf, size_t siz) {
-	assert(item->type == CP_ITEM_BLOB);
+	assert(item->type == CPITEM_BLOB);
 	assert(item->as.Blob.eoff >= siz);
 	item->rbuf = buf;
 	item->as.Blob.len = siz;
@@ -118,9 +119,9 @@ static inline ssize_t cp_pack_blob_data(
 	return cp_pack(pack, item);
 }
 
-static inline ssize_t cp_pack_string(cp_pack_t pack, const char *buf, size_t len) {
+static inline size_t cp_pack_string(cp_pack_t pack, const char *buf, size_t len) {
 	struct cpitem i;
-	i.type = CP_ITEM_STRING;
+	i.type = CPITEM_STRING;
 	i.rchr = buf;
 	i.as.String = (struct cpbufinfo){
 		.len = len,
@@ -130,13 +131,31 @@ static inline ssize_t cp_pack_string(cp_pack_t pack, const char *buf, size_t len
 	return cp_pack(pack, &i);
 }
 
-static inline ssize_t cp_pack_str(cp_pack_t pack, const char *str) {
+static inline size_t cp_pack_str(cp_pack_t pack, const char *str) {
 	return cp_pack_string(pack, str, strlen(str));
 }
 
-static inline ssize_t cp_pack_string_size(
+static inline size_t cp_pack_vfstr(cp_pack_t pack, const char *fmt, va_list args) {
+	va_list cargs;
+	va_copy(cargs, args);
+	int siz = vsnprintf(NULL, 0, fmt, cargs);
+	va_end(cargs);
+	char str[siz];
+	assert(vsnprintf(str, siz, fmt, args) == siz);
+	return cp_pack_string(pack, str, siz - 1);
+}
+
+static inline size_t cp_pack_fstr(cp_pack_t pack, const char *fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	size_t res = cp_pack_vfstr(pack, fmt, args);
+	va_end(args);
+	return res;
+}
+
+static inline size_t cp_pack_string_size(
 	cp_pack_t pack, struct cpitem *item, size_t siz) {
-	item->type = CP_ITEM_STRING;
+	item->type = CPITEM_STRING;
 	item->as.String = (struct cpbufinfo){
 		.len = 0,
 		.eoff = siz,
@@ -145,9 +164,9 @@ static inline ssize_t cp_pack_string_size(
 	return cp_pack(pack, item);
 }
 
-static inline ssize_t cp_pack_string_data(
+static inline size_t cp_pack_string_data(
 	cp_pack_t pack, struct cpitem *item, const char *buf, size_t siz) {
-	assert(item->type == CP_ITEM_STRING);
+	assert(item->type == CPITEM_STRING);
 	assert(item->as.Blob.eoff >= siz);
 	item->rchr = buf;
 	item->as.String.len = siz;
@@ -158,33 +177,33 @@ static inline ssize_t cp_pack_string_data(
 	return cp_pack(pack, item);
 }
 
-static inline ssize_t cp_pack_list_begin(cp_pack_t pack) {
+static inline size_t cp_pack_list_begin(cp_pack_t pack) {
 	struct cpitem i;
-	i.type = CP_ITEM_LIST;
+	i.type = CPITEM_LIST;
 	return cp_pack(pack, &i);
 }
 
-static inline ssize_t cp_pack_map_begin(cp_pack_t pack) {
+static inline size_t cp_pack_map_begin(cp_pack_t pack) {
 	struct cpitem i;
-	i.type = CP_ITEM_MAP;
+	i.type = CPITEM_MAP;
 	return cp_pack(pack, &i);
 }
 
-static inline ssize_t cp_pack_imap_begin(cp_pack_t pack) {
+static inline size_t cp_pack_imap_begin(cp_pack_t pack) {
 	struct cpitem i;
-	i.type = CP_ITEM_IMAP;
+	i.type = CPITEM_IMAP;
 	return cp_pack(pack, &i);
 }
 
-static inline ssize_t cp_pack_meta_begin(cp_pack_t pack) {
+static inline size_t cp_pack_meta_begin(cp_pack_t pack) {
 	struct cpitem i;
-	i.type = CP_ITEM_META;
+	i.type = CPITEM_META;
 	return cp_pack(pack, &i);
 }
 
-static inline ssize_t cp_pack_container_end(cp_pack_t pack) {
+static inline size_t cp_pack_container_end(cp_pack_t pack) {
 	struct cpitem i;
-	i.type = CP_ITEM_CONTAINER_END;
+	i.type = CPITEM_CONTAINER_END;
 	return cp_pack(pack, &i);
 }
 

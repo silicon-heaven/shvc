@@ -13,8 +13,20 @@ option(
   description: 'Build cpconv tool that converts between Chainpack and Cpon.',
 )
 option(
-  'shvbroker',
+  'shvc',
+  type: 'boolean',
+  value: true,
+  description: 'Build shvc tool that can call methods over SHV RPC protocol.',
+)
+option(
+  'shvcbroker',
   type: 'boolean',
   value: true,
   description: 'Build SHV RPC Broker standalone application.',
+)
+option(
+  'demo',
+  type: 'boolean',
+  value: true,
+  description: 'Build SHV RPC demo applications.',
 )

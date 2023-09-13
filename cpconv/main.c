@@ -69,7 +69,7 @@ int main(int argc, char **argv) {
 			res = chainpack_unpack(in, &item);
 		res > 0;
 	})) {
-		if (item.type == CP_ITEM_INVALID)
+		if (item.type == CPITEM_INVALID)
 			break;
 		ssize_t res;
 		if (conf.op == OP_PACK)

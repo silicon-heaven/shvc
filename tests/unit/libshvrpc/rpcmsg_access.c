@@ -87,9 +87,9 @@ TEST(all, acc_unpack_fully) {
 	cp_unpack_t unpack = unpack_cpon(str);
 	struct cpitem item = (struct cpitem){};
 	cp_unpack(unpack, &item);
-	ck_assert_item_type(item, CP_ITEM_LIST);
+	ck_assert_item_type(item, CPITEM_LIST);
 	ck_assert_int_eq(rpcmsg_access_unpack(unpack, &item), RPCMSG_ACC_BROWSE);
 	cp_unpack(unpack, &item);
-	ck_assert_item_type(item, CP_ITEM_CONTAINER_END);
+	ck_assert_item_type(item, CPITEM_CONTAINER_END);
 	unpack_free(unpack);
 }

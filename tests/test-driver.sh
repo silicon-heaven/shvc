@@ -15,6 +15,7 @@ default_valgrind_args+=('--show-error-list=yes')
 default_valgrind_args+=('--track-fds=yes')
 default_valgrind_args+=('--trace-children=yes')
 default_valgrind_args+=('--child-silent-after-fork=no')
+default_valgrind_args+=('--trace-children-skip=*/pyshvbroker')
 
 case "${VALGRIND:-}" in
 memcheck)

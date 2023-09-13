@@ -1,5 +1,7 @@
 #include <shv/cp.h>
 #include <shv/chainpack.h>
+#include <stdlib.h>
+#include "common.h"
 
 #ifndef __BYTE_ORDER__
 #error We use __BYTE_ORDER__ macro and we need it to be defined
@@ -10,7 +12,7 @@
 	do { \
 		uint8_t __v = (V); \
 		if (f && fputc(__v, f) != __v) \
-			return -1; \
+			return 0; \
 		res++; \
 	} while (false)
 #define WRITE(V, SIZ) \
@@ -18,35 +20,36 @@
 		size_t __siz = SIZ; \
 		if (f) { \
 			if (fwrite((V), 1, __siz, f) != __siz) \
-				return -1; \
+				return 0; \
 		} \
 		res += __siz; \
 	} while (false)
 #define CALL(FUNC, ...) \
 	do { \
 		ssize_t __cnt = FUNC(f, __VA_ARGS__); \
-		if (__cnt < 0) \
-			return -1; \
+		if (__cnt == 0) \
+			return 0; \
 		res += __cnt; \
 	} while (false)
 
 
-static ssize_t chainpack_pack_int(FILE *f, int64_t v);
+static size_t chainpack_pack_int(FILE *f, long long v);
+static size_t chainpack_pack_uint(FILE *f, unsigned long long v);
 
 
-ssize_t chainpack_pack(FILE *f, const struct cpitem *item) {
-	ssize_t res = 0;
+size_t chainpack_pack(FILE *f, const struct cpitem *item) {
+	size_t res = 0;
+	if (common_pack(&res, f, item))
+		return res;
 
 	switch (item->type) {
-		/* We pack invalid as NULL to ensure that we pack at least somethuing */
-		case CP_ITEM_INVALID:
-		case CP_ITEM_NULL:
+		case CPITEM_NULL:
 			PUTC(CPS_Null);
 			break;
-		case CP_ITEM_BOOL:
+		case CPITEM_BOOL:
 			PUTC(item->as.Bool ? CPS_TRUE : CPS_FALSE);
 			break;
-		case CP_ITEM_INT:
+		case CPITEM_INT:
 			if (item->as.Int >= 0 && item->as.Int < 64)
 				PUTC((item->as.Int % 64) + 64);
 			else {
@@ -54,15 +57,15 @@ ssize_t chainpack_pack(FILE *f, const struct cpitem *item) {
 				CALL(chainpack_pack_int, item->as.Int);
 			}
 			break;
-		case CP_ITEM_UINT:
+		case CPITEM_UINT:
 			if (item->as.UInt < 64)
 				PUTC(item->as.Int % 64);
 			else {
 				PUTC(CPS_UInt);
-				CALL(_chainpack_pack_uint, item->as.UInt);
+				CALL(chainpack_pack_uint, item->as.UInt);
 			}
 			break;
-		case CP_ITEM_DOUBLE:
+		case CPITEM_DOUBLE:
 			PUTC(CPS_Double);
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 			const uint8_t *_b = (const uint8_t *)&item->as.Double;
@@ -72,37 +75,37 @@ ssize_t chainpack_pack(FILE *f, const struct cpitem *item) {
 			WRITE((uint8_t *)&item->as.Double, sizeof(double));
 #endif
 			break;
-		case CP_ITEM_DECIMAL:
+		case CPITEM_DECIMAL:
 			PUTC(CPS_Decimal);
 			CALL(chainpack_pack_int, item->as.Decimal.mantisa);
 			CALL(chainpack_pack_int, item->as.Decimal.exponent);
 			break;
-		case CP_ITEM_BLOB:
+		case CPITEM_BLOB:
 			if (item->as.Blob.flags & CPBI_F_FIRST) {
 				if (item->as.Blob.flags & CPBI_F_STREAM) {
 					PUTC(CPS_BlobChain);
 				} else {
 					PUTC(CPS_Blob);
-					CALL(_chainpack_pack_uint,
+					CALL(chainpack_pack_uint,
 						item->as.Blob.len + item->as.Blob.eoff);
 				}
 			}
 			if (item->as.Blob.len) {
 				if (item->as.Blob.flags & CPBI_F_STREAM)
-					CALL(_chainpack_pack_uint, item->as.Blob.len);
+					CALL(chainpack_pack_uint, item->as.Blob.len);
 				WRITE(item->rbuf, item->as.Blob.len);
 			}
 			if (item->as.Blob.flags & CPBI_F_STREAM &&
 				item->as.Blob.flags & CPBI_F_LAST)
 				PUTC(0);
 			break;
-		case CP_ITEM_STRING:
+		case CPITEM_STRING:
 			if (item->as.String.flags & CPBI_F_FIRST) {
 				if (item->as.String.flags & CPBI_F_STREAM)
 					PUTC(CPS_CString);
 				else {
 					PUTC(CPS_String);
-					CALL(_chainpack_pack_uint,
+					CALL(chainpack_pack_uint,
 						(int64_t)item->as.String.len + item->as.String.eoff);
 				}
 			}
@@ -111,7 +114,7 @@ ssize_t chainpack_pack(FILE *f, const struct cpitem *item) {
 				item->as.Blob.flags & CPBI_F_LAST)
 				PUTC('\0');
 			break;
-		case CP_ITEM_DATETIME:
+		case CPITEM_DATETIME:
 			PUTC(CPS_DateTime);
 			/* Some arguable optimizations when msec == 0 or TZ_offset == a this
 			 * can save byte in packed date-time, but packing scheme is more
@@ -133,26 +136,29 @@ ssize_t chainpack_pack(FILE *f, const struct cpitem *item) {
 				msecs |= 2;
 			CALL(chainpack_pack_int, msecs);
 			break;
-		case CP_ITEM_LIST:
+		case CPITEM_LIST:
 			PUTC(CPS_List);
 			break;
-		case CP_ITEM_MAP:
+		case CPITEM_MAP:
 			PUTC(CPS_Map);
 			break;
-		case CP_ITEM_IMAP:
+		case CPITEM_IMAP:
 			PUTC(CPS_IMap);
 			break;
-		case CP_ITEM_META:
+		case CPITEM_META:
 			PUTC(CPS_MetaMap);
 			break;
-		case CP_ITEM_CONTAINER_END:
+		case CPITEM_CONTAINER_END:
 			PUTC(CPS_TERM);
+			break;
+		default:
+			abort(); /* anything else should be handled in common_pack */
 			break;
 	}
 	return res;
 }
 
-ssize_t _chainpack_pack_uint(FILE *f, unsigned long long v) {
+static size_t chainpack_pack_uint(FILE *f, unsigned long long v) {
 	ssize_t res = 0;
 	unsigned bytes = chainpack_w_uint_bytes(v);
 	uint8_t buf[bytes];
@@ -163,7 +169,7 @@ ssize_t _chainpack_pack_uint(FILE *f, unsigned long long v) {
 	return res;
 }
 
-static ssize_t chainpack_pack_int(FILE *f, int64_t v) {
+static size_t chainpack_pack_int(FILE *f, long long v) {
 	ssize_t res = 0;
 	unsigned bytes = chainpack_w_int_bytes(v);
 	uint8_t buf[bytes];

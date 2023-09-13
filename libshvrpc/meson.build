@@ -1,19 +1,24 @@
 libshvrpc_sources = [
   files(
-    'rpcclient.c',
+    'rpcclient_connect.c',
     'rpcclient_datagram.c',
+    'rpcclient_log.c',
+    'rpcclient_login.c',
     'rpcclient_serial.c',
     'rpcclient_stream.c',
+    'rpchandler.c',
     'rpcmsg_access.c',
-    'rpcmsg_meta.c',
+    'rpcmsg_head.c',
     'rpcmsg_pack.c',
+    'rpcrespond.c',
+    'rpctoplevel.c',
     'rpcurl.c',
   ),
   gperf.process('rpcmsg_access.gperf'),
   gperf.process('rpcurl_query.gperf'),
   gperf.process('rpcurl_scheme.gperf'),
 ]
-libshvrpc_dependencies = [libshvchainpack_dep, uriparser]
+libshvrpc_dependencies = [libshvchainpack_dep, openssl, uriparser]
 
 libshvrpc = library(
   'shvrpc',
