@@ -11,7 +11,7 @@ libshvbroker = library(
   ),
   install: not meson.is_subproject(),
 )
-install_headers(libshvbroker_headers)
+install_headers(libshvbroker_headers, preserve_path: true)
 
 libshvbroker_dep = declare_dependency(
   include_directories: includes,

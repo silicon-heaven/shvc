@@ -24,7 +24,7 @@ libshvchainpack = library(
   ),
   install: not meson.is_subproject(),
 )
-install_headers(libshvchainpack_headers)
+install_headers(libshvchainpack_headers, preserve_path: true)
 
 libshvchainpack_dep = declare_dependency(
   dependencies: libshvchainpack_dependencies,

@@ -32,7 +32,7 @@ libshvrpc = library(
   ),
   install: not meson.is_subproject(),
 )
-install_headers(libshvrpc_headers)
+install_headers(libshvrpc_headers, preserve_path: true)
 
 libshvrpc_dep = declare_dependency(
   dependencies: libshvrpc_dependencies,
