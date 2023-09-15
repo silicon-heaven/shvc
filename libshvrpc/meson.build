@@ -42,4 +42,8 @@ libshvrpc_dep = declare_dependency(
 
 
 pkg_mod = import('pkgconfig')
-pkg_mod.generate(libshvrpc, description: 'Silicon Heaven RPC')
+pkg_mod.generate(
+  libshvrpc,
+  libraries: [libshvchainpack],
+  description: 'Silicon Heaven RPC',
+)
