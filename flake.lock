@@ -150,16 +150,15 @@
         "shvapp": "shvapp"
       },
       "locked": {
-        "lastModified": 1692968432,
-        "narHash": "sha256-WLpSNxzbH5W2eqHz+wdljFJERM+b5M49b5/e+o85agM=",
-        "ref": "urltweak",
-        "rev": "d208f1a53090fc4e46cb229ba61ede5a0dea12dd",
-        "revCount": 95,
+        "lastModified": 1694672975,
+        "narHash": "sha256-itjeksAIk2faG+UDJ0jB/Q2LiA1FHKXrGDlGTHpoOis=",
+        "ref": "refs/heads/master",
+        "rev": "5a4961a735cc02f11388b3f149fd43b3523545bd",
+        "revCount": 98,
         "type": "git",
         "url": "https://gitlab.com/elektroline-predator/pyshv.git"
       },
       "original": {
-        "ref": "urltweak",
         "type": "git",
         "url": "https://gitlab.com/elektroline-predator/pyshv.git"
       }
