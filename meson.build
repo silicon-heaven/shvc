@@ -10,8 +10,9 @@ cc = meson.get_compiler('c')
 isnuttx = cc.get_define('__NuttX__') != '' # Won't be defined outside NuttX
 fs = import('fs')
 
-
-add_project_arguments('-D_GNU_SOURCE', language: 'c')
+if not isnuttx
+  add_project_arguments('-D_GNU_SOURCE', language: 'c')
+endif
 add_project_arguments('-DPROJECT_VERSION="@0@"'.format(meson.project_version()), language: 'c')
 
 
