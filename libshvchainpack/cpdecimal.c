@@ -1,7 +1,18 @@
 #include <shv/cp.h>
 #include <math.h>
 
-double cpdectod(struct cpdecimal v) {
+void cpdecnorm(struct cpdecimal *v) {
+	if (v->mantisa == 0) {
+		v->exponent = 0;
+		return;
+	}
+	while (v->mantisa % 10 == 0) {
+		v->mantisa /= 10;
+		v->exponent++;
+	}
+}
+
+double cpdectod(const struct cpdecimal v) {
 	double res = v.mantisa;
 	if (v.exponent >= 0) {
 		for (long i = 0; i < v.exponent; i++)

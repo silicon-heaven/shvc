@@ -147,12 +147,39 @@ struct cpdecimal {
 	int exponent;
 };
 
+/*! Normalize decimal number.
+ *
+ * The normal format for decimal number is where mantisa is as small as possible
+ * without loosing precission. In other words unless mantisa is a zero the
+ * residue after division 10 must be non-zero.
+ *
+ * @param v: Decimal number to be normalized.
+ */
+void cpdecnorm(struct cpdecimal *v) __attribute__((nonnull));
+
+/*! Compare two decimal numbers.
+ *
+ * The input must be normalized, otherwise assert is tripped.
+ *
+ * @returns a positive number if ``A`` is greater than ``B``, a negative number
+ *   ``A`` is less than ``B`` and zero if ``A`` is equal to ``B``.
+ */
+#define cpdeccmp(A, B) \
+	({ \
+		assert(A->mantisa % 10 || A->mantisa == 0); \
+		assert(B->mantisa % 10 || B->mantisa == 0); \
+		long long res = A->exponent - B->exponment; \
+		if (res == 0) \
+			res = A->mantisa - B->mantisa; \
+		res; \
+	})
+
 /*! Convert decimal number to double precision floating point number.
  *
  * @param v: Decimal value to be converted
  * @returns Approximate floating point representation of the decimal number.
  */
-double cpdectod(struct cpdecimal v);
+double cpdectod(const struct cpdecimal v);
 
 /*! Convert double precision floating point number to decimal number.
  *
@@ -383,6 +410,8 @@ struct cpon_state {
 };
 
 /*! Pack next item to CPON data format.
+ *
+ * @returns Number of bytes read from @ref f.
  */
 size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item)
 	__attribute__((nonnull));

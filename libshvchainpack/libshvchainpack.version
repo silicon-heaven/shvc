@@ -2,6 +2,7 @@ V0.0 {
 	global:
 		# shv/cp.h
 		cpitem_type_str;
+		cpdecnorm;
 		cpdectod;
 		cpdtodec;
 		cpdttotm;

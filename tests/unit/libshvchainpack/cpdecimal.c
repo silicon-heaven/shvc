@@ -7,16 +7,33 @@
 TEST_CASE(all) {}
 
 static const struct {
+	struct cpdecimal val, norm;
+} decnorm_d[] = {
+	{{.mantisa = 1}, {.mantisa = 1}},
+	{{.mantisa = 100}, {.mantisa = 1, .exponent = 2}},
+	{{.mantisa = 100, .exponent = -7}, {.mantisa = 1, .exponent = -5}},
+	{{}, {}},
+	{{.exponent = 100}, {}},
+};
+ARRAY_TEST(all, decnorm) {
+	struct cpdecimal d = _d.val;
+	cpdecnorm(&d);
+	ck_assert_int_eq(d.mantisa, _d.norm.mantisa);
+	ck_assert_int_eq(d.exponent, _d.norm.exponent);
+}
+END_TEST
+
+static const struct {
 	double f;
 	struct cpdecimal d;
-} _d[] = {
+} dec_d[] = {
 	{0., (struct cpdecimal){}},
 	{1., (struct cpdecimal){.mantisa = 1}},
 	{-1., (struct cpdecimal){.mantisa = -1}},
 	{42.124, (struct cpdecimal){.mantisa = 42124, .exponent = -3}},
 };
 
-ARRAY_TEST(all, dectod, _d) {
+ARRAY_TEST(all, dectod, dec_d) {
 	ck_assert_double_eq_tol(cpdectod(_d.d), _d.f, 0.0000001);
 }
 END_TEST
