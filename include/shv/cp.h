@@ -233,7 +233,8 @@ enum cperror {
 	CPERR_INVALID,
 	/*! Data in stream had size outside of the value supported by SHVC.
 	 *
-	 * This applies to numeric as well as too long strings or blobs.
+	 * This applies to integers where SHVC for optimality chooses to use
+	 * sometimes int sometimes long long.
 	 */
 	CPERR_OVERFLOW,
 };

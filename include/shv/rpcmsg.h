@@ -48,8 +48,8 @@ size_t rpcmsg_pack_request(cp_pack_t pack, const char *path, const char *method,
 
 /*! Pack request message with no parameters.
  *
- * This provides an easy way to just pack message without arguments. It calls
- * `rpcmsg_pack_request` and packs additional `NULL` and `CONTAINER_END` to
+ * This provides an easy way to just pack message without arguments. It packs
+ * the same head as `rpcmsg_pack_request` plus additional `CONTAINER_END` to
  * complete the message. Such message can be immediately sent.
  *
  * @param pack: pack context the meta should be written to.
@@ -59,21 +59,8 @@ size_t rpcmsg_pack_request(cp_pack_t pack, const char *path, const char *method,
  * @param rid: request identifier. Thanks to this number you can associate
  * response with requests.
  */
-__attribute__((nonnull(1, 3))) static inline size_t rpcmsg_pack_request_void(
-	cp_pack_t pack, const char *path, const char *method, int rid) {
-	size_t res = 0;
-#define RES(V) \
-	({ \
-		size_t __res = V; \
-		res += __res; \
-		__res; \
-	})
-	if (RES(rpcmsg_pack_request(pack, path, method, rid)) &&
-		RES(cp_pack_null(pack)) && RES(cp_pack_container_end(pack)))
-		return res;
-#undef RES
-	return 0;
-}
+size_t rpcmsg_pack_request_void(cp_pack_t pack, const char *path,
+	const char *method, int rid) __attribute__((nonnull(1, 3)));
 
 /*! Pack signal message meta and open imap. The followup packed data are
  * signaled values. The message needs to be terminated with container end
@@ -275,6 +262,9 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 
 
 size_t rpcmsg_pack_response(cp_pack_t, const struct rpcmsg_meta *meta)
+	__attribute__((nonnull));
+
+size_t rpcmsg_pack_response_void(cp_pack_t, const struct rpcmsg_meta *meta)
 	__attribute__((nonnull));
 
 enum rpcmsg_error {

@@ -7,7 +7,7 @@
 #include <poll.h>
 #include <shv/rpcurl.h>
 #include <shv/rpcclient.h>
-#include <shv/rpctoplevel.h>
+#include <shv/rpcapp.h>
 #include "opts.h"
 #include "device_handler.h"
 
@@ -49,15 +49,17 @@ int main(int argc, char **argv) {
 	}
 	rpcurl_free(rpcurl);
 
-	rpctoplevel_t toplevel = rpctoplevel_new("demo-device", PROJECT_VERSION, true);
+	struct device_state *state = device_state_new();
 
-	struct demo_handler h = {.func = demo_device_handler_func};
-	const rpchandler_func *funcs[] = {
-		rpctoplevel_func(toplevel),
-		&h.func,
-		NULL,
-	};
-	rpchandler_t handler = rpchandler_new(client, funcs, NULL);
+	rpcapp_t app = rpcapp_new("demo-device", PROJECT_VERSION);
+
+	struct rpchandler_stage stages[4];
+	stages[0] = rpcapp_handler_stage(app);
+	stages[1] = (struct rpchandler_stage){
+		.funcs = &device_handler_funcs, .cookie = state};
+	stages[2] = (struct rpchandler_stage){};
+
+	rpchandler_t handler = rpchandler_new(client, stages, NULL);
 	assert(handler);
 
 	int res = 0;
@@ -67,7 +69,7 @@ int main(int argc, char **argv) {
 			&pfd, 1, rpcclient_maxsleep(client, RPC_DEFAULT_IDLE_TIME) * 1000);
 		if (pr == 0) {
 			cp_pack_t pack = rpchandler_msg_new(handler);
-			rpcmsg_pack_request_void(pack, ".broker/app", "ping", 0);
+			rpcmsg_pack_request_void(pack, ".app", "ping", 0);
 			rpchandler_msg_send(handler);
 		} else if (pr == -1 || pfd.revents & POLLERR) {
 			fprintf(stderr, "Poll error: %s\n", strerror(errno));
@@ -82,7 +84,8 @@ int main(int argc, char **argv) {
 	}
 
 	rpchandler_destroy(handler);
-	rpctoplevel_destroy(toplevel);
+	rpcapp_destroy(app);
+	device_state_free(state);
 	rpcclient_destroy(client);
 	rpcclient_logger_destroy(logger);
 	return res;

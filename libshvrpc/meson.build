@@ -1,5 +1,6 @@
 libshvrpc_sources = [
   files(
+    'rpcapp.c',
     'rpcclient_connect.c',
     'rpcclient_datagram.c',
     'rpcclient_log.c',
@@ -11,7 +12,6 @@ libshvrpc_sources = [
     'rpcmsg_head.c',
     'rpcmsg_pack.c',
     'rpcrespond.c',
-    'rpctoplevel.c',
     'rpcurl.c',
   ),
   gperf.process('rpcmsg_access.gperf'),

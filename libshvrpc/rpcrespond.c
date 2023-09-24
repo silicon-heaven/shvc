@@ -2,10 +2,9 @@
 #include <stdlib.h>
 
 struct rpcresponder {
-	rpchandler_func func;
 	struct rpcrespond {
 		int request_id;
-		rpcreceive_t receive;
+		struct rpcreceive *receive;
 		cp_unpack_t unpack;
 		struct cpitem *item;
 		const struct rpcmsg_meta *meta;
@@ -15,9 +14,9 @@ struct rpcresponder {
 	pthread_mutex_t lock;
 };
 
-static enum rpchandler_func_res func(void *ptr, rpcreceive_t receive,
-	cp_unpack_t unpack, struct cpitem *item, const struct rpcmsg_meta *meta) {
-	struct rpcresponder *resp = ptr;
+static enum rpchandler_func_res rpc_msg(
+	void *cookie, struct rpcreceive *receive, const struct rpcmsg_meta *meta) {
+	struct rpcresponder *resp = cookie;
 	if (meta->type != RPCMSG_T_RESPONSE && meta->type != RPCMSG_T_ERROR)
 		return RPCHFR_UNHANDLED;
 	enum rpchandler_func_res res = RPCHFR_HANDLED;
@@ -27,8 +26,6 @@ static enum rpchandler_func_res func(void *ptr, rpcreceive_t receive,
 	while (r) {
 		if (r->request_id == meta->request_id) {
 			r->receive = receive;
-			r->unpack = unpack;
-			r->item = item;
 			r->meta = meta;
 			sem_post(&r->sem);
 			sem_wait(&r->sem_complete);
@@ -48,9 +45,10 @@ static enum rpchandler_func_res func(void *ptr, rpcreceive_t receive,
 	return res;
 }
 
+static struct rpchandler_funcs rpc_funcs = {.msg = rpc_msg};
+
 rpcresponder_t rpcresponder_new(void) {
 	struct rpcresponder *res = malloc(sizeof *res);
-	res->func = func;
 	res->resp = NULL;
 	pthread_mutex_init(&res->lock, NULL);
 	return res;
@@ -67,8 +65,8 @@ void rpcresponder_destroy(rpcresponder_t resp) {
 	free(resp);
 }
 
-rpchandler_func *rpcresponder_func(rpcresponder_t responder) {
-	return &responder->func;
+struct rpchandler_stage rpcresponder_handler_stage(rpcresponder_t responder) {
+	return (struct rpchandler_stage){.funcs = &rpc_funcs, .cookie = responder};
 }
 
 
@@ -89,9 +87,10 @@ rpcrespond_t rpcrespond_expect(rpcresponder_t responder, int request_id) {
 	return res;
 }
 
-bool rpcrespond_waitfor(rpcrespond_t respond, cp_unpack_t *unpack,
-	struct cpitem **item, int timeout) {
+bool rpcrespond_waitfor(rpcrespond_t respond, struct rpcreceive **receive,
+	struct rpcmsg_meta **meta, int timeout) {
 	sem_wait(&respond->sem);
+	// TODO wait
 	return 1;
 }
 

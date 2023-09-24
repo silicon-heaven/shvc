@@ -20,8 +20,7 @@ static inline size_t meta_begin(cp_pack_t pack) {
 	return res;
 }
 
-
-size_t rpcmsg_pack_request(
+size_t _rpcmsg_pack_request(
 	cp_pack_t pack, const char *path, const char *method, int rid) {
 	size_t res = 0;
 	RES(meta_begin(pack));
@@ -36,7 +35,22 @@ size_t rpcmsg_pack_request(
 	RES(cp_pack_container_end(pack));
 
 	RES(cp_pack_imap_begin(pack));
+	return res;
+}
+
+size_t rpcmsg_pack_request(
+	cp_pack_t pack, const char *path, const char *method, int rid) {
+	size_t res = 0;
+	RES(_rpcmsg_pack_request(pack, path, method, rid));
 	RES(cp_pack_int(pack, RPCMSG_KEY_PARAMS));
+	return res;
+}
+
+size_t rpcmsg_pack_request_void(
+	cp_pack_t pack, const char *path, const char *method, int rid) {
+	size_t res = 0;
+	RES(_rpcmsg_pack_request(pack, path, method, rid));
+	RES(cp_pack_container_end(pack));
 	return res;
 }
 
@@ -85,6 +99,13 @@ size_t rpcmsg_pack_response(cp_pack_t pack, const struct rpcmsg_meta *meta) {
 	size_t res = 0;
 	RES(_pack_response(pack, meta));
 	RES(cp_pack_int(pack, RPCMSG_KEY_RESULT));
+	return res;
+}
+
+size_t rpcmsg_pack_response_void(cp_pack_t pack, const struct rpcmsg_meta *meta) {
+	size_t res = 0;
+	RES(_pack_response(pack, meta));
+	RES(cp_pack_container_end(pack));
 	return res;
 }
 

@@ -2,12 +2,14 @@ V0.0 {
 	global:
 		# shv/rpcmsg.h
 		rpcmsg_pack_request;
+		rpcmsg_pack_request_void;
 		rpcmsg_pack_signal;
 		rpcmsg_access_str;
 		rpcmsg_access_extract;
 		rpcmsg_access_unpack;
 		rpcmsg_head_unpack;
 		rpcmsg_pack_response;
+		rpcmsg_pack_response_void;
 		rpcmsg_pack_error;
 		rpcmsg_pack_ferror;
 		rpcmsg_pack_vferror;
@@ -43,11 +45,15 @@ V0.0 {
 		rpcreceive_response_new;
 		rpcreceive_response_send;
 		rpcreceive_response_drop;
+		rpchandler_ls_result;
+		rpchandler_ls_name;
+		rpchandler_dir_result;
+		rpchandler_dir_name;
 
-		# shv/rpctoplevel.h
-		rpctoplevel_new;
-		rpctoplevel_destroy;
-		rpctoplevel_func;
+		# shv/rpcapp.h
+		rpcapp_destroy;
+		rpcapp_new;
+		rpcapp_handler_stage;
 
 	local: *;
 };

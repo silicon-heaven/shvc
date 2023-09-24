@@ -3,12 +3,17 @@
 #include <shv/rpchandler.h>
 
 
-struct demo_handler {
-	rpchandler_func func;
+struct device_state {
+	struct track {
+		int *values;
+		size_t cnt;
+	} tracks[9];
 };
 
+extern const struct rpchandler_funcs device_handler_funcs;
 
-enum rpchandler_func_res demo_device_handler_func(void *ptr, rpcreceive_t receive,
-	cp_unpack_t unpack, struct cpitem *item, const struct rpcmsg_meta *meta);
+struct device_state *device_state_new(void);
+
+void device_state_free(struct device_state *state);
 
 #endif
