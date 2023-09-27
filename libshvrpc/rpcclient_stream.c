@@ -53,11 +53,10 @@ static ssize_t cookie_read(void *cookie, char *buf, size_t size) {
 	return i;
 }
 
-static size_t cp_unpack_stream(void *ptr, struct cpitem *item) {
+static void cp_unpack_stream(void *ptr, struct cpitem *item) {
 	struct rpcclient_stream *c = ptr - offsetof(struct rpcclient_stream, c.unpack);
-	size_t res = chainpack_unpack(c->rf, item);
+	chainpack_unpack(c->rf, item);
 	rpcclient_log_item(c->c.logger, item);
-	return res;
 }
 
 static ssize_t read_size(int fd) {
@@ -101,12 +100,12 @@ static bool msgfetch_stream(struct rpcclient *client, bool newmsg) {
 	return ok;
 }
 
-static size_t cp_pack_stream(void *ptr, const struct cpitem *item) {
+static bool cp_pack_stream(void *ptr, const struct cpitem *item) {
 	struct rpcclient_stream *c = ptr - offsetof(struct rpcclient_stream, c.pack);
 	if (ftell(c->fbuf) == 0)
 		rpcclient_log_lock(c->c.logger, false);
 	rpcclient_log_item(c->c.logger, item);
-	return chainpack_pack(c->fbuf, item);
+	return chainpack_pack(c->fbuf, item) > 0;
 }
 
 static bool write_size(int fd, size_t len) {

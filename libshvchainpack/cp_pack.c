@@ -1,9 +1,9 @@
 #include <shv/cp_pack.h>
 #include <stdlib.h>
 
-static size_t cp_pack_chainpack_func(void *ptr, const struct cpitem *item) {
+static bool cp_pack_chainpack_func(void *ptr, const struct cpitem *item) {
 	struct cp_pack_chainpack *p = ptr;
-	return chainpack_pack(p->f, item);
+	return chainpack_pack(p->f, item) > 0;
 }
 
 cp_pack_t cp_pack_chainpack_init(struct cp_pack_chainpack *pack, FILE *f) {
@@ -19,9 +19,9 @@ static void cpon_state_realloc(struct cpon_state *state) {
 	state->ctx = realloc(state->ctx, state->cnt * sizeof *state->ctx);
 }
 
-static size_t cp_pack_cpon_func(void *ptr, const struct cpitem *item) {
+static bool cp_pack_cpon_func(void *ptr, const struct cpitem *item) {
 	struct cp_pack_cpon *p = ptr;
-	return cpon_pack(p->f, &p->state, item);
+	return cpon_pack(p->f, &p->state, item) > 0;
 }
 
 cp_pack_t cp_pack_cpon_init(struct cp_pack_cpon *pack, FILE *f, const char *indent) {

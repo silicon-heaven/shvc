@@ -3,80 +3,72 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define RES(V) \
+#define G(V) \
 	do { \
-		size_t __res = V; \
-		if (__res == 0) \
-			return 0; \
-		res += __res; \
+		if (!(V)) \
+			return false; \
 	} while (false)
 
 
-static inline size_t meta_begin(cp_pack_t pack) {
-	size_t res = 0;
-	RES(cp_pack_meta_begin(pack));
-	RES(cp_pack_int(pack, RPCMSG_TAG_META_TYPE_ID));
-	RES(cp_pack_int(pack, 1));
-	return res;
+static inline bool meta_begin(cp_pack_t pack) {
+	G(cp_pack_meta_begin(pack));
+	G(cp_pack_int(pack, RPCMSG_TAG_META_TYPE_ID));
+	G(cp_pack_int(pack, 1));
+	return true;
 }
 
-size_t _rpcmsg_pack_request(
+bool _rpcmsg_pack_request(
 	cp_pack_t pack, const char *path, const char *method, int rid) {
-	size_t res = 0;
-	RES(meta_begin(pack));
-	RES(cp_pack_int(pack, RPCMSG_TAG_REQUEST_ID));
-	RES(cp_pack_int(pack, rid));
+	G(meta_begin(pack));
+	G(cp_pack_int(pack, RPCMSG_TAG_REQUEST_ID));
+	G(cp_pack_int(pack, rid));
 	if (path) {
-		RES(cp_pack_int(pack, RPCMSG_TAG_SHV_PATH));
-		RES(cp_pack_str(pack, path));
+		G(cp_pack_int(pack, RPCMSG_TAG_SHV_PATH));
+		G(cp_pack_str(pack, path));
 	}
-	RES(cp_pack_int(pack, RPCMSG_TAG_METHOD));
-	RES(cp_pack_str(pack, method));
-	RES(cp_pack_container_end(pack));
+	G(cp_pack_int(pack, RPCMSG_TAG_METHOD));
+	G(cp_pack_str(pack, method));
+	G(cp_pack_container_end(pack));
 
-	RES(cp_pack_imap_begin(pack));
-	return res;
+	G(cp_pack_imap_begin(pack));
+	return true;
 }
 
-size_t rpcmsg_pack_request(
+bool rpcmsg_pack_request(
 	cp_pack_t pack, const char *path, const char *method, int rid) {
-	size_t res = 0;
-	RES(_rpcmsg_pack_request(pack, path, method, rid));
-	RES(cp_pack_int(pack, RPCMSG_KEY_PARAMS));
-	return res;
+	G(_rpcmsg_pack_request(pack, path, method, rid));
+	G(cp_pack_int(pack, RPCMSG_KEY_PARAMS));
+	return true;
 }
 
-size_t rpcmsg_pack_request_void(
+bool rpcmsg_pack_request_void(
 	cp_pack_t pack, const char *path, const char *method, int rid) {
-	size_t res = 0;
-	RES(_rpcmsg_pack_request(pack, path, method, rid));
-	RES(cp_pack_container_end(pack));
-	return res;
+	G(_rpcmsg_pack_request(pack, path, method, rid));
+	G(cp_pack_container_end(pack));
+	return true;
 }
 
-size_t rpcmsg_pack_signal(cp_pack_t pack, const char *path, const char *method) {
-	size_t res = 0;
-	RES(meta_begin(pack));
-	RES(cp_pack_int(pack, RPCMSG_TAG_SHV_PATH));
+bool rpcmsg_pack_signal(cp_pack_t pack, const char *path, const char *method) {
+	G(meta_begin(pack));
+	G(cp_pack_int(pack, RPCMSG_TAG_SHV_PATH));
 	if (path) {
-		RES(cp_pack_str(pack, path));
-		RES(cp_pack_int(pack, RPCMSG_TAG_METHOD));
+		G(cp_pack_str(pack, path));
+		G(cp_pack_int(pack, RPCMSG_TAG_METHOD));
 	}
-	RES(cp_pack_str(pack, method));
-	RES(cp_pack_container_end(pack));
+	G(cp_pack_str(pack, method));
+	G(cp_pack_container_end(pack));
 
-	RES(cp_pack_imap_begin(pack));
-	RES(cp_pack_int(pack, RPCMSG_KEY_PARAMS));
-	return res;
+	G(cp_pack_imap_begin(pack));
+	G(cp_pack_int(pack, RPCMSG_KEY_PARAMS));
+	return true;
 }
 
-static size_t _pack_response(cp_pack_t pack, const struct rpcmsg_meta *meta) {
-	size_t res = 0;
-	RES(meta_begin(pack));
-	RES(cp_pack_int(pack, RPCMSG_TAG_REQUEST_ID));
-	RES(cp_pack_int(pack, meta->request_id));
+static bool _pack_response(cp_pack_t pack, const struct rpcmsg_meta *meta) {
+	G(meta_begin(pack));
+	G(cp_pack_int(pack, RPCMSG_TAG_REQUEST_ID));
+	G(cp_pack_int(pack, meta->request_id));
 	if (meta->cids.siz) {
-		RES(cp_pack_int(pack, RPCMSG_TAG_CALLER_IDS));
+		G(cp_pack_int(pack, RPCMSG_TAG_CALLER_IDS));
 		FILE *f = fmemopen(meta->cids.ptr, meta->cids.siz, "r");
 		uint8_t buf[BUFSIZ];
 		struct cpitem item = (struct cpitem){.buf = buf, .bufsiz = BUFSIZ};
@@ -85,55 +77,52 @@ static size_t _pack_response(cp_pack_t pack, const struct rpcmsg_meta *meta) {
 			assert(chainpack_unpack(f, &item) != -1);
 			if (item.type == CPITEM_INVALID)
 				break;
-			RES(cp_pack(pack, &item));
+			G(cp_pack(pack, &item));
 		}
 		fclose(f);
 	}
-	RES(cp_pack_container_end(pack));
+	G(cp_pack_container_end(pack));
 
-	RES(cp_pack_imap_begin(pack));
-	return res;
+	G(cp_pack_imap_begin(pack));
+	return true;
 }
 
-size_t rpcmsg_pack_response(cp_pack_t pack, const struct rpcmsg_meta *meta) {
-	size_t res = 0;
-	RES(_pack_response(pack, meta));
-	RES(cp_pack_int(pack, RPCMSG_KEY_RESULT));
-	return res;
+bool rpcmsg_pack_response(cp_pack_t pack, const struct rpcmsg_meta *meta) {
+	G(_pack_response(pack, meta));
+	G(cp_pack_int(pack, RPCMSG_KEY_RESULT));
+	return true;
 }
 
-size_t rpcmsg_pack_response_void(cp_pack_t pack, const struct rpcmsg_meta *meta) {
-	size_t res = 0;
-	RES(_pack_response(pack, meta));
-	RES(cp_pack_container_end(pack));
-	return res;
+bool rpcmsg_pack_response_void(cp_pack_t pack, const struct rpcmsg_meta *meta) {
+	G(_pack_response(pack, meta));
+	G(cp_pack_container_end(pack));
+	return true;
 }
 
-size_t rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
+bool rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
 	enum rpcmsg_error error, const char *msg) {
-	size_t res = 0;
-	RES(_pack_response(pack, meta));
-	RES(cp_pack_int(pack, RPCMSG_KEY_ERROR));
-	RES(cp_pack_imap_begin(pack));
-	RES(cp_pack_int(pack, RPCMSG_ERR_KEY_CODE));
-	RES(cp_pack_int(pack, error));
-	RES(cp_pack_int(pack, RPCMSG_ERR_KEY_MESSAGE));
-	RES(cp_pack_str(pack, msg));
-	RES(cp_pack_container_end(pack));
-	RES(cp_pack_container_end(pack));
-	return res;
+	G(_pack_response(pack, meta));
+	G(cp_pack_int(pack, RPCMSG_KEY_ERROR));
+	G(cp_pack_imap_begin(pack));
+	G(cp_pack_int(pack, RPCMSG_ERR_KEY_CODE));
+	G(cp_pack_int(pack, error));
+	G(cp_pack_int(pack, RPCMSG_ERR_KEY_MESSAGE));
+	G(cp_pack_str(pack, msg));
+	G(cp_pack_container_end(pack));
+	G(cp_pack_container_end(pack));
+	return true;
 }
 
-size_t rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
+bool rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
 	enum rpcmsg_error error, const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
-	size_t res = rpcmsg_pack_vferror(pack, meta, error, fmt, args);
+	bool res = rpcmsg_pack_vferror(pack, meta, error, fmt, args);
 	va_end(args);
 	return res;
 }
 
-size_t rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
+bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
 	enum rpcmsg_error error, const char *fmt, va_list args) {
 	va_list argsdup;
 	va_copy(argsdup, args);

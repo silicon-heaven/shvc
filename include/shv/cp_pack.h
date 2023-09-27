@@ -22,20 +22,19 @@
  * @param ptr: Pointer to the context information that is pointer to the @ref
  *   cp_pack_t.
  * @param item: Item to be packed.
- * @returns Number of bytes written. On error it returns value of zero. Note
- *   that some bytes might have been successfully written before error was
- *   detected. Number of written bytes in case of an error is irrelevant because
- *   packed data is invalid anyway. Be aware that some inputs might inevitably
- *   produce no output (strings and blobs that are not first or last and have
- *   zero length produce no output).
+ * @returns `true` in case packing was sucesfull and `false` otherwise. The
+ *   common way to diagnose such error is not provided. If we are talking about
+ *   bare ChainPack and CPON packers it is going to mean either stream error or
+ *   EOF. The generic meaning is that additional packing won't be possible when
+ *   `false` is returned.
  */
-typedef size_t (*cp_pack_func_t)(void *ptr, const struct cpitem *item);
+typedef bool (*cp_pack_func_t)(void *ptr, const struct cpitem *item);
 /*! Generic packer.
  *
  * This is pointer to the function pointer that implements packing. The function
  * is called by dereferencing this generic packer and the pointer to it is
  * passed to the function as the first argument. This double pointer provides
- * you a way to store any context info side by pointer to the unpack function.
+ * you a way to store any context info side by pointer to the pack function.
  *
  * To understand this you can look into the @ref cp_pack_chainpack and @ref
  * cp_pack_cpon definitions. They have @ref cp_pack_func_t as a first field and
@@ -105,14 +104,9 @@ cp_pack_t cp_pack_cpon_init(struct cp_pack_cpon *pack, FILE *f,
  *
  * The calling is described in @ref cp_pack_func_t.
  *
- * @param PACK: Generic packer to be used for unpacking.
+ * @param PACK: Generic packer to be used for packing.
  * @param ITEM: Item to be packed.
- * @returns Number of bytes written. On error it returns value of zero. Note
- *   that some bytes might have been successfully written before error was
- *   detected. Number of written bytes in case of an error is irrelevant because
- *   packed data is invalid anyway. Be aware that some inputs might inevitably
- *   produce no output (strings and blobs that are not first or last and have
- *   zero length produce no output).
+ * @returns Boolean signaling the pack success or failure.
  */
 #define cp_pack(PACK, ITEM) \
 	({ \
@@ -124,9 +118,9 @@ cp_pack_t cp_pack_cpon_init(struct cp_pack_cpon *pack, FILE *f,
 /*! Pack *Null* to the generic packer.
  *
  * @param pack: Generic packer.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_null(cp_pack_t pack) {
+static inline bool cp_pack_null(cp_pack_t pack) {
 	struct cpitem i;
 	i.type = CPITEM_NULL;
 	return cp_pack(pack, &i);
@@ -136,9 +130,9 @@ static inline size_t cp_pack_null(cp_pack_t pack) {
  *
  * @param pack: Generic packer.
  * @param v: Boolean value to be packed.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_bool(cp_pack_t pack, bool v) {
+static inline bool cp_pack_bool(cp_pack_t pack, bool v) {
 	struct cpitem i;
 	i.type = CPITEM_BOOL;
 	i.as.Bool = v;
@@ -149,9 +143,9 @@ static inline size_t cp_pack_bool(cp_pack_t pack, bool v) {
  *
  * @param pack: Generic packer.
  * @param v: Integer value to be packed.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_int(cp_pack_t pack, long long v) {
+static inline bool cp_pack_int(cp_pack_t pack, long long v) {
 	struct cpitem i;
 	i.type = CPITEM_INT;
 	i.as.Int = v;
@@ -162,9 +156,9 @@ static inline size_t cp_pack_int(cp_pack_t pack, long long v) {
  *
  * @param pack: Generic packer.
  * @param v: Uinsigned integer value to be packed.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_uint(cp_pack_t pack, unsigned long long v) {
+static inline bool cp_pack_uint(cp_pack_t pack, unsigned long long v) {
 	struct cpitem i;
 	i.type = CPITEM_UINT;
 	i.as.UInt = v;
@@ -175,9 +169,9 @@ static inline size_t cp_pack_uint(cp_pack_t pack, unsigned long long v) {
  *
  * @param pack: Generic packer.
  * @param v: Float point number value to be packed.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_double(cp_pack_t pack, double v) {
+static inline bool cp_pack_double(cp_pack_t pack, double v) {
 	struct cpitem i;
 	i.type = CPITEM_DOUBLE;
 	i.as.Double = v;
@@ -188,9 +182,9 @@ static inline size_t cp_pack_double(cp_pack_t pack, double v) {
  *
  * @param pack: Generic packer.
  * @param v: Decimal number value to be packed.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_decimal(cp_pack_t pack, struct cpdecimal v) {
+static inline bool cp_pack_decimal(cp_pack_t pack, struct cpdecimal v) {
 	struct cpitem i;
 	i.type = CPITEM_DECIMAL;
 	i.as.Decimal = v;
@@ -201,9 +195,9 @@ static inline size_t cp_pack_decimal(cp_pack_t pack, struct cpdecimal v) {
  *
  * @param pack: Generic packer.
  * @param v: Date and time value to be packed.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_datetime(cp_pack_t pack, struct cpdatetime v) {
+static inline bool cp_pack_datetime(cp_pack_t pack, struct cpdatetime v) {
 	struct cpitem i;
 	i.type = CPITEM_DATETIME;
 	i.as.Datetime = v;
@@ -215,9 +209,9 @@ static inline size_t cp_pack_datetime(cp_pack_t pack, struct cpdatetime v) {
  * @param pack: Generic packer.
  * @param buf: Buffer to be packed as a signle blob.
  * @param len: Size of the **buf** (valid number of bytes to be packed).
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_blob(cp_pack_t pack, const uint8_t *buf, size_t len) {
+static inline bool cp_pack_blob(cp_pack_t pack, const uint8_t *buf, size_t len) {
 	struct cpitem i;
 	i.type = CPITEM_BLOB;
 	i.rbuf = buf;
@@ -239,9 +233,9 @@ static inline size_t cp_pack_blob(cp_pack_t pack, const uint8_t *buf, size_t len
  * @param item: Item that needs to be used with subsequent @ref
  *   cp_pack_blob_data calls. The item doesn't have to be initialized.
  * @param siz: Number of bytes to be packed in total.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_blob_size(
+static inline bool cp_pack_blob_size(
 	cp_pack_t pack, struct cpitem *item, size_t siz) {
 	item->type = CPITEM_BLOB;
 	item->as.Blob = (struct cpbufinfo){
@@ -262,15 +256,15 @@ static inline size_t cp_pack_blob_size(
  * @param pack: Generic packer.
  * @param item: Item previously used with @ref cp_pack_blob_size.
  * @param buf: Buffer to the bytes to be packed to the blob.
- * @param siz: Size of the **buf** (valid number of bytes to be packed). It is
- *   discouraged to use here `0`, because that results in this function
- *   returining zero.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @param siz: Size of the **buf** (valid number of bytes to be packed).
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_blob_data(
+static inline bool cp_pack_blob_data(
 	cp_pack_t pack, struct cpitem *item, const uint8_t *buf, size_t siz) {
 	assert(item->type == CPITEM_BLOB);
 	assert(item->as.Blob.eoff >= siz);
+	if (siz == 0)
+		return true;
 	item->rbuf = buf;
 	item->as.Blob.len = siz;
 	item->as.Blob.eoff -= siz;
@@ -285,9 +279,9 @@ static inline size_t cp_pack_blob_data(
  * @param pack: Generic packer.
  * @param buf: Buffer containing characters to be packed as a signle string.
  * @param len: Size of the **buf** (valid number of characters to be packed).
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_string(cp_pack_t pack, const char *buf, size_t len) {
+static inline bool cp_pack_string(cp_pack_t pack, const char *buf, size_t len) {
 	struct cpitem i;
 	i.type = CPITEM_STRING;
 	i.rchr = buf;
@@ -303,9 +297,9 @@ static inline size_t cp_pack_string(cp_pack_t pack, const char *buf, size_t len)
  *
  * @param pack: Generic packer.
  * @param str: C-String (null terminated string) to be packed.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_str(cp_pack_t pack, const char *str) {
+static inline bool cp_pack_str(cp_pack_t pack, const char *str) {
 	return cp_pack_string(pack, str, strlen(str));
 }
 
@@ -314,9 +308,9 @@ static inline size_t cp_pack_str(cp_pack_t pack, const char *str) {
  * @param pack: Generic packer.
  * @param fmt: printf format string.
  * @param args: list of variadic arguments to be passed to the printf.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_vfstr(cp_pack_t pack, const char *fmt, va_list args) {
+static inline bool cp_pack_vfstr(cp_pack_t pack, const char *fmt, va_list args) {
 	va_list cargs;
 	va_copy(cargs, args);
 	int siz = vsnprintf(NULL, 0, fmt, cargs);
@@ -330,9 +324,9 @@ static inline size_t cp_pack_vfstr(cp_pack_t pack, const char *fmt, va_list args
  *
  * @param pack: Generic packer.
  * @param fmt: printf format string.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_fstr(cp_pack_t pack, const char *fmt, ...) {
+static inline bool cp_pack_fstr(cp_pack_t pack, const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
 	size_t res = cp_pack_vfstr(pack, fmt, args);
@@ -350,9 +344,9 @@ static inline size_t cp_pack_fstr(cp_pack_t pack, const char *fmt, ...) {
  * @param item: Item that needs to be used with subsequent @ref
  *   cp_pack_string_data calls. The item doesn't have to be initialized.
  * @param siz: Number of bytes to be packed in total.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_string_size(
+static inline bool cp_pack_string_size(
 	cp_pack_t pack, struct cpitem *item, size_t siz) {
 	item->type = CPITEM_STRING;
 	item->as.String = (struct cpbufinfo){
@@ -373,15 +367,15 @@ static inline size_t cp_pack_string_size(
  * @param pack: Generic packer.
  * @param item: Item previously used with @ref cp_pack_string_size.
  * @param buf: Buffer to the bytes to be packed to the string.
- * @param siz: Size of the **buf** (valid number of bytes to be packed). It is
- *   discouraged to use here `0`, because that results in this function
- *   returining zero.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @param siz: Size of the **buf** (valid number of bytes to be packed).
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_string_data(
+static inline bool cp_pack_string_data(
 	cp_pack_t pack, struct cpitem *item, const char *buf, size_t siz) {
 	assert(item->type == CPITEM_STRING);
 	assert(item->as.Blob.eoff >= siz);
+	if (siz == 0)
+		return true;
 	item->rchr = buf;
 	item->as.String.len = siz;
 	item->as.String.eoff -= siz;
@@ -397,9 +391,9 @@ static inline size_t cp_pack_string_data(
  * to terminate the it with @ref cp_pack_container_end.
  *
  * @param pack: Generic packer.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_list_begin(cp_pack_t pack) {
+static inline bool cp_pack_list_begin(cp_pack_t pack) {
 	struct cpitem i;
 	i.type = CPITEM_LIST;
 	return cp_pack(pack, &i);
@@ -412,9 +406,9 @@ static inline size_t cp_pack_list_begin(cp_pack_t pack) {
  * cp_pack_container_end.
  *
  * @param pack: Generic packer.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_map_begin(cp_pack_t pack) {
+static inline bool cp_pack_map_begin(cp_pack_t pack) {
 	struct cpitem i;
 	i.type = CPITEM_MAP;
 	return cp_pack(pack, &i);
@@ -427,9 +421,9 @@ static inline size_t cp_pack_map_begin(cp_pack_t pack) {
  * cp_pack_container_end.
  *
  * @param pack: Generic packer.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_imap_begin(cp_pack_t pack) {
+static inline bool cp_pack_imap_begin(cp_pack_t pack) {
 	struct cpitem i;
 	i.type = CPITEM_IMAP;
 	return cp_pack(pack, &i);
@@ -442,9 +436,9 @@ static inline size_t cp_pack_imap_begin(cp_pack_t pack) {
  * with @ref cp_pack_container_end and follow it with item that meta is tied to.
  *
  * @param pack: Generic packer.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_meta_begin(cp_pack_t pack) {
+static inline bool cp_pack_meta_begin(cp_pack_t pack) {
 	struct cpitem i;
 	i.type = CPITEM_META;
 	return cp_pack(pack, &i);
@@ -456,9 +450,9 @@ static inline size_t cp_pack_meta_begin(cp_pack_t pack) {
  * cp_pack_map_begin, @ref cp_pack_imap_begin and @ref cp_pack_meta_begin.
  *
  * @param pack: Generic packer.
- * @returns Number of bytes written. See @ref cp_pack.
+ * @returns Boolean signaling the pack success or failure.
  */
-static inline size_t cp_pack_container_end(cp_pack_t pack) {
+static inline bool cp_pack_container_end(cp_pack_t pack) {
 	struct cpitem i;
 	i.type = CPITEM_CONTAINER_END;
 	return cp_pack(pack, &i);

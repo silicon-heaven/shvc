@@ -46,8 +46,8 @@ static bool repack(cp_unpack_t unpack, struct cpitem *item,
 	bool res = true;
 	unsigned depth = 0;
 	do {
-		cp_unpack(unpack, item);
-		if (item->type == CPITEM_INVALID || chainpack_pack(f, item) == -1) {
+		if (cp_unpack_type(unpack, item) == CPITEM_INVALID ||
+			chainpack_pack(f, item) == 0) {
 			/* Note: chainpack_pack Can fail only due to not enough space in the
 			 * buffer.
 			 */
@@ -86,7 +86,7 @@ static bool unpack_extra(cp_unpack_t unpack, struct cpitem *item,
 	struct rpcmsg_meta_extra **extra, struct obstack *obstack) {
 	while (*extra != NULL)
 		extra = &(*extra)->next;
-	*extra = malloc(sizeof **extra);
+	*extra = obstack_alloc(obstack, sizeof **extra);
 	(*extra)->key = item->as.Int;
 	(*extra)->next = NULL;
 	return repack(unpack, item, &(*extra)->ptr, -1, obstack);
@@ -96,8 +96,7 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 	struct rpcmsg_meta *meta, struct rpcmsg_meta_limits *limits,
 	struct obstack *obstack) {
 	meta->type = RPCMSG_T_INVALID;
-	cp_unpack(unpack, item);
-	if (item->type != CPITEM_META)
+	if (!cp_unpack(unpack, item))
 		return false;
 
 	meta->request_id = INT64_MIN;
@@ -128,7 +127,7 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 				break;
 			case RPCMSG_TAG_REQUEST_ID:
 				has_rid = true;
-				if (cp_unpack_int(unpack, item, meta->request_id) <= 0)
+				if (!cp_unpack_int(unpack, item, meta->request_id))
 					return false;
 				break;
 			case RPCMSG_TAG_SHV_PATH:
@@ -157,8 +156,8 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 	if (cp_unpack_type(unpack, item) != CPITEM_IMAP)
 		return false;
 	int key = -1;
-	cp_unpack(unpack, item);
-	if (item->type != CPITEM_CONTAINER_END && !cpitem_extract_int(item, key))
+	if (cp_unpack_type(unpack, item) != CPITEM_CONTAINER_END &&
+		!cpitem_extract_int(item, key))
 		return false;
 	if (has_rid) {
 		if (valid_method) {

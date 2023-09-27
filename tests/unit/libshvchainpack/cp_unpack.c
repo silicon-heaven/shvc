@@ -17,7 +17,7 @@ TEST(unpack, chainpack_unpack_null) {
 	struct bdata b = B(CPS_Null);
 	cp_unpack_t unpack = unpack_chainpack(&b);
 	struct cpitem item = (struct cpitem){};
-	ck_assert_uint_eq(cp_unpack(unpack, &item), 1);
+	cp_unpack(unpack, &item);
 	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
@@ -26,7 +26,7 @@ TEST(unpack, cpon_unpack_null) {
 	const char *str = "null";
 	cp_unpack_t unpack = unpack_cpon(str);
 	struct cpitem item = (struct cpitem){};
-	ck_assert_uint_eq(cp_unpack(unpack, &item), 4);
+	cp_unpack(unpack, &item);
 	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
@@ -39,11 +39,11 @@ TEST(unpack, cpon_unpack_ctx_realloc) {
 	struct cpitem item = (struct cpitem){};
 
 	for (int i = 0; i < 3; i++) {
-		ck_assert_uint_eq(cp_unpack(unpack, &item), 1);
+		cp_unpack(unpack, &item);
 		ck_assert_int_eq(item.type, CPITEM_LIST);
 	}
 	for (int i = 0; i < 3; i++) {
-		ck_assert_uint_eq(cp_unpack(unpack, &item), 1);
+		cp_unpack(unpack, &item);
 		ck_assert_int_eq(item.type, CPITEM_CONTAINER_END);
 	}
 

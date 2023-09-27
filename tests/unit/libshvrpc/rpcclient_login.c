@@ -54,6 +54,7 @@ TEST(all, invalid) {
 	ck_assert(!rpcclient_login(c, &opts, &msg));
 	ck_assert_str_eq(msg, "Invalid login");
 
+	free(msg);
 	rpcclient_destroy(c);
 }
 END_TEST

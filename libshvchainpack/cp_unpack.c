@@ -4,9 +4,9 @@
 #include <assert.h>
 #include <sys/param.h>
 
-static size_t cp_unpack_chainpack_func(void *ptr, struct cpitem *item) {
+static void cp_unpack_chainpack_func(void *ptr, struct cpitem *item) {
 	struct cp_unpack_chainpack *p = ptr;
-	return chainpack_unpack(p->f, item);
+	chainpack_unpack(p->f, item);
 }
 
 cp_unpack_t cp_unpack_chainpack_init(struct cp_unpack_chainpack *unpack, FILE *f) {
@@ -22,9 +22,9 @@ static void cpon_state_realloc(struct cpon_state *state) {
 	state->ctx = realloc(state->ctx, state->cnt * sizeof *state->ctx);
 }
 
-static size_t cp_unpack_cpon_func(void *ptr, struct cpitem *item) {
+static void cp_unpack_cpon_func(void *ptr, struct cpitem *item) {
 	struct cp_unpack_cpon *p = ptr;
-	return cpon_unpack(p->f, &p->state, item);
+	cpon_unpack(p->f, &p->state, item);
 }
 
 cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *unpack, FILE *f) {
@@ -41,27 +41,24 @@ cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *unpack, FILE *f) {
 	return &unpack->func;
 }
 
-size_t cp_unpack_drop(cp_unpack_t unpack, struct cpitem *item) {
-	size_t res = 0;
+void cp_unpack_drop(cp_unpack_t unpack, struct cpitem *item) {
 	item->buf = NULL;
 	item->bufsiz = SIZE_MAX;
 	while ((item->type == CPITEM_STRING || item->type == CPITEM_BLOB) &&
 		!(item->as.Blob.flags & CPBI_F_LAST))
-		res += cp_unpack(unpack, item);
+		cp_unpack(unpack, item);
 	item->bufsiz = 0;
-	return res;
 }
 
-size_t cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item) {
-	return cp_unpack_finish(unpack, item, 0);
+void cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item) {
+	cp_unpack_finish(unpack, item, 0);
 }
 
-size_t cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth) {
-	size_t res = 0;
+void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth) {
 	cp_unpack_drop(unpack, item);
 	item->bufsiz = SIZE_MAX;
 	do {
-		res += cp_unpack(unpack, item);
+		cp_unpack(unpack, item);
 		switch (item->type) {
 			case CPITEM_BLOB:
 			case CPITEM_STRING:
@@ -80,13 +77,13 @@ size_t cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth)
 				depth--;
 				break;
 			case CPITEM_INVALID:
-				return false;
+				item->bufsiz = 0;
+				return;
 			default:
 				break;
 		}
 	} while (depth);
 	item->bufsiz = 0;
-	return res;
 }
 
 static void *cp_unpack_dup(

@@ -39,12 +39,13 @@ enum rpcmsg_error_key {
  *
  * @param pack: pack context the meta should be written to.
  * @param path: SHV path to the node the method we want to request is associated
- * with.
+ *   with.
  * @param method: name of the method we request to call.
  * @param rid: request identifier. Thanks to this number you can associate
- * response with requests.
+ *   response with requests.
+ * @returns Boolean signaling the pack success or failure.
  */
-size_t rpcmsg_pack_request(cp_pack_t pack, const char *path, const char *method,
+bool rpcmsg_pack_request(cp_pack_t pack, const char *path, const char *method,
 	int rid) __attribute__((nonnull(1, 3)));
 
 /*! Pack request message with no parameters.
@@ -59,8 +60,9 @@ size_t rpcmsg_pack_request(cp_pack_t pack, const char *path, const char *method,
  * @param method: name of the method we request to call.
  * @param rid: request identifier. Thanks to this number you can associate
  * response with requests.
+ * @returns Boolean signaling the pack success or failure.
  */
-size_t rpcmsg_pack_request_void(cp_pack_t pack, const char *path,
+bool rpcmsg_pack_request_void(cp_pack_t pack, const char *path,
 	const char *method, int rid) __attribute__((nonnull(1, 3)));
 
 /*! Pack signal message meta and open imap. The followup packed data are
@@ -70,8 +72,9 @@ size_t rpcmsg_pack_request_void(cp_pack_t pack, const char *path,
  * @param pack: pack context the meta should be written to.
  * @param path: SHV path to the node method is associated with.
  * @param method: name of the method signal is raised for.
+ * @returns Boolean signaling the pack success or failure.
  */
-size_t rpcmsg_pack_signal(cp_pack_t pack, const char *path, const char *method)
+bool rpcmsg_pack_signal(cp_pack_t pack, const char *path, const char *method)
 	__attribute__((nonnull(1, 3)));
 
 /*! Pack value change signal message meta and open imap. The followup packed
@@ -83,8 +86,9 @@ size_t rpcmsg_pack_signal(cp_pack_t pack, const char *path, const char *method)
  *
  * @param pack: pack context the meta should be written to.
  * @param path: SHV path the value change signal is associated with.
+ * @returns Boolean signaling the pack success or failure.
  */
-__attribute__((nonnull(1))) static inline size_t rpcmsg_pack_chng(
+__attribute__((nonnull(1))) static inline bool rpcmsg_pack_chng(
 	cp_pack_t pack, const char *path) {
 	return rpcmsg_pack_signal(pack, path, "chng");
 }
@@ -264,10 +268,26 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 	struct obstack *obstack);
 
 
-size_t rpcmsg_pack_response(cp_pack_t, const struct rpcmsg_meta *meta)
+/*! Pack response message meta based on the provided meta.
+ *
+ * @param pack: Pack context the meta should be written to.
+ * @param meta: Meta with info for previously received request.
+ * @returns Boolean signaling the pack success or failure.
+ */
+bool rpcmsg_pack_response(cp_pack_t pack, const struct rpcmsg_meta *meta)
 	__attribute__((nonnull));
 
-size_t rpcmsg_pack_response_void(cp_pack_t, const struct rpcmsg_meta *meta)
+/*! Pack response message based on the provided meta without any value.
+ *
+ * This is helper to pack the complete message at once when response is *void*
+ * (only confirm without any real value returned). After this you can directly
+ * send the message.
+ *
+ * @param pack: Pack context the meta should be written to.
+ * @param meta: Meta with info for previously received request.
+ * @returns Boolean signaling the pack success or failure.
+ */
+bool rpcmsg_pack_response_void(cp_pack_t, const struct rpcmsg_meta *meta)
 	__attribute__((nonnull));
 
 enum rpcmsg_error {
@@ -284,13 +304,49 @@ enum rpcmsg_error {
 	RPCMSG_E_USER_CODE = 32,
 };
 
-size_t rpcmsg_pack_error(cp_pack_t, const struct rpcmsg_meta *meta,
+/*! Pack error response message based on the provided meta.
+ *
+ * This is helper to pack the whole error message at once. After this you can
+ * direcly send the message.
+ *
+ * @param pack: Pack context the meta should be written to.
+ * @param meta: Meta with info for previously received request.
+ * @param error: Error code to be reported as response to the request.
+ * @param msg: Optional message describing the error details.
+ * @returns Boolean signaling the pack success or failure.
+ */
+bool rpcmsg_pack_error(cp_pack_t, const struct rpcmsg_meta *meta,
 	enum rpcmsg_error error, const char *msg) __attribute__((nonnull(1, 2)));
 
-size_t rpcmsg_pack_ferror(cp_pack_t, const struct rpcmsg_meta *meta,
+/*! Pack error response message based on the provided meta.
+ *
+ * This is variant of @ref rpcmsg_pack_error that allows you to use printf
+ * format string to generate the error message. This function packs complete
+ * message and thus you can immediately send it.
+ *
+ * @param pack: Pack context the meta should be written to.
+ * @param meta: Meta with info for previously received request.
+ * @param error: Error code to be reported as response to the request.
+ * @param fmt: Format string used to generate the error message.
+ * @returns Boolean signaling the pack success or failure.
+ */
+bool rpcmsg_pack_ferror(cp_pack_t, const struct rpcmsg_meta *meta,
 	enum rpcmsg_error error, const char *fmt, ...) __attribute__((nonnull(1, 2)));
 
-size_t rpcmsg_pack_vferror(cp_pack_t, const struct rpcmsg_meta *meta,
+/*! Pack error response message based on the provided meta.
+ *
+ * This is variant of @ref rpcmsg_pack_error that allows you to use printf
+ * format string to generate the error message. This function packs complete
+ * message and thus you can immediately send it.
+ *
+ * @param pack: Pack context the meta should be written to.
+ * @param meta: Meta with info for previously received request.
+ * @param error: Error code to be reported as response to the request.
+ * @param fmt: Format string used to generate the error message.
+ * @param args: Variable list of arguments to be used with **fmt**.
+ * @returns Boolean signaling the pack success or failure.
+ */
+bool rpcmsg_pack_vferror(cp_pack_t, const struct rpcmsg_meta *meta,
 	enum rpcmsg_error error, const char *fmt, va_list args)
 	__attribute__((nonnull(1, 2)));
 

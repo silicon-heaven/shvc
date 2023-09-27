@@ -30,7 +30,7 @@ bool common_unpack(size_t *res, FILE *f, struct cpitem *item) {
 }
 
 bool common_pack(size_t *res, FILE *f, const struct cpitem *item) {
-	if (ferror(f)) /* No reason to write to file in error */
+	if (f && ferror(f)) /* No reason to write to file in error */
 		return true;
 	switch (item->type) {
 		case CPITEM_INVALID:

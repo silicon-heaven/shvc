@@ -21,9 +21,8 @@
  *   cp_unpack_t.
  * @param item: Item where info about the unpacked item and its value is placed
  *   to.
- * @returns Number of bytes read.
  */
-typedef size_t (*cp_unpack_func_t)(void *ptr, struct cpitem *item);
+typedef void (*cp_unpack_func_t)(void *ptr, struct cpitem *item);
 /*! Generic unpacker.
  *
  * This is pointer to the function pointer that implements unpacking. The
@@ -101,12 +100,15 @@ cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *pack, FILE *f)
  * @param UNPACK: Generic unpacker to be used for unpacking.
  * @param ITEM: Item where info about the unpacked item and its value is placed
  *   to.
- * @returns Number of bytes read.
+ * @returns Boolean signaling if unpack was successful (non-invalid item was
+ *   unpacked).
  */
 #define cp_unpack(UNPACK, ITEM) \
 	({ \
 		cp_unpack_t __unpack = UNPACK; \
-		(*__unpack)(__unpack, (ITEM)); \
+		struct cpitem *__item = ITEM; \
+		(*__unpack)(__unpack, __item); \
+		__item->type != CPITEM_INVALID; \
 	})
 
 /*! Unpack item with generic unpacker and provide its type.
@@ -138,9 +140,8 @@ cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *pack, FILE *f)
  * @param unpack: Unpack handle.
  * @param item: Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @returns number of read bytes.
  */
-size_t cp_unpack_drop(cp_unpack_t unpack, struct cpitem *item)
+void cp_unpack_drop(cp_unpack_t unpack, struct cpitem *item)
 	__attribute__((nonnull));
 
 /*! Instead of getting next item this skips it.
@@ -155,9 +156,8 @@ size_t cp_unpack_drop(cp_unpack_t unpack, struct cpitem *item)
  * @param unpack: Unpack handle.
  * @param item: Item used for the last `cp_unpack` call. This is required
  * because there might be unfinished string or blob we need to know about.
- * @returns number of read bytes.
  */
-size_t cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item)
+void cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item)
 	__attribute__((nonnull));
 
 /*! Read until the currently opened container is finished.
@@ -172,9 +172,8 @@ size_t cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item)
  * @param depth: How many containers we should finish. To finish one pass `1`.
  * To close two containers pass `2` and so on. The `0` provides the same
  * functionality as `cp_unpack_skip`.
- * @returns number of read bytes.
  */
-size_t cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth)
+void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth)
 	__attribute__((nonnull));
 
 
@@ -187,16 +186,14 @@ size_t cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth)
  *   to. You can use it to identify the real type or error in case of failure.
  * @param DEST: destination integer variable (not pointer, the variable
  *   directly).
- * @returns Number of read bytes or zero or negative number of read bytes in
- *   case of an error. The error can be either due to the unpack failure or due
- *   to number being too big to be stored in **DEST**. The real issue can be
- *   deduced from **ITEM**.
+ * @returns Boolean signaling if both unpack was successful and value fit the
+ *   destination. The real issue can be deduced from **ITEM**.
  */
 #define cp_unpack_int(UNPACK, ITEM, DEST) \
 	({ \
-		struct cpitem *__uitem = ITEM; \
-		ssize_t res = cp_unpack(UNPACK, __uitem); \
-		cpitem_extract_int(__uitem, DEST) ? res : -res; \
+		struct cpitem *___item = ITEM; \
+		cp_unpack(UNPACK, ___item); \
+		cpitem_extract_int(___item, DEST); \
 	})
 
 /*! Unpack unsigned integer and place it to the destination.
@@ -208,16 +205,14 @@ size_t cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth)
  *   to. You can use it to identify the real type or error in case of failure.
  * @param DEST: destination integer variable (not pointer, the variable
  *   directly).
- * @returns Number of read bytes or zero or negative number of read bytes in
- *   case of an error. The error can be either due to the unpack failure or due
- *   to number being too big to be stored in **DEST**. The real issue can be
- *   deduced from **ITEM**.
+ * @returns Boolean signaling if both unpack was successful and value fit the
+ *   destination. The real issue can be deduced from **ITEM**.
  */
 #define cp_unpack_uint(UNPACK, ITEM, DEST) \
 	({ \
-		struct cpitem *__uitem = ITEM; \
-		ssize_t res = cp_unpack(UNPACK, __uitem); \
-		cpitem_extract_uint(__uitem, DEST) ? res : -res; \
+		struct cpitem *___item = ITEM; \
+		cp_unpack(UNPACK, ___item); \
+		cpitem_extract_uint(___item, DEST); \
 	})
 
 /*! Unpack a single by from string.
@@ -432,9 +427,9 @@ __attribute__((nonnull(1, 2))) static inline ssize_t cp_unpack_memcpy(
  */
 #define for_cp_unpack_list(UNPACK, ITEM) \
 	while (({ \
-		struct cpitem *__item = ITEM; \
-		cp_unpack(UNPACK, __item); \
-		__item->type != CPITEM_INVALID && __item->type != CPITEM_CONTAINER_END; \
+		struct cpitem *___item = ITEM; \
+		cp_unpack(UNPACK, ___item); \
+		___item->type != CPITEM_INVALID && ___item->type != CPITEM_CONTAINER_END; \
 	}))
 
 /*! Helper macro for unpacking lists with items counter.
@@ -447,10 +442,10 @@ __attribute__((nonnull(1, 2))) static inline ssize_t cp_unpack_memcpy(
  */
 #define for_cp_unpack_ilist(UNPACK, ITEM, CNT) \
 	for (unsigned CNT = 0; ({ \
-			 struct cpitem *__item = ITEM; \
-			 cp_unpack(UNPACK, __item); \
-			 __item->type != CPITEM_INVALID && \
-				 __item->type != CPITEM_CONTAINER_END; \
+			 struct cpitem *___item = ITEM; \
+			 cp_unpack(UNPACK, ___item); \
+			 ___item->type != CPITEM_INVALID && \
+				 ___item->type != CPITEM_CONTAINER_END; \
 		 }); \
 		 CNT++)
 
@@ -465,18 +460,18 @@ __attribute__((nonnull(1, 2))) static inline ssize_t cp_unpack_memcpy(
  */
 #define for_cp_unpack_map(UNPACK, ITEM) \
 	while (({ \
-		struct cpitem *__item = ITEM; \
-		cp_unpack(UNPACK, __item); \
-		__item->type == CPITEM_STRING; \
+		struct cpitem *___item = ITEM; \
+		cp_unpack(UNPACK, ___item); \
+		___item->type == CPITEM_STRING; \
 	}))
 
 /*! Helper macro for unpacking integer maps.
  */
 #define for_cp_unpack_imap(UNPACK, ITEM) \
 	while (({ \
-		struct cpitem *__item = ITEM; \
-		cp_unpack(UNPACK, __item); \
-		__item->type == CPITEM_INT; \
+		struct cpitem *___item = ITEM; \
+		cp_unpack(UNPACK, ___item); \
+		___item->type == CPITEM_INT; \
 	}))
 
 /*! Open string or blob for reading using stream.
