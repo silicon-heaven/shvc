@@ -17,7 +17,6 @@ python = import('python')
 if not isnuttx
   add_project_arguments('-D_GNU_SOURCE', language: 'c')
 endif
-add_project_arguments('-fms-extensions', language: 'c')
 add_project_arguments('-DPROJECT_VERSION="@0@"'.format(meson.project_version()), language: 'c')
 
 

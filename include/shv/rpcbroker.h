@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef SHV_RPCBROKER_H
 #define SHV_RPCBROKER_H
 

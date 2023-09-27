@@ -13,11 +13,7 @@ V0.0 {
 		rpcmsg_pack_error;
 		rpcmsg_pack_ferror;
 		rpcmsg_pack_vferror;
-
-		# shv/rpcurl.h
-		rpcurl_parse;
-		rpcurl_free;
-		rpcurl_str;
+		rpcmsg_unpack_error;
 
 		# shv/rpcclient.h
 		rpcclient_connect;
@@ -31,6 +27,17 @@ V0.0 {
 		rpcclient_serial_connect;
 		rpcclient_logger_new;
 		rpcclient_logger_destroy;
+
+		# shv/rpcclient_impl.h
+		rpcclient_init;
+		rpcclient_log_lock;
+		rpcclient_log_item;
+		rpcclient_log_unlock;
+
+		# shv/rpcurl.h
+		rpcurl_parse;
+		rpcurl_free;
+		rpcurl_str;
 
 		# shv/rpchandler.h
 		rpchandler_destroy;
@@ -50,10 +57,18 @@ V0.0 {
 		rpchandler_dir_result;
 		rpchandler_dir_name;
 
-		# shv/rpcapp.h
-		rpcapp_destroy;
-		rpcapp_new;
-		rpcapp_handler_stage;
+		# shv/rpchandler_app.h
+		rpchandler_app_destroy;
+		rpchandler_app_new;
+		rpchandler_app_stage;
+
+		# shv/rpchandler_responses.h
+		rpchandler_responses_new;
+		rpchandler_responses_destroy;
+		rpchandler_responses_stage;
+		rpcresponse_expect;
+		rpcresponse_waitfor;
+		rpcresponse_validmsg;
 
 	local: *;
 };

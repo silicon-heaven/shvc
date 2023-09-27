@@ -1,5 +1,3 @@
-#include "check.h"
-#include "shv/cp.h"
 #include <shv/rpcmsg.h>
 #include <stdlib.h>
 #include <obstack.h>

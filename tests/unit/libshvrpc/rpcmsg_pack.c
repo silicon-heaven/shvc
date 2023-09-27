@@ -15,7 +15,7 @@ END_TEST
 
 TEST(all, request_void) {
 	rpcmsg_pack_request_void(packstream_pack, ".broker/app", "ping", 42);
-	ck_assert_packstr("<1:1,8:42,9:\".broker/app\",10:\"ping\">i{1:null}");
+	ck_assert_packstr("<1:1,8:42,9:\".broker/app\",10:\"ping\">i{}");
 }
 END_TEST
 

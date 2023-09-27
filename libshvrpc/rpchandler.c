@@ -1,4 +1,3 @@
-#include "shv/rpcmsg.h"
 #include <shv/rpchandler.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -6,6 +5,7 @@
 #include <obstack.h>
 #define obstack_chunk_alloc malloc
 #define obstack_chunk_free free
+#include "strset.h"
 
 struct rpchandler {
 	struct rpcreceive recv;
@@ -42,6 +42,7 @@ struct rpchandler_x_ctx {
 
 struct rpchandler_ls_ctx {
 	struct rpchandler_x_ctx x;
+	struct strset strset;
 };
 
 struct rpchandler_dir_ctx {
@@ -80,6 +81,7 @@ void rpchandler_destroy(rpchandler_t rpchandler) {
 static bool parse_ls_dir(struct rpcreceive *recv, struct rpcmsg_meta *meta,
 	struct rpchandler_x_ctx *ctx) {
 	ctx->name = NULL;
+	ctx->pack = NULL;
 	bool invalid_param = false;
 	if (recv->item.type != CPITEM_CONTAINER_END) {
 		cp_unpack(recv->unpack, &recv->item);
@@ -101,32 +103,43 @@ static bool parse_ls_dir(struct rpcreceive *recv, struct rpcmsg_meta *meta,
 	if (!rpcreceive_validmsg(recv))
 		return true;
 
-	ctx->pack = rpcreceive_response_new(recv);
+	cp_pack_t pack = rpcreceive_response_new(recv);
 	if (invalid_param) {
-		rpcmsg_pack_error(ctx->pack, meta, RPCMSG_E_INVALID_PARAMS,
+		rpcmsg_pack_error(pack, meta, RPCMSG_E_INVALID_PARAMS,
 			"Use Null or String with node name");
 		rpcreceive_response_send(recv);
 		return false;
-	}
+	} else
+		ctx->pack = pack;
 	return true;
 }
 
 static bool handle_ls(const struct rpchandler_stage *stages,
 	struct rpcreceive *recv, struct rpcmsg_meta *meta) {
 	struct rpchandler_ls_ctx ctx;
+	printf("Wtf\n");
 	if (!parse_ls_dir(recv, meta, &ctx.x))
 		return false;
+	if (ctx.x.pack == NULL)
+		return true;
 
 	ctx.x.located = false;
-	rpcmsg_pack_response(ctx.x.pack, meta);
-	if (ctx.x.name == NULL)
-		cp_pack_list_begin(ctx.x.pack);
+	ctx.strset = (struct strset){};
 	for (const struct rpchandler_stage *s = stages; s->funcs; s++)
 		if (s->funcs->ls)
 			s->funcs->ls(s->cookie, meta->path, &ctx);
-	if (ctx.x.name == NULL)
+	printf("Before response pack\n");
+	rpcmsg_pack_response(ctx.x.pack, meta);
+	printf("Before packing\n");
+	if (ctx.x.name == NULL) {
+		cp_pack_list_begin(ctx.x.pack);
+		for (size_t i = 0; i < ctx.strset.cnt; i++) {
+			printf("Packing %s\n", ctx.strset.items[i].str);
+			cp_pack_str(ctx.x.pack, ctx.strset.items[i].str);
+		}
 		cp_pack_container_end(ctx.x.pack);
-	else
+		shv_strset_free(&ctx.strset);
+	} else
 		cp_pack_bool(ctx.x.pack, ctx.x.located);
 	cp_pack_container_end(ctx.x.pack);
 	rpcreceive_response_send(recv);
@@ -281,15 +294,42 @@ bool rpcreceive_response_drop(struct rpcreceive *receive) {
 	return res;
 }
 
-bool rpchandler_ls_result(struct rpchandler_ls_ctx *ctx, const char *name) {
+void rpchandler_ls_result(struct rpchandler_ls_ctx *ctx, const char *name) {
+	printf("LS with %s\n", name);
 	if (ctx->x.name)
 		ctx->x.located = !strcmp(ctx->x.name, name);
 	else
-		cp_pack_str(ctx->x.pack, name);
-	// TODO error?
-	return true;
+		shv_strset_add(&ctx->strset, name);
+	printf("LS with %s done\n", name);
 }
 
+void rpchandler_ls_const(struct rpchandler_ls_ctx *ctx, const char *name) {
+	if (ctx->x.name)
+		ctx->x.located = !strcmp(ctx->x.name, name);
+	else
+		shv_strset_add_const(&ctx->strset, name);
+}
+
+void rpchandler_ls_result_vfmt(
+	struct rpchandler_ls_ctx *ctx, const char *fmt, va_list args) {
+	if (ctx->x.name) {
+		va_list cargs;
+		va_copy(cargs, args);
+		int siz = snprintf(NULL, 0, fmt, cargs);
+		va_end(cargs);
+		if (siz != strlen(ctx->x.name)) {
+			va_end(args);
+			return;
+		}
+		char str[siz];
+		assert(snprintf(str, siz, fmt, args) == siz);
+		ctx->x.located = !strcmp(ctx->x.name, str);
+	} else {
+		char *str;
+		assert(vasprintf(&str, fmt, args) > 0);
+		shv_strset_add_dyn(&ctx->strset, str);
+	}
+}
 
 bool rpchandler_dir_result(struct rpchandler_dir_ctx *ctx, const char *name,
 	enum rpcnode_dir_signature signature, int flags, enum rpcmsg_access access,

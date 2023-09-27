@@ -18,7 +18,7 @@ TEST(all, plain) {
 		.password = "admin!123",
 		.login_type = RPC_LOGIN_PLAIN,
 	};
-	ck_assert_int_eq(rpcclient_login(c, &opts), RPCCLIENT_LOGIN_OK);
+	ck_assert(rpcclient_login(c, &opts, NULL));
 
 	rpcclient_ping_test(c);
 
@@ -34,7 +34,7 @@ TEST(all, sha1) {
 		.password = "57a261a7bcb9e6cf1db80df501cdd89cee82957e",
 		.login_type = RPC_LOGIN_SHA1,
 	};
-	ck_assert_int_eq(rpcclient_login(c, &opts), RPCCLIENT_LOGIN_OK);
+	ck_assert(rpcclient_login(c, &opts, NULL));
 
 	rpcclient_ping_test(c);
 
@@ -50,7 +50,9 @@ TEST(all, invalid) {
 		.password = "invalid",
 		.login_type = RPC_LOGIN_PLAIN,
 	};
-	ck_assert_int_eq(rpcclient_login(c, &opts), RPCCLIENT_LOGIN_INVALID);
+	char *msg;
+	ck_assert(!rpcclient_login(c, &opts, &msg));
+	ck_assert_str_eq(msg, "Invalid login");
 
 	rpcclient_destroy(c);
 }

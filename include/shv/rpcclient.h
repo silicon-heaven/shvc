@@ -1,25 +1,37 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef SHV_RPCCLIENT_H
 #define SHV_RPCCLIENT_H
+/*! @file
+ * Handle managing a single connection for SHV RPC.
+ */
+
+#include <stdio.h>
 #include <stdbool.h>
-#include <shv/rpcclient_impl.h>
+#include <time.h>
 #include <shv/rpcurl.h>
+#include <shv/rpcclient_impl.h>
 
 /*! Number of seconds that is default idle time before brokers disconnect
  * clients for inactivity.
  */
 #define RPC_DEFAULT_IDLE_TIME 180
 
+/*! Handle used to manage SHV RPC client. */
 typedef struct rpcclient *rpcclient_t;
 
 
+/*! Establish a new connection based on the provided URL.
+ *
+ * This only estableshes the connection. You might need to perform login if you
+ * are connecting to the SHV Broker.
+ *
+ * @param url: RPC URL with connection info.
+ * @returns SHV RPC handle or `NULL` in case connection failed. Based on the
+ */
 rpcclient_t rpcclient_connect(const struct rpcurl *url);
 
-enum rpcclient_login_res {
-	RPCCLIENT_LOGIN_OK,
-	RPCCLIENT_LOGIN_INVALID,
-	RPCCLIENT_LOGIN_ERROR,
-} rpcclient_login(rpcclient_t client, const struct rpclogin_options *opts)
-	__attribute__((nonnull));
+bool rpcclient_login(rpcclient_t client, const struct rpclogin_options *opts,
+	char **errmsg) __attribute__((nonnull(1, 2)));
 
 
 rpcclient_t rpcclient_stream_new(int readfd, int writefd);
@@ -35,6 +47,8 @@ rpcclient_t rpcclient_serial_connect(const char *path);
 
 #define rpcclient_destroy(CLIENT) ((CLIENT)->disconnect(CLIENT))
 
+#define rpcclient_connected(CLIENT) ((CLIENT)->rfd != -1)
+
 #define rpcclient_nextmsg(CLIENT) ((CLIENT)->msgfetch(CLIENT, true))
 
 #define rpcclient_validmsg(CLIENT) ((CLIENT)->msgfetch(CLIENT, false))
@@ -46,6 +60,8 @@ rpcclient_t rpcclient_serial_connect(const char *path);
 #define rpcclient_sendmsg(CLIENT) ((CLIENT)->msgflush(CLIENT, true))
 
 #define rpcclient_dropmsg(CLIENT) ((CLIENT)->msgflush(CLIENT, false))
+
+#define rpcclient_pollfd(CLIENT) ((CLIENT)->rfd)
 
 #define rpcclient_logger(CLIENT) ((CLIENT)->logger)
 

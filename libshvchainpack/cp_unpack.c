@@ -103,10 +103,12 @@ static void *cp_unpack_dup(
 		cp_unpack(unpack, item);
 		if (item->type != (size ? CPITEM_BLOB : CPITEM_STRING)) {
 			free(res);
+			item->bufsiz = 0;
 			return NULL;
 		}
 		off += item->as.Blob.len;
 	} while (off < len && !(item->as.Blob.flags & CPBI_F_LAST));
+	item->bufsiz = 0;
 	if (size) {
 		*size = off;
 		return realloc(res, off);
@@ -165,6 +167,7 @@ static void *cp_unpack_dupo(cp_unpack_t unpack, struct cpitem *item,
 		}
 	} while (obstack_object_size(obstack) < len &&
 		!(item->as.Blob.flags & CPBI_F_LAST));
+	item->bufsiz = 0;
 	if (size)
 		*size = obstack_object_size(obstack) - zeropad;
 	else if (zeropad == 0)
@@ -192,12 +195,6 @@ void cp_unpack_memndupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
 	*buf = cp_unpack_dupo(unpack, item, siz, *siz, obstack);
 }
 
-int cp_unpack_expect_str(
-	cp_unpack_t unpack, struct cpitem *item, const char **strings) {
-	// TODO
-	return -2;
-}
-
 
 struct cookie {
 	cp_unpack_t unpack;
@@ -211,6 +208,7 @@ static ssize_t _read(void *cookie, char *buf, size_t size, bool blob) {
 	c->item->chr = buf;
 	c->item->bufsiz = size;
 	cp_unpack(c->unpack, c->item);
+	c->item->bufsiz = 0;
 	if (c->item->type != (blob ? CPITEM_BLOB : CPITEM_STRING))
 		return -1;
 	return c->item->as.String.len;

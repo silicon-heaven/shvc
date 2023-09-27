@@ -1,5 +1,4 @@
 #include "device_handler.h"
-#include "shv/rpchandler.h"
 #include <stdlib.h>
 
 
@@ -70,10 +69,8 @@ static enum rpchandler_func_res rpc_msg(
 						continue;
 					} else if (receive->item.type != CPITEM_CONTAINER_END) {
 						free(res);
-						printf("We got %d\n", receive->item.type);
 						invalid_param = true;
 					}
-					break;
 				} while (receive->item.type != CPITEM_CONTAINER_END);
 			} else
 				invalid_param = true;

@@ -1,5 +1,14 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef SHV_CHAINPACK_H
 #define SHV_CHAINPACK_H
+/*! @file
+ * The basic utilities for working with Chainpack data. This provides
+ * definitions and simple operations you need to unpack and pack data in
+ * Chainpack format. This is not a most user friendly way to work with
+ * Chainpack. It is suggester rather to use [packer and unpacker](./cp.md)
+ * instead.
+ **/
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <limits.h>
@@ -161,7 +170,7 @@ static inline int chainpack_int_value1(uint8_t c, unsigned bytes) {
  *
  * You can use this only with numbers from 0 to 63.
  *
- * @param c: Number to be packed.
+ * @param num: Number to be packed.
  * @returns Byte with packed number in the scheme byte.
  */
 static inline uint8_t chainpack_w_scheme_uint(unsigned num) {
@@ -172,7 +181,7 @@ static inline uint8_t chainpack_w_scheme_uint(unsigned num) {
  *
  * You can use this only with numbers from 0 to 63.
  *
- * @param c: Number to be packed.
+ * @param num: Number to be packed.
  * @returns byte with packed number in the scheme byte.
  */
 static inline uint8_t chainpack_w_scheme_int(int num) {
@@ -181,7 +190,7 @@ static inline uint8_t chainpack_w_scheme_int(int num) {
 
 /*! Deduce number of bytes needed to pack unsigned integer number.
  *
- * @param c: Number to be packed.
+ * @param num: Number to be packed.
  * @returns number of bytes needed to fit packed number.
  */
 static inline unsigned chainpack_w_uint_bytes(unsigned long long num) {
@@ -206,7 +215,7 @@ static inline unsigned chainpack_w_uint_bytes(unsigned long long num) {
 
 /*! Deduce number of bytes needed to pack signed integer number.
  *
- * @param c: Number to be packed.
+ * @param num: Number to be packed.
  * @returns number of bytes needed to fit packed number.
  */
 static inline unsigned chainpack_w_int_bytes(long long num) {

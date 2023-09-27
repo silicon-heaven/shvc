@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef SHV_RPCMSG_H
 #define SHV_RPCMSG_H
 
@@ -106,7 +107,7 @@ enum rpcmsg_access {
 /*! Convert access level to its string representation.
  *
  * @param access: Access level to be converted.
- * @retunrs Pointer to string constant representing the access level.
+ * @returns Pointer to string constant representing the access level.
  */
 const char *rpcmsg_access_str(enum rpcmsg_access access);
 
@@ -239,22 +240,24 @@ struct rpcmsg_meta_limits {
  * @param unpack: Unpack handle.
  * @param item: Item used for the `cp_unpack` calls and was used in the last
  * @param meta: Pointer to the structure where unpacked data will be placed. In
- * case of integers the value is directly stored. For strings and byte arrays
- * the data are stored on obstack, if provided, and meta contains pointers to
- * this data. If you do not provide `obstack` then pointers in the meta need to
- * point to valid buffers.
+ *   case of integers the value is directly stored. For strings and byte arrays
+ *   the data are stored on obstack, if provided, and meta contains pointers to
+ *   this data. If you do not provide `obstack` then pointers in the meta need
+ * to point to valid buffers.
  * @param limits: Optional pointer to the limits imposed on the meta attributes.
- * This is used for two purposes: It specifies size of the buffers if you do not
- * provide `obstack; It limits maximal length for data copied to the obstack.
- * Please see `struct rpcmsg_meta_limits` documentation for explanation.
+ *   This is used for two purposes: It specifies size of the buffers if you do
+ * not provide `obstack; It limits maximal length for data copied to the
+ * obstack. Please see `struct rpcmsg_meta_limits` documentation for
+ * explanation.
  * @param obstack: pointer to the obstack used to allocate space for received
- * strings and byte arrays. You can pass `NULL` but in such case you need to
- * provide your own buffers in `meta`.
+ *   strings and byte arrays. You can pass `NULL` but in such case you need to
+ *   provide your own buffers in `meta`.
  * @returns `false` in case unpack reports error, if meta contains invalid value
- * for supported key, or when there is not enough space to store caller IDs. In
- * other cases `true` is returned. In short this return primarily signals if it
- * is possible to generate response to this message for request messages and if
- * it is possible to parameters, response or error for other message types.
+ *   for supported key, or when there is not enough space to store caller IDs.
+ *   In other cases `true` is returned. In short this return primarily signals
+ *   if it is possible to generate response to this message for request messages
+ *   and if it is possible to parameters, response or error for other message
+ *   types.
  */
 bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 	struct rpcmsg_meta *meta, struct rpcmsg_meta_limits *limits,
@@ -290,5 +293,8 @@ size_t rpcmsg_pack_ferror(cp_pack_t, const struct rpcmsg_meta *meta,
 size_t rpcmsg_pack_vferror(cp_pack_t, const struct rpcmsg_meta *meta,
 	enum rpcmsg_error error, const char *fmt, va_list args)
 	__attribute__((nonnull(1, 2)));
+
+bool rpcmsg_unpack_error(cp_unpack_t unpack, struct cpitem *item,
+	enum rpcmsg_error *errnum, char **errmsg) __attribute__((nonnull(1, 2)));
 
 #endif

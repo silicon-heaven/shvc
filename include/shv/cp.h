@@ -1,5 +1,10 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef SHV_CP_H
 #define SHV_CP_H
+/*! @file
+ * Serialization and deserialization of ChainPack and CPON data formats
+ * implemented on top of `FILE` stream.
+ */
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -50,30 +55,27 @@ enum cpitem_type {
 	CPITEM_DATETIME,
 	/*! Blob is sequence of bytes.
 	 *
-	 * To receive them you need to provide @ref cpitem.cpitem_buf.buf. Unpacker
-	 * copies up to the @ref cpitem.bufsiz bytes to it and stores info about
-	 * that in @ref cpbufinfo "cpitem.as.Blob". You might need to call
-	 * unpacker multiple times to receive all bytes before you can unpack next
-	 * item.
+	 * To receive them you need to provide @ref cpitem.buf. Unpacker copies up
+	 * to the @ref cpitem.bufsiz bytes to it and stores info about that in @ref
+	 * cpbufinfo "cpitem.as.Blob". You might need to call unpacker multiple
+	 * times to receive all bytes before you can unpack next item.
 	 *
 	 * Packer does the opposite. When you are packing you need to point @ref
-	 * cpitem.cpitem_buf.rbuf to your data and set @ref cpbufinfo
-	 * "cpitem.as.Blob" appropriately. Do not forget to correctly manage @ref
-	 * cpbufinfo.flags and especially the @ref CPBI_F_FIRST and @ref CPBI_F_LAST
-	 * flags.
+	 * cpitem.rbuf to your data and set @ref cpbufinfo "cpitem.as.Blob"
+	 * appropriately. Do not forget to correctly manage @ref cpbufinfo.flags and
+	 * especially the @ref CPBI_F_FIRST and @ref CPBI_F_LAST flags.
 	 */
 	CPITEM_BLOB,
 	/*! Sequence of bytes that you should represent as a string.
 	 *
-	 * To receive them you need to provide @ref cpitem.cpitem_buf.chr. Unpacker
-	 * copies up to the @ref cpitem.bufsiz bytes to it and stores info about
-	 * that in @ref cpbufinfo "cpitem.as.String". You might need to call
-	 * unpacker multiple times to receive all bytes before you can unpack next
-	 * item.
+	 * To receive them you need to provide @ref cpitem.chr. Unpacker copies up
+	 * to the @ref cpitem.bufsiz bytes to it and stores info about that in @ref
+	 * cpbufinfo "cpitem.as.String". You might need to call unpacker multiple
+	 * times to receive all bytes before you can unpack next item.
 	 *
 	 * Packer does the opposite. When you are packing you need to point @ref
-	 * cpitem.cpitem_buf.rchr to your data and set @ref cpbufinfo
-	 * "cpitem.as.String" appropriately.
+	 * cpitem.rchr to your data and set @ref cpbufinfo "cpitem.as.String"
+	 * appropriately.
 	 */
 	CPITEM_STRING,
 	/*! Start of the list container. The followup items are part of this list up
@@ -114,14 +116,14 @@ enum cpitem_type {
 	 * inserted in the data) or it is just more efficient to copy data without
 	 * interpreting them. For that this special type is available.
 	 *
-	 * For unpacker you need to provide pointer to the writable buffer in
-	 * @ref cpitem.cpitem_buf.buf and unpacker will store up to @ref
-	 * cpitem.bufsiz bytes in it.  Number of valid bytes will be stored in
-	 * @ref cpbufinfo.len "cpitem.as.Blob.len".
+	 * For unpacker you need to provide pointer to the writable buffer in @ref
+	 * cpitem.buf and unpacker will store up to @ref cpitem.bufsiz bytes in it.
+	 * Number of valid bytes will be stored in @ref cpbufinfo.len
+	 * "cpitem.as.Blob.len".
 	 *
-	 * For packer you need to provide pointer to the data in @ref
-	 * cpitem.cpitem_buf.rbuf and packer will write @ref cpbufinfo.len
-	 * "cpitem.as.Blob.len" bytes without interpreting them.
+	 * For packer you need to provide pointer to the data in @ref cpitem.rbuf
+	 * and packer will write @ref cpbufinfo.len "cpitem.as.Blob.len" bytes
+	 * without interpreting them.
 	 */
 	CPITEM_RAW = 256,
 };
@@ -143,7 +145,9 @@ const char *cpitem_type_str(enum cpitem_type tp);
  * 10^32767 and estimation of number of atoms in the observeble universe 10^82).
  */
 struct cpdecimal {
+	/*! Mantisa in `mantisa * 10^exponent`. */
 	long long mantisa;
+	/*! Exponent in `mantisa * 10^exponent`. */
 	int exponent;
 };
 
@@ -258,15 +262,15 @@ enum cperror {
  * data as hex.
  */
 #define CPBI_F_HEX (1 << 3)
-/*! Combination of @ref CPBI_F_FIRST and CPBI_F_LAST. It is pretty common to use
- * these two together when you are packing short strings or blobs and thus they
- * are provided in this macro.
+/*! Combination of @ref CPBI_F_FIRST and @ref CPBI_F_LAST. It is pretty common
+ * to use these two together when you are packing short strings or blobs and
+ * thus they are provided in this macro.
  */
 #define CPBI_F_SINGLE (CPBI_F_FIRST | CPBI_F_LAST)
 
 /*! Info about data stored in the @ref cpitem buffer. */
 struct cpbufinfo {
-	/*! Number of valid bytes in @ref cpitem.cpitem_buf.
+	/*! Number of valid bytes in @ref cpitem.buf.
 	 *
 	 * The special case is when you invoke packer just to get packed size (that
 	 * is `FILE` is `NULL`). In such case buffer is not accessed and thus it can
@@ -300,8 +304,7 @@ struct cpbufinfo {
 struct cpitem {
 	/*! Type of the item. */
 	enum cpitem_type type;
-	/*! TODO
-	 */
+	/*! Union to access different representations based on the @ref type. */
 	union cpitem_as {
 		/*! Used to store value for @ref CPITEM_BOOL. */
 		bool Bool;
@@ -322,39 +325,54 @@ struct cpitem {
 		/*! Info about type of unpack error for @ref CPITEM_INVALID. */
 		enum cperror Error;
 	}
-	/*! Wtf */
-	as; // TODO possibly just use anonymous union
-	/*! Pointer to the buffer with data chunk.
-	 *
-	 * It is defined both as `const` as well as modifiable. The pack functions
-	 * use `buf` while unpack functions use `rbuf`. Be aware that this can
-	 * allow write to the buffer marked as `const` if you pass it to unpack
-	 * function.
-	 *
-	 * The `chr` and `rchr` are additionally provided just to allow easy
-	 * assignment of the strings without changing type (which would be required
-	 * due to change of the sign).
-	 *
-	 * The special case is when you set buffer to `NULL` while `bufsiz != 0`,
-	 * this discards up to `bufsiz` bytes instead of copying. This is used to
-	 * skip data.
+	/*! Access to the value for most of the types. The only types not handled
+	 * through this are @ref CPITEM_STRING and @ref CPITEM_BLOB.
 	 */
-	union cpitem_buf {
-		/*! Buffer used to store binary data when unpacking. */
+	as;
+	// @cond
+	union {
+		// @endcond
+		/*! Buffer used to store binary data when unpacking.
+		 *
+		 * The special case is when @ref bufsiz is nonzero while this is set to
+		 * `NULL`, in such situation the read bytes are discarded. The number of
+		 * discarded bytes is given by @ref bufsiz.
+		 *
+		 * This is aliased with @ref rbuf, @ref chr and @ref rchr with union!
+		 */
 		uint8_t *buf;
-		/*! Buffer used to receive binary data when packing. */
+		/*! Buffer used to pass binary data to packer.
+		 *
+		 * This is provided as an addition to the @ref buf for packing
+		 * operations to allow usage of constant buffers.
+		 *
+		 * This is aliased with @ref buf, @ref chr and @ref rchr with union!
+		 */
 		const uint8_t *rbuf;
-		/*! Buffer used to store string data when unpacking. */
+		/*! Buffer used to store string data when unpacking.
+		 *
+		 * This is provided as an addition to the @ref buf for unpacking
+		 * strings.
+		 *
+		 * This is aliased with @ref buf, @ref rbuf and @ref rchr with union!
+		 */
 		char *chr;
-		/*! Buffer used to receive string data when packing. */
+		/*! Buffer used to pass string data to packer.
+		 *
+		 * This is provided as an addition to the @ref rbuf for packing
+		 * operations to allow usage of constant buffers.
+		 *
+		 * This is aliased with @ref buf, @ref rbuf and @ref chr with union!
+		 */
 		const char *rchr;
 	};
-	/*! Size of the @ref cpitem_buf.buf (@ref cpitem_buf.rbuf, @ref
-	 * cpitem_buf.chr and @ref cpitem_buf.rchr). This is used only by unpacking
-	 * functions to know the limit of the buffer.
+	/*! Size of the @ref buf (@ref rbuf, @ref chr and @ref rchr). This is used
+	 * only by unpacking functions to know the limit of the buffer.
 	 *
 	 * It is common to set this to zero to receive type of the item and only
-	 * after that you would set the pointer to the buffer and its size.
+	 * after that you would set the pointer to the buffer and its size. Make
+	 * sure that you set it back to zero afterward to prevent access to the
+	 * pointer used previously here.
 	 */
 	size_t bufsiz;
 };
@@ -377,54 +395,189 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 	item->bufsiz = 0;
 }
 
+/*! Extract integer from the item and check if it fits to the destination.
+ *
+ * ChainPack and CPON support pretty large integer types. That is limited by
+ * platform to `long long` but in applications it is more common to use `int` or
+ * other types. By simple assignment the number can just be mangled to some
+ * invalid value if it is too big and thus this macro is provided to extract
+ * integer from item while it checks for the destination limits.
+ *
+ * @param ITEM: item from which integer is extract.
+ * @param DEST: destination integer variable (not pointer, the variable
+ *   directly).
+ * @returns `true` in case value was @ref CPITEM_INT and value fits to the
+ *   destination, otherwise `false` is returned. The destination is not modified
+ *   when `false` is returned.
+ */
+#define cpitem_extract_int(ITEM, DEST) \
+	({ \
+		struct cpitem *__item = ITEM; \
+		bool __valid = false; \
+		if (__item->type == CPITEM_INT) { \
+			if (sizeof(DEST) < sizeof(long long)) { \
+				long long __lim = 1LL << ((sizeof(DEST) * 8) - 1); \
+				__valid = __item->as.Int >= -__lim && __item->as.Int < __lim; \
+			} else \
+				__valid = true; \
+			(DEST) = __item->as.Int; \
+		} \
+		__valid; \
+	})
+
+/*! Extract unsigned integer from the item and check if it fits to the
+ * destination.
+ *
+ * This is variant of @ref cpitem_extract_int for unsigned integers. Please see
+ * documentation for @ref cpitem_extract_int for an explanation.
+ *
+ * @param ITEM: item from which unsigned integer is extract.
+ * @param DEST: destination unsigned integer variable (not pointer, the variable
+ *   directly).
+ * @returns `true` in case value was @ref CPITEM_UINT and value fits to the
+ *   destination, otherwise `false` is returned. The destination is not modified
+ *   when `false` is returned.
+ */
+#define cpitem_extract_uint(ITEM, DEST) \
+	({ \
+		struct cpitem *__item = ITEM; \
+		bool __valid = false; \
+		if (__item->type == CPITEM_UINT) { \
+			if (sizeof(DEST) < sizeof(unsigned long long)) { \
+				unsigned long long __lim = 1LL << ((sizeof(DEST) * 8) - 1); \
+				__valid = __item->as.Int < __lim; \
+			} else \
+				__valid = true; \
+			(DEST) = __item->as.Int; \
+		} \
+		__valid; \
+	})
+
 
 /*! Unpack item from ChainPack data format.
  *
- * @returns Number of bytes read from @ref f.
+ * @param f: File from which ChainPack bytes are read from.
+ * @param item: Item where info about the unpacked item and its value is placed
+ *   to.
+ * @returns Number of bytes read from **f**.
  */
 size_t chainpack_unpack(FILE *f, struct cpitem *item) __attribute__((nonnull));
 
 /*! Pack next item to ChainPack data format.
  *
- * @returns Number of bytes written to @ref f. On error it returns value of
- * zero. Note that some bytes might have been successfully written before error
- * was detected. Number of written bytes in case of an error is irrelevant
- * because packed data is invalid anyway. Be aware that some inputs might
- * inevitably produce no output (strings and blobs that are not first or last
- * and have zero length produce no output).
+ * @param f: File to which ChainPack bytes are written to. It can be `NULL` and
+ *   in such a case packer only calculates number of bytes item would take when
+ *   packed.
+ * @param item: Item to be packed.
+ * @returns Number of bytes written to **f**. On error it returns value of zero.
+ * Note that some bytes might have been successfully written before error was
+ * detected. Number of written bytes in case of an error is irrelevant because
+ * packed data is invalid anyway. Be aware that some inputs might inevitably
+ * produce no output (strings and blobs that are not first or last and have zero
+ * length produce no output).
  */
 size_t chainpack_pack(FILE *f, const struct cpitem *item)
 	__attribute__((nonnull(2)));
 
 
+/*! State for the CPON packer and unpacker.
+ *
+ * Compared to the ChainPack, CPON needs additional information because of these
+ * issues:
+ *
+ * * Containers are terminated with either `}` or `]` based on the type compared
+ * to the unified termination in ChainPack and CP API.
+ * * Map and IMap containers use item separators (`,` and `:`) where in
+ * ChainPack simple end of an item is the separator.
+ *
+ * Because of that CPON packer and unpacker needs to remember stack of
+ * containers as well as additional flags to decide on the separator to use.
+ */
 struct cpon_state {
-	const char *indent;
+	/*! Counter of opened containers. */
 	size_t depth;
+	/*! Container context. */
 	struct cpon_state_ctx {
+		/*! Container type */
 		enum cpitem_type tp;
+		/*! Flag signaling that there is not a single item in the container yet.
+		 */
 		bool first;
+		/*! Flag signaling that even number of items were packed to the
+		 * container. This decides if `,` or `:` should be used as separator.
+		 */
 		bool even;
+		/*! Flag signaling that previous item was meta and thus that next item
+		 * should not be separated by any separator.
+		 */
 		bool meta;
-	} * ctx;
+	}
+		/*! Array of container contexts. This array can be preallocated or it
+		 * can be dynamically allocated on demand by @ref cpon_state::realloc.
+		 */
+		* ctx;
+	/*! Size of container contexts array (@ref cpon_state.ctx).
+	 *
+	 * This is fixed size if @ref cpon_state.realloc is `NULL` or it has to be
+	 * modified by that function.
+	 */
 	size_t cnt;
+	/*! Pointer to the function that is called when there is not enough space to
+	 * store additional container context. This function needs to reallocate the
+	 * current array to increase its size or it can just do nothing but it can't
+	 * decrease the array size under the @ref depth. The new size needs to be
+	 * stored in @ref cnt.
+	 *
+	 * This field can be set to `NULL` and in such case the dynamic allocation
+	 * of container contexts won't be possible.
+	 */
 	void (*realloc)(struct cpon_state *state);
+	/*! Indent to be used for CPON packer. This is rather a packer configuration
+	 * but it is placed in the state because it makes it a convenient way to
+	 * pass it consistently to every @ref cpon_pack call.
+	 *
+	 * You can set it to `NULL` to pack CPON on a singe line.
+	 */
+	const char *indent;
 };
 
 /*! Pack next item to CPON data format.
  *
- * @returns Number of bytes read from @ref f.
+ * The unpacker is strict in CPON format but only if @ref cpon_state.cnt is
+ * more than @ref cpon_state.depth. In other words if unpacker can't remember
+ * context it will disregard difference between `:` and `,` as well as `}` and
+ * `]`.
+ *
+ * @param f: File from which CPON bytes are read from.
+ * @param state: CPON state (can't be shared with packer!) that preserves
+ *   context information between function calls.
+ * @param item: Item where info about the unpacked item and its value is placed
+ *   to.
+ * @returns Number of bytes read from **f**.
  */
 size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item)
 	__attribute__((nonnull));
 
 /*! Unpack next item from CPON data format.
  *
- * @returns Number of bytes written to @ref f. On error it returns value of
- * zero. Note that some bytes might have been successfully written before error
- * was detected. Number of written bytes in case of an error is irrelevant
- * because packed data is invalid anyway. Be aware that some inputs might
- * inevitably produce no output (strings and blobs that are not first or last
- * and have zero length produce no output).
+ * The packer can reliably pack only if @ref cpon_state.cnt is more than @ref
+ * cpon_state.depth. Any container that is beyond that limit is ignored and
+ * replaced by sequence `...` (invalid in CPON).
+ *
+ * @param f: File to which CPON bytes are written to. It can be `NULL` and in
+ *   such a case packer only calculates number of bytes item would take when
+ *   packed. Be aware that this operation updates CPON state and thus you can't
+ *   just simply call it with `NULL` and then call it with same item with
+ *   `FILE`.
+ * @param state: CPON state (can't be shared with unpacker!) that preserves
+ *   context information between function calls.
+ * @param item: Item to be packed.
+ * @returns Number of bytes written to **f**. On error it returns value of
+ *   zero. Note that some bytes might have been successfully written before
+ *   error was detected. Number of written bytes in case of an error is
+ *   irrelevant because packed data is invalid anyway. Be aware that some inputs
+ *   might inevitably produce no output (strings and blobs that are not first or
+ *   last and have zero length produce no output).
  */
 size_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item)
 	__attribute__((nonnull(2, 3)));

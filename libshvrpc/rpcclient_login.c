@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <string.h>
+#include <time.h>
 #include <obstack.h>
 #define obstack_chunk_alloc malloc
 #define obstack_chunk_free free
@@ -30,9 +31,11 @@ static void sha1_password(const char *nonce, const char *password, char *res) {
 }
 
 
-enum rpcclient_login_res rpcclient_login(
-	rpcclient_t client, const struct rpclogin_options *opts) {
-	enum rpcclient_login_res res = RPCCLIENT_LOGIN_ERROR;
+bool rpcclient_login(
+	rpcclient_t client, const struct rpclogin_options *opts, char **errmsg) {
+	bool res = false;
+	if (errmsg)
+		*errmsg = NULL;
 	struct obstack obs;
 	obstack_init(&obs);
 	void *obs_base = obstack_base(&obs);
@@ -54,8 +57,7 @@ enum rpcclient_login_res rpcclient_login(
 			meta.request_id == 1))
 		goto err;
 	obstack_free(&obs, obs_base);
-	// TODO unpack message beginning
-	if (!cp_unpack_expect_type(rpcclient_unpack(client), &item, CPITEM_MAP))
+	if (cp_unpack_type(rpcclient_unpack(client), &item) != CPITEM_MAP)
 		goto err;
 	for_cp_unpack_map(rpcclient_unpack(client), &item) {
 		char str[7];
@@ -120,18 +122,13 @@ enum rpcclient_login_res rpcclient_login(
 	/* Response to login */
 	if (!(rpcclient_nextmsg(client) &&
 			rpcmsg_head_unpack(rpcclient_unpack(client), &item, &meta, NULL, &obs) &&
-			meta.request_id == 2 && rpcclient_validmsg(client)))
+			meta.request_id == 2))
 		goto err;
-	switch (meta.type) {
-		case RPCMSG_T_RESPONSE:
-			res = RPCCLIENT_LOGIN_OK;
-			break;
-		case RPCMSG_T_ERROR:
-			res = RPCCLIENT_LOGIN_INVALID;
-			break;
-		default:
-			break;
-	}
+	if (errmsg && meta.type == RPCMSG_T_ERROR)
+		rpcmsg_unpack_error(rpcclient_unpack(client), &item, NULL, errmsg);
+	if (!rpcclient_validmsg(client))
+		goto err;
+	res = meta.type == RPCMSG_T_RESPONSE;
 err:
 	free(nonce);
 	obstack_free(&obs, NULL);

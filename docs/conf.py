@@ -44,8 +44,10 @@ files = [file.relative_to(includedir) for file in includedir.glob("**/*.h")]
 breathe_projects_source = {"public_api": ("../include", files)}
 breathe_default_project = "public_api"
 breathe_doxygen_config_options = {
-    "PREDEFINED": "__attribute__(...)=",
+    "PREDEFINED": "__attribute__(...)= restrict=",
     "MACRO_EXPANSION": "YES",
+    "EXPAND_ONLY_PREDEF": "YES",
+    "EXTRACT_STATIC": "YES",
 }
 
 

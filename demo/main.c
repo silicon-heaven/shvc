@@ -7,7 +7,7 @@
 #include <poll.h>
 #include <shv/rpcurl.h>
 #include <shv/rpcclient.h>
-#include <shv/rpcapp.h>
+#include <shv/rpchandler_app.h>
 #include "opts.h"
 #include "device_handler.h"
 
@@ -35,26 +35,26 @@ int main(int argc, char **argv) {
 		logger = rpcclient_logger_new(stderr, conf.verbose);
 		client->logger = logger;
 	}
-	switch (rpcclient_login(client, &rpcurl->login)) {
-		case RPCCLIENT_LOGIN_OK:
-			break;
-		case RPCCLIENT_LOGIN_INVALID:
+	char *loginerr;
+	if (!rpcclient_login(client, &rpcurl->login, &loginerr)) {
+		if (loginerr) {
 			fprintf(stderr, "Invalid login for connecting to the: %s\n", conf.url);
-			rpcclient_destroy(client);
-			rpcurl_free(rpcurl);
-			return 1;
-		case RPCCLIENT_LOGIN_ERROR:
+			fprintf(stderr, "%s\n", loginerr);
+		} else {
 			fprintf(stderr, "Communication error with server\n");
-			return 2;
+		}
+		rpcclient_destroy(client);
+		rpcurl_free(rpcurl);
+		return 1;
 	}
 	rpcurl_free(rpcurl);
 
 	struct device_state *state = device_state_new();
 
-	rpcapp_t app = rpcapp_new("demo-device", PROJECT_VERSION);
+	rpchandler_app_t app = rpchandler_app_new("demo-device", PROJECT_VERSION);
 
 	struct rpchandler_stage stages[4];
-	stages[0] = rpcapp_handler_stage(app);
+	stages[0] = rpchandler_app_stage(app);
 	stages[1] = (struct rpchandler_stage){
 		.funcs = &device_handler_funcs, .cookie = state};
 	stages[2] = (struct rpchandler_stage){};
@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
 	}
 
 	rpchandler_destroy(handler);
-	rpcapp_destroy(app);
+	rpchandler_app_destroy(app);
 	device_state_free(state);
 	rpcclient_destroy(client);
 	rpcclient_logger_destroy(logger);

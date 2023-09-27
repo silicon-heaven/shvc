@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef SHV_RPCNODE_H
 #define SHV_RPCNODE_H
 

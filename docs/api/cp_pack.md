@@ -1,6 +1,8 @@
 # Generic packer
 
-Generic packer API with utility functions to pack data more easilly.
+```c
+#include <shv/cp_pack.h>
+```
 
 ```{autodoxygenfile} cp_pack.h
 ```

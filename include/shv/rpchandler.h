@@ -1,8 +1,10 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef SHV_RPCHANDLER_H
 #define SHV_RPCHANDLER_H
 
 #include <stdbool.h>
 #include <pthread.h>
+#include <stdarg.h>
 #include <shv/rpcclient.h>
 #include <shv/rpcmsg.h>
 #include <shv/rpcnode.h>
@@ -75,8 +77,22 @@ bool rpcreceive_response_send(struct rpcreceive *receive) __attribute__((nonnull
 bool rpcreceive_response_drop(struct rpcreceive *receive) __attribute__((nonnull));
 
 
-bool rpchandler_ls_result(struct rpchandler_ls_ctx *context, const char *name)
+void rpchandler_ls_result(struct rpchandler_ls_ctx *context, const char *name)
 	__attribute__((nonnull));
+
+void rpchandler_ls_result_const(struct rpchandler_ls_ctx *context,
+	const char *name) __attribute__((nonnull));
+
+void rpchandler_ls_result_vfmt(struct rpchandler_ls_ctx *context,
+	const char *fmt, va_list args) __attribute__((nonnull));
+
+__attribute__((nonnull)) static inline void rpchandler_ls_result_fmt(
+	struct rpchandler_ls_ctx *context, const char *fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	rpchandler_ls_result_vfmt(context, fmt, args);
+	va_end(args);
+}
 
 const char *rpchandler_ls_name(struct rpchandler_ls_ctx *context)
 	__attribute__((nonnull));

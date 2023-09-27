@@ -19,7 +19,7 @@ TEST(all, stream_tcp) {
 		.password = "admin!123",
 		.login_type = RPC_LOGIN_PLAIN,
 	};
-	ck_assert_int_eq(rpcclient_login(c, &opts), RPCCLIENT_LOGIN_OK);
+	ck_assert(rpcclient_login(c, &opts, NULL));
 
 	rpcclient_ping_test(c);
 
@@ -35,7 +35,7 @@ TEST(all, stream_unix) {
 		.password = "admin!123",
 		.login_type = RPC_LOGIN_PLAIN,
 	};
-	ck_assert_int_eq(rpcclient_login(c, &opts), RPCCLIENT_LOGIN_OK);
+	ck_assert(rpcclient_login(c, &opts, NULL));
 
 	rpcclient_ping_test(c);
 

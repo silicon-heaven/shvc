@@ -1,9 +1,14 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef SHV_RPCCLIENT_IMPL_H
 #define SHV_RPCCLIENT_IMPL_H
-#include <stdio.h>
+/*! @file
+ * Implementation of the SHV RPC client handle. The implementation is defined
+ * publically to allow possibly anyone to provide custom implementation but at
+ * the same time it is split to clearly differentiate that direct access from
+ * the users to the handle is not desirable.
+ */
+
 #include <stdbool.h>
-#include <time.h>
-#include <semaphore.h>
 #include <shv/cp_pack.h>
 #include <shv/cp_unpack.h>
 

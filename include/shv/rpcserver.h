@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef SHV_RPCSERVER_H
 #define SHV_RPCSERVER_H
 #include <stdbool.h>

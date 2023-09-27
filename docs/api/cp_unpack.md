@@ -1,6 +1,8 @@
 # Generic unpacker
 
-Generic unpacker API with utility functions to unpack data more easilly.
+```c
+#include <shv/cp_unpack.h>
+```
 
 ```{autodoxygenfile} cp_unpack.h
 ```

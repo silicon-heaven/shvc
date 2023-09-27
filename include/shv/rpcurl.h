@@ -1,5 +1,15 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef SHV_RPCURL_H
 #define SHV_RPCURL_H
+/*! @file
+ * RPC URL is universal identifier that is used to specify the way client
+ * connects to the server as well as server listen configuration. The URL is a
+ * complete set parameters needed to connect client (including the client
+ * device) to the SHV network.
+ *
+ * The description of the format can be found [in pySHV
+ * documentation](https://elektroline-predator.gitlab.io/pyshv/master/url.html).
+ */
 
 /*! Protocol used to connect client to the server or to listen for connection on
  */

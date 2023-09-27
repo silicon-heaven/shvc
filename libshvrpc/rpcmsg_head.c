@@ -154,11 +154,11 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 				break;
 		}
 	}
-	if (!cp_unpack_expect_type(unpack, item, CPITEM_IMAP))
+	if (cp_unpack_type(unpack, item) != CPITEM_IMAP)
 		return false;
 	int key = -1;
 	cp_unpack(unpack, item);
-	if (item->type != CPITEM_CONTAINER_END && !cp_extract_int(item, key))
+	if (item->type != CPITEM_CONTAINER_END && !cpitem_extract_int(item, key))
 		return false;
 	if (has_rid) {
 		if (valid_method) {

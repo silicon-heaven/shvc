@@ -18,6 +18,7 @@ TEST(unpack, chainpack_unpack_null) {
 	cp_unpack_t unpack = unpack_chainpack(&b);
 	struct cpitem item = (struct cpitem){};
 	ck_assert_uint_eq(cp_unpack(unpack, &item), 1);
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -26,6 +27,7 @@ TEST(unpack, cpon_unpack_null) {
 	cp_unpack_t unpack = unpack_cpon(str);
 	struct cpitem item = (struct cpitem){};
 	ck_assert_uint_eq(cp_unpack(unpack, &item), 4);
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -45,6 +47,7 @@ TEST(unpack, cpon_unpack_ctx_realloc) {
 		ck_assert_int_eq(item.type, CPITEM_CONTAINER_END);
 	}
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -62,6 +65,7 @@ TEST(unpack, drop_string) {
 	cp_unpack(unpack, &item);
 	ck_assert_item_type(item, CPITEM_INVALID);
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -79,6 +83,7 @@ TEST(unpack, skip_int) {
 	cp_unpack(unpack, &item);
 	ck_assert_item_type(item, CPITEM_CONTAINER_END);
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -94,6 +99,7 @@ TEST(unpack, skip_string) {
 	cp_unpack(unpack, &item);
 	ck_assert_item_type(item, CPITEM_CONTAINER_END);
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -111,6 +117,7 @@ TEST(unpack, skip_string_fin) {
 	cp_unpack(unpack, &item);
 	ck_assert_item_type(item, CPITEM_CONTAINER_END);
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -126,6 +133,7 @@ TEST(unpack, skip_containers) {
 	cp_unpack(unpack, &item);
 	ck_assert_item_type(item, CPITEM_CONTAINER_END);
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -143,6 +151,7 @@ TEST(unpack, finish_containers) {
 	cp_unpack(unpack, &item);
 	ck_assert_item_type(item, CPITEM_CONTAINER_END);
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -155,6 +164,7 @@ TEST(unpack, unpack_strdup) {
 	char *res = cp_unpack_strdup(unpack, &item);
 	ck_assert_str_eq(res, "Some text");
 	free(res);
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -166,6 +176,7 @@ TEST(unpack, unpack_strndup) {
 	char *res = cp_unpack_strndup(unpack, &item, 5);
 	ck_assert_str_eq(res, "Some ");
 	free(res);
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -183,6 +194,7 @@ TEST(unpack, unpack_memdup) {
 	ck_assert_mem_eq(res, exp.v, siz);
 	free(res);
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -200,6 +212,7 @@ TEST(unpack, unpack_memndup) {
 	ck_assert_mem_eq(res, exp.v, siz);
 	free(res);
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -212,6 +225,7 @@ TEST(unpack, unpack_strdupo) {
 	obstack_init(&obstack);
 	char *res = cp_unpack_strdupo(unpack, &item, &obstack);
 	ck_assert_str_eq(res, "Some text");
+	ck_assert_uint_eq(item.bufsiz, 0);
 	obstack_free(&obstack, NULL);
 	unpack_free(unpack);
 }
@@ -225,6 +239,7 @@ TEST(unpack, unpack_strndupo) {
 	obstack_init(&obstack);
 	char *res = cp_unpack_strndupo(unpack, &item, 5, &obstack);
 	ck_assert_str_eq(res, "Some ");
+	ck_assert_uint_eq(item.bufsiz, 0);
 	obstack_free(&obstack, NULL);
 	unpack_free(unpack);
 }
@@ -244,6 +259,7 @@ TEST(unpack, unpack_memdupo) {
 	ck_assert_int_eq(siz, exp.len);
 	ck_assert_mem_eq(res, exp.v, siz);
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	obstack_free(&obstack, NULL);
 	unpack_free(unpack);
 }
@@ -263,6 +279,7 @@ TEST(unpack, unpack_memndupo) {
 	ck_assert_int_eq(siz, exp.len);
 	ck_assert_mem_eq(res, exp.v, siz);
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	obstack_free(&obstack, NULL);
 	unpack_free(unpack);
 }
@@ -274,6 +291,7 @@ TEST(unpack, unpack_strdup_invalid) {
 	struct cpitem item = (struct cpitem){};
 	ck_assert_ptr_null(cp_unpack_strdup(unpack, &item));
 	ck_assert_int_eq(item.type, CPITEM_INT);
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -291,6 +309,7 @@ TEST(unpack, unpack_strncpy) {
 	ck_assert_int_eq(cp_unpack_strncpy(unpack, &item, buf, 5), 4);
 	ck_assert_str_eq(buf, "text");
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -308,6 +327,7 @@ TEST(unpack, unpack_memcpy) {
 	uint8_t exp2[] = {0x6, 0x7, 0x8, 0x9};
 	ck_assert_mem_eq(buf, exp2, 4);
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -327,6 +347,7 @@ TEST(unpack, unpack_fopen_string) {
 	ck_assert_str_eq(buf, "string");
 	fclose(f);
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST
@@ -344,6 +365,7 @@ TEST(unpack, unpack_fopen_blob) {
 	ck_assert_mem_eq(buf, exp, 9);
 	fclose(f);
 
+	ck_assert_uint_eq(item.bufsiz, 0);
 	unpack_free(unpack);
 }
 END_TEST

@@ -1,6 +1,8 @@
 # Chainpack and CPON packer and unpacker
 
-The serialization and deserialization of Chainpack and CPON data formats.
+```c
+#include <shv/cp.h>
+```
 
 ```{autodoxygenfile} shv/cp.h
 ```

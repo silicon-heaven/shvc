@@ -31,17 +31,17 @@ int main(int argc, char **argv) {
 		logger = rpcclient_logger_new(stderr, conf.verbose);
 		client->logger = logger;
 	}
-	switch (rpcclient_login(client, &rpcurl->login)) {
-		case RPCCLIENT_LOGIN_OK:
-			break;
-		case RPCCLIENT_LOGIN_INVALID:
+	char *loginerr;
+	if (!rpcclient_login(client, &rpcurl->login, &loginerr)) {
+		if (loginerr) {
 			fprintf(stderr, "Invalid login for connecting to the: %s\n", conf.url);
-			rpcclient_destroy(client);
-			rpcurl_free(rpcurl);
-			return 1;
-		case RPCCLIENT_LOGIN_ERROR:
+			fprintf(stderr, "%s\n", loginerr);
+		} else {
 			fprintf(stderr, "Communication error with server\n");
-			return 2;
+		}
+		rpcclient_destroy(client);
+		rpcurl_free(rpcurl);
+		return 1;
 	}
 	rpcurl_free(rpcurl);
 

@@ -1,7 +1,7 @@
-#include <shv/rpcapp.h>
+#include <shv/rpchandler_app.h>
 #include <stdlib.h>
 
-struct rpcapp {
+struct rpchandler_app {
 	const char *name;
 	const char *version;
 };
@@ -28,7 +28,7 @@ static void rpc_dir(void *cookie, const char *path, struct rpchandler_dir_ctx *c
 
 static enum rpchandler_func_res rpc_msg(
 	void *cookie, struct rpcreceive *receive, const struct rpcmsg_meta *meta) {
-	struct rpcapp *rpcapp = cookie;
+	struct rpchandler_app *rpchandler_app = cookie;
 	enum methods {
 		UNKNOWN,
 		SHV_VERSION_MAJOR,
@@ -61,10 +61,10 @@ static enum rpchandler_func_res rpc_msg(
 			cp_pack_int(pack, 0);
 			break;
 		case APP_NAME:
-			cp_pack_str(pack, rpcapp->name ?: "shvc"); // TODO
+			cp_pack_str(pack, rpchandler_app->name ?: "shvc"); // TODO
 			break;
 		case APP_VERSION:
-			cp_pack_str(pack, rpcapp->version ?: PROJECT_VERSION); // TODO
+			cp_pack_str(pack, rpchandler_app->version ?: PROJECT_VERSION); // TODO
 			break;
 		case UNKNOWN:
 			abort(); /* Can't happen */
@@ -81,17 +81,17 @@ const struct rpchandler_funcs rpc_funcs = {
 };
 
 
-rpcapp_t rpcapp_new(const char *name, const char *version) {
-	rpcapp_t res = malloc(sizeof *res);
+rpchandler_app_t rpchandler_app_new(const char *name, const char *version) {
+	rpchandler_app_t res = malloc(sizeof *res);
 	res->name = name;
 	res->version = version;
 	return res;
 }
 
-void rpcapp_destroy(rpcapp_t rpcapp) {
-	free(rpcapp);
+void rpchandler_app_destroy(rpchandler_app_t rpchandler_app) {
+	free(rpchandler_app);
 }
 
-struct rpchandler_stage rpcapp_handler_stage(rpcapp_t rpcapp) {
-	return (struct rpchandler_stage){.funcs = &rpc_funcs, .cookie = rpcapp};
+struct rpchandler_stage rpchandler_app_stage(rpchandler_app_t rpchandler_app) {
+	return (struct rpchandler_stage){.funcs = &rpc_funcs, .cookie = rpchandler_app};
 }

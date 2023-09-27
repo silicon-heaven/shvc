@@ -1,42 +1,130 @@
+/* SPDX-License-Identifier: MIT */
 #ifndef SHV_CP_UNPACK_H
 #define SHV_CP_UNPACK_H
+/*! @file
+ * Generic unpacker API with utility functions to unpack data more easilly.
+ */
 
 #include <shv/cp.h>
 #include <obstack.h>
 
+/*! Definition of function that provides generic unpacker.
+ *
+ * This function is called to unpack next item and all its context, including
+ * the input, is provided by **ptr**.
+ *
+ * This abstraction allows us to work with any unpacker in the same way and it
+ * also provides a way to overlay additional handling on top of the low level
+ * unpacker (such as logging).
+ *
+ * @param ptr: Pointer to the context information that is pointer to the @ref
+ *   cp_unpack_t.
+ * @param item: Item where info about the unpacked item and its value is placed
+ *   to.
+ * @returns Number of bytes read.
+ */
 typedef size_t (*cp_unpack_func_t)(void *ptr, struct cpitem *item);
+/*! Generic unpacker.
+ *
+ * This is pointer to the function pointer that implements unpacking. The
+ * function is called by dereferencing this generic unpacker and the pointer to
+ * it is passed to the function as the first argument. This double pointer
+ * provides you a way to store any context info side by pointer to the unpack
+ * function.
+ *
+ * To understand this you can look into the @ref cp_unpack_chainpack and @ref
+ * cp_unpack_cpon definitions. They have @ref cp_unpack_func_t as a first field
+ * and thus this function gets pointer to the structure in the first argument.
+ */
 typedef cp_unpack_func_t *cp_unpack_t;
 
 
+/*! Handle for the ChainPack generic unpacker. */
 struct cp_unpack_chainpack {
+	/*! Generic unpacker function. */
 	cp_unpack_func_t func;
+	/*! File object used in @ref chainpack_unpack() calls. */
 	FILE *f;
 };
 
+/*! Initialize @ref cp_unpack_chainpack.
+ *
+ * The initialization only fills in @ref cp_unpack_chainpack.func and sets @ref
+ * cp_unpack_chainpack.f to the **f** passed to it. There is no need for a
+ * special resource deallocation afterward.
+ *
+ * @param pack: Pointer to the handle to be initialized.
+ * @param f: File used to read ChainPack bytes.
+ * @returns Generic unpacker.
+ */
 cp_unpack_t cp_unpack_chainpack_init(struct cp_unpack_chainpack *pack, FILE *f)
 	__attribute__((nonnull));
 
+/*! Handle for the CPON generic unpacker. */
 struct cp_unpack_cpon {
+	/*! Generic unpacker function. */
 	cp_unpack_func_t func;
+	/*! File object used in @ref cpon_unpack calls. */
 	FILE *f;
+	/*! Context information state for the CPON.
+	 *
+	 * Function @ref cp_unpack_cpon_init() will prepare this state for the
+	 * unconstrained allocation. If you prefer to limit the depth you can change
+	 * the @ref cpon_state.realloc to your own implementation.
+	 *
+	 * After generic unpacker end of use you need to free @ref cpon_state.ctx!
+	 */
 	struct cpon_state state;
 };
 
+/*! Initialize @ref cp_unpack_cpon.
+ *
+ * The initialization only fills in @ref cp_unpack_chainpack.func, sets @ref
+ * cp_unpack_chainpack.f to the **f** passed to it, initializes @ref cpon_state
+ * to zeroes and sets @ref cpon_state.realloc to unconstrained allocator.
+ *
+ * Remember to release resources allocated by @ref cpon_state.ctx!
+ *
+ * @param pack: Pointer to the handle to be initialized.
+ * @param f: File used to read CPON bytes.
+ * @returns Generic unpacker.
+ */
 cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *pack, FILE *f)
 	__attribute__((nonnull));
 
 
+/*! Unpack item with generic unpacker.
+ *
+ * The calling is described in @ref cp_unpack_func_t. You want to repeatedly
+ * pass the same @ref cpitem instance to unpack multiple items.
+ *
+ * @param UNPACK: Generic unpacker to be used for unpacking.
+ * @param ITEM: Item where info about the unpacked item and its value is placed
+ *   to.
+ * @returns Number of bytes read.
+ */
 #define cp_unpack(UNPACK, ITEM) \
 	({ \
 		cp_unpack_t __unpack = UNPACK; \
 		(*__unpack)(__unpack, (ITEM)); \
 	})
 
-#define cp_unpack_expect_type(UNPACK, ITEM, TYPE) \
+/*! Unpack item with generic unpacker and provide its type.
+ *
+ * This is variant of @ref cp_unpack() that instead of number of read bytes
+ * returns type of the item read.
+ *
+ * @param UNPACK: Generic unpacker to be used for unpacking.
+ * @param ITEM: Item where info about the unpacked item and its value is placed
+ *   to.
+ * @returns Type of the unpacked item.
+ */
+#define cp_unpack_type(UNPACK, ITEM) \
 	({ \
+		cp_unpack_t __unpack = UNPACK; \
 		struct cpitem *__item = ITEM; \
-		cp_unpack(UNPACK, __item); \
-		__item->type == TYPE; \
+		(*__unpack)(__unpack, __item); \
+		__item->type; \
 	})
 
 /*! Instead of getting next item this drops the any unread blocks from current
@@ -89,48 +177,47 @@ size_t cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item)
 size_t cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth)
 	__attribute__((nonnull));
 
-#define cp_extract_int(ITEM, DEST) \
-	({ \
-		struct cpitem *__item = ITEM; \
-		bool __valid = false; \
-		if (__item->type == CPITEM_INT) { \
-			if (sizeof(DEST) < sizeof(long long)) { \
-				long long __lim = 1LL << ((sizeof(DEST) * 8) - 1); \
-				__valid = __item->as.Int >= -__lim && __item->as.Int < __lim; \
-			} else \
-				__valid = true; \
-			(DEST) = __item->as.Int; \
-		} \
-		__valid; \
-	})
 
-#define cp_extact_uint(ITEM, DEST) \
-	({ \
-		struct cpitem *__item = ITEM; \
-		bool __valid = false; \
-		if (__item->type == CPITEM_UINT) { \
-			if (sizeof(DEST) < sizeof(unsigned long long)) { \
-				unsigned long long __lim = 1LL << ((sizeof(DEST) * 8) - 1); \
-				__valid = __item->as.Int < __lim; \
-			} else \
-				__valid = true; \
-			(DEST) = __item->as.Int; \
-		} \
-		__valid; \
-	})
-
+/*! Unpack integer and place it to the destination.
+ *
+ * This combines @ref cp_unpack with @ref cpitem_extract_int.
+ *
+ * @param UNPACK: Generic unpacker to be used for unpacking.
+ * @param ITEM: Item where info about the unpacked item and its value is placed
+ *   to. You can use it to identify the real type or error in case of failure.
+ * @param DEST: destination integer variable (not pointer, the variable
+ *   directly).
+ * @returns Number of read bytes or zero or negative number of read bytes in
+ *   case of an error. The error can be either due to the unpack failure or due
+ *   to number being too big to be stored in **DEST**. The real issue can be
+ *   deduced from **ITEM**.
+ */
 #define cp_unpack_int(UNPACK, ITEM, DEST) \
 	({ \
 		struct cpitem *__uitem = ITEM; \
 		ssize_t res = cp_unpack(UNPACK, __uitem); \
-		cp_extract_int(__uitem, DEST) ? res : -res; \
+		cpitem_extract_int(__uitem, DEST) ? res : -res; \
 	})
 
+/*! Unpack unsigned integer and place it to the destination.
+ *
+ * This combines @ref cp_unpack with @ref cpitem_extract_uint.
+ *
+ * @param UNPACK: Generic unpacker to be used for unpacking.
+ * @param ITEM: Item where info about the unpacked item and its value is placed
+ *   to. You can use it to identify the real type or error in case of failure.
+ * @param DEST: destination integer variable (not pointer, the variable
+ *   directly).
+ * @returns Number of read bytes or zero or negative number of read bytes in
+ *   case of an error. The error can be either due to the unpack failure or due
+ *   to number being too big to be stored in **DEST**. The real issue can be
+ *   deduced from **ITEM**.
+ */
 #define cp_unpack_uint(UNPACK, ITEM, DEST) \
 	({ \
 		struct cpitem *__uitem = ITEM; \
 		ssize_t res = cp_unpack(UNPACK, __uitem); \
-		cp_extract_uint(__uitem, DEST) ? res : -res; \
+		cpitem_extract_uint(__uitem, DEST) ? res : -res; \
 	})
 
 /*! Unpack a single by from string.
@@ -242,24 +329,6 @@ __attribute__((nonnull(1, 2))) static inline ssize_t cp_unpack_strncpy(
 	return item->as.String.len;
 }
 
-/*! Expect one of the strings to be present and provide index to say which.
- *
- * Parsing of maps is a common operation. Regularly keys can be in any order and
- * thus we need to expect multiple different strings to be present. This handles
- * that for you.
- *
- * Note that the implementation is based on decision tree that is generated in
- * runtime. If you know the strings upfront you can get a better performance
- * if you fetch bytes and use some hash searching algorithm instead.
- *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
- * one.
- */
-int cp_unpack_expect_str(cp_unpack_t unpack, struct cpitem *item,
-	const char **strings) __attribute__((nonnull));
-
-
 /*! Copy blob to malloc allocated buffer and provide it.
  *
  * This unpacks the whole blob and returns it.
@@ -300,7 +369,7 @@ void cp_unpack_memndup(cp_unpack_t unpack, struct cpitem *item, uint8_t **data,
  * @param unpack: Unpack handle.
  * @param item: Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param data: Pointer where pointer to the data would be placed.
+ * @param buf: Pointer where pointer to the data would be placed.
  * @param siz: Pointer where number of valid data bytes were unpacked.
  * @param obstack: Obstack used to allocate the space needed for the blob
  * object.
@@ -317,7 +386,7 @@ void cp_unpack_memdupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
  * @param unpack: Unpack handle.
  * @param item: Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param data: Pointer where pointer to the data would be placed.
+ * @param buf: Pointer where pointer to the data would be placed.
  * @param siz: Pointer to maximum number of bytes to be copied that is updated
  * with number of valid bytes actually copied over.
  * @param obstack: Obstack used to allocate the space needed for the blob
@@ -334,7 +403,7 @@ void cp_unpack_memndupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
  * @param item: Item used for the `cp_unpack` calls and was used in the last
  * one.
  * @param dest: Destination buffer where unpacked bytes are placed to.
- * @param n: Maximum number of bytes to be used in `dest`.
+ * @param siz: Maximum number of bytes to be used in `dest`.
  * @returns number of bytes written to `dest` or `-1` in case of unpack error.
  */
 __attribute__((nonnull(1, 2))) static inline ssize_t cp_unpack_memcpy(
@@ -342,11 +411,25 @@ __attribute__((nonnull(1, 2))) static inline ssize_t cp_unpack_memcpy(
 	item->buf = dest;
 	item->bufsiz = siz;
 	cp_unpack(unpack, item);
+	item->bufsiz = 0;
 	if (item->type != CPITEM_BLOB)
 		return -1;
 	return item->as.Blob.len;
 }
 
+/*! Helper macro for unpacking lists.
+ *
+ * Lists are sequence of items starting with @ref CPITEM_LIST item and ending
+ * with @ref CPITEM_CONTAINER_END. This provides loop that iterates over items
+ * in the list.
+ *
+ * You need to call this when you unpack @ref CPITEM_LIST and thus this does
+ * not check if you are calling it in list or not. It immediately starts
+ * unpacking next item and thus first item in the list.
+ *
+ * @param UNPACK: Generic unpacker.
+ * @param ITEM: Pointer to the @ref cpitem that was used to unpack last item.
+ */
 #define for_cp_unpack_list(UNPACK, ITEM) \
 	while (({ \
 		struct cpitem *__item = ITEM; \
@@ -354,6 +437,14 @@ __attribute__((nonnull(1, 2))) static inline ssize_t cp_unpack_memcpy(
 		__item->type != CPITEM_INVALID && __item->type != CPITEM_CONTAINER_END; \
 	}))
 
+/*! Helper macro for unpacking lists with items counter.
+ *
+ * This is variant of @ref for_cp_unpack_list with items counter from zero.
+ *
+ * @param UNPACK: Generic unpacker.
+ * @param ITEM: Pointer to the @ref cpitem that was used to unpack last item.
+ * @param CNT: Counter variable name. The variable is defined in the for loop.
+ */
 #define for_cp_unpack_ilist(UNPACK, ITEM, CNT) \
 	for (unsigned CNT = 0; ({ \
 			 struct cpitem *__item = ITEM; \
@@ -363,6 +454,15 @@ __attribute__((nonnull(1, 2))) static inline ssize_t cp_unpack_memcpy(
 		 }); \
 		 CNT++)
 
+/*! Helper macro for unpacking maps.
+ *
+ * This provides loop that unpacks and validates key. You need to unpack the key
+ * value on your own and for correct functionality you need to fully unpack
+ * value as well (you can skip it if you do not need it).
+ *
+ * @param UNPACK: Generic unpacker.
+ * @param ITEM: Pointer to the @ref cpitem that was used to unpack last item.
+ */
 #define for_cp_unpack_map(UNPACK, ITEM) \
 	while (({ \
 		struct cpitem *__item = ITEM; \
@@ -370,6 +470,8 @@ __attribute__((nonnull(1, 2))) static inline ssize_t cp_unpack_memcpy(
 		__item->type == CPITEM_STRING; \
 	}))
 
+/*! Helper macro for unpacking integer maps.
+ */
 #define for_cp_unpack_imap(UNPACK, ITEM) \
 	while (({ \
 		struct cpitem *__item = ITEM; \

@@ -1,6 +1,7 @@
 #include <shv/rpcclient.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <semaphore.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
