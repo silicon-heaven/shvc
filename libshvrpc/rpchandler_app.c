@@ -26,7 +26,7 @@ static void rpc_dir(void *cookie, const char *path, struct rpchandler_dir_ctx *c
 	}
 }
 
-static enum rpchandler_func_res rpc_msg(
+static bool rpc_msg(
 	void *cookie, struct rpcreceive *receive, const struct rpcmsg_meta *meta) {
 	struct rpchandler_app *rpchandler_app = cookie;
 	enum methods {
@@ -47,10 +47,11 @@ static enum rpchandler_func_res rpc_msg(
 			method = APP_VERSION;
 	}
 	if (method == UNKNOWN)
-		return RPCHFR_UNHANDLED;
+		return false;
 
+	// TODO possibly be pedantic about not having parameter
 	if (!rpcreceive_validmsg(receive))
-		return RPCHFR_RECV_ERR;
+		return true;
 	cp_pack_t pack = rpcreceive_response_new(receive);
 	rpcmsg_pack_response(pack, meta);
 	switch (method) {
@@ -71,7 +72,7 @@ static enum rpchandler_func_res rpc_msg(
 	}
 	cp_pack_container_end(pack);
 	rpcreceive_response_send(receive);
-	return RPCHFR_HANDLED;
+	return true;
 }
 
 const struct rpchandler_funcs rpc_funcs = {

@@ -3,7 +3,7 @@
 
   inputs = {
     check-suite.url = "github:cynerd/check-suite";
-    pyshv.url = "git+https://gitlab.com/elektroline-predator/pyshv.git";
+    pyshv.url = "git+https://gitlab.com/elektroline-predator/pyshv.git?ref=shv3";
   };
 
   outputs = {

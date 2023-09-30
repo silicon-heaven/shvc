@@ -15,12 +15,11 @@ struct rpchandler_responses {
 	pthread_mutex_t lock;
 };
 
-static enum rpchandler_func_res rpc_msg(
+static bool rpc_msg(
 	void *cookie, struct rpcreceive *receive, const struct rpcmsg_meta *meta) {
 	struct rpchandler_responses *resp = cookie;
 	if (meta->type != RPCMSG_T_RESPONSE && meta->type != RPCMSG_T_ERROR)
-		return RPCHFR_UNHANDLED;
-	enum rpchandler_func_res res = RPCHFR_HANDLED;
+		return false;
 	pthread_mutex_lock(&resp->lock);
 	rpcresponse_t pr = NULL;
 	rpcresponse_t r = resp->resp;
@@ -43,7 +42,7 @@ static enum rpchandler_func_res rpc_msg(
 		r = r->next;
 	};
 	pthread_mutex_unlock(&resp->lock);
-	return res;
+	return true;
 }
 
 static struct rpchandler_funcs rpc_funcs = {.msg = rpc_msg};

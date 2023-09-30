@@ -7,7 +7,7 @@
 #include <check.h>
 
 void rpcclient_ping_test(rpcclient_t c) {
-	rpcmsg_pack_request_void(rpcclient_pack(c), ".broker/app", "ping", 3);
+	rpcmsg_pack_request_void(rpcclient_pack(c), ".app", "ping", 3);
 	ck_assert(rpcclient_sendmsg(c));
 
 	struct obstack obs;

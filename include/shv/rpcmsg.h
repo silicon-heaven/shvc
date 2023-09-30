@@ -1,6 +1,9 @@
 /* SPDX-License-Identifier: MIT */
 #ifndef SHV_RPCMSG_H
 #define SHV_RPCMSG_H
+/*! @file
+ * Functions to pack and unpack RPC messages.
+ */
 
 #include <stdbool.h>
 #include <stdarg.h>
@@ -9,33 +12,49 @@
 #include <shv/cp_unpack.h>
 #include <obstack.h>
 
+/*! Keys used in RPC message meta. */
 enum rpcmsg_tags {
-	RPCMSG_TAG_UNKNOWN = 0,
-	RPCMSG_TAG_META_TYPE_ID,
+	/*! Identifier of the message type. */
+	RPCMSG_TAG_META_TYPE_ID = 1,
+	/*! Identifier for the message namespace. */
 	RPCMSG_TAG_META_TYPE_NAMESPACE_ID,
+	/*! Request identifier used for request and response messages. */
 	RPCMSG_TAG_REQUEST_ID = 8,
+	/*! Path in the SHV tree to the specific node. */
 	RPCMSG_TAG_SHV_PATH,
+	/*! Method name associated with node on SHV path. */
 	RPCMSG_TAG_METHOD,
+	/*! Identifiers for callers. */
 	RPCMSG_TAG_CALLER_IDS,
+	/*! Identifiers for the reverse callers. */
 	RPCMSG_TAG_REV_CALLER_IDS,
-	RPCMSG_TAG_ACCESS_GRANT,
-	RPCMSG_TAG_USER_ID,
+	/*! Access level associated with this message. */
+	RPCMSG_TAG_ACCESS,
 };
 
+/*! Keys used in RPC top level *IMap*. */
 enum rpcmsg_keys {
+	/*! Parameter used for requests and signals. */
 	RPCMSG_KEY_PARAMS = 1,
+	/*! Result used for successful responses. */
 	RPCMSG_KEY_RESULT,
+	/*! Result used for failed responses. */
 	RPCMSG_KEY_ERROR,
 };
 
+/*! Keys used in RPC error *IMap*, that follows @ref RPCMSG_KEY_ERROR. */
 enum rpcmsg_error_key {
+	/*! Must be followed by *Int* value specifying the error code (see @ref
+	 * rpcmsg_error).
+	 */
 	RPCMSG_ERR_KEY_CODE = 1,
+	/*! Message describing cause of the error. */
 	RPCMSG_ERR_KEY_MESSAGE,
 };
 
 /*! Pack request message meta and open imap. The followup packed data are
  * parameters provided to the method call request. The message needs to be
- * terminated with container end (`chainpack_pack_container_end`).
+ * terminated with container end (@ref cp_pack_container_end).
  *
  * @param pack: pack context the meta should be written to.
  * @param path: SHV path to the node the method we want to request is associated
@@ -51,8 +70,8 @@ bool rpcmsg_pack_request(cp_pack_t pack, const char *path, const char *method,
 /*! Pack request message with no parameters.
  *
  * This provides an easy way to just pack message without arguments. It packs
- * the same head as `rpcmsg_pack_request` plus additional `CONTAINER_END` to
- * complete the message. Such message can be immediately sent.
+ * the same head as @ref rpcmsg_pack_request plus additional container end to
+ * complete the message. Such message can be immediately send.
  *
  * @param pack: pack context the meta should be written to.
  * @param path: SHV path to the node the method we want to request is associated
@@ -67,7 +86,7 @@ bool rpcmsg_pack_request_void(cp_pack_t pack, const char *path,
 
 /*! Pack signal message meta and open imap. The followup packed data are
  * signaled values. The message needs to be terminated with container end
- * (`chainpack_pack_container_end`).
+ * (@ref cp_pack_container_end).
  *
  * @param pack: pack context the meta should be written to.
  * @param path: SHV path to the node method is associated with.
@@ -79,9 +98,9 @@ bool rpcmsg_pack_signal(cp_pack_t pack, const char *path, const char *method)
 
 /*! Pack value change signal message meta and open imap. The followup packed
  * data are signaled values. The message needs to be terminated with container
- * end (`chainpack_pack_container_end`).
+ * end (@ref cp_pack_container_end).
  *
- * This is actually just a convenient way to call `rpcmsg_pack_signal` for
+ * This is actually just a convenient way to call @ref rpcmsg_pack_signal for
  * "chng" methods.
  *
  * @param pack: pack context the meta should be written to.
@@ -127,8 +146,8 @@ enum rpcmsg_access rpcmsg_access_extract(const char *str);
  * You can detect unpack error by checking `item->type != CP_ITEM_INVALID`.
  *
  * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
- * one.
+ * @param item: Item used for the @ref cp_unpack calls and was used in the last
+ *   one.
  * @returns Access level.
  */
 enum rpcmsg_access rpcmsg_access_unpack(cp_unpack_t unpack, struct cpitem *item);
@@ -151,13 +170,15 @@ enum rpcmsg_type {
 
 /*! Pointer to data (`ptr`) with `siz` number of valid bytes. */
 struct rpcmsg_ptr {
+	/*! Pointer to the data. */
 	void *ptr;
+	/*! Number of valid bytes in @ref ptr */
 	size_t siz;
 };
 
 /*! Parsed  content of RPC Message Meta.
  *
- * Parsing is performed with `rpcmsg_meta_unpack`.
+ * Parsing is performed with @ref rpcmsg_head_unpack.
  */
 struct rpcmsg_meta {
 	/*! Type of the message. */
@@ -173,29 +194,35 @@ struct rpcmsg_meta {
 	/*! Client IDs in Chainpack if message is request. */
 	struct rpcmsg_ptr cids;
 
+	/*! Additional extra fields found in meta as linked list. */
 	struct rpcmsg_meta_extra {
+		/*! Integer key this value had in meta. */
 		int key;
+		/*! Pointer and size of the value. */
 		struct rpcmsg_ptr ptr;
+		/*! Next meta or `NULL` if this is the last one. */
 		struct rpcmsg_meta_extra *next;
-	} * extra;
+	}
+		/*! Pointer to the first extra meta or `NULL`. */
+		* extra;
 };
 
-/*! Limits imposed on `struct rpcmsg_meta` fields.
+/*! Limits imposed on @ref rpcmsg_meta fields.
  *
- * This is used by `rpcmsg_meta_unpack` in two modes: It provides size of the
- * buffers pointed in `struct rpcmsg_meta`; It provides limit on dynamically
+ * This is used by @ref rpcmsg_head_unpack in two modes: It provides size of the
+ * buffers pointed in @ref rpcmsg_meta; It provides limit on dynamically
  * allocated buffers.
  *
  * The dynamic allocation can be constrained or unconstrained. The default
- * behavior if you pass no limits to the `rpcmsg_meta_unpack` is to use as much
- * space as required. Not only that this results in possible crash if message
- * with too big fields is received, it is primarily not necessary. The devices
- * commonly know how long paths and methods they support and anything longer is
- * invalid anyway and thus in most cases it servers no purpose to store actually
- * the whole value.
+ * behavior if you pass no limits to the @ref rpcmsg_head_unpack is to use as
+ * much space as required. Not only that this results in possible crash if
+ * message with too big fields is received, it is primarily not necessary. The
+ * devices commonly know how long paths and methods they support and anything
+ * longer is invalid anyway and thus in most cases it servers no purpose to
+ * store actually the whole value.
  *
  * To allow constrained allocation for some of the fields but not for other you
- * can use `-1` as limit which informs `rpcmsg_meta_unpack` that there is no
+ * can use `-1` as limit which informs @ref rpcmsg_head_unpack that there is no
  * limit for that field.
  */
 struct rpcmsg_meta_limits {
@@ -234,28 +261,28 @@ struct rpcmsg_meta_limits {
  *
  * The unpacking can be performed in two different modes. You can either provide
  * obstack and in such case data would be pushed to it (highly suggested). But
- * if you know all limits upfront you can also just pass `NULL` to `obstack` and
- * in such case we expect that provided `meta` is already seeded with buffers of
- * sizes specified in `limits`.
+ * if you know all limits upfront you can also just pass `NULL` to **obstack**
+ * and in such case we expect that provided **meta** is already seeded with
+ * buffers of sizes specified in **limits**.
  *
- * WARNING: The limits when `obstack` is provided are not enforced right now.
+ * WARNING: The limits when **obstack** is provided are not enforced right now.
  * This is missing implementation not intended state!
  *
  * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param item: Item used for the @ref cp_unpack calls and was used in the last
+ *   one.
  * @param meta: Pointer to the structure where unpacked data will be placed. In
  *   case of integers the value is directly stored. For strings and byte arrays
  *   the data are stored on obstack, if provided, and meta contains pointers to
- *   this data. If you do not provide `obstack` then pointers in the meta need
- * to point to valid buffers.
+ *   this data. If you do not provide **obstack** then pointers in the meta need
+ *   to point to valid buffers.
  * @param limits: Optional pointer to the limits imposed on the meta attributes.
  *   This is used for two purposes: It specifies size of the buffers if you do
- * not provide `obstack; It limits maximal length for data copied to the
- * obstack. Please see `struct rpcmsg_meta_limits` documentation for
- * explanation.
- * @param obstack: pointer to the obstack used to allocate space for received
+ *   not provide **obstack** It limits maximal length for data copied to the
+ *   obstack. Please see @ref rpcmsg_meta_limits for explanation.
+ * @param obstack: Pointer to the obstack used to allocate space for received
  *   strings and byte arrays. You can pass `NULL` but in such case you need to
- *   provide your own buffers in `meta`.
+ *   provide your own buffers in **meta**.
  * @returns `false` in case unpack reports error, if meta contains invalid value
  *   for supported key, or when there is not enough space to store caller IDs.
  *   In other cases `true` is returned. In short this return primarily signals
@@ -287,20 +314,36 @@ bool rpcmsg_pack_response(cp_pack_t pack, const struct rpcmsg_meta *meta)
  * @param meta: Meta with info for previously received request.
  * @returns Boolean signaling the pack success or failure.
  */
-bool rpcmsg_pack_response_void(cp_pack_t, const struct rpcmsg_meta *meta)
+bool rpcmsg_pack_response_void(cp_pack_t pack, const struct rpcmsg_meta *meta)
 	__attribute__((nonnull));
 
+/*! Known error codes defined in SHV. */
 enum rpcmsg_error {
+	/*! No error that is mostly internally used to identify no errors. */
 	RPCMSG_E_NO_ERROR,
+	/*! Sent request is invalid in its format. */
 	RPCMSG_E_INVALID_REQUEST,
+	/*! Method is can't be found or you do not have access to it. */
 	RPCMSG_E_METHOD_NOT_FOUND,
+	/*! Request received but with invalid parameters. */
 	RPCMSG_E_INVALID_PARAMS,
+	/*! Request can't be processes due to the internal error. */
 	RPCMSG_E_INTERNAL_ERR,
+	/*! Message content can't be parsed correctly. */
 	RPCMSG_E_PARSE_ERR,
+	/*! Request timed out without response. */
 	RPCMSG_E_METHOD_CALL_TIMEOUT,
+	/*! Request got canceled. */
 	RPCMSG_E_METHOD_CALL_CANCELLED,
+	/*! Request was received successfully but issue was encountered when it was
+	 * being acted upon it.
+	 */
 	RPCMSG_E_METHOD_CALL_EXCEPTION,
+	/*! Generic unknown error assigned when we are not aware what happened. */
 	RPCMSG_E_UNKNOWN,
+	/*! The first user defined error code. The lower values are reserved for the
+	 * SHV defined errors.
+	 */
 	RPCMSG_E_USER_CODE = 32,
 };
 
@@ -315,7 +358,7 @@ enum rpcmsg_error {
  * @param msg: Optional message describing the error details.
  * @returns Boolean signaling the pack success or failure.
  */
-bool rpcmsg_pack_error(cp_pack_t, const struct rpcmsg_meta *meta,
+bool rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
 	enum rpcmsg_error error, const char *msg) __attribute__((nonnull(1, 2)));
 
 /*! Pack error response message based on the provided meta.
@@ -330,7 +373,7 @@ bool rpcmsg_pack_error(cp_pack_t, const struct rpcmsg_meta *meta,
  * @param fmt: Format string used to generate the error message.
  * @returns Boolean signaling the pack success or failure.
  */
-bool rpcmsg_pack_ferror(cp_pack_t, const struct rpcmsg_meta *meta,
+bool rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
 	enum rpcmsg_error error, const char *fmt, ...) __attribute__((nonnull(1, 2)));
 
 /*! Pack error response message based on the provided meta.
@@ -346,10 +389,26 @@ bool rpcmsg_pack_ferror(cp_pack_t, const struct rpcmsg_meta *meta,
  * @param args: Variable list of arguments to be used with **fmt**.
  * @returns Boolean signaling the pack success or failure.
  */
-bool rpcmsg_pack_vferror(cp_pack_t, const struct rpcmsg_meta *meta,
+bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
 	enum rpcmsg_error error, const char *fmt, va_list args)
 	__attribute__((nonnull(1, 2)));
 
+/*! Unpack error.
+ *
+ * This must be called right after @ref rpcmsg_head_unpack to correctly unpack
+ * error.
+ *
+ * @param unpack: Unpack handle.
+ * @param item: Item used for the @ref cp_unpack calls and was used in the last
+ *   one.
+ * @param errnum: Pointer to the variable where error number is placed. Can be
+ *   `NULL` if you are not interested in the error code.
+ * @param errmsg: Pointer to the variable where error message is placed. Error
+ *   message is copied to the memory allocated using malloc and thus do not
+ *   forget to free it. You can pass `NULL` if you are not interested in the
+ *   error message.
+ * @returns `true` if error was unpacked correctly, `false` otherwise.
+ */
 bool rpcmsg_unpack_error(cp_unpack_t unpack, struct cpitem *item,
 	enum rpcmsg_error *errnum, char **errmsg) __attribute__((nonnull(1, 2)));
 

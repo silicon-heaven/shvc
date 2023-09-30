@@ -142,7 +142,7 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 				valid_cids = unpack_cids(unpack, item, &meta->cids,
 					limits ? limits->cids : -1, obstack);
 				break;
-			case RPCMSG_TAG_ACCESS_GRANT:
+			case RPCMSG_TAG_ACCESS:
 				meta->access_grant = rpcmsg_access_unpack(unpack, item);
 				break;
 			default:

@@ -152,7 +152,7 @@ static bool msgflush_stream(struct rpcclient *client, bool send) {
 	return true;
 }
 
-static void disconnect(rpcclient_t client) {
+static void destroy(rpcclient_t client) {
 	struct rpcclient_stream *c = (struct rpcclient_stream *)client;
 	fclose(c->rf);
 	fclose(c->fbuf);
@@ -176,7 +176,7 @@ rpcclient_t rpcclient_stream_new(int readfd, int writefd) {
 				.msgfetch = msgfetch_stream,
 				.pack = cp_pack_stream,
 				.msgflush = msgflush_stream,
-				.disconnect = disconnect,
+				.destroy = destroy,
 				.logger = NULL,
 			},
 		.rf = f,

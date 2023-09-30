@@ -101,7 +101,7 @@ static bool parse_ls_dir(struct rpcreceive *recv, struct rpcmsg_meta *meta,
 	if (recv->item.type == CPITEM_INVALID && recv->item.as.Error == CPERR_IO)
 		return false;
 	if (!rpcreceive_validmsg(recv))
-		return true;
+		return false;
 
 	cp_pack_t pack = rpcreceive_response_new(recv);
 	if (invalid_param) {
@@ -114,27 +114,22 @@ static bool parse_ls_dir(struct rpcreceive *recv, struct rpcmsg_meta *meta,
 	return true;
 }
 
-static bool handle_ls(const struct rpchandler_stage *stages,
+static void handle_ls(const struct rpchandler_stage *stages,
 	struct rpcreceive *recv, struct rpcmsg_meta *meta) {
 	struct rpchandler_ls_ctx ctx;
-	printf("Wtf\n");
 	if (!parse_ls_dir(recv, meta, &ctx.x))
-		return false;
-	if (ctx.x.pack == NULL)
-		return true;
+		return;
 
 	ctx.x.located = false;
 	ctx.strset = (struct strset){};
 	for (const struct rpchandler_stage *s = stages; s->funcs; s++)
 		if (s->funcs->ls)
 			s->funcs->ls(s->cookie, meta->path, &ctx);
-	printf("Before response pack\n");
+	// TODO when empty we need to validate that path exists
 	rpcmsg_pack_response(ctx.x.pack, meta);
-	printf("Before packing\n");
 	if (ctx.x.name == NULL) {
 		cp_pack_list_begin(ctx.x.pack);
 		for (size_t i = 0; i < ctx.strset.cnt; i++) {
-			printf("Packing %s\n", ctx.strset.items[i].str);
 			cp_pack_str(ctx.x.pack, ctx.strset.items[i].str);
 		}
 		cp_pack_container_end(ctx.x.pack);
@@ -143,14 +138,13 @@ static bool handle_ls(const struct rpchandler_stage *stages,
 		cp_pack_bool(ctx.x.pack, ctx.x.located);
 	cp_pack_container_end(ctx.x.pack);
 	rpcreceive_response_send(recv);
-	return true;
 }
 
-static bool handle_dir(const struct rpchandler_stage *stages,
+static void handle_dir(const struct rpchandler_stage *stages,
 	struct rpcreceive *recv, struct rpcmsg_meta *meta) {
 	struct rpchandler_dir_ctx ctx;
 	if (!parse_ls_dir(recv, meta, &ctx.x))
-		return false;
+		return;
 
 	ctx.x.located = false;
 	rpcmsg_pack_response(ctx.x.pack, meta);
@@ -169,35 +163,28 @@ static bool handle_dir(const struct rpchandler_stage *stages,
 		cp_pack_null(ctx.x.pack);
 	cp_pack_container_end(ctx.x.pack);
 	rpcreceive_response_send(recv);
-	return true;
 }
 
-static bool handle_msg(const struct rpchandler_stage *stages,
+static void handle_msg(const struct rpchandler_stage *stages,
 	struct rpcreceive *recv, struct rpcmsg_meta *meta) {
-	enum rpchandler_func_res fres = RPCHFR_UNHANDLED;
-	for (const struct rpchandler_stage *s = stages;
-		 s->funcs && fres == RPCHFR_UNHANDLED; s++)
-		fres = s->funcs->msg(s->cookie, recv, meta);
-	if (fres == RPCHFR_UNHANDLED) {
+	const struct rpchandler_stage *s = stages;
+	while (s->funcs && !s->funcs->msg(s->cookie, recv, meta))
+		s++;
+	if (s->funcs == NULL && meta->type == RPCMSG_T_REQUEST) {
 		/* Default handler for requests, other types are dropped. */
 		if (!rpcreceive_validmsg(recv))
-			return false;
-		if (meta->type == RPCMSG_T_REQUEST) {
-			cp_pack_t pack = rpcreceive_response_new(recv);
-			rpcmsg_pack_ferror(pack, meta, RPCMSG_E_METHOD_NOT_FOUND,
-				"No such method '%s' on path '%s'", meta->method, meta->path);
-			rpcreceive_response_send(recv);
-		}
+			return;
+		cp_pack_t pack = rpcreceive_response_new(recv);
+		rpcmsg_pack_ferror(pack, meta, RPCMSG_E_METHOD_NOT_FOUND,
+			"No such method '%s' on path '%s'", meta->method, meta->path);
+		rpcreceive_response_send(recv);
 	}
-	// TODO handle other fres
-	return true;
 }
 
 bool rpchandler_next(struct rpchandler *rpchandler) {
 	if (!(rpcclient_nextmsg(rpchandler->client)))
 		return false;
 
-	bool res = false;
 	void *obs_base = obstack_base(&rpchandler->recv.obstack);
 	cpitem_unpack_init(&rpchandler->recv.item);
 	struct rpcmsg_meta meta;
@@ -206,15 +193,15 @@ bool rpchandler_next(struct rpchandler *rpchandler) {
 		rpchandler->recv.unpack = rpcclient_unpack(rpchandler->client);
 		rpchandler->can_respond = meta.type == RPCMSG_T_REQUEST;
 		if (!strcmp(meta.method, "ls"))
-			res = handle_ls(rpchandler->stages, &rpchandler->recv, &meta);
+			handle_ls(rpchandler->stages, &rpchandler->recv, &meta);
 		else if (!strcmp(meta.method, "dir"))
-			res = handle_dir(rpchandler->stages, &rpchandler->recv, &meta);
+			handle_dir(rpchandler->stages, &rpchandler->recv, &meta);
 		else
-			res = handle_msg(rpchandler->stages, &rpchandler->recv, &meta);
+			handle_msg(rpchandler->stages, &rpchandler->recv, &meta);
 	}
 
 	obstack_free(&rpchandler->recv.obstack, obs_base);
-	return res;
+	return rpcclient_connected(rpchandler->client);
 }
 
 static void *thread_loop(void *ctx) {
@@ -295,12 +282,10 @@ bool rpcreceive_response_drop(struct rpcreceive *receive) {
 }
 
 void rpchandler_ls_result(struct rpchandler_ls_ctx *ctx, const char *name) {
-	printf("LS with %s\n", name);
 	if (ctx->x.name)
 		ctx->x.located = !strcmp(ctx->x.name, name);
 	else
 		shv_strset_add(&ctx->strset, name);
-	printf("LS with %s done\n", name);
 }
 
 void rpchandler_ls_const(struct rpchandler_ls_ctx *ctx, const char *name) {
@@ -331,12 +316,12 @@ void rpchandler_ls_result_vfmt(
 	}
 }
 
-bool rpchandler_dir_result(struct rpchandler_dir_ctx *ctx, const char *name,
+void rpchandler_dir_result(struct rpchandler_dir_ctx *ctx, const char *name,
 	enum rpcnode_dir_signature signature, int flags, enum rpcmsg_access access,
 	const char *description) {
 	if (ctx->x.name) {
 		if (strcmp(ctx->x.name, name))
-			return true;
+			return;
 		ctx->x.located = true;
 	}
 	cp_pack_map_begin(ctx->x.pack);
@@ -353,6 +338,4 @@ bool rpchandler_dir_result(struct rpchandler_dir_ctx *ctx, const char *name,
 		cp_pack_str(ctx->x.pack, description);
 	}
 	cp_pack_container_end(ctx->x.pack);
-	// TODO error?
-	return true;
 }

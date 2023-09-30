@@ -16,6 +16,7 @@
 _Static_assert(sizeof(unsigned long long) <= 17, "Limitation of the ChainPack");
 
 
+/*! Scheme bytes used in ChainPack. */
 enum chainpack_scheme {
 	CPS_Null = 128,
 	CPS_UInt,

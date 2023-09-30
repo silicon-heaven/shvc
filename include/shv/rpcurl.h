@@ -38,6 +38,7 @@ enum rpclogin_type {
 	RPC_LOGIN_SHA1,
 };
 
+/*! Options used for login to the RPC Broker.  */
 struct rpclogin_options {
 	/*! User name used to login client connection to the server */
 	const char *username;

@@ -365,7 +365,9 @@ struct cpitem {
 		 * This is aliased with @ref buf, @ref rbuf and @ref chr with union!
 		 */
 		const char *rchr;
+		// @cond
 	};
+	// @endcond
 	/*! Size of the @ref buf (@ref rbuf, @ref chr and @ref rchr). This is used
 	 * only by unpacking functions to know the limit of the buffer.
 	 *

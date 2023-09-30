@@ -24,7 +24,7 @@ struct rpcclient {
 	bool (*msgflush)(struct rpcclient *, bool send);
 	struct timespec last_send;
 
-	void (*disconnect)(struct rpcclient *);
+	void (*destroy)(struct rpcclient *);
 
 	struct rpcclient_logger *logger;
 };

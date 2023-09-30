@@ -1,7 +1,6 @@
 libshvrpc_sources = [
   files(
     'rpcclient_connect.c',
-    'rpcclient_datagram.c',
     'rpcclient_log.c',
     'rpcclient_login.c',
     'rpcclient_serial.c',

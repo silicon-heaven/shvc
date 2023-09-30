@@ -36,14 +36,14 @@ static void rpc_dir(void *cookie, const char *path, struct rpchandler_dir_ctx *c
 	}
 }
 
-static enum rpchandler_func_res rpc_msg(
+static bool rpc_msg(
 	void *cookie, struct rpcreceive *receive, const struct rpcmsg_meta *meta) {
 	struct device_state *state = cookie;
 	int tid = trackid(meta->path);
 	if (tid != -1) {
 		if (!strcmp(meta->method, "get")) {
 			if (!rpcreceive_validmsg(receive))
-				return RPCHFR_RECV_ERR;
+				return true;
 			cp_pack_t pack = rpcreceive_response_new(receive);
 			rpcmsg_pack_response(pack, meta);
 			cp_pack_list_begin(pack);
@@ -52,7 +52,7 @@ static enum rpchandler_func_res rpc_msg(
 			cp_pack_container_end(pack);
 			cp_pack_container_end(pack);
 			rpcreceive_response_send(receive);
-			return RPCHFR_HANDLED;
+			return true;
 		} else if (!strcmp(meta->method, "set")) {
 			size_t siz = 2;
 			size_t cnt = 0;
@@ -75,7 +75,7 @@ static enum rpchandler_func_res rpc_msg(
 			} else
 				invalid_param = true;
 			if (!rpcreceive_validmsg(receive))
-				return RPCHFR_RECV_ERR;
+				return true;
 
 			cp_pack_t pack = rpcreceive_response_new(receive);
 			if (invalid_param)
@@ -88,10 +88,10 @@ static enum rpchandler_func_res rpc_msg(
 				rpcmsg_pack_response_void(pack, meta);
 			}
 			rpcreceive_response_send(receive);
-			return RPCHFR_HANDLED;
+			return true;
 		}
 	}
-	return RPCHFR_UNHANDLED;
+	return false;
 }
 
 
