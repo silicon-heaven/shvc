@@ -8,7 +8,7 @@
 #include <netinet/udp.h>
 #include <shv/rpcmsg.h>
 
-struct rpcclient_logger {
+struct rpclogger {
 	FILE *f;
 	bool ellipsis;
 	struct cpon_state cpon_state;
@@ -17,7 +17,7 @@ struct rpcclient_logger {
 };
 
 
-void rpcclient_log_lock(struct rpcclient_logger *logger, bool in) {
+void rpclogger_log_lock(struct rpclogger *logger, bool in) {
 	if (logger == NULL)
 		return;
 	// TODO signal interrupt
@@ -25,7 +25,7 @@ void rpcclient_log_lock(struct rpcclient_logger *logger, bool in) {
 	fputs(in ? "<= " : "=> ", logger->f);
 }
 
-void rpcclient_log_item(struct rpcclient_logger *logger, const struct cpitem *item) {
+void rpclogger_log_item(struct rpclogger *logger, const struct cpitem *item) {
 	if (logger == NULL)
 		return;
 	int semval;
@@ -52,7 +52,7 @@ void rpcclient_log_item(struct rpcclient_logger *logger, const struct cpitem *it
 	}
 }
 
-void rpcclient_log_unlock(struct rpcclient_logger *logger) {
+void rpclogger_log_unlock(struct rpclogger *logger) {
 	if (logger == NULL)
 		return;
 	if (logger->cpon_state.depth > 0) {
@@ -68,8 +68,8 @@ void rpcclient_log_unlock(struct rpcclient_logger *logger) {
 
 
 static void cpon_state_realloc(struct cpon_state *state) {
-	const struct rpcclient_logger *logger =
-		(void *)state - offsetof(struct rpcclient_logger, cpon_state);
+	const struct rpclogger *logger =
+		(void *)state - offsetof(struct rpclogger, cpon_state);
 	size_t newcnt = state->cnt ? state->cnt * 2 : 1;
 	if (newcnt > logger->maxdepth)
 		newcnt = logger->maxdepth;
@@ -79,8 +79,8 @@ static void cpon_state_realloc(struct cpon_state *state) {
 	}
 }
 
-rpcclient_logger_t rpcclient_logger_new(FILE *f, unsigned maxdepth) {
-	struct rpcclient_logger *res = malloc(sizeof *res);
+rpclogger_t rpclogger_new(FILE *f, unsigned maxdepth) {
+	struct rpclogger *res = malloc(sizeof *res);
 	res->f = f;
 	res->ellipsis = false;
 	res->cpon_state = (struct cpon_state){.realloc = cpon_state_realloc};
@@ -89,7 +89,7 @@ rpcclient_logger_t rpcclient_logger_new(FILE *f, unsigned maxdepth) {
 	return res;
 }
 
-void rpcclient_logger_destroy(rpcclient_logger_t logger) {
+void rpclogger_destroy(rpclogger_t logger) {
 	free(logger->cpon_state.ctx);
 	sem_destroy(&logger->semaphore);
 	free(logger);

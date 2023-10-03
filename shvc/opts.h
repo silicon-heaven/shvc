@@ -8,6 +8,7 @@ struct conf {
 	const char *method;
 	const char *param;
 	unsigned verbose;
+	bool json;
 };
 
 /* Parse arguments. */

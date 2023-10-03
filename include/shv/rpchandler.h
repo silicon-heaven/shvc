@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: MIT */
 #ifndef SHV_RPCHANDLER_H
 #define SHV_RPCHANDLER_H
-/* @file
+/*! @file
  * The RPC message handler that wraps RPC Client and allows asynchronous access
  * for sending and receiving messages.
  */
@@ -20,7 +20,7 @@
  * It provides access to functionality needed to receive message and optionally
  * also to send single message back. The full access is intentionally limited
  * to reduce the time it takes to receive message. If you need to pass some
- * handle the message handling function then you might not be doing what you
+ * handle to the message handling function then you might not be doing what you
  * should.
  */
 struct rpcreceive {
@@ -131,16 +131,6 @@ struct rpchandler_stage {
 typedef struct rpchandler *rpchandler_t;
 
 
-/*! Free all resources occupied by @ref rpchandler_t object.
- *
- * This is destructor for the object created by @ref rpchandler_new.
- *
- * The RPC Client that Handle manages is not destroyed nor disconnected.
- *
- * @param rpchandler: RPC Handler object.
- */
-void rpchandler_destroy(rpchandler_t rpchandler);
-
 /*! Create new RPC message handle.
  *
  * @param client: RPC client to wrap in the handler. Make sure that you destroy
@@ -157,7 +147,17 @@ void rpchandler_destroy(rpchandler_t rpchandler);
  */
 rpchandler_t rpchandler_new(rpcclient_t client,
 	const struct rpchandler_stage *stages, const struct rpcmsg_meta_limits *limits)
-	__attribute__((nonnull(1, 2), malloc, malloc(rpchandler_destroy, 1)));
+	__attribute__((nonnull(1, 2), malloc));
+
+/*! Free all resources occupied by @ref rpchandler_t object.
+ *
+ * This is destructor for the object created by @ref rpchandler_new.
+ *
+ * The RPC Client that Handle manages is not destroyed nor disconnected.
+ *
+ * @param rpchandler: RPC Handler object.
+ */
+void rpchandler_destroy(rpchandler_t rpchandler);
 
 /*! This allows you to change the current array of stages.
  *
@@ -187,21 +187,57 @@ void rpchandler_change_stages(rpchandler_t handler,
  */
 bool rpchandler_next(rpchandler_t rpchandler) __attribute__((nonnull));
 
-/*! Spawn thread that repeatedly calls @ref rpchandler_next.
+/*! RPC Handler errors */
+enum rpchandler_error {
+	/*! Disconnect is reported by RPC Client. */
+	RPCHANDLER_DISCONNECT,
+	/*! Detected too long inactivity. */
+	RPCHANDLER_TIMEOUT,
+};
+
+/*! Run the RPC Handler loop.
  *
  * This is the most easier way to get RPC Handler up and running. It is the
  * suggested way unless you plan to use some poll based loop and multiple
  * handlers. The single handler can live pretty easily in it this thread.
  *
+ * Loop performs the following actions:
+ * * Wait for data to be read from client and calls @ref rpchandler_next.
+ * * On inactivity longer than half of the @ref RPC_DEFAULT_IDLE_TIME it calls
+ * **onerr** with @ref RPCHANDLER_TIMEOUT. Then it continues executing (fail
+ * was either resolved or this will lead to disconnect by other side).
+ * * On disconnect it calls **onerr** with @ref RPCHANDLER_DISCONNECT. It
+ * continues only if client is connected afterwards, otherwise it terminates the
+ * loop.
+ *
  * @param rpchandler: RPC Handler instance.
+ * @param onerr: Callback called when some error is detected. It allows you to
+ *   act on that error and possibly clear it before return from callback to
+ *   continue the loop. Callback gets the RPC Handler object and RPC Client
+ *   object it wraps. You can pass `NULL` in which case default function is used
+ *   that ignores disconnects and sends ping requests on timeout.
+ */
+void rpchandler_run(rpchandler_t rpchandler,
+	void (*onerr)(rpchandler_t, rpcclient_t, enum rpchandler_error))
+	__attribute__((nonnull(1)));
+
+/*! Spawn thread that runs @ref rpchandler_run.
+ *
+ * It is common to run handler in separate thread and perform work on primary
+ * one. This simplifies this setup by spawning that thread for you.
+ *
+ * @param rpchandler: RPC Handler instance.
+ * @param onerr: Passed to @ref rpchandler_run.
  * @param thread: Pointer to the variable where handle for the pthread is
  *   stored. You can use this to control thread.
  * @param attr: Pointer to the pthread attributes or `NULL` for the inherited
  *   defaults.
  * @returns Integer value returned from `pthread_create`.
  */
-int rpchandler_spawn_thread(rpchandler_t rpchandler, pthread_t *restrict thread,
-	const pthread_attr_t *restrict attr) __attribute__((nonnull(1, 2)));
+int rpchandler_spawn_thread(rpchandler_t rpchandler,
+	void (*onerr)(rpchandler_t, rpcclient_t, enum rpchandler_error),
+	pthread_t *restrict thread, const pthread_attr_t *restrict attr)
+	__attribute__((nonnull(1, 2)));
 
 
 /*! Get next unused request ID.
@@ -226,8 +262,8 @@ cp_pack_t rpchandler_msg_new(rpchandler_t rpchandler) __attribute__((nonnull));
 
 /*! Send the packed message.
  *
- * This calls @ref rpcclient_send under the hood and releases the lock taken by
- * @ref rpchandler_msg_new.
+ * This calls @ref rpcclient_sendmsg under the hood and releases the lock taken
+ * by @ref rpchandler_msg_new.
  *
  * @param rpchandler: RPC Handler instance.
  * @returns `true` if send was successful and `false` otherwise.
@@ -236,8 +272,8 @@ bool rpchandler_msg_send(rpchandler_t rpchandler) __attribute__((nonnull));
 
 /*! Drop the packed message.
  *
- * This calls @ref rpcclient_drop under the hood and releases the lock taken by
- * @ref rpchandler_msg_new.
+ * This calls @ref rpcclient_dropmsg under the hood and releases the lock taken
+ * by @ref rpchandler_msg_new.
  *
  * @param rpchandler: RPC Handler instance.
  * @returns `true` if send was successful and `false` otherwise.

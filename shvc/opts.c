@@ -4,19 +4,21 @@
 #include <unistd.h>
 #include <limits.h>
 
+static const char *default_url =
+	"tcp://test@localhost?password=test&devmount=test/device";
+
 
 static void print_usage(const char *argv0) {
-	fprintf(stderr, "%s [-vqd] [URL] [PATH] [METHOD] [PARAM]\n", argv0);
+	fprintf(stderr, "%s [-ujvqdVh] [PATH] [METHOD] [PARAM]\n", argv0);
 }
 
 static void print_help(const char *argv0) {
 	print_usage(argv0);
-	fprintf(stderr, "Convert between Chainpack and human readable Cpon.\n");
-	fprintf(stderr,
-		"The conversion direction is can be autodetected but it is highly "
-		"advised to specify the direction if possible.\n");
+	fprintf(stderr, "SHV RPC client.\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Arguments:\n");
+	fprintf(stderr, "  -u URL   Where to connect to (default %s)\n", default_url);
+	fprintf(stderr, "  -j       Output in JSON format instead of CPON\n");
 	fprintf(stderr, "  -v       Increase logging level of the communication\n");
 	fprintf(stderr, "  -q       Decrease logging level of the communication\n");
 	fprintf(stderr, "  -d       Set maximul logging level of the communication\n");
@@ -26,16 +28,23 @@ static void print_help(const char *argv0) {
 
 void parse_opts(int argc, char **argv, struct conf *conf) {
 	*conf = (struct conf){
-		.url = "tcp://localhost",
+		.url = default_url,
 		.path = NULL,
 		.method = "dir",
-		.param = "null",
+		.param = NULL,
 		.verbose = 0,
+		.json = false,
 	};
 
 	int c;
-	while ((c = getopt(argc, argv, "vqdVh")) != -1) {
+	while ((c = getopt(argc, argv, "ujvqdVh")) != -1) {
 		switch (c) {
+			case 'u':
+				conf->url = argv[optind];
+				break;
+			case 'j':
+				conf->json = true;
+				break;
 			case 'v':
 				if (conf->verbose < UINT_MAX)
 					conf->verbose++;
@@ -59,8 +68,6 @@ void parse_opts(int argc, char **argv, struct conf *conf) {
 				exit(2);
 		}
 	}
-	if (optind < argc)
-		conf->url = argv[optind++];
 	if (optind < argc)
 		conf->path = argv[optind++];
 	if (optind < argc)

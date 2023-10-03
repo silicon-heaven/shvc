@@ -1,13 +1,13 @@
 libshvrpc_sources = [
   files(
     'rpcclient_connect.c',
-    'rpcclient_log.c',
     'rpcclient_login.c',
     'rpcclient_serial.c',
     'rpcclient_stream.c',
     'rpchandler.c',
     'rpchandler_app.c',
     'rpchandler_responses.c',
+    'rpclogger.c',
     'rpcmsg_access.c',
     'rpcmsg_head.c',
     'rpcmsg_pack.c',

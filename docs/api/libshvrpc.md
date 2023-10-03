@@ -7,6 +7,7 @@ This is API provided by libshvrpc library.
 
 rpcclient
 rpcserver
+rpclogger
 rpcurl
 rpcmsg
 rpchandler

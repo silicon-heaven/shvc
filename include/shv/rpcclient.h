@@ -8,13 +8,81 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <time.h>
+#include <errno.h>
 #include <shv/rpcurl.h>
-#include <shv/rpcclient_impl.h>
+#include <shv/cp_pack.h>
+#include <shv/cp_unpack.h>
+#include <shv/rpclogger.h>
 
 /*! Number of seconds that is default idle time before brokers disconnect
  * clients for inactivity.
  */
 #define RPC_DEFAULT_IDLE_TIME 180
+
+/*! Operations performed by control function for RPC Client.
+ *
+ * To reduce the size of the @ref rpcclient  structure we use only one function
+ * pointer and pass operation as argument. We define macros to hide this but
+ * also because control function must be called with pointer to the RPC Client
+ * and thus using macros makes is safer and more easy to read.
+ */
+enum rpcclient_ctlop {
+	/*! @ref rpcclient_destroy */
+	RPCC_CTRLOP_DESTROY,
+	/*! @ref rpcclient_errno and @ref rpcclient_connected */
+	RPCC_CTRLOP_ERRNO,
+	/*! @ref rpcclient_nextmsg */
+	RPCC_CTRLOP_NEXTMSG,
+	/*! @ref rpcclient_validmsg */
+	RPCC_CTRLOP_VALIDMSG,
+	/*! @ref rpcclient_sendmsg */
+	RPCC_CTRLOP_SENDMSG,
+	/*! @ref rpcclient_dropmsg */
+	RPCC_CTRLOP_DROPMSG,
+	/*! @ref rpcclient_pollfd */
+	RPCC_CTRLOP_POLLFD,
+};
+
+/*! Public definition of RPC Client object.
+ *
+ * It provides abstraction on top of multiple different protocols providing
+ * transfer of SHV RPC messages.
+ */
+struct rpcclient {
+	/*! Control function. Do not use directly. */
+	int (*ctl)(struct rpcclient *, enum rpcclient_ctlop);
+
+	/*! Unpack function. Please use @ref rpcclient_unpack instead. */
+	cp_unpack_func_t unpack;
+	/*! The last time we received message.
+	 *
+	 * This is used by RPC Broker to detect inactive clients.
+	 */
+	struct timespec last_receive;
+
+	/*! Pack function. Please use @ref rpcclient_pack instead. */
+	cp_pack_func_t pack;
+	/*! Last time we sent message.
+	 *
+	 * This is used by RPC clients to detect that thay should perform some
+	 * activity to stay connected to the RPC Broker.
+	 */
+	struct timespec last_send;
+
+	/*! Logger used to log communication happenning with this client.
+	 *
+	 * Be aware that log implementation is based on the locks and thus all
+	 * logged clients under the same logger are serialized and only one client
+	 * runs at a time. If you have a bit complex setup deadlocks can be easily
+	 * encountered.
+	 *
+	 * You can change logger while client is handling some message but you must
+	 * ensure that previous logger stays valid for some time so the running
+	 * function can finish with the old log. Thew new log will take effect only
+	 * with next message processed.
+	 */
+	rpclogger_t logger;
+};
 
 /*! Handle used to manage SHV RPC client. */
 typedef struct rpcclient *rpcclient_t;
@@ -136,7 +204,7 @@ rpcclient_t rpcclient_serial_unix_connect(const char *location)
  *
  * @param CLIENT: Pointer to the RPC client object.
  */
-#define rpcclient_destroy(CLIENT) ((CLIENT)->destroy(CLIENT))
+#define rpcclient_destroy(CLIENT) ((CLIENT)->ctl(CLIENT, RPCC_CTRLOP_DESTROY))
 
 /*! Check that client is still connected.
  *
@@ -146,7 +214,18 @@ rpcclient_t rpcclient_serial_unix_connect(const char *location)
  * @param CLIENT: The RPC client object.
  * @returns `true` in case client seems to be connected and `false` otherwise.
  */
-#define rpcclient_connected(CLIENT) ((CLIENT)->rfd != -1)
+#define rpcclient_connected(CLIENT) \
+	((CLIENT)->ctl(CLIENT, RPCC_CTRLOP_ERRNO) == 0)
+
+/*! Get errno recorded for error in RPC Client.
+ *
+ * This can be read or write error, they are recorded over each other. In any
+ * case it should given you an idea of what caused the failure.
+ *
+ * @param CLIENT: The RPC client object.
+ * @returns Standard error number recorded in reading or writing in RPC Client.
+ */
+#define rpcclient_errno(CLIENT) ((CLIENT)->ctl(CLIENT, RPCC_CTRLOP_ERRNO))
 
 /*! Wait for the next message to be ready for reading.
  *
@@ -158,7 +237,21 @@ rpcclient_t rpcclient_serial_unix_connect(const char *location)
  * @returns `true` if next message is received and `false` if client is no
  * longer connected.
  */
-#define rpcclient_nextmsg(CLIENT) ((CLIENT)->msgfetch(CLIENT, true))
+#define rpcclient_nextmsg(CLIENT) ((CLIENT)->ctl(CLIENT, RPCC_CTRLOP_NEXTMSG))
+
+/*! Provides access to the general unpack handle for this client and message.
+ *
+ * The unpack is allowed to be changed by @ref rpcclient_nextmsg and @ref
+ * rpcclient_validmsg and thus make sure that you always refresh your own
+ * reference after you call those functions.
+ *
+ * Unpack always unpacks only a single message. The @ref CPERR_EOF error signals
+ * end of the message not end of the connection.
+ *
+ * @param CLIENT: The RPC client object.
+ * @returns @ref cp_unpack_t that can be used to unpack the received message.
+ */
+#define rpcclient_unpack(CLIENT) (&(CLIENT)->unpack)
 
 /*! Finish reading and validate the received message.
  *
@@ -177,21 +270,7 @@ rpcclient_t rpcclient_serial_unix_connect(const char *location)
  * @returns `true` if received message was valid and `false` otherwise. Note
  *   that `false` can also mean client disconnect not just invalid message.
  */
-#define rpcclient_validmsg(CLIENT) ((CLIENT)->msgfetch(CLIENT, false))
-
-/*! Provides access to the general unpack handle for this client and message.
- *
- * The unpack is allowed to be changed by @ref rpcclient_nextmsg and @ref
- * rpcclient_validmsg and thus make sure that you always refresh your own
- * reference after you call those functions.
- *
- * Unpack always unpacks only a single message. The @ref CPERR_EOF error signals
- * end of the message not end of the connection.
- *
- * @param CLIENT: The RPC client object.
- * @returns @ref cp_unpack_t that can be used to unpack the received message.
- */
-#define rpcclient_unpack(CLIENT) (&(CLIENT)->unpack)
+#define rpcclient_validmsg(CLIENT) ((CLIENT)->ctl(CLIENT, RPCC_CTRLOP_VALIDMSG))
 
 /*! Provides access to the general pack handle for this client.
  *
@@ -220,7 +299,7 @@ rpcclient_t rpcclient_serial_unix_connect(const char *location)
  * @returns `true` if message sending was successful, `false` otherwise. The
  *   sending can fail only due to the disconnect.
  */
-#define rpcclient_sendmsg(CLIENT) ((CLIENT)->msgflush(CLIENT, true))
+#define rpcclient_sendmsg(CLIENT) ((CLIENT)->ctl(CLIENT, RPCC_CTRLOP_SENDMSG))
 
 /*! Drop packed message.
  *
@@ -237,7 +316,7 @@ rpcclient_t rpcclient_serial_unix_connect(const char *location)
  *   drop might need to send some bytes to inform other side about end of the
  *   message and this operation can as side effect detect the client disconnect.
  */
-#define rpcclient_dropmsg(CLIENT) ((CLIENT)->msgflush(CLIENT, false))
+#define rpcclient_dropmsg(CLIENT) ((CLIENT)->ctl(CLIENT, RPCC_CTRLOP_DROPMSG))
 
 /*! This provides access to the underlying file descriptor used for reading.
  *
@@ -248,42 +327,7 @@ rpcclient_t rpcclient_serial_unix_connect(const char *location)
  * @returns Integer with file descriptor or `-1` if client provides none or lost
  *   connection.
  */
-#define rpcclient_pollfd(CLIENT) ((CLIENT)->rfd)
-
-/*! Provides access  to the logger for this RPC client.
- *
- * This is implemented as macro and allows not only access but also change of
- * the logger with syntax `rpcclient_logger(client) = logger;`.
- *
- * Be aware that log implementation is based on the locks and thus all logged
- * clients under the same logger are serialized and only one client runs at a
- * time. If you have a bit complex setup deadlocks can be easily encountered.
- *
- * @param CLIENT: The RPC client object.
- * @returns @ref rpcclient_logger for the client.
- */
-#define rpcclient_logger(CLIENT) ((CLIENT)->logger)
-
-
-/*! RPC Client logger handle. */
-typedef struct rpcclient_logger *rpcclient_logger_t;
-
-/*! Destroy the existing logger handle.
- *
- * @param logger: Logger handle.
- */
-void rpcclient_logger_destroy(rpcclient_logger_t logger);
-
-/*! Create a new RPC Client logger handle.
- *
- * @param f: Stream used to output log lines.
- * @param maxdepth: The output is in CPON format and this allows you to limit
- *   the maximum depth of containers you want to see in the logs. By specifying
- *   low enough number the logger can skip unnecessary data and still show you
- *   enough info about the message so you can recognize it.
- */
-rpcclient_logger_t rpcclient_logger_new(FILE *f, unsigned maxdepth)
-	__attribute__((nonnull, malloc, malloc(rpcclient_logger_destroy)));
+#define rpcclient_pollfd(CLIENT) ((CLIENT)->ctl(CLIENT, RPCC_CTRLOP_POLLFD))
 
 /*! Calculate maximum sleep before some message needs to be sent.
  *
@@ -301,6 +345,30 @@ static inline int rpcclient_maxsleep(rpcclient_t client, int idle_time) {
 	if (t.tv_sec > client->last_send.tv_sec + period)
 		return 0;
 	return period - t.tv_sec + client->last_send.tv_sec;
+}
+
+/*! Update @ref rpcclient.last_receive to current time.
+ *
+ * This is available mostly for implementation of additional RPC Clients.
+ * Existing implementations are already calling this internally in the
+ * appropriate places and thus you do not need to call it on your own.
+ *
+ * @param client: Client handle.
+ */
+static inline void rpcclient_last_receive_update(struct rpcclient *client) {
+	clock_gettime(CLOCK_MONOTONIC, &client->last_receive);
+}
+
+/*! Update @ref rpcclient.last_send to current time.
+ *
+ * This is available mostly for implementation of additional RPC Clients.
+ * Existing implementations are already calling this internally in the
+ * appropriate places and thus you do not need to call it on your own.
+ *
+ * @param client: Client handle.
+ */
+static inline void rpcclient_last_send_update(struct rpcclient *client) {
+	clock_gettime(CLOCK_MONOTONIC, &client->last_send);
 }
 
 #endif

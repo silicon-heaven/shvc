@@ -8,10 +8,10 @@ libshvchainpack_headers = files(
 )
 libshvrpc_headers = files(
   'shv/rpcclient.h',
-  'shv/rpcclient_impl.h',
   'shv/rpchandler.h',
   'shv/rpchandler_app.h',
   'shv/rpchandler_responses.h',
+  'shv/rpclogger.h',
   'shv/rpcmsg.h',
   'shv/rpcnode.h',
   'shv/rpcserver.h',

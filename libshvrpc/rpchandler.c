@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <semaphore.h>
+#include <poll.h>
 #include <obstack.h>
 #define obstack_chunk_alloc malloc
 #define obstack_chunk_free free
@@ -76,6 +77,27 @@ void rpchandler_destroy(rpchandler_t rpchandler) {
 	pthread_mutex_destroy(&rpchandler->mutex);
 	pthread_mutex_destroy(&rpchandler->pmutex);
 	free(rpchandler);
+}
+
+static void priority_lock(rpchandler_t rpchandler) {
+	pthread_mutex_lock(&rpchandler->pmutex);
+	pthread_mutex_lock(&rpchandler->mutex);
+	pthread_mutex_unlock(&rpchandler->pmutex);
+}
+
+static void lock(rpchandler_t rpchandler) {
+	while (true) {
+		pthread_mutex_lock(&rpchandler->mutex);
+		if (pthread_mutex_trylock(&rpchandler->pmutex) == 0) {
+			pthread_mutex_unlock(&rpchandler->pmutex);
+			break;
+		} else
+			pthread_mutex_unlock(&rpchandler->mutex);
+	}
+}
+
+static void unlock(rpchandler_t rpchandler) {
+	pthread_mutex_unlock(&rpchandler->mutex);
 }
 
 static bool parse_ls_dir(struct rpcreceive *recv, struct rpcmsg_meta *meta,
@@ -204,15 +226,64 @@ bool rpchandler_next(struct rpchandler *rpchandler) {
 	return rpcclient_connected(rpchandler->client);
 }
 
-static void *thread_loop(void *ctx) {
-	rpchandler_t rpchandler = ctx;
-	while (rpchandler_next(rpchandler)) {}
+void rpchandler_run(rpchandler_t rpchandler,
+	void (*onerr)(rpchandler_t, rpcclient_t, enum rpchandler_error)) {
+	while (rpcclient_connected(rpchandler->client)) {
+		while (true) {
+			struct pollfd pfd = {
+				.fd = rpcclient_pollfd(rpchandler->client),
+				.events = POLLIN | POLLHUP,
+			};
+			int pr = poll(&pfd, 1,
+				rpcclient_maxsleep(rpchandler->client, RPC_DEFAULT_IDLE_TIME) *
+					1000);
+			if (pr == 0) { /* Timeout */
+				priority_lock(rpchandler);
+				if (onerr)
+					onerr(rpchandler, rpchandler->client, RPCHANDLER_TIMEOUT);
+				else {
+					rpcmsg_pack_request_void(
+						rpcclient_pack(rpchandler->client), ".app", "ping", 0);
+					rpcclient_sendmsg(rpchandler->client);
+				}
+				unlock(rpchandler);
+			} else if (pr == -1 || pfd.revents & POLLERR) {
+				fprintf(stderr, "Poll error: %s\n", strerror(errno));
+				abort(); // TODO
+			} else if (pfd.revents & (POLLIN | POLLHUP)) {
+				/* Even on pollhup we request so RPC Client actually detest the
+				 * disconnect not just us.
+				 */
+				if (!rpchandler_next(rpchandler))
+					break;
+			}
+		}
+		/*printf("Calling onerr\n");*/
+		if (onerr)
+			onerr(rpchandler, rpchandler->client, RPCHANDLER_DISCONNECT);
+	}
+}
+
+struct thread_ctx {
+	rpchandler_t handler;
+	void (*onerr)(rpchandler_t, rpcclient_t, enum rpchandler_error);
+};
+
+static void *thread_loop(void *_ctx) {
+	struct thread_ctx *ctx = _ctx;
+	rpchandler_t handler = ctx->handler;
+	void (*onerr)(rpchandler_t, rpcclient_t, enum rpchandler_error) = ctx->onerr;
+	free(ctx);
+	rpchandler_run(handler, onerr);
 	return NULL;
 }
 
-int rpchandler_spawn_thread(rpchandler_t rpchandler, pthread_t *restrict thread,
-	const pthread_attr_t *restrict attr) {
-	return pthread_create(thread, attr, thread_loop, rpchandler);
+int rpchandler_spawn_thread(rpchandler_t rpchandler,
+	void (*onerr)(rpchandler_t, rpcclient_t, enum rpchandler_error),
+	pthread_t *restrict thread, const pthread_attr_t *restrict attr) {
+	struct thread_ctx *ctx = malloc(sizeof *ctx);
+	*ctx = (struct thread_ctx){.handler = rpchandler, .onerr = onerr};
+	return pthread_create(thread, attr, thread_loop, ctx);
 }
 
 int rpchandler_next_request_id(rpchandler_t rpchandler) {
@@ -221,26 +292,19 @@ int rpchandler_next_request_id(rpchandler_t rpchandler) {
 
 
 cp_pack_t rpchandler_msg_new(rpchandler_t rpchandler) {
-	while (true) {
-		pthread_mutex_lock(&rpchandler->mutex);
-		if (pthread_mutex_trylock(&rpchandler->pmutex) == 0) {
-			pthread_mutex_unlock(&rpchandler->pmutex);
-			break;
-		} else
-			pthread_mutex_unlock(&rpchandler->mutex);
-	}
+	lock(rpchandler);
 	return rpcclient_pack(rpchandler->client);
 }
 
 bool rpchandler_msg_send(rpchandler_t rpchandler) {
 	bool res = rpcclient_sendmsg(rpchandler->client);
-	pthread_mutex_unlock(&rpchandler->mutex);
+	unlock(rpchandler);
 	return res;
 }
 
 bool rpchandler_msg_drop(rpchandler_t rpchandler) {
 	bool res = rpcclient_dropmsg(rpchandler->client);
-	pthread_mutex_unlock(&rpchandler->mutex);
+	unlock(rpchandler);
 	return res;
 }
 
@@ -253,14 +317,12 @@ bool rpcreceive_validmsg(struct rpcreceive *receive) {
 
 cp_pack_t rpcreceive_response_new(struct rpcreceive *receive) {
 	struct rpchandler *rpchandler = (struct rpchandler *)receive;
-	/* DUe to the logging the message needs to be first read to release the lock
+	/* Due to the logging the message needs to be first read to release the lock
 	 * for the logging before we start writing.
 	 */
 	assert(receive->unpack == NULL);
 	assert(rpchandler->can_respond);
-	pthread_mutex_lock(&rpchandler->pmutex);
-	pthread_mutex_lock(&rpchandler->mutex);
-	pthread_mutex_unlock(&rpchandler->pmutex);
+	priority_lock(rpchandler);
 	return rpcclient_pack(rpchandler->client);
 }
 
@@ -269,7 +331,7 @@ bool rpcreceive_response_send(struct rpcreceive *receive) {
 	assert(rpchandler->can_respond);
 	bool res = rpcclient_sendmsg(rpchandler->client);
 	rpchandler->can_respond = false;
-	pthread_mutex_unlock(&rpchandler->mutex);
+	unlock(rpchandler);
 	return res;
 }
 
@@ -277,7 +339,7 @@ bool rpcreceive_response_drop(struct rpcreceive *receive) {
 	struct rpchandler *rpchandler = (struct rpchandler *)receive;
 	assert(rpchandler->can_respond);
 	bool res = rpcclient_dropmsg(rpchandler->client);
-	pthread_mutex_unlock(&rpchandler->mutex);
+	unlock(rpchandler);
 	return res;
 }
 

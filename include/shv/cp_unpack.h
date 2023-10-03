@@ -52,11 +52,11 @@ struct cp_unpack_chainpack {
  * cp_unpack_chainpack.f to the **f** passed to it. There is no need for a
  * special resource deallocation afterward.
  *
- * @param pack: Pointer to the handle to be initialized.
+ * @param unpack: Pointer to the handle to be initialized.
  * @param f: File used to read ChainPack bytes.
  * @returns Generic unpacker.
  */
-cp_unpack_t cp_unpack_chainpack_init(struct cp_unpack_chainpack *pack, FILE *f)
+cp_unpack_t cp_unpack_chainpack_init(struct cp_unpack_chainpack *unpack, FILE *f)
 	__attribute__((nonnull));
 
 /*! Handle for the CPON generic unpacker. */
@@ -84,11 +84,11 @@ struct cp_unpack_cpon {
  *
  * Remember to release resources allocated by @ref cpon_state.ctx!
  *
- * @param pack: Pointer to the handle to be initialized.
+ * @param unpack: Pointer to the handle to be initialized.
  * @param f: File used to read CPON bytes.
  * @returns Generic unpacker.
  */
-cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *pack, FILE *f)
+cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *unpack, FILE *f)
 	__attribute__((nonnull));
 
 

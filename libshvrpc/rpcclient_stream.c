@@ -16,7 +16,9 @@
 
 struct rpcclient_stream {
 	struct rpcclient c;
+	int errnum;
 	/* Read */
+	int rfd;
 	FILE *rf;
 	size_t rmsgoff;
 	/* Write */
@@ -27,19 +29,40 @@ struct rpcclient_stream {
 };
 
 
-static ssize_t xread(int fd, char *buf, size_t siz) {
+static ssize_t xread(struct rpcclient_stream *c, char *buf, size_t siz) {
 	ssize_t i;
 	do
-		i = read(fd, buf, siz);
+		i = read(c->rfd, buf, siz);
 	while (i == -1 && errno == EINTR);
+	if (i == -1)
+		c->errnum = errno;
 	return i;
 }
 
-static int readc(int fd) {
+static int readc(struct rpcclient_stream *c) {
 	uint8_t v;
-	if (xread(fd, (void *)&v, 1) < 0)
+	if (xread(c, (void *)&v, 1) != 1) {
+		c->errnum = ENODATA;
 		return -1;
+	}
 	return v;
+}
+
+static bool xwrite(struct rpcclient_stream *c, const void *buf, size_t siz) {
+	uint8_t *data = (uint8_t *)buf;
+	while (siz > 0) {
+		ssize_t i = write(c->wfd, data, siz);
+		if (i == -1) {
+			if (errno != EINTR) {
+				c->errnum = errno;
+				return false;
+			}
+		} else {
+			data += i;
+			siz -= i;
+		}
+	}
+	return true;
 }
 
 static ssize_t cookie_read(void *cookie, char *buf, size_t size) {
@@ -47,7 +70,7 @@ static ssize_t cookie_read(void *cookie, char *buf, size_t size) {
 	if (c->rmsgoff < size)
 		/* Read up to the end of the message and then signal EOF by reading 0. */
 		size = c->rmsgoff;
-	ssize_t i = xread(c->c.rfd, buf, size);
+	ssize_t i = xread(c, buf, size);
 	if (i > 0)
 		c->rmsgoff -= i;
 	return i;
@@ -56,97 +79,84 @@ static ssize_t cookie_read(void *cookie, char *buf, size_t size) {
 static void cp_unpack_stream(void *ptr, struct cpitem *item) {
 	struct rpcclient_stream *c = ptr - offsetof(struct rpcclient_stream, c.unpack);
 	chainpack_unpack(c->rf, item);
-	rpcclient_log_item(c->c.logger, item);
+	rpclogger_log_item(c->c.logger, item);
 }
 
-static ssize_t read_size(int fd) {
-	int c;
-	if ((c = readc(fd)) == -1)
+static ssize_t read_size(struct rpcclient_stream *c) {
+	int v;
+	if ((v = readc(c)) == -1)
 		return -1;
-	unsigned bytes = chainpack_int_bytes(c);
-	size_t res = chainpack_uint_value1(c, bytes);
+	unsigned bytes = chainpack_int_bytes(v);
+	size_t res = chainpack_uint_value1(v, bytes);
 	for (unsigned i = 1; i < bytes; i++) {
-		if ((c = readc(fd)) == -1)
+		if ((v = readc(c)) == -1)
 			return -1;
-		res = (res << 8) | c;
+		res = (res << 8) | v;
 	}
 	return res;
 }
 
-static bool msgfetch_stream(struct rpcclient *client, bool newmsg) {
-	struct rpcclient_stream *c = (struct rpcclient_stream *)client;
+static void flushmsg(struct rpcclient_stream *c) {
+	/* Flush the rest of the message. Read up to the EOF. */
+	char buf[BUFSIZ];
+	while (fread(buf, 1, BUFSIZ, c->rf) > 0) {}
+}
+
+static bool nextmsg_stream(struct rpcclient_stream *c) {
 	bool ok = true;
-	if (newmsg) {
-		ssize_t msgsiz = read_size(c->c.rfd);
-		if (msgsiz == -1)
-			return false;
-		c->rmsgoff = msgsiz;
-		clearerr(c->rf);
-		if (ok) {
-			if (fgetc(c->rf) != CP_ChainPack)
-				ok = false;
-			else
-				rpcclient_log_lock(c->c.logger, true);
-		}
-		rpcclient_last_receive_update(client);
-	} else {
-		rpcclient_last_receive_update(client);
-		rpcclient_log_unlock(c->c.logger);
-		/* Flush the rest of the message */
-		char buf[BUFSIZ];
-		while (fread(buf, 1, BUFSIZ, c->rf) > 0)
-			;
+	ssize_t msgsiz = read_size(c);
+	if (msgsiz == -1)
+		return false;
+	c->rmsgoff = msgsiz;
+	clearerr(c->rf);
+	if (fgetc(c->rf) != CP_ChainPack) {
+		flushmsg(c);
+		rpcclient_last_receive_update(&c->c); /* Still valid receive */
+		return false;
 	}
+	rpclogger_log_lock(c->c.logger, true);
+	rpcclient_last_receive_update(&c->c);
 	return ok;
+}
+
+static bool validmsg_stream(struct rpcclient_stream *c) {
+	rpcclient_last_receive_update(&c->c);
+	rpclogger_log_unlock(c->c.logger);
+	flushmsg(c);
+	rpcclient_last_receive_update(&c->c);
+	return true; /* Always valid for stream as we relly on lower layer */
 }
 
 static bool cp_pack_stream(void *ptr, const struct cpitem *item) {
 	struct rpcclient_stream *c = ptr - offsetof(struct rpcclient_stream, c.pack);
 	if (ftell(c->fbuf) == 0)
-		rpcclient_log_lock(c->c.logger, false);
-	rpcclient_log_item(c->c.logger, item);
+		rpclogger_log_lock(c->c.logger, false);
+	rpclogger_log_item(c->c.logger, item);
 	return chainpack_pack(c->fbuf, item) > 0;
 }
 
-static bool write_size(int fd, size_t len) {
+static bool write_size(struct rpcclient_stream *c, size_t len) {
 	unsigned bytes = chainpack_w_uint_bytes(len);
 	for (unsigned i = 0; i < bytes; i++) {
-		uint8_t c = i == 0 ? chainpack_w_uint_value1(len, bytes)
+		uint8_t v = i == 0 ? chainpack_w_uint_value1(len, bytes)
 						   : 0xff & (len >> (8 * (bytes - i - 1)));
-		int res;
-		do
-			res = write(fd, &c, 1);
-		while (res == -1 && errno == EINTR);
-		if (res == -1)
+		if (!xwrite(c, &v, 1))
 			return false;
 	}
 	return true;
 }
 
-static bool msgflush_stream(struct rpcclient *client, bool send) {
-	struct rpcclient_stream *c = (struct rpcclient_stream *)client;
-	rpcclient_log_unlock(c->c.logger);
+static bool msgflush_stream(struct rpcclient_stream *c, bool send) {
+	rpclogger_log_unlock(c->c.logger);
 	fflush(c->fbuf);
 	if (send) {
 		size_t len = ftell(c->fbuf);
-		if (!write_size(c->wfd, len + 1))
+		if (!write_size(c, len + 1))
 			return false;
-		int res;
 		uint8_t cpf = CP_ChainPack;
-		do
-			res = write(c->wfd, &cpf, 1);
-		while (res == -1 && errno == EINTR);
-		ssize_t i = 0;
-		while (i < len) {
-			ssize_t r = write(c->wfd, c->buf, len);
-			if (r == -1) {
-				if (errno == EINTR)
-					continue;
-				return false;
-			}
-			i += r;
-		}
-		rpcclient_last_send_update(client);
+		if (!xwrite(c, &cpf, 1) || !xwrite(c, c->buf, len))
+			return false;
+		rpcclient_last_send_update(&c->c);
 	}
 	fseek(c->fbuf, 0, SEEK_SET);
 	return true;
@@ -157,11 +167,34 @@ static void destroy(rpcclient_t client) {
 	fclose(c->rf);
 	fclose(c->fbuf);
 	free(c->buf);
-	close(c->c.rfd);
-	if (c->c.rfd != c->wfd)
+	close(c->rfd);
+	if (c->rfd != c->wfd)
 		close(c->wfd);
 	free(c);
 }
+
+static int ctl_stream(struct rpcclient *client, enum rpcclient_ctlop op) {
+	struct rpcclient_stream *c = (struct rpcclient_stream *)client;
+	switch (op) {
+		case RPCC_CTRLOP_DESTROY:
+			destroy(client);
+			return true;
+		case RPCC_CTRLOP_ERRNO:
+			return c->errnum;
+		case RPCC_CTRLOP_NEXTMSG:
+			return nextmsg_stream(c);
+		case RPCC_CTRLOP_VALIDMSG:
+			return validmsg_stream(c);
+		case RPCC_CTRLOP_SENDMSG:
+			return msgflush_stream(c, true);
+		case RPCC_CTRLOP_DROPMSG:
+			return msgflush_stream(c, false);
+		case RPCC_CTRLOP_POLLFD:
+			return c->rfd;
+	}
+	abort(); /* This should not happen -> implementation error */
+}
+
 
 rpcclient_t rpcclient_stream_new(int readfd, int writefd) {
 	struct rpcclient_stream *res = malloc(sizeof *res);
@@ -171,14 +204,12 @@ rpcclient_t rpcclient_stream_new(int readfd, int writefd) {
 	*res = (struct rpcclient_stream){
 		.c =
 			(struct rpcclient){
-				.rfd = readfd,
+				.ctl = ctl_stream,
 				.unpack = cp_unpack_stream,
-				.msgfetch = msgfetch_stream,
 				.pack = cp_pack_stream,
-				.msgflush = msgflush_stream,
-				.destroy = destroy,
 				.logger = NULL,
 			},
+		.rfd = readfd,
 		.rf = f,
 		.rmsgoff = 0,
 		.wfd = writefd,
@@ -188,6 +219,7 @@ rpcclient_t rpcclient_stream_new(int readfd, int writefd) {
 	assert(res->fbuf);
 	return &res->c;
 }
+
 
 rpcclient_t rpcclient_stream_tcp_connect(const char *location, int port) {
 	struct addrinfo hints;

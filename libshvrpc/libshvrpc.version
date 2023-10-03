@@ -26,14 +26,13 @@ V0.0 {
 		rpcclient_serial_new;
 		rpcclient_serial_tty_connect;
 		rpcclient_serial_unix_connect;
-		rpcclient_logger_new;
-		rpcclient_logger_destroy;
 
-		# shv/rpcclient_impl.h
-		rpcclient_init;
-		rpcclient_log_lock;
-		rpcclient_log_item;
-		rpcclient_log_unlock;
+		# shv/rpclogger.h
+		rpclogger_new;
+		rpclogger_destroy;
+		rpclogger_log_lock;
+		rpclogger_log_item;
+		rpclogger_log_unlock;
 
 		# shv/rpcurl.h
 		rpcurl_parse;
@@ -44,6 +43,7 @@ V0.0 {
 		rpchandler_destroy;
 		rpchandler_new;
 		rpchandler_next;
+		rpchandler_run;
 		rpchandler_spawn_thread;
 		rpchandler_next_request_id;
 		rpchandler_msg_new;
