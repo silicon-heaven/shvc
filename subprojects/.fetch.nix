@@ -1,5 +1,10 @@
 {
-  pkgs,
+  makeSetupHook,
+  stdenvNoCC,
+  meson,
+  cacert,
+  git,
+  # The following should be specified by caller
   src,
   hash ? "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
   rev,
@@ -9,15 +14,15 @@
     then rev
     else "src";
 in
-  pkgs.makeSetupHook {
+  makeSetupHook {
     name = "${pname}-meson-subprojects-setup-hook";
 
     substitutions = {
-      subprojects = pkgs.stdenvNoCC.mkDerivation {
+      subprojects = stdenvNoCC.mkDerivation {
         name = "${pname}-meson-subprojects";
         inherit src;
 
-        nativeBuildInputs = with pkgs; [meson cacert git];
+        nativeBuildInputs = [meson cacert git];
 
         buildCommand = ''
           cp -r --no-preserve=mode $src/. .

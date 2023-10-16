@@ -19,20 +19,33 @@
         path = ./.;
         filter = path: type: ! hasSuffix ".nix" path;
       };
-      packages = pkgs: let
-        subprojects = import ./subprojects/.fetch.nix {
-          inherit pkgs src;
-          rev = self.rev or null;
-          hash = "sha256-GEUDy5crY09UTQ072NEvB50DjjgNv2BrLSwxLRNqEKM=";
-        };
-      in {
-        template-c = pkgs.stdenv.mkDerivation {
+
+      template-c = {
+        stdenv,
+        callPackage,
+        gperf,
+        meson,
+        ninja,
+        pkg-config,
+        doxygen,
+        sphinxHook,
+        python3Packages,
+        check,
+        check-suite,
+        bats,
+        bash,
+      }:
+        stdenv.mkDerivation {
           pname = "template-c";
           inherit version src;
           outputs = ["out" "doc"];
-          buildInputs = with pkgs; [];
-          nativeBuildInputs = with pkgs; [
-            subprojects
+          buildInputs = [];
+          nativeBuildInputs = [
+            (callPackage ./subprojects/.fetch.nix {
+              inherit src;
+              rev = self.rev or null;
+              hash = "sha256-GEUDy5crY09UTQ072NEvB50DjjgNv2BrLSwxLRNqEKM=";
+            })
             gperf
             meson
             ninja
@@ -46,25 +59,26 @@
               ];
             }))
           ];
-          checkInputs = with pkgs; [
+          checkInputs = [
             check
-            pkgs.check-suite
+            check-suite
           ];
-          nativeCheckInputs = with pkgs; [
+          nativeCheckInputs = [
             bash
             bats
           ];
           doCheck = true;
           sphinxRoot = "../docs";
         };
-      };
     in
       {
         overlays = {
-          template-c = final: prev: packages (id prev);
+          noInherit = final: prev: {
+            template-c = final.callPackage template-c {};
+          };
           default = composeManyExtensions [
             check-suite.overlays.default
-            self.overlays.template-c
+            self.overlays.noInherit
           ];
         };
       }
