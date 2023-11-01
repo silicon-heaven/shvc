@@ -121,8 +121,8 @@ include:
 .mesonlinter:
   extends: .linter
   script:
-    - 'nix develop --quiet -c meson setup build -Doptimization=plain'
-    - 'nix develop --quiet -c meson compile -C build $COMPILE_ARG'
+    - nix develop --quiet -c meson setup build -Doptimization=plain
+    - nix develop --quiet -c meson compile -C build $COMPILE_ARG
 
 cppcheck:
   extends: .mesonlinter
@@ -230,6 +230,6 @@ release:
       artifacts: true
   before_script:
     - apk update
-    - apk add bash curl yq
+    - apk add bash grep curl yq
   script:
     - ./.release.sh
