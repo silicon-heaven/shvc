@@ -161,7 +161,7 @@ clang-format:
 shell-format:
   extends: .style
   script:
-    - git ls-files '**.sh' '**.bats' | xargs nix develop --quiet -c shfmt --binary-next-line -w
+    - git ls-files '**.sh' '**.bats' | xargs nix develop --quiet -c shfmt -w
     - git diff --exit-code
 
 nixfmt:
