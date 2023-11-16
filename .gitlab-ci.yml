@@ -76,6 +76,7 @@ tests:
     - job: build
       artifacts: false
   script:
+    - ulimit -n 1024 # workaround for Valgrind
     - nix develop --quiet -c meson setup build -Doptimization=plain -Db_coverage=true
     - nix develop --quiet -c meson test -C build
   artifacts:
