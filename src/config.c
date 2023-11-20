@@ -22,13 +22,14 @@
 #ifdef __NuttX__
 
 static void print_usage(const char *argv0) {
-	fprintf(stderr, "%s [-h] [FILE]\n", argv0);
+	fprintf(stderr, "%s [-hV] [FILE]\n", argv0);
 }
 
 static void print_help(const char *argv0) {
 	print_usage(argv0);
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Arguments:\n");
+	fprintf(stderr, "  -V  Print application version\n");
 	fprintf(stderr, "  -h  Print this help text\n");
 }
 
@@ -38,6 +39,9 @@ static void parse_opts(struct config *conf, int argc, char **argv) {
 		switch (c) {
 			case 'h':
 				print_help(argv[0]);
+				exit(0);
+			case 'V':
+				puts(PROJECT_VERSION);
 				exit(0);
 			default:
 				print_usage(argv[0]);
