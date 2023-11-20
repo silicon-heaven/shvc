@@ -84,10 +84,11 @@
       }
       // eachDefaultSystem (system: let
         pkgs = nixpkgs.legacyPackages.${system}.extend self.overlays.default;
+        defaultpkg = pkgs.template-c;
       in {
         packages = {
           inherit (pkgs) template-c;
-          default = pkgs.template-c;
+          default = defaultpkg;
         };
         legacyPackages = pkgs;
 
@@ -114,7 +115,12 @@
           };
         };
 
-        checks.default = self.packages.${system}.template-c;
+        apps.default = {
+          type = "app";
+          program = "${defaultpkg}/bin/foo";
+        };
+
+        checks.default = defaultpkg;
 
         formatter = pkgs.alejandra;
       });

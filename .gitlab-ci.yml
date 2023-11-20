@@ -64,6 +64,16 @@ nix:
   script:
     - nix build .?submodules=1
 
+nix-appimage:
+  extends: .build
+  needs: ["nix"]
+  script:
+    - nix bundle --bundler github:ralismark/nix-appimage .?submodules=1
+  artifacts:
+    when: always
+    paths:
+    - '*.AppImage'
+
 ## Test stage ##################################################################
 .test:
   stage: test
@@ -207,9 +217,13 @@ coverage:
 dist:
   stage: release
   extends: .nix
+  rules:
+    - if: '$CI_COMMIT_TAG'
   needs:
     - job: tests
       artifacts: false
+    - job: nix-appimage
+      artifacts: true
   script:
     - nix develop --quiet -c meson setup build
     - nix develop --quiet -c meson dist -C build --formats xztar,gztar,zip
@@ -220,12 +234,13 @@ dist:
       - "*.tar.xz"
       - "*.tar.gz"
       - "*.zip"
+      - "*.AppImage"
 
 release:
   stage: release
-  image: "registry.gitlab.com/gitlab-org/release-cli:latest"
   rules:
     - if: '$CI_COMMIT_TAG'
+  image: "registry.gitlab.com/gitlab-org/release-cli:latest"
   needs:
     - job: dist
       artifacts: true

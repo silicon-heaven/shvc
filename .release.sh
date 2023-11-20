@@ -50,7 +50,7 @@ while read -r dists; do
 			--upload-file "${dist}" "${url}"
 		args+=("--assets-link" "{\"name\":\"${dist}\",\"url\":\"${url}\"}")
 	done
-done <<<"$(yq '.build.artifacts.paths[]' .gitlab-ci.yml)"
+done <<<"$(yq '.dist.artifacts.paths[]' .gitlab-ci.yml)"
 
 release-cli create \
 	--name "Release $version" \
