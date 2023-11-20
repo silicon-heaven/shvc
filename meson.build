@@ -1,7 +1,7 @@
 project(
   'template-c',
   'c',
-  version: run_command('.version.sh', check: true).stdout().strip(),
+  version: run_command(find_program('bash'), './.version.sh', check: true).stdout().strip(),
   license: 'GPL-3.0-or-later',
   default_options: 'c_std=c17',
   meson_version: '>=0.57.0',
