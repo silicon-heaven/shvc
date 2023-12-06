@@ -2,6 +2,7 @@
   description = "Project template for C";
 
   inputs = {
+    semver.url = "gitlab:cynerd/nixsemver";
     check-suite.url = "github:cynerd/check-suite";
   };
 
@@ -9,12 +10,14 @@
     self,
     flake-utils,
     nixpkgs,
+    semver,
     check-suite,
   }:
     with builtins;
     with flake-utils.lib;
-    with nixpkgs.lib; let
-      version = fileContents ./version;
+    with nixpkgs.lib;
+    with semver.lib; let
+      version = changelog.currentRelease ./CHANGELOG.md self.sourceInfo;
       src = builtins.path {
         path = ./.;
         filter = path: type: ! hasSuffix ".nix" path;
@@ -38,6 +41,7 @@
         stdenv.mkDerivation {
           pname = "template-c";
           inherit version src;
+          GIT_REV = self.shortRev or self.dirtyShortRev;
           outputs = ["out" "doc"];
           buildInputs = [];
           nativeBuildInputs = [
