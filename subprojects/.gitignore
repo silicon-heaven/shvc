@@ -1,4 +1,4 @@
 *
-!.gitignore
-!.fetch.nix
+!gitignore
+!fetch.nix
 !.nix-setup-hook.sh

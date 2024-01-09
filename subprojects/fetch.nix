@@ -49,4 +49,4 @@ in
       };
     };
   }
-  ./.nix-setup-hook.sh
+  ./nix-setup-hook.sh

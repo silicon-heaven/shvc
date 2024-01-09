@@ -45,10 +45,10 @@
           outputs = ["out" "doc"];
           buildInputs = [];
           nativeBuildInputs = [
-            (callPackage ./subprojects/.fetch.nix {
+            (callPackage ./subprojects/fetch.nix {
               inherit src;
               rev = self.rev or null;
-              hash = "sha256-GEUDy5crY09UTQ072NEvB50DjjgNv2BrLSwxLRNqEKM=";
+              hash = "sha256-R3YTQYHilh9R3eoyhhlyAuxU8BK9/c3DX1qTPKC+Y7E=";
             })
             gperf
             meson
@@ -76,6 +76,7 @@
         };
     in
       {
+        foo = ./subprojects/.nix-setup-hook.sh;
         overlays = {
           noInherit = final: prev: {
             template-c = final.callPackage template-c {};
