@@ -89,12 +89,8 @@
       }
       // eachDefaultSystem (system: let
         pkgs = nixpkgs.legacyPackages.${system}.extend self.overlays.default;
-        defaultpkg = pkgs.template-c;
       in {
-        packages = {
-          inherit (pkgs) template-c;
-          default = defaultpkg;
-        };
+        packages.default = pkgs.template-c;
         legacyPackages = pkgs;
 
         devShells = filterPackages system {
@@ -115,17 +111,17 @@
               # Documentation
               sphinx-autobuild
             ];
-            inputsFrom = [self.packages.${system}.template-c];
+            inputsFrom = [self.packages.${system}.default];
             meta.platforms = platforms.linux;
           };
         };
 
         apps.default = {
           type = "app";
-          program = "${defaultpkg}/bin/foo";
+          program = "${self.packages.${system}.default}/bin/foo";
         };
 
-        checks.default = defaultpkg;
+        checks.default = self.packages.${system}.default;
 
         formatter = pkgs.alejandra;
       });
