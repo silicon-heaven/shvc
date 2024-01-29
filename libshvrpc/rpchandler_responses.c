@@ -89,9 +89,10 @@ rpcresponse_t rpcresponse_expect(rpchandler_responses_t responder, int request_i
 }
 
 bool rpcresponse_waitfor(rpcresponse_t respond, struct rpcreceive **receive,
-	struct rpcmsg_meta **meta, int timeout) {
-	sem_wait(&respond->sem);
-	// TODO wait
+	const struct rpcmsg_meta **meta, int timeout) {
+	sem_wait(&respond->sem); // TODO timeout
+	*meta = respond->meta;
+	*receive = respond->receive;
 	return 1;
 }
 

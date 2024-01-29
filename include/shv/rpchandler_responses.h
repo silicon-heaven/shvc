@@ -73,7 +73,7 @@ rpcresponse_t rpcresponse_expect(rpchandler_responses_t responses, int request_i
  * @returns `true` if response received or `false` otherwise.
  */
 bool rpcresponse_waitfor(rpcresponse_t respond, struct rpcreceive **receive,
-	struct rpcmsg_meta **meta, int timeout) __attribute__((nonnull));
+	const struct rpcmsg_meta **meta, int timeout) __attribute__((nonnull));
 
 /*! Validate the response message.
  *

@@ -214,9 +214,9 @@ bool rpchandler_next(struct rpchandler *rpchandler) {
 			&rpchandler->recv.item, &meta, NULL, &rpchandler->recv.obstack)) {
 		rpchandler->recv.unpack = rpcclient_unpack(rpchandler->client);
 		rpchandler->can_respond = meta.type == RPCMSG_T_REQUEST;
-		if (!strcmp(meta.method, "ls"))
+		if (meta.method && !strcmp(meta.method, "ls"))
 			handle_ls(rpchandler->stages, &rpchandler->recv, &meta);
-		else if (!strcmp(meta.method, "dir"))
+		else if (meta.method && !strcmp(meta.method, "dir"))
 			handle_dir(rpchandler->stages, &rpchandler->recv, &meta);
 		else
 			handle_msg(rpchandler->stages, &rpchandler->recv, &meta);
