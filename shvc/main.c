@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
 	}
 
 	struct rpcreceive *receive;
-	struct rpcmsg_meta const *meta;
+	const struct rpcmsg_meta *meta;
 	if (!rpcresponse_waitfor(resp, &receive, &meta, TIMEOUT)) {
 		fprintf(stderr, "Request timed out\n");
 		goto err;

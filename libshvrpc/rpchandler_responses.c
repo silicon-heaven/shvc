@@ -90,10 +90,17 @@ rpcresponse_t rpcresponse_expect(rpchandler_responses_t responder, int request_i
 
 bool rpcresponse_waitfor(rpcresponse_t respond, struct rpcreceive **receive,
 	const struct rpcmsg_meta **meta, int timeout) {
-	sem_wait(&respond->sem); // TODO timeout
+	struct timespec ts_timeout;
+	clock_gettime(CLOCK_REALTIME, &ts_timeout);
+	ts_timeout.tv_sec += timeout;
+
+	int sem_ret = sem_timedwait(&respond->sem, &ts_timeout);
+	if (sem_ret != 0)
+		return false;
+
 	*meta = respond->meta;
 	*receive = respond->receive;
-	return 1;
+	return true;
 }
 
 bool rpcresponse_validmsg(rpcresponse_t respond) {
