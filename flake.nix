@@ -2,6 +2,7 @@
   description = "Silicon Heaven in C";
 
   inputs = {
+    semver.url = "gitlab:cynerd/nixsemver";
     check-suite.url = "github:cynerd/check-suite";
     pyshv.url = "git+https://gitlab.com/elektroline-predator/pyshv.git";
   };
@@ -10,109 +11,126 @@
     self,
     flake-utils,
     nixpkgs,
+    semver,
     check-suite,
     pyshv,
-  }:
-    with builtins;
-    with flake-utils.lib;
-    with nixpkgs.lib; let
-      version = fileContents ./version;
-      src = builtins.path {
-        path = ./.;
-        filter = path: type: ! hasSuffix ".nix" path;
-      };
-      packages = pkgs: let
-        subprojects = import ./subprojects/.fetch.nix {
-          inherit pkgs src;
-          rev = self.rev or null;
-          hash = "sha256-GEUDy5crY09UTQ072NEvB50DjjgNv2BrLSwxLRNqEKM=";
-        };
-      in {
-        shvc = pkgs.stdenv.mkDerivation {
-          pname = "shvc";
-          inherit version src;
-          outputs = ["out" "doc"];
-          buildInputs = with pkgs; [
-              inih
-              uriparser
-              openssl
-          ];
-          nativeBuildInputs = with pkgs; [
-            subprojects
-            gperf
-            meson
-            ninja
-            pkg-config
-            doxygen
-            (sphinxHook.overrideAttrs (oldAttrs: {
-              propagatedBuildInputs = with python3Packages; [
-                sphinx_rtd_theme
-                myst-parser
-                breathe
-              ];
-            }))
-          ];
-          checkInputs = with pkgs; [
-            check
-            pkgs.check-suite
-          ];
-          nativeCheckInputs = with pkgs; [
-            (python3.withPackages (pypkgs:
-              with pypkgs; [
-                pytest
-                pytest-tap
-                pypkgs.pyshv
-              ]))
-          ];
-          doCheck = true;
-          sphinxRoot = "../docs";
-        };
-      };
-    in
-      {
-        overlays = {
-          shvc = final: prev: packages (id prev);
-          default = composeManyExtensions [
-            check-suite.overlays.default
-            pyshv.overlays.default
-            self.overlays.shvc
-          ];
-        };
-      }
-      // eachDefaultSystem (system: let
-        pkgs = nixpkgs.legacyPackages.${system}.extend self.overlays.default;
-      in {
-        packages = {
-          inherit (pkgs) shvc;
-          default = pkgs.shvc;
-        };
-        legacyPackages = pkgs;
+  }: let
+    inherit (nixpkgs.lib) hasSuffix composeManyExtensions platforms;
+    inherit (flake-utils.lib) eachDefaultSystem filterPackages mkApp;
+    inherit (semver.lib) changelog;
 
-        devShells = filterPackages system {
-          default = pkgs.mkShell {
-            packages = with pkgs; [
-              # Linters and formaters
-              clang-tools_14
-              cppcheck
-              editorconfig-checker
-              flawfinder
-              muon
-              shellcheck
-              shfmt
-              gitlint
-              # Testing and code coverage
-              valgrind
-              gcovr
-              # Documentation
-              sphinx-autobuild
+    version = changelog.currentRelease ./CHANGELOG.md self.sourceInfo;
+    src = builtins.path {
+      path = ./.;
+      filter = path: type: ! hasSuffix ".nix" path;
+    };
+
+    shvc = {
+      stdenv,
+      callPackage,
+      gperf,
+      meson,
+      ninja,
+      pkg-config,
+      doxygen,
+      sphinxHook,
+      python3Packages,
+      inih,
+      uriparser,
+      openssl,
+      check,
+      check-suite,
+      python3,
+    }:
+      stdenv.mkDerivation {
+        pname = "shvc";
+        inherit version src;
+        GIT_REV = self.shortRev or self.dirtyShortRev;
+        outputs = ["out" "doc"];
+        buildInputs = [
+          inih
+          uriparser
+          openssl
+        ];
+        nativeBuildInputs = [
+          (callPackage ./subprojects/fetch.nix {
+            inherit src;
+            rev = self.rev or null;
+            hash = "sha256-R3YTQYHilh9R3eoyhhlyAuxU8BK9/c3DX1qTPKC+Y7E=";
+          })
+          gperf
+          meson
+          ninja
+          pkg-config
+          doxygen
+          (sphinxHook.overrideAttrs (oldAttrs: {
+            propagatedBuildInputs = with python3Packages; [
+              sphinx_rtd_theme
+              myst-parser
+              breathe
             ];
-            inputsFrom = [self.packages.${system}.shvc];
-            meta.platforms = platforms.linux;
-          };
+          }))
+        ];
+        checkInputs = [
+          check
+          check-suite
+        ];
+        nativeCheckInputs = [
+          (python3.withPackages (pypkgs:
+            with pypkgs; [
+              pytest
+              pytest-tap
+              pypkgs.pyshv
+            ]))
+        ];
+        doCheck = true;
+        sphinxRoot = "../docs";
+      };
+  in
+    {
+      overlays = {
+        noInherit = final: prev: {
+          shvc = final.callPackage shvc {};
         };
+        default = composeManyExtensions [
+          check-suite.overlays.default
+          pyshv.overlays.default
+          self.overlays.noInherit
+        ];
+      };
+    }
+    // eachDefaultSystem (system: let
+      pkgs = nixpkgs.legacyPackages.${system}.extend self.overlays.default;
+    in {
+      packages.default = pkgs.shvc;
+      legacyPackages = pkgs;
 
-        checks.default = self.packages.${system}.shvc;
+      devShells = filterPackages system {
+        default = pkgs.mkShell {
+          packages = with pkgs; [
+            # Linters and formaters
+            clang-tools_14
+            cppcheck
+            editorconfig-checker
+            flawfinder
+            muon
+            shellcheck
+            shfmt
+            gitlint
+            # Testing and code coverage
+            valgrind
+            gcovr
+            gcc11 # Hotfix for https://github.com/NixOS/nixpkgs/pull/279455
+            # Documentation
+            sphinx-autobuild
+          ];
+          inputsFrom = [self.packages.${system}.default];
+          meta.platforms = platforms.linux;
+        };
+      };
 
-        formatter = pkgs.alejandra;
-      });
+      checks.default = self.packages.${system}.default;
+
+      formatter = pkgs.alejandra;
+    });
 }

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 set -eu
 
+semregexp='^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$'
 version="${CI_COMMIT_TAG#v}"
-if ! grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$' <<<"$version"; then
-	echo "Tag has to be valid version number such as v1.0.0!" >&2
+if ! grep -qE "$semregexp" <<<"$version"; then
+	echo "Tag has to be valid semantic version!" >&2
 	exit 1
 fi
 
@@ -49,7 +50,7 @@ while read -r dists; do
 			--upload-file "${dist}" "${url}"
 		args+=("--assets-link" "{\"name\":\"${dist}\",\"url\":\"${url}\"}")
 	done
-done <<<"$(yq '.build.artifacts.paths[]' .gitlab-ci.yml)"
+done <<<"$(yq '.dist.artifacts.paths[]' .gitlab-ci.yml)"
 
 release-cli create \
 	--name "Release $version" \
