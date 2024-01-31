@@ -7,6 +7,7 @@ unittest_libshvchainpack = executable(
     'cp_unpack.c',
     'cpdatetime.c',
     'cpdecimal.c',
+    'cpitem.c',
     'cpon.c',
     unittest_utils_src,
   ],
