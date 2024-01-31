@@ -126,6 +126,13 @@ int main(int argc, char **argv) {
 		switch (meta.type) {
 			case RPCMSG_T_RESPONSE:
 				break;
+			case RPCMSG_T_REQUEST:
+				break;
+			case RPCMSG_T_SIGNAL:
+				break;
+			case RPCMSG_T_ERROR:
+			case RPCMSG_T_INVALID:
+				break;
 		}
 	}
 	obstack_free(&obs, NULL);
