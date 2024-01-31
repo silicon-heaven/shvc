@@ -70,7 +70,7 @@ void setup_shvbroker(void) {
 	shvbroker_tcp_port = empty_port();
 	fprintf(f, "internet = tcp://localhost:%d\n", shvbroker_tcp_port);
 	shvbroker_unix_path = tmpdir_path("shvbroker.sock");
-	fprintf(f, "unix = localsocket:%s\n", shvbroker_unix_path);
+	fprintf(f, "unix = unix:%s\n", shvbroker_unix_path);
 	fputs("[users.admin]\n", f);
 	fputs("password = admin!123\n", f);
 	fputs("roles = admin\n", f);
@@ -78,9 +78,8 @@ void setup_shvbroker(void) {
 	fputs("sha1pass = 57a261a7bcb9e6cf1db80df501cdd89cee82957e\n", f);
 	fputs("roles = admin\n", f);
 	fputs("[roles.admin]\n", f);
-	fputs("rules = admin\n", f);
+	fputs("methods = :\n", f);
 	fputs("access = dev\n", f);
-	fputs("[rules.admin]\n", f);
 	fclose(f);
 
 	char *args[] = {PYSHVBROKER, "-vvc", config_path, NULL};
