@@ -52,10 +52,6 @@ subdir('libshvchainpack')
 subdir('libshvrpc')
 subdir('libshvbroker')
 
-cpconv_opt = get_option('cpconv')
-if cpconv_opt
-  subdir('cpconv')
-endif
 shvc_opt = get_option('shvc')
 if shvc_opt
   subdir('shvc')

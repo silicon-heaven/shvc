@@ -7,12 +7,6 @@ option(
 
 # Applications
 option(
-  'cpconv',
-  type: 'boolean',
-  value: true,
-  description: 'Build cpconv tool that converts between Chainpack and Cpon.',
-)
-option(
   'shvc',
   type: 'boolean',
   value: true,
