@@ -176,6 +176,10 @@ static void handle_dir(const struct rpchandler_stage *stages,
 		&ctx, "dir", RPCNODE_DIR_RET_PARAM, 0, RPCMSG_ACC_BROWSE, NULL);
 	rpchandler_dir_result(
 		&ctx, "ls", RPCNODE_DIR_RET_PARAM, 0, RPCMSG_ACC_BROWSE, NULL);
+
+	if (meta->path == NULL)
+		meta->path = "";
+
 	for (const struct rpchandler_stage *s = stages; s->funcs; s++)
 		if (s->funcs->dir)
 			s->funcs->dir(s->cookie, meta->path, &ctx);
