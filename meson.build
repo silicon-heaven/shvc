@@ -39,9 +39,10 @@ else
 endif
 
 
-gperf = generator(find_program('gperf'),
+gperf = generator(
+  find_program('gperf'),
   output: '@PLAINNAME@.h',
-  arguments: ['@EXTRA_ARGS@', '--output-file=@OUTPUT@', '@INPUT@']
+  arguments: ['@EXTRA_ARGS@', '--output-file=@OUTPUT@', '@INPUT@'],
 )
 
 
@@ -58,10 +59,9 @@ shvbroker_opt = get_option('shvcbroker')
 if shvbroker_opt
   subdir('shvcbroker')
 endif
-demo_opt = get_option('demo')
-if demo_opt
-  subdir('demo')
-endif
+demo_device_opt = get_option('demo-device')
+demo_client_opt = get_option('demo-client')
+subdir('demo')
 
 
 test_buildtypes = ['debug', 'debugoptimized']

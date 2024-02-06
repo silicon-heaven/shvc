@@ -5,7 +5,7 @@
 #include <limits.h>
 
 static const char *default_url =
-	"tcp://test@localhost?password=test&devmount=test/device";
+	"tcp://test@localhost?password=test&devmount=test/shvc-demo";
 
 
 static void print_usage(const char *argv0) {
@@ -19,7 +19,7 @@ static void print_help(const char *argv0) {
 	fprintf(stderr, "Arguments:\n");
 	fprintf(stderr, "  -v       Increase logging level of the communication\n");
 	fprintf(stderr, "  -q       Decrease logging level of the communication\n");
-	fprintf(stderr, "  -d       Set maximul logging level of the communication\n");
+	fprintf(stderr, "  -d       Set maximum logging level of the communication\n");
 	fprintf(stderr, "  -V       Print SHVC version and exit\n");
 	fprintf(stderr, "  -h       Print this help text\n");
 }

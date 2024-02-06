@@ -90,6 +90,9 @@ rpclogger_t rpclogger_new(FILE *f, unsigned maxdepth) {
 }
 
 void rpclogger_destroy(rpclogger_t logger) {
+	if (logger == NULL)
+		return;
+
 	free(logger->cpon_state.ctx);
 	sem_destroy(&logger->semaphore);
 	free(logger);

@@ -19,8 +19,14 @@ option(
   description: 'Build SHV RPC Broker standalone application.',
 )
 option(
-  'demo',
+  'demo-device',
   type: 'boolean',
   value: true,
-  description: 'Build SHV RPC demo applications.',
+  description: 'Build SHV RPC demo device application.',
+)
+option(
+  'demo-client',
+  type: 'boolean',
+  value: true,
+  description: 'Build SHV RPC demo client application.',
 )
