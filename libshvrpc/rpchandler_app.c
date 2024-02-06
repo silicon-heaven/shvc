@@ -19,9 +19,9 @@ static void rpc_dir(void *cookie, const char *path, struct rpchandler_dir_ctx *c
 			RPCNODE_DIR_F_GETTER, RPCMSG_ACC_BROWSE, NULL);
 		rpchandler_dir_result(ctx, "shvVersionMinor", RPCNODE_DIR_RET_VOID,
 			RPCNODE_DIR_F_GETTER, RPCMSG_ACC_BROWSE, NULL);
-		rpchandler_dir_result(ctx, "appName", RPCNODE_DIR_RET_VOID,
+		rpchandler_dir_result(ctx, "name", RPCNODE_DIR_RET_VOID,
 			RPCNODE_DIR_F_GETTER, RPCMSG_ACC_BROWSE, NULL);
-		rpchandler_dir_result(ctx, "appVersion", RPCNODE_DIR_RET_VOID,
+		rpchandler_dir_result(ctx, "version", RPCNODE_DIR_RET_VOID,
 			RPCNODE_DIR_F_GETTER, RPCMSG_ACC_BROWSE, NULL);
 	}
 }
@@ -41,9 +41,9 @@ static bool rpc_msg(
 			method = SHV_VERSION_MAJOR;
 		else if (!strcmp(meta->method, "shvVersionMinor"))
 			method = SHV_VERSION_MINOR;
-		else if (!strcmp(meta->method, "appName"))
+		else if (!strcmp(meta->method, "name"))
 			method = APP_NAME;
-		else if (!strcmp(meta->method, "appVersion"))
+		else if (!strcmp(meta->method, "version"))
 			method = APP_VERSION;
 	}
 	if (method == UNKNOWN)

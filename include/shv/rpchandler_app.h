@@ -14,8 +14,8 @@
  * include methods:
  * * `.app:shvVersionMajor`
  * * `.app:shvVersionMinor`
- * * `.app appName`
- * * `.app:appVersion`
+ * * `.app:name`
+ * * `.app:version`
  * * `.app:ping`
  */
 typedef struct rpchandler_app *rpchandler_app_t;
