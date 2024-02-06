@@ -18,7 +18,6 @@ AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterDefinitionReturnType: None
 AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakAfterReturnType: None
-AlwaysBreakBeforeMultilineStrings: false
 BinPackArguments: true
 BinPackParameters: true
 BitFieldColonSpacing: None
@@ -65,7 +64,6 @@ SpacesBeforeTrailingComments: 1
 SpacesInCStyleCastParentheses: false
 SpacesInContainerLiterals: false
 SpacesInConditionalStatement: false
-SpacesInContainerLiterals: false
 SpacesInParentheses: false
 SpacesInSquareBrackets: false
 TabWidth: 4
