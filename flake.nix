@@ -86,10 +86,32 @@
         doCheck = true;
         sphinxRoot = "../docs";
       };
+
+    pypkg-multiversion = {
+      buildPythonPackage,
+      fetchFromGitHub,
+      sphinx,
+    }:
+      buildPythonPackage {
+        pname = "sphinx-multiversion";
+        version = "0.2.4";
+        src = fetchFromGitHub {
+          owner = "Holzhaus";
+          repo = "sphinx-multiversion";
+          rev = "v0.2.4";
+          hash = "sha256-ZFEELAeZ/m1pap1DmS4PogL3eZ3VuhTdmwDOg5rKOPA=";
+        };
+        propagatedBuildInputs = [sphinx];
+        doCheck = false;
+      };
   in
     {
       overlays = {
+        pythonPackagesExtension = final: prev: {
+          sphinx-multiversion = final.callPackage pypkg-multiversion {};
+        };
         noInherit = final: prev: {
+          pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [self.overlays.pythonPackagesExtension];
           shvc = final.callPackage shvc {};
         };
         default = composeManyExtensions [
@@ -123,6 +145,7 @@
             gcc11 # Hotfix for https://github.com/NixOS/nixpkgs/pull/279455
             # Documentation
             sphinx-autobuild
+            python3Packages.sphinx-multiversion
           ];
           inputsFrom = [self.packages.${system}.default];
           meta.platforms = platforms.linux;
