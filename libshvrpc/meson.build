@@ -19,7 +19,7 @@ libshvrpc_sources = [
   gperf.process('rpcurl_query.gperf'),
   gperf.process('rpcurl_scheme.gperf'),
 ]
-libshvrpc_dependencies = [libshvchainpack_dep, openssl, uriparser]
+libshvrpc_dependencies = [libshvcp_dep, openssl, uriparser]
 libshvrpc_internal_includes = include_directories('.')
 
 libshvrpc = library(
@@ -46,6 +46,6 @@ libshvrpc_dep = declare_dependency(
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(
   libshvrpc,
-  libraries: [libshvchainpack],
+  libraries: [libshvcp],
   description: 'Silicon Heaven RPC',
 )

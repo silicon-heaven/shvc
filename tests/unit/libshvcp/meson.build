@@ -1,5 +1,5 @@
-unittest_libshvchainpack = executable(
-  'unittest-libshvchainpack',
+unittest_libshvcp = executable(
+  'unittest-libshvcp',
   [
     'chainpack.c',
     'chainpackh.c',
@@ -16,11 +16,11 @@ unittest_libshvchainpack = executable(
   c_args: unittest_utils_c_args,
 )
 test(
-  'unittest-libshvchainpack',
+  'unittest-libshvcp',
   bash,
-  args: [test_driver, unittest_libshvchainpack.full_path()],
+  args: [test_driver, unittest_libshvcp.full_path()],
   env: unittests_env,
   protocol: 'tap',
-  depends: unittest_libshvchainpack,
+  depends: unittest_libshvcp,
   timeout: 120,
 )

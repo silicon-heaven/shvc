@@ -48,7 +48,7 @@ gperf = generator(find_program('gperf'),
 
 
 subdir('include')
-subdir('libshvchainpack')
+subdir('libshvcp')
 subdir('libshvrpc')
 subdir('libshvbroker')
 

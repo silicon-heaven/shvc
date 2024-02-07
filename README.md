@@ -17,12 +17,14 @@ manages the read while all threads can negotiate for write access.
 For tests:
 
 * [check-suite](https://gitlab.com/Cynerd/check-suite)
-* [bats](https://bats-core.readthedocs.io/en/stable/index.html)
+* [pytest](https://docs.pytest.org/)
+* [pytest-tap](https://github.com/python-tap/pytest-tap)
+* [pyshv](https://gitlab.com/elektroline-predator/pyshv)
 * Optionally [valgrind](http://www.valgrind.org)
 
 For code coverage report:
 
-* [lcov](http://ltp.sourceforge.net/coverage/lcov.php)
+* [gcovr](https://gcovr.com)
 
 For linting:
 

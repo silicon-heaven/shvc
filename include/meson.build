@@ -1,6 +1,6 @@
 includes = include_directories('.')
 
-libshvchainpack_headers = files(
+libshvcp_headers = files(
   'shv/chainpack.h',
   'shv/cp.h',
   'shv/cp_pack.h',

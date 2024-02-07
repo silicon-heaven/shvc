@@ -11,5 +11,5 @@ unittests_env = [
 ]
 
 subdir('utils')
-subdir('libshvchainpack')
+subdir('libshvcp')
 subdir('libshvrpc')

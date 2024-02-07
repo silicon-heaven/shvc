@@ -3,6 +3,6 @@
 ```{toctree}
 :maxdepth: 3
 
-libshvchainpack
+libshvcp
 libshvrpc
 ```

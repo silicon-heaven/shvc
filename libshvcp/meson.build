@@ -1,4 +1,4 @@
-libshvchainpack_sources = files(
+libshvcp_sources = files(
   'chainpack_pack.c',
   'chainpack_unpack.c',
   'common.c',
@@ -10,31 +10,31 @@ libshvchainpack_sources = files(
   'cpon_pack.c',
   'cpon_unpack.c',
 )
-libshvchainpack_dependencies = [m]
+libshvcp_dependencies = [m]
 
-libshvchainpack = library(
+libshvcp = library(
   'shvchainpack',
-  libshvchainpack_sources,
+  libshvcp_sources,
   version: '0.0.0',
-  dependencies: libshvchainpack_dependencies,
+  dependencies: libshvcp_dependencies,
   include_directories: includes,
   link_args: '-Wl,--version-script=' + join_paths(
     meson.current_source_dir(),
-    'libshvchainpack.version',
+    'libshvcp.version',
   ),
   install: not meson.is_subproject(),
 )
-install_headers(libshvchainpack_headers, preserve_path: true)
+install_headers(libshvcp_headers, preserve_path: true)
 
-libshvchainpack_dep = declare_dependency(
-  dependencies: libshvchainpack_dependencies,
+libshvcp_dep = declare_dependency(
+  dependencies: libshvcp_dependencies,
   include_directories: includes,
-  link_with: libshvchainpack,
+  link_with: libshvcp,
 )
 
 
 pkg_mod = import('pkgconfig')
 pkg_mod.generate(
-  libshvchainpack,
+  libshvcp,
   description: 'Silicon Heaven Chainpack packer and unpacker',
 )
