@@ -1,12 +1,29 @@
 # Silicon Heaven in C
 
-This provides implementation of Silicon Heaven communication protocol in C. This
-implementation is based on top of threads where there is a dedicated thread that
-manages the read while all threads can negotiate for write access.
+This provides implementation of [Silicon Heaven communication
+protocol](https://silicon-heaven.github.io/shv-doc/) in C.
 
 * [📃 Sources](https://gitlab.com/elektroline-predator/shvc)
 * [⁉️ Issue tracker](https://gitlab.com/elektroline-predator/shvc/-/issues)
 * [📕 Documentation](https://elektroline-predator.gitlab.io/shvc/)
+
+The code is divided to the separate libraries and applications for easier
+management. Every library or application has its own specific goal and together
+they provide complete SHV RPC toolkit.
+
+* **libshvcp** provides packing and unpacking facilities for CPON and ChainPack.
+  The implementation is based on streams (`FILE`) and packing and unpacking can
+  be done without `malloc()`.
+* **libshvrpc** provides a complete facilities to receive and send SHV RPC
+  messages as well as more advanced constructs to manage them (`rpchandler`).
+* **libshvbroker** is a library that implements SHV RPC Broker and thus broker's
+  functionality can be combined with other to create combined and custom
+  applications. If you have need only for SHV RPC Broker then you can use
+  `shvcbroker` directly. (NOT IMPLEMENTED YET)
+* **libshvhistory** is a library that provides implementation for history
+  application. It can be used to create logging facility that is part of SHV
+  RPC. (NOT IMPLEMENTED YET)
+* **shvcbroker** is standalone SHV RPC Broker application. (NOT IMPLEMENTED YET)
 
 ## Dependencies
 
