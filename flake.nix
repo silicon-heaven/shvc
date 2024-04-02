@@ -45,10 +45,10 @@
         outputs = ["out" "doc"];
         buildInputs = [];
         nativeBuildInputs = [
-          (callPackage ./subprojects/fetch.nix {
+          (callPackage ./subprojects/.fetch.nix {
             inherit src;
             rev = self.rev or null;
-            hash = "sha256-R3YTQYHilh9R3eoyhhlyAuxU8BK9/c3DX1qTPKC+Y7E=";
+            hash = "sha256-Q0pRpk/cNHw7SzJ/AfxQuNDlAMuIRjuh9+vTwZfnXf4=";
           })
           gperf
           meson
