@@ -126,7 +126,7 @@ static inline unsigned chainpack_int_bytes(uint8_t c) {
 
 /*! Unsigned integer value packed in the first integer byte.
  *
- * This is companion function ton the `chainpack_int_bytes` because it extracts
+ * This is companion function to the `chainpack_int_bytes` because it extracts
  * remaining bits from the first byte.
  *
  * These are the most significant bits and thus to construct the while number

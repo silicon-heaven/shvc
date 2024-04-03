@@ -11,6 +11,8 @@
 #include <shv/cp_pack.h>
 #include <shv/cp_unpack.h>
 #include <shv/rpclogger.h>
+#include <shv/rpcprotocol.h>
+#include "../../libshvrpc/rpcprotocol_common.h"
 
 /*! Number of seconds that is default idle time before brokers disconnect
  * clients for inactivity.
@@ -50,6 +52,11 @@ struct rpcclient {
 	/*! Control function. Do not use directly. */
 	int (*ctl)(struct rpcclient *, enum rpcclient_ctlop);
 
+	/*! Transport layer used for communication. Do not use directly. */
+	struct rpcprotocol_interface *protocol_interface;
+
+	int fd;
+
 	/*! Unpack function. Please use @ref rpcclient_unpack instead. */
 	cp_unpack_func_t unpack;
 
@@ -77,19 +84,20 @@ typedef struct rpcclient *rpcclient_t;
 rpcclient_t rpcclient_connect(const struct rpcurl *url);
 
 
-/*! Create new RPC Client with Stream transport layer.
+/*! Create new RPC Client with Stream protocol_interface layer.
  *
- * The transport layer description can be seen in the [official SHV
+ * The protocol_interface layer description can be seen in the [official SHV
  * documentation](https://silicon-heaven.github.io/shv-doc/rpctransportlayer.html#tcp--stream).
  *
  * @param readfd: File descriptor used for reading / receiving.
  * @param writefd: File descriptor used for writing / sending.
+ * @param trans_info: Information about the protocol_interface layer used for connection.
  * @returns New RPC Client object. To free it you need to use @ref
  *   rpcclient_destroy.
  */
-rpcclient_t rpcclient_stream_new(int readfd, int writefd);
+rpcclient_t rpcclient_stream_new(struct rpcprotocol_interface *protocol_interface, int socket);
 
-/*! Establish a new TCP connection that uses Stream transport layer.
+/*! Establish a new TCP connection that uses Stream protocol layer.
  *
  * @param location: Location of the TCP server.
  * @param port: Port of the TCP server (commonly 3755).
@@ -100,7 +108,7 @@ rpcclient_t rpcclient_stream_new(int readfd, int writefd);
 rpcclient_t rpcclient_stream_tcp_connect(const char *location, int port)
 	__attribute__((nonnull));
 
-/*! Establish a new Unix socket connection that uses Stream transport layer.
+/*! Establish a new Unix socket connection that uses Stream protocol layer.
  *
  * @param location: Location of the Unix socket.
  * @returns New RPC Client object or `NULL` in case connection couldn't have
@@ -110,9 +118,9 @@ rpcclient_t rpcclient_stream_tcp_connect(const char *location, int port)
 rpcclient_t rpcclient_stream_unix_connect(const char *location)
 	__attribute__((nonnull));
 
-/*! Create new RPC Client with Serial transport layer.
+/*! Create new RPC Client with Serial protocol layer.
  *
- * The transport layer description can be seen in the [official SHV
+ * The protocol layer description can be seen in the [official SHV
  * documentation](https://silicon-heaven.github.io/shv-doc/rpctransportlayer.html#rs232--serial).
  *
  * @param fd: File descriptor used to both read / receive and write / send
@@ -122,7 +130,7 @@ rpcclient_t rpcclient_stream_unix_connect(const char *location)
  */
 rpcclient_t rpcclient_serial_new(int fd);
 
-/*! Establish a new connection over terminal device that uses Serial transport
+/*! Establish a new connection over terminal device that uses Serial protocol
  * layer.
  *
  * This provides an easy way to open serial console and set it speed. The code
@@ -140,9 +148,9 @@ rpcclient_t rpcclient_serial_new(int fd);
 rpcclient_t rpcclient_serial_tty_connect(const char *path, unsigned speed)
 	__attribute__((nonnull));
 
-/*! Establish a new Unix socket connection that uses Serial transport layer.
+/*! Establish a new Unix socket connection that uses Serial protocol layer.
  *
- * The advantage of the Serial transport layer is that it sends data before they
+ * The advantage of the Serial protocol layer is that it sends data before they
  * are all generated (because it doesn't have to know the complete message size
  * to do so). That is beneficial in inter-process communication. Once sending
  * process fills socket connection buffer the system can plan the receiving
@@ -215,8 +223,8 @@ rpcclient_t rpcclient_serial_unix_connect(const char *location)
 /*! Finish reading and validate the received message.
  *
  * This should be called every time at the end of the message receive to
- * validate the received data. Some transport layers validate messages only
- * after they receive the complete message, not during the transport. The
+ * validate the received data. Some protocol layers validate messages only
+ * after they receive the complete message, not during the protocol. The
  * received bytes can be invalid but still be a valid packing format, or other
  * side can decide to drop the already almost sent message and thus you should
  * always validate message before you proceed to act on the data received.
@@ -266,7 +274,7 @@ rpcclient_t rpcclient_serial_unix_connect(const char *location)
  * message instead. The primary use case is to replace the existing message with
  * error that was detected when that message was being packed.
  *
- * Based on the transport layer this causes failure reported by @ref
+ * Based on the protocol layer this causes failure reported by @ref
  * rpcclient_validmsg or it prevents from message to be even sent.
  *
  * @param CLIENT: The RPC client object.

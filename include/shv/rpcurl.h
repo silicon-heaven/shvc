@@ -11,19 +11,19 @@
 /*! Protocol used to connect client to the server or to listen for connection on
  */
 enum rpc_protocol {
-	/*! TCP/IP protocol with SHV RPC Stream link layer used to transport
+	/*! TCP/IP protocol with SHV RPC Stream link layer used to protocol
 	 * messages.
 	 */
 	RPC_PROTOCOL_TCP,
-	/*! UDP/IP protocol with SHV RPC Datagram link layer used to transport
+	/*! UDP/IP protocol with SHV RPC Datagram link layer used to protocol
 	 * messages.
 	 */
 	RPC_PROTOCOL_UDP,
-	/*! Unix domain name socket with SHV RPC Stream link layer used to transport
+	/*! Unix domain name socket with SHV RPC Stream link layer used to protocol
 	 * messages.
 	 */
 	RPC_PROTOCOL_LOCAL_SOCKET,
-	/*! Serial port with SHV RPC Stream link layer used to transport messages. */
+	/*! Serial port with SHV RPC Stream link layer used to protocol messages. */
 	RPC_PROTOCOL_SERIAL_PORT,
 };
 
