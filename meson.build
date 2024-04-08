@@ -31,6 +31,8 @@ else
   openssl = declare_dependency()
   uriparser_var = cmake.subproject_options()
   uriparser_var.add_cmake_defines({
+    'CMAKE_TRY_COMPILE_TARGET_TYPE': 'STATIC_LIBRARY',
+    'BUILD_SHARED_LIBS': false,
     'URIPARSER_BUILD_TESTS': false,
     'URIPARSER_BUILD_DOCS': false,
     'URIPARSER_BUILD_TOOLS': false,

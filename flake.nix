@@ -56,7 +56,7 @@
           (callPackage ./subprojects/fetch.nix {
             inherit src;
             rev = self.rev or null;
-            hash = "sha256-R3YTQYHilh9R3eoyhhlyAuxU8BK9/c3DX1qTPKC+Y7E=";
+            hash = "sha256-4nmUv845q8NQ8LkQjwiltfsr2/+GYwdv37Yz0YTCMJE=";
           })
           gperf
           meson
