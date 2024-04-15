@@ -259,7 +259,7 @@ rpcclient_t rpcclient_stream_unix_connect(const char *location) {
 		sizeof(struct sockaddr_un) - offsetof(struct sockaddr_un, sun_path) - 1;
 	strncpy(addr.sun_path, location, addrlen);
 	addr.sun_path[addrlen] = '\0';
-	if (connect(sock, &addr, sizeof addr) == -1) {
+	if (connect(sock, (const struct sockaddr *)&addr, sizeof addr) == -1) {
 		close(sock);
 		return NULL;
 	}

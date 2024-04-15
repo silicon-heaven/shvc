@@ -11,7 +11,7 @@ struct sha1ctx;
 typedef struct sha1ctx *sha1ctx_t;
 
 /*! Create new context for SHA1 calculation. */
-sha1ctx_t sha1_new();
+sha1ctx_t sha1_new(void);
 
 /*! Destroy SHA1 calculation context. */
 void sha1_destroy(sha1ctx_t ctx);

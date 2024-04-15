@@ -48,10 +48,10 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 	} while (false)
 #define EXPECT(V) \
 	do { \
-		char c = GETC; \
-		if (c == EOF) \
+		char tmp = GETC; \
+		if (tmp == EOF) \
 			ERR_IO; \
-		if (c != (V)) { \
+		if (tmp != (V)) { \
 			UNGETC(V); \
 			ERR_INVALID; \
 		} \
