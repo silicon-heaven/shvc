@@ -19,6 +19,11 @@ libshvrpc_sources = [
   gperf.process('rpcurl_query.gperf'),
   gperf.process('rpcurl_scheme.gperf'),
 ]
+if not isnuttx
+  libshvrpc_sources += files('sha1_openssl.c')
+else
+  libshvrpc_sources += files('sha1_nuttx.c')
+endif
 libshvrpc_dependencies = [libshvcp_dep, openssl, uriparser]
 libshvrpc_internal_includes = include_directories('.')
 

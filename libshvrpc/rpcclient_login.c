@@ -6,28 +6,18 @@
 #include <obstack.h>
 #define obstack_chunk_alloc malloc
 #define obstack_chunk_free free
-#include <openssl/evp.h>
 #include <shv/rpcmsg.h>
+#include "sha1.h"
 
 
-#define SHA1_SIZ 40
 
 static void sha1_password(const char *nonce, const char *password, char *res) {
-	const EVP_MD *md = EVP_sha1();
-	EVP_MD_CTX *ctx = EVP_MD_CTX_new();
-	assert(EVP_DigestInit(ctx, md));
-	assert(EVP_DigestUpdate(ctx, nonce, strlen(nonce)));
-	assert(EVP_DigestUpdate(ctx, password, strlen(password)));
-	unsigned siz;
-	unsigned char digest[20];
-	assert(EVP_DigestFinal_ex(ctx, digest, &siz));
-	assert(siz == 20);
-	static const char *const hex = "0123456789abcdef";
-	for (unsigned i = 0; i < 20; i++) {
-		*res++ = hex[(digest[i] >> 4) & 0xf];
-		*res++ = hex[digest[i] & 0xf];
-	}
-	EVP_MD_CTX_free(ctx);
+	sha1ctx_t ctx = sha1_new();
+	assert(ctx);
+	assert(sha1_update(ctx, (const uint8_t *)nonce, strlen(nonce)));
+	assert(sha1_update(ctx, (const uint8_t *)password, strlen(password)));
+	assert(sha1_hex_digest(ctx, res));
+	sha1_destroy(ctx);
 }
 
 
@@ -79,9 +69,9 @@ bool rpcclient_login(
 	cp_pack_map_begin(rpcclient_pack(client));
 	cp_pack_str(rpcclient_pack(client), "password");
 	if (opts->login_type == RPC_LOGIN_SHA1) {
-		char sha1[SHA1_SIZ];
+		char sha1[SHA1_HEX_SIZ];
 		sha1_password(nonce, opts->password, sha1);
-		cp_pack_string(rpcclient_pack(client), sha1, SHA1_SIZ);
+		cp_pack_string(rpcclient_pack(client), sha1, SHA1_HEX_SIZ);
 	} else
 		cp_pack_str(rpcclient_pack(client), opts->password);
 	cp_pack_str(rpcclient_pack(client), "user");
