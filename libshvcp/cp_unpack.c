@@ -148,7 +148,7 @@ static void *cp_unpack_dupo(cp_unpack_t unpack, struct cpitem *item,
 			obstack_1grow(obstack, '\0'); /* Force allocation of more room */
 			zeropad = 1;
 		}
-		item->chr = obstack_next_free(obstack);
+		item->chr = obstack_next_free(obstack) - (zeropad * sizeof *item->chr);
 		size_t room = obstack_room(obstack) + zeropad;
 		size_t limit = len - obstack_object_size(obstack);
 		item->bufsiz = MIN(room, limit);
