@@ -3,9 +3,9 @@
 This provides implementation of [Silicon Heaven communication
 protocol](https://silicon-heaven.github.io/shv-doc/) in C.
 
-* [📃 Sources](https://gitlab.com/elektroline-predator/shvc)
-* [⁉️ Issue tracker](https://gitlab.com/elektroline-predator/shvc/-/issues)
-* [📕 Documentation](https://elektroline-predator.gitlab.io/shvc/)
+* [📃 Sources](https://gitlab.com/silicon-heaven/shvc)
+* [⁉️ Issue tracker](https://gitlab.com/silicon-heaven/shvc/-/issues)
+* [📕 Documentation](https://silicon-heaven.gitlab.io/shvc/)
 
 The code is divided to the separate libraries and applications for easier
 management. Every library or application has its own specific goal and together
@@ -36,7 +36,7 @@ For tests:
 * [check-suite](https://gitlab.com/Cynerd/check-suite)
 * [pytest](https://docs.pytest.org/)
 * [pytest-tap](https://github.com/python-tap/pytest-tap)
-* [pyshv](https://gitlab.com/elektroline-predator/pyshv)
+* [pyshv](https://gitlab.com/silicon-heaven/pyshv)
 * Optionally [valgrind](http://www.valgrind.org)
 
 For code coverage report:
