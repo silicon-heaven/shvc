@@ -20,7 +20,7 @@
     version = changelog.currentRelease ./CHANGELOG.md self.sourceInfo;
     src = builtins.path {
       path = ./.;
-      filter = path: type: ! hasSuffix ".nix" path;
+      filter = path: _: ! hasSuffix ".nix" path;
     };
 
     template-c = {
@@ -77,12 +77,12 @@
   in
     {
       overlays = {
-        noInherit = final: prev: {
+        pkgs = final: prev: {
           template-c = final.callPackage template-c {};
         };
         default = composeManyExtensions [
           check-suite.overlays.default
-          self.overlays.noInherit
+          self.overlays.pkgs
         ];
       };
     }
@@ -95,7 +95,7 @@
       devShells = filterPackages system {
         default = pkgs.mkShell {
           packages = with pkgs; [
-            # Linters and formaters
+            # Linters and formatters
             clang-tools_14
             cppcheck
             editorconfig-checker
@@ -103,6 +103,8 @@
             muon
             shellcheck
             shfmt
+            statix
+            deadnix
             gitlint
             # Testing and code coverage
             valgrind
