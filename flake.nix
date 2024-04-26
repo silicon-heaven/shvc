@@ -96,7 +96,7 @@
         default = pkgs.mkShell {
           packages = with pkgs; [
             # Linters and formatters
-            clang-tools_14
+            clang-tools_18
             cppcheck
             editorconfig-checker
             flawfinder
