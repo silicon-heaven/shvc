@@ -55,13 +55,13 @@
           ninja
           pkg-config
           doxygen
-          (sphinxHook.overrideAttrs (oldAttrs: {
+          (sphinxHook.overrideAttrs {
             propagatedBuildInputs = with python3Packages; [
               sphinx_rtd_theme
               myst-parser
               breathe
             ];
-          }))
+          })
         ];
         checkInputs = [
           check
@@ -77,7 +77,7 @@
   in
     {
       overlays = {
-        pkgs = final: prev: {
+        pkgs = final: _: {
           template-c = final.callPackage template-c {};
         };
         default = composeManyExtensions [
