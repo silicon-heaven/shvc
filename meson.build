@@ -58,11 +58,14 @@ if cppcheck.found()
     'cppcheck',
     command: [
       cppcheck,
+      '-j' + run_command(find_program('nproc'), check: true).stdout().strip(),
+      '--error-exitcode=1',
+      '--check-level=exhaustive',
       '--project=' + join_paths(
         meson.project_build_root(),
         'compile_commands.json',
       ),
-      '--suppress=*:*subprojects*',
+      '--suppress=*:*/subprojects/*',
     ],
   )
 endif
