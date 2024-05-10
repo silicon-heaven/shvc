@@ -2,7 +2,7 @@
   description = "Project template for C";
 
   inputs = {
-    semver.url = "gitlab:cynerd/nixsemver";
+    semver.url = "github:cynerd/nixsemver";
     check-suite.url = "github:cynerd/check-suite";
   };
 
