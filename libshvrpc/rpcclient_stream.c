@@ -14,62 +14,59 @@
 
 
 bool nextmsg_stream(rpcclient_t client) {
-	int8_t nextmsg_return = nextmsg_protocol_stream(client->protocol_interface);
-	if (nextmsg_return != SUCCESS)
+	bool nextmsg_return = nextmsg_protocol_stream(client->protocol_interface);
+	if (!nextmsg_return)
 		return false;
 
 	int format_byte = fgetc(client->protocol_interface->message_stream);
 	if (format_byte != CP_ChainPack) {
 		flushmsg(client->protocol_interface);
-		rpcclient_last_receive_update(client);
 		return false;
 	} else {
-		rpclogger_log_lock(client->logger, true);
-		rpcclient_last_receive_update(client);
+		if (client->logger_in)
+			rpclogger_log_end(client->logger_in, RPCLOGGER_ET_UNKNOWN);
 		return true;
 	}
 }
 
 bool msgflush_stream(rpcclient_t client) {
-	rpclogger_log_unlock(client->logger);
+	if (client->logger_out)
+		rpclogger_log_end(client->logger_out, RPCLOGGER_ET_INVALID);
 	return msgflush_protocol_stream(client->protocol_interface);
 }
 
 bool msgsend_stream(rpcclient_t client) {
-	rpclogger_log_unlock(client->logger);
-	bool return_value = msgsend_protocol_stream(client->protocol_interface);
-
-	if (return_value)
-		rpcclient_last_send_update(client);
-
-	return return_value;
+	if (client->logger_out)
+		rpclogger_log_end(client->logger_out, RPCLOGGER_ET_VALID);
+	return msgsend_protocol_stream(client->protocol_interface);
 }
 
 bool cp_pack_stream(void *ptr, const struct cpitem *item) {
-	rpcclient_t client = (rpcclient_t)((char *)ptr - offsetof(struct rpcclient, pack));
-	if (ftell(client->protocol_interface->message_stream) == 0)
-		rpclogger_log_lock(client->logger, false);
-	rpclogger_log_item(client->logger, item);
+	rpcclient_t client =
+		(rpcclient_t)((char *)ptr - offsetof(struct rpcclient, pack));
+	if (client->logger_out)
+		rpclogger_log_item(client->logger_out, item);
 	return chainpack_pack(client->protocol_interface->message_stream, item) > 0;
 }
 
 void cp_unpack_stream(void *ptr, struct cpitem *item) {
-	rpcclient_t client = (rpcclient_t)((char *)ptr - offsetof(struct rpcclient, unpack));
+	rpcclient_t client =
+		(rpcclient_t)((char *)ptr - offsetof(struct rpcclient, unpack));
 	chainpack_unpack(client->protocol_interface->message_stream, item);
-	rpclogger_log_item(client->logger, item);
+	if (client->logger_in)
+		rpclogger_log_item(client->logger_in, item);
 }
 
 static bool validmsg_stream(rpcclient_t client) {
-	rpcclient_last_receive_update(client);
-	rpclogger_log_unlock(client->logger);
 	flushmsg(client->protocol_interface);
-	rpcclient_last_receive_update(client);
+	if (client->logger_in)
+		rpclogger_log_end(client->logger_in, RPCLOGGER_ET_VALID);
 	return true; /* Always valid for stream as we rely on lower layer */
 }
 
 static void destroy(rpcclient_t client) {
-	destroy_protocol_stream(client->protocol_interface);
-    free(client);
+	destroy_protocol(client->protocol_interface);
+	free(client);
 }
 
 int ctl_stream(rpcclient_t client, enum rpcclient_ctlop op) {
@@ -93,17 +90,15 @@ int ctl_stream(rpcclient_t client, enum rpcclient_ctlop op) {
 	abort(); /* This should not happen -> implementation error */
 }
 
-rpcclient_t rpcclient_stream_new(struct rpcprotocol_interface *protocol_interface, int socket) {
+rpcclient_t rpcclient_stream_new(
+	struct rpcprotocol_interface *protocol_interface, int socket) {
 	struct rpcclient *result = malloc(sizeof *result);
 
-	*result = (struct rpcclient){
-        .ctl = ctl_stream,
+	*result = (struct rpcclient){.ctl = ctl_stream,
 		.protocol_interface = protocol_interface,
-        .unpack = cp_unpack_stream,
-        .pack = cp_pack_stream,
-        .logger = NULL,
-		.fd = socket
-	};
+		.unpack = cp_unpack_stream,
+		.pack = cp_pack_stream,
+		.fd = socket};
 
 	return result;
 }
@@ -114,6 +109,7 @@ rpcclient_t rpcclient_stream_tcp_connect(const char *location, int port) {
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = 0;
 	hints.ai_protocol = 0;
+
 	struct addrinfo *addrs;
 	char *p;
 	assert(asprintf(&p, "%d", port) != -1);
@@ -121,33 +117,35 @@ rpcclient_t rpcclient_stream_tcp_connect(const char *location, int port) {
 	free(p);
 	if (res != 0)
 		return NULL;
-
-	struct addrinfo *addr;
-	int sock;
-	for (addr = addrs; addr != NULL; addr = addr->ai_next) {
+	int sock = -1;
+	for (struct addrinfo *addr = addrs; addr != NULL; addr = addr->ai_next) {
 		sock = socket(addr->ai_family, addr->ai_socktype, addr->ai_protocol);
 		if (sock == -1)
 			continue;
 		if (connect(sock, addr->ai_addr, addr->ai_addrlen) != -1)
 			break;
 		close(sock);
+		sock = -1;
 	}
-
 	freeaddrinfo(addrs);
+	if (sock == -1)
+		return NULL;
 
 	struct rpcprotocol_info *trans_info = malloc(sizeof *trans_info);
 	assert(trans_info);
 	*trans_info = (struct rpcprotocol_info){
 		.protocol_scheme = TCP,
-		.destination = (struct protocol_destination){
-			.name = strdup(location),
-			.additional_info.port = (uint16_t)port,
-		},
-		.data_link = STREAM,
+		.destination =
+			(struct protocol_destination){
+				.name = strdup(location),
+				.additional_info.port = (uint16_t)port,
+			},
+		.transport_layer = STREAM,
 	};
 
-    struct rpcprotocol_interface *protocol_interface = rpcprotocol_stream_new(sock, trans_info);
-	return addr ? rpcclient_stream_new(protocol_interface, sock) : NULL;
+	struct rpcprotocol_interface *protocol_interface =
+		rpcprotocol_stream_new(sock, trans_info);
+	return rpcclient_stream_new(protocol_interface, sock);
 }
 
 rpcclient_t rpcclient_stream_unix_connect(const char *location) {
@@ -168,13 +166,14 @@ rpcclient_t rpcclient_stream_unix_connect(const char *location) {
 	assert(trans_info);
 	*trans_info = (struct rpcprotocol_info){
 		.protocol_scheme = UNIX,
-		.destination = (struct protocol_destination){
-			.name = strdup(location),
-		},
-		.data_link = STREAM,
+		.destination =
+			(struct protocol_destination){
+				.name = strdup(location),
+			},
+		.transport_layer = STREAM,
 	};
 
-	struct rpcprotocol_interface *protocol_interface = rpcprotocol_stream_new(sock, trans_info);
+	struct rpcprotocol_interface *protocol_interface =
+		rpcprotocol_stream_new(sock, trans_info);
 	return rpcclient_stream_new(protocol_interface, sock);
 }
-

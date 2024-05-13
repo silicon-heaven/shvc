@@ -37,10 +37,9 @@ else
 endif
 
 
-gperf = generator(
-  find_program('gperf'),
+gperf = generator(find_program('gperf'),
   output: '@PLAINNAME@.h',
-  arguments: ['@EXTRA_ARGS@', '--output-file=@OUTPUT@', '@INPUT@'],
+  arguments: ['@EXTRA_ARGS@', '--output-file=@OUTPUT@', '@INPUT@']
 )
 
 

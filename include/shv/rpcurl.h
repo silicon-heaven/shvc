@@ -15,16 +15,20 @@ enum rpc_protocol {
 	 * messages.
 	 */
 	RPC_PROTOCOL_TCP,
-	/*! UDP/IP protocol with SHV RPC Datagram link layer used to protocol
+	/*! TCP/IP protocol with SHV RPC Serial link layer used to protocol
 	 * messages.
 	 */
-	RPC_PROTOCOL_UDP,
+	RPC_PROTOCOL_TCPS,
 	/*! Unix domain name socket with SHV RPC Stream link layer used to protocol
 	 * messages.
 	 */
-	RPC_PROTOCOL_LOCAL_SOCKET,
+	RPC_PROTOCOL_UNIX,
+	/*! Unix domain name socket with SHV RPC Serial link layer used to protocol
+	 * messages.
+	 */
+	RPC_PROTOCOL_UNIXS,
 	/*! Serial port with SHV RPC Stream link layer used to protocol messages. */
-	RPC_PROTOCOL_SERIAL_PORT,
+	RPC_PROTOCOL_TTY,
 };
 
 /*! The format of the password passed to the login process. */

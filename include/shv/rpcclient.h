@@ -89,13 +89,15 @@ rpcclient_t rpcclient_connect(const struct rpcurl *url);
  * The protocol_interface layer description can be seen in the [official SHV
  * documentation](https://silicon-heaven.github.io/shv-doc/rpctransportlayer.html#tcp--stream).
  *
- * @param readfd: File descriptor used for reading / receiving.
- * @param writefd: File descriptor used for writing / sending.
- * @param trans_info: Information about the protocol_interface layer used for connection.
+ * @param protocol_interface: Protocol transport interface which is used by
+ * various protocol layers to read / receive and write / send messages.
+ * @param socket: File descriptor of a socket used to both read / receive and
+ * write / send messages.
  * @returns New RPC Client object. To free it you need to use @ref
  *   rpcclient_destroy.
  */
-rpcclient_t rpcclient_stream_new(struct rpcprotocol_interface *protocol_interface, int socket);
+rpcclient_t rpcclient_stream_new(
+	struct rpcprotocol_interface *protocol_interface, int socket);
 
 /*! Establish a new TCP connection that uses Stream protocol layer.
  *
@@ -123,12 +125,15 @@ rpcclient_t rpcclient_stream_unix_connect(const char *location)
  * The protocol layer description can be seen in the [official SHV
  * documentation](https://silicon-heaven.github.io/shv-doc/rpctransportlayer.html#rs232--serial).
  *
+ * @param protocol_interface: Protocol transport interface which is used by
+ * various protocol layers to read / receive and write / send messages.
  * @param fd: File descriptor used to both read / receive and write / send
  *   messages.
  * @returns New RPC Client object. To free it you need to use @ref
  *   rpcclient_destroy.
  */
-rpcclient_t rpcclient_serial_new(int fd);
+rpcclient_t rpcclient_serial_new(
+	struct rpcprotocol_interface *protocol_interface, int fd);
 
 /*! Establish a new connection over terminal device that uses Serial protocol
  * layer.
@@ -139,13 +144,13 @@ rpcclient_t rpcclient_serial_new(int fd);
  * configuration on the terminal device.
  *
  * @param path: Path to the terminal device.
- * @param speed: Speed to be specified as the communication speed on the
+ * @param baudrate: Speed to be specified as the communication speed on the
  *   terminal device.
  * @returns New RPC Client object or `NULL` in case terminal device open or
  *   configuration failed. You can investigate the `errno` to identify why that
  *   might have been the case.
  */
-rpcclient_t rpcclient_serial_tty_connect(const char *path, unsigned speed)
+rpcclient_t rpcclient_serial_tty_connect(const char *path, unsigned baudrate)
 	__attribute__((nonnull));
 
 /*! Establish a new Unix socket connection that uses Serial protocol layer.
@@ -167,6 +172,8 @@ rpcclient_t rpcclient_serial_tty_connect(const char *path, unsigned speed)
 rpcclient_t rpcclient_serial_unix_connect(const char *location)
 	__attribute__((nonnull));
 
+rpcclient_t rpcclient_serial_tcp_connect(const char *location, int port)
+	__attribute__((nonnull));
 
 /*! Perform disconnect and destroy the RPC client object.
  *

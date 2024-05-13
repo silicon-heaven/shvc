@@ -25,8 +25,9 @@ struct gperf_rpcurl_scheme_match;
 
 %%
 tcp, RPC_PROTOCOL_TCP
-udp, RPC_PROTOCOL_UDP
-localsocket, RPC_PROTOCOL_LOCAL_SOCKET
-unix, RPC_PROTOCOL_LOCAL_SOCKET
-serialport, RPC_PROTOCOL_SERIAL_PORT
+tcps, RPC_PROTOCOL_TCPS
+unix, RPC_PROTOCOL_UNIX
+unixs, RPC_PROTOCOL_UNIX
+serial, RPC_PROTOCOL_TTY
+tty, RPC_PROTOCOL_TTY
 %%

@@ -1,8 +1,10 @@
 libshvrpc_sources = [
   files(
+    'crc.c',
     'rpcaccess.c',
     'rpcclient_connect.c',
     'rpcclient_serial.c',
+    'rpcclient_stream.c',
     'rpcdir.c',
     'rpcerror.c',
     'rpchandler.c',
@@ -12,9 +14,10 @@ libshvrpc_sources = [
     'rpcmsg_head.c',
     'rpcmsg_pack.c',
     'rpcmsg_request_id.c',
-    'rpcurl.c',
     'rpcprotocol_common.c',
+    'rpcprotocol_serial.c',
     'rpcprotocol_stream.c',
+    'rpcurl.c',
     'strset.c',
   ),
   gperf.process('rpcaccess.gperf'),
