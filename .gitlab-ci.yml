@@ -68,7 +68,14 @@ nix-appimage:
   extends: .build
   needs: ["nix"]
   script:
-    - nix bundle --bundler github:ralismark/nix-appimage/17dd6001ec228ea0b8505d6904fc5796d3de5012 .?submodules=1
+    - |
+      nix eval --json --impure --apply 'v: builtins.attrNames v.${builtins.currentSystem}' .#apps \
+        | nix run .#jq -- -r '.[]' \
+        | while read -r app; do
+          nix bundle \
+            --bundler github:ralismark/nix-appimage/17dd6001ec228ea0b8505d6904fc5796d3de5012 \
+            ".?submodules=1#$app";
+          done
   artifacts:
     when: always
     paths:
