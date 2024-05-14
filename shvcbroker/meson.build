@@ -1,5 +1,5 @@
 shvbroker_sources = files('config.c')
-shvbroker_dependencies = [libshvbroker_dep, inih]
+shvbroker_dependencies = [libshvbroker_dep]
 
 
 if isnuttx

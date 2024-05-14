@@ -64,6 +64,16 @@ nix:
   script:
     - nix build .?submodules=1
 
+nix-appimage:
+  extends: .build
+  needs: ["nix"]
+  script:
+    - nix bundle --bundler github:ralismark/nix-appimage/17dd6001ec228ea0b8505d6904fc5796d3de5012 .?submodules=1
+  artifacts:
+    when: always
+    paths:
+    - '*.AppImage'
+
 ## Test stage ##################################################################
 .test:
   stage: test
@@ -140,6 +150,11 @@ shellcheck:
   script:
     - git ls-files '**.sh' | xargs nix develop --quiet -c shellcheck
 
+statix:
+  extends: .linter
+  script:
+    - nix develop --quiet -c statix check .
+
 ## Style stage #################################################################
 .style:
   stage: style
@@ -170,6 +185,11 @@ nixfmt:
   script:
     - nix fmt
     - git diff --exit-code
+
+deadnix:
+  extends: .style
+  script:
+    - nix develop --quiet -c deadnix --fail .
 
 editorconfig-checker:
   extends: .style
@@ -204,36 +224,19 @@ coverage:
         path: 'build/meson-logs/coverage.xml'
 
 ## Release creation ############################################################
-dist:
-  stage: release
-  extends: .nix
-  rules:
-    - if: '$CI_COMMIT_TAG'
-  needs:
-    - job: tests
-      artifacts: false
-  script:
-    - nix develop --quiet -c meson setup build
-    - nix develop --quiet -c meson dist -C build --formats xztar,gztar,zip
-    - mv build/meson-dist/* ./
-  artifacts:
-    expire_in: 1 month
-    paths:
-      - "*.tar.xz"
-      - "*.tar.gz"
-      - "*.zip"
-
 release:
   stage: release
   rules:
     - if: '$CI_COMMIT_TAG'
   image: "registry.gitlab.com/gitlab-org/release-cli:latest"
   needs:
-    - job: dist
+    - job: tests
+      artifacts: false
+    - job: nix-appimage
       artifacts: true
   before_script:
     - apk update
-    - apk add bash grep curl yq
+    - apk add bash curl yq py3-semver
   script:
     - ./.release.sh
 

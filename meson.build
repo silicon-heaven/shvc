@@ -22,12 +22,10 @@ add_project_arguments('-DPROJECT_VERSION="@0@"'.format(meson.project_version()),
 
 if not isnuttx
   m = cc.find_library('m', required : false)
-  inih = dependency('inih')
   openssl = dependency('openssl', version: '>=3.0.0')
   uriparser = dependency('liburiparser', version: '>= 0.9.0')
 else
   m = declare_dependency()
-  inih = declare_dependency()
   openssl = declare_dependency()
   uriparser_var = cmake.subproject_options()
   uriparser_var.add_cmake_defines({
@@ -89,11 +87,14 @@ if cppcheck.found()
     'cppcheck',
     command: [
       cppcheck,
+      '-j' + run_command(find_program('nproc'), check: true).stdout().strip(),
+      '--error-exitcode=1',
+      '--check-level=exhaustive',
       '--project=' + join_paths(
         meson.project_build_root(),
         'compile_commands.json',
       ),
-      '--suppress=*:*subprojects*',
+      '--suppress=*:*/subprojects/*',
     ],
   )
 endif

@@ -2,7 +2,7 @@
   description = "Silicon Heaven in C";
 
   inputs = {
-    semver.url = "gitlab:cynerd/nixsemver";
+    semver.url = "github:cynerd/nixsemver";
     check-suite.url = "github:cynerd/check-suite";
     pyshv.url = "git+https://gitlab.com/silicon-heaven/pyshv.git";
   };
@@ -22,7 +22,7 @@
     version = changelog.currentRelease ./CHANGELOG.md self.sourceInfo;
     src = builtins.path {
       path = ./.;
-      filter = path: type: ! hasSuffix ".nix" path;
+      filter = path: _: ! hasSuffix ".nix" path;
     };
 
     shvc = {
@@ -35,7 +35,6 @@
       doxygen,
       sphinxHook,
       python3Packages,
-      inih,
       uriparser,
       openssl,
       check,
@@ -48,28 +47,27 @@
         GIT_REV = self.shortRev or self.dirtyShortRev;
         outputs = ["out" "doc"];
         buildInputs = [
-          inih
           uriparser
           openssl
         ];
         nativeBuildInputs = [
-          (callPackage ./subprojects/fetch.nix {
+          (callPackage ./subprojects/.fetch.nix {
             inherit src;
             rev = self.rev or null;
-            hash = "sha256-4nmUv845q8NQ8LkQjwiltfsr2/+GYwdv37Yz0YTCMJE=";
+            hash = "sha256-OQ069Ye4GxrmCF5qpzH80/AdMabIL58617JBi+6BuYI=";
           })
           gperf
           meson
           ninja
           pkg-config
           doxygen
-          (sphinxHook.overrideAttrs (oldAttrs: {
+          (sphinxHook.overrideAttrs {
             propagatedBuildInputs = with python3Packages; [
               sphinx_rtd_theme
               myst-parser
               breathe
             ];
-          }))
+          })
         ];
         checkInputs = [
           check
@@ -107,17 +105,17 @@
   in
     {
       overlays = {
-        pythonPackagesExtension = final: prev: {
+        pythonPackagesExtension = final: _: {
           sphinx-multiversion = final.callPackage pypkg-multiversion {};
         };
-        noInherit = final: prev: {
+        pkgs = final: prev: {
           pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [self.overlays.pythonPackagesExtension];
           shvc = final.callPackage shvc {};
         };
         default = composeManyExtensions [
           check-suite.overlays.default
           pyshv.overlays.default
-          self.overlays.noInherit
+          self.overlays.pkgs
         ];
       };
     }
@@ -127,17 +125,29 @@
       packages.default = pkgs.shvc;
       legacyPackages = pkgs;
 
+      apps = {
+        default = mkApp {
+          drv = self.packages.${system}.default;
+        };
+        broker = mkApp {
+          drv = self.packages.${system}.default;
+          name = "shvbroker";
+        };
+      };
+
       devShells = filterPackages system {
         default = pkgs.mkShell {
           packages = with pkgs; [
-            # Linters and formaters
-            clang-tools_14
+            # Linters and formatters
+            clang-tools_18
             cppcheck
             editorconfig-checker
             flawfinder
             muon
             shellcheck
             shfmt
+            statix
+            deadnix
             gitlint
             # Testing and code coverage
             valgrind
