@@ -517,7 +517,7 @@ struct cpon_state {
 		/*! Array of container contexts. This array can be preallocated or it
 		 * can be dynamically allocated on demand by @ref cpon_state::realloc.
 		 */
-		* ctx;
+		*ctx;
 	/*! Size of container contexts array (@ref cpon_state.ctx).
 	 *
 	 * This is fixed size if @ref cpon_state.realloc is `NULL` or it has to be

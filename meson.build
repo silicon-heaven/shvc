@@ -95,6 +95,8 @@ if cppcheck.found()
         'compile_commands.json',
       ),
       '--suppress=*:*/subprojects/*',
+      '-D__BYTE_ORDER__',
+      '-DPROJECT_VERSION=""',
     ],
   )
 endif

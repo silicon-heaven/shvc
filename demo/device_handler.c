@@ -63,8 +63,11 @@ static bool rpc_msg(
 				do {
 					cp_unpack(receive->unpack, &receive->item);
 					if (receive->item.type == CPITEM_INT) {
-						if (cnt >= siz)
-							res = realloc(res, sizeof(int) * (siz *= 2));
+						if (cnt >= siz) {
+							int *tmp_res = realloc(res, sizeof(int) * (siz *= 2));
+							assert(tmp_res);
+							res = tmp_res;
+						}
 						res[cnt++] = receive->item.as.Int;
 						continue;
 					} else if (receive->item.type != CPITEM_CONTAINER_END) {

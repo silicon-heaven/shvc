@@ -11,7 +11,7 @@ struct rpchandler_responses {
 		const struct rpcmsg_meta *meta;
 		sem_t sem, sem_complete;
 		struct rpcresponse *next;
-	} * resp;
+	} *resp;
 	pthread_mutex_t lock;
 };
 

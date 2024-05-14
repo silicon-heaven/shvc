@@ -88,14 +88,22 @@ void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth) {
 
 static void *cp_unpack_dup(
 	cp_unpack_t unpack, struct cpitem *item, size_t *size, size_t len) {
+#define res_realloc(siz) \
+	do { \
+		uint8_t *tmp_res = realloc(res, siz); \
+		if (tmp_res == NULL) { \
+			free(res); \
+			return NULL; \
+		} \
+		res = tmp_res; \
+	} while (false)
 	uint8_t *res = NULL;
 	size_t off = 0;
 	do {
 		item->bufsiz = MAX(off, 4);
 		if (len < (item->bufsiz + off))
 			item->bufsiz = len - off;
-		res = realloc(res, off + item->bufsiz);
-		assert(res);
+		res_realloc(off + item->bufsiz);
 		item->buf = res + off;
 		cp_unpack(unpack, item);
 		if (item->type != (size ? CPITEM_BLOB : CPITEM_STRING)) {
@@ -108,12 +116,13 @@ static void *cp_unpack_dup(
 	item->bufsiz = 0;
 	if (size) {
 		*size = off;
-		return realloc(res, off);
+		res_realloc(off);
 	} else {
-		res = realloc(res, off + 1);
+		res_realloc(off + 1);
 		res[off] = '\0';
-		return res;
 	}
+	return res;
+#undef res_realloc
 }
 
 char *cp_unpack_strdup(cp_unpack_t unpack, struct cpitem *item) {

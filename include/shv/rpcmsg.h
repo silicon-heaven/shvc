@@ -204,7 +204,7 @@ struct rpcmsg_meta {
 		struct rpcmsg_meta_extra *next;
 	}
 		/*! Pointer to the first extra meta or `NULL`. */
-		* extra;
+		*extra;
 };
 
 /*! Limits imposed on @ref rpcmsg_meta fields.

@@ -10,7 +10,7 @@ struct strset {
 		unsigned hash;
 		const char *str;
 		bool dyn;
-	} * items;
+	} *items;
 	size_t cnt, siz;
 };
 
