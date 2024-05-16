@@ -80,6 +80,7 @@ static bool rpc_msg(
 			if (!rpcreceive_validmsg(receive))
 				return true;
 
+			// TODO signal
 			cp_pack_t pack = rpcreceive_response_new(receive);
 			if (invalid_param)
 				rpcmsg_pack_error(pack, meta, RPCMSG_E_INVALID_PARAMS,

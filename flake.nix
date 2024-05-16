@@ -78,6 +78,7 @@
             with pypkgs; [
               pytest
               pytest-tap
+              pytest-asyncio
               pypkgs.pyshv
             ]))
         ];

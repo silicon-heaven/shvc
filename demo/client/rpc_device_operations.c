@@ -5,7 +5,7 @@ bool is_device_mounted(rpc_request_ctx *ctx) {
 		return false;
 
 	rpc_request_start(ctx, "test", "ls");
-	cp_pack_str(ctx->packer, "shvc-demo");
+	cp_pack_str(ctx->packer, "device");
 	bool receive_success = rpc_request_send_and_receive(ctx);
 	if (!receive_success) {
 		fprintf(stderr, "Error: 'test:ls' request failed or timed out.\n");
@@ -42,7 +42,7 @@ bool is_device_mounted(rpc_request_ctx *ctx) {
 }
 
 bool get_app_name(rpc_request_ctx *ctx, char **out_app_name) {
-	rpc_request_start(ctx, "test/shvc-demo/.app", "name");
+	rpc_request_start(ctx, "test/device/.app", "name");
 	cp_pack_null(ctx->packer);
 	bool app_name_receive_success = rpc_request_send_and_receive(ctx);
 	if (!app_name_receive_success) {
@@ -78,7 +78,7 @@ bool track_getter_call(rpc_request_ctx *ctx) {
 	if (ctx == NULL)
 		return false;
 
-	rpc_request_start(ctx, "test/shvc-demo/track/" TRACK_ID, "get");
+	rpc_request_start(ctx, "test/device/track/" TRACK_ID, "get");
 	cp_pack_null(ctx->packer);
 	bool track_value_receive_success = rpc_request_send_and_receive(ctx);
 	if (!track_value_receive_success) {
@@ -159,7 +159,7 @@ bool try_set_track(
 	if (ctx == NULL || buf_data == NULL)
 		return false;
 
-	rpc_request_start(ctx, "test/shvc-demo/track/" TRACK_ID, "set");
+	rpc_request_start(ctx, "test/device/track/" TRACK_ID, "set");
 	cp_pack_list_begin(ctx->packer);
 	for (size_t i = 0; i < buf_length; i++) {
 		cp_pack_int(ctx->packer, buf_data[i]);

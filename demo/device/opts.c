@@ -5,7 +5,7 @@
 #include <limits.h>
 
 static const char *default_url =
-	"tcp://test@localhost?password=test&devmount=test/shvc-demo";
+	"tcp://test@localhost?password=test&devmount=test/device";
 
 
 static void print_usage(const char *argv0) {

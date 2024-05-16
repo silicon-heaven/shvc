@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 		.timeout = CALL_TIMEOUT};
 
 	if (!is_device_mounted(&ctx)) {
-		fprintf(stderr, "Error: Device not mounted at 'test/shvc-demo'.\n");
+		fprintf(stderr, "Error: Device not mounted at 'test/device'.\n");
 		fprintf(stderr, "Hint: Make sure the device is connected to the broker.\n");
 		goto cleanup;
 	}

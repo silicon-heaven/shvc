@@ -25,7 +25,7 @@ static void parse_opts(const char **confpath, int argc, char **argv) {
 				*confpath = argv[optind];
 				break;
 			case 'V':
-				printf("%s " PROJECT_VERSION, argv[0]);
+				printf("%s " PROJECT_VERSION "\n", argv[0]);
 				exit(0);
 			case 'h':
 				print_help(argv[0]);

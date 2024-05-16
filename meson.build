@@ -55,8 +55,8 @@ shvc_opt = get_option('shvc')
 if shvc_opt
   subdir('shvc')
 endif
-shvbroker_opt = get_option('shvcbroker')
-if shvbroker_opt
+shvcbroker_opt = get_option('shvcbroker')
+if shvcbroker_opt
   subdir('shvcbroker')
 endif
 demo_device_opt = get_option('demo-device')
