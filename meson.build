@@ -55,6 +55,18 @@ shvc_opt = get_option('shvc')
 if shvc_opt
   subdir('shvc')
 endif
+shvcsub_opt = get_option('shvcsub')
+if shvcsub_opt
+  subdir('shvcsub')
+endif
+shvcp_opt = get_option('shvcsub')
+if shvcp_opt
+  subdir('shvcp')
+endif
+shvctio_opt = get_option('shvctio')
+if shvctio_opt
+  subdir('shvctio')
+endif
 shvcbroker_opt = get_option('shvcbroker')
 if shvcbroker_opt
   subdir('shvcbroker')

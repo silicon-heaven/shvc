@@ -14,7 +14,7 @@ static void print_usage(const char *argv0) {
 
 static void print_help(const char *argv0) {
 	print_usage(argv0);
-	fprintf(stderr, "SHV RPC client call.\n");
+	fprintf(stderr, "SHV RPC client.\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Arguments:\n");
 	fprintf(stderr, "  -u URL   Where to connect to (default %s)\n", default_url);

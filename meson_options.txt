@@ -13,11 +13,31 @@ option(
   description: 'Build shvc tool that can call methods over SHV RPC protocol.',
 )
 option(
+  'shvcsub',
+  type: 'boolean',
+  value: true,
+  description: 'Build shvcsub tool that can subscribe and receive SHV RPC signals.',
+)
+option(
+  'shvcp',
+  type: 'boolean',
+  value: true,
+  description: 'Build shvcp tool that can copy files over SHV RPC protocol.',
+)
+option(
+  'shvctio',
+  type: 'boolean',
+  value: true,
+  description: 'Build shvctio terminal interface for SHV RPC exchange nodes.',
+)
+option(
   'shvcbroker',
   type: 'boolean',
   value: true,
   description: 'Build SHV RPC Broker standalone application.',
 )
+
+# Demo applications
 option(
   'demo-device',
   type: 'boolean',
