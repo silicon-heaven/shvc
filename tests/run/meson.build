@@ -12,19 +12,19 @@ pytest_depends = []
 pytest_env = []
 if shvc_opt
   pytest_depends += shvc
-  pytest_env += 'SHVC=' + shvc.path()
+  pytest_env += 'SHVC=' + shvc.full_path()
 endif
 if shvcbroker_opt
   pytest_depends += shvcbroker
-  pytest_env += 'SHVCBROKER=' + shvcbroker.path()
+  pytest_env += 'SHVCBROKER=' + shvcbroker.full_path()
 endif
 if demo_device_opt
   pytest_depends += demo_device
-  pytest_env += 'DEMO_DEVICE=' + demo_device.path()
+  pytest_env += 'DEMO_DEVICE=' + demo_device.full_path()
 endif
 if demo_client_opt
   pytest_depends += demo_client
-  pytest_env += 'DEMO_CLIENT=' + demo_client.path()
+  pytest_env += 'DEMO_CLIENT=' + demo_client.full_path()
 endif
 
 test(
@@ -33,7 +33,7 @@ test(
   args: [
     test_driver,
     '-n',
-    python_pytest.path(),
+    python_pytest.full_path(),
     '-m',
     'pytest',
     '--tap-stream',
