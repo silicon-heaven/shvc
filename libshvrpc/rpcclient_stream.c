@@ -65,6 +65,13 @@ static bool xwrite(struct rpcclient_stream *c, const void *buf, size_t siz) {
 	return true;
 }
 
+static void tcpflush(int fd) {
+	int flag = 1;
+	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
+	flag = 0;
+	setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(int));
+}
+
 static ssize_t cookie_read(void *cookie, char *buf, size_t size) {
 	struct rpcclient_stream *c = (struct rpcclient_stream *)cookie;
 	if (c->rmsgoff < size)
@@ -156,6 +163,7 @@ static bool msgflush_stream(struct rpcclient_stream *c, bool send) {
 		uint8_t cpf = CP_ChainPack;
 		if (!xwrite(c, &cpf, 1) || !xwrite(c, c->buf, len))
 			return false;
+		tcpflush(c->wfd);
 		rpcclient_last_send_update(&c->c);
 	}
 	fseek(c->fbuf, 0, SEEK_SET);
