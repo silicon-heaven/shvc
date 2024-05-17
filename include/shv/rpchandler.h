@@ -199,7 +199,7 @@ enum rpchandler_error {
  *
  * This is the most easier way to get RPC Handler up and running. It is the
  * suggested way unless you plan to use some poll based loop and multiple
- * handlers. The single handler can live pretty easily in it this thread.
+ * handlers.
  *
  * Loop performs the following actions:
  * * Wait for data to be read from client and calls @ref rpchandler_next.
@@ -237,7 +237,7 @@ void rpchandler_run(rpchandler_t rpchandler,
 int rpchandler_spawn_thread(rpchandler_t rpchandler,
 	void (*onerr)(rpchandler_t, rpcclient_t, enum rpchandler_error),
 	pthread_t *restrict thread, const pthread_attr_t *restrict attr)
-	__attribute__((nonnull(1, 2)));
+	__attribute__((nonnull(1, 3)));
 
 
 /*! Get next unused request ID.

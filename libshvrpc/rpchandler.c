@@ -262,7 +262,6 @@ void rpchandler_run(rpchandler_t rpchandler,
 					break;
 			}
 		}
-		/*printf("Calling onerr\n");*/
 		if (onerr)
 			onerr(rpchandler, rpchandler->client, RPCHANDLER_DISCONNECT);
 	}
