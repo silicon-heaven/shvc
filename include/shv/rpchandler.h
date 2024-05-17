@@ -260,6 +260,39 @@ int rpchandler_next_request_id(rpchandler_t rpchandler) __attribute__((nonnull))
  */
 cp_pack_t rpchandler_msg_new(rpchandler_t rpchandler) __attribute__((nonnull));
 
+/*! Start sending the request message.
+ *
+ * This combines @ref rpchandler_msg_new with @ref rpcmsg_pack_request in a
+ * convenient single function.
+ *
+ * @param rpchandler: RPC Handler instance.
+ * @param path: The SHV path request will be sent to.
+ * @param method: The method name this request call of.
+ * @param request_id: Unique request ID (@ref rpchandler_next_request_id)
+ * @returns Packer you need to use to pack parameters. The message must be
+ * closed with @ref cp_pack_container_end and sent with @ref
+ * rpchandler_msg_send.
+ */
+cp_pack_t rpchandler_msg_new_request(rpchandler_t rpchandler, const char *path,
+	const char *method, int request_id) __attribute__((nonnull));
+
+/*! Start sending the request message without any parameter.
+ *
+ * This combines @ref rpchandler_msg_new with @ref rpcmsg_pack_request_void in a
+ * convenient single function. The message is not immediately sent to allow
+ * caller to register expectation for response message.
+ *
+ * @param rpchandler: RPC Handler instance.
+ * @param path: The SHV path request will be sent to.
+ * @param method: The method name this request call of.
+ * @param request_id: Unique request ID (@ref rpchandler_next_request_id)
+ * @returns `true` if message was packed successfully and `false` otherwise. The
+ * message will be sent after @ref rpchandler_msg_send. You can also decide
+ * to drop it with @ref rpchandler_msg_drop.
+ */
+bool rpchandler_msg_new_request_void(rpchandler_t rpchandler, const char *path,
+	const char *method, int request_id) __attribute__((nonnull));
+
 /*! Send the packed message.
  *
  * This calls @ref rpcclient_sendmsg under the hood and releases the lock taken
@@ -368,24 +401,19 @@ void rpchandler_ls_result_const(struct rpchandler_ls_ctx *context,
  *
  * @param context: Context passed to the @ref rpchandler_funcs.ls.
  * @param fmt: Format string used to generate node name.
- * @param args: List of variable arguments used in format string.
  */
-void rpchandler_ls_result_vfmt(struct rpchandler_ls_ctx *context,
-	const char *fmt, va_list args) __attribute__((nonnull));
+void rpchandler_ls_result_fmt(struct rpchandler_ls_ctx *context,
+	const char *fmt, ...) __attribute__((nonnull));
 
 /*! The variant of the @ref rpchandler_ls_result with name generated from format
  * string.
  *
  * @param context: Context passed to the @ref rpchandler_funcs.ls.
  * @param fmt: Format string used to generate node name.
+ * @param args: List of variable arguments used in format string.
  */
-__attribute__((nonnull)) static inline void rpchandler_ls_result_fmt(
-	struct rpchandler_ls_ctx *context, const char *fmt, ...) {
-	va_list args;
-	va_start(args, fmt);
-	rpchandler_ls_result_vfmt(context, fmt, args);
-	va_end(args);
-}
+void rpchandler_ls_result_vfmt(struct rpchandler_ls_ctx *context,
+	const char *fmt, va_list args) __attribute__((nonnull));
 
 /*! Access name of the node ls should validate that it exists.
  *

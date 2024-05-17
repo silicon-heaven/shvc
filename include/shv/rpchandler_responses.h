@@ -69,6 +69,41 @@ rpcresponse_t rpcresponse_expect(rpchandler_responses_t responses, int request_i
 void rpcresponse_discard(rpchandler_responses_t responses, rpcresponse_t response)
 	__attribute__((nonnull(1)));
 
+/*! Provide request ID of the given response.
+ *
+ * @param response: Response object the request ID should be provided for.
+ * @returns The request ID.
+ */
+int rpcresponse_request_id(rpcresponse_t response) __attribute__((nonnull));
+
+/*! Wait for the response to be received.
+ *
+ * This blocks execution of the thread for up to the given timeout.
+ *
+ * @param response: Response object to wait for.
+ * @param receive: Pointer to the variable where pointer to the receive
+ *   structure is placed in. This structure provides you with reference you need
+ *   to receive message just like in @ref rpchandler_funcs.msg.
+ * @param meta: Pointer to the variable where pointer to the meta structure is
+ *   placed in. This structure contains info about received message such as its
+ *   type or if it caries an error.
+ * @param timeout: Number of seconds we wait before we stop waiting.
+ * @returns `true` if response received or `false` otherwise (timeout
+ *   encountered).
+ */
+bool rpcresponse_waitfor(rpcresponse_t response, struct rpcreceive **receive,
+	const struct rpcmsg_meta **meta, int timeout) __attribute__((nonnull));
+
+/*! Validate the response message.
+ *
+ * This also frees the RPC Response from RPC Responses Handler.
+ *
+ * @param response: Respond object to wait for.
+ * @returns `true` if message is valid and `false` otherwise.
+ */
+bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
+
+
 // clang-format off
 /*! Macro that helps you pack request with parameter, registers response
  * expectation and sends the request.
@@ -107,18 +142,12 @@ void rpcresponse_discard(rpchandler_responses_t responses, rpcresponse_t respons
 	for (int request_id = rpchandler_next_request_id(handler), __ = 1; __; ({ \
 			 if (__) { \
 				 rpchandler_msg_drop(handler); \
+				 response = NULL; \
 				 __--; \
 			 } \
 		 })) \
-		for (cp_pack_t packer = ({ \
-				 cp_pack_t __packer = rpchandler_msg_new(handler); \
-				 if (!rpcmsg_pack_request(__packer, (path), (method), request_id)) { \
-					 rpchandler_msg_drop(handler); /* Release the lock */ \
-					 response = NULL; \
-					 __packer = NULL; \
-				 } \
-				 __packer; \
-			 }); \
+		for (cp_pack_t packer = rpchandler_msg_new_request( \
+				 (handler), (path), (method), request_id); \
 			 packer; ({ \
 				 cp_pack_container_end(packer); \
 				 packer = NULL; \
@@ -149,40 +178,6 @@ void rpcresponse_discard(rpchandler_responses_t responses, rpcresponse_t respons
 rpcresponse_t rpcresponse_send_request_void(rpchandler_t handler,
 	rpchandler_responses_t responses, const char *path, const char *method)
 	__attribute__((nonnull));
-
-/*! Provide request ID of the given response.
- *
- * @param response: Response object the request ID should be provided for.
- * @returns The request ID.
- */
-int rpcresponse_request_id(rpcresponse_t response) __attribute__((nonnull));
-
-/*! Wait for the response to be received.
- *
- * This blocks execution of the thread for up to the given timeout.
- *
- * @param response: Response object to wait for.
- * @param receive: Pointer to the variable where pointer to the receive
- *   structure is placed in. This structure provides you with reference you need
- *   to receive message just like in @ref rpchandler_funcs.msg.
- * @param meta: Pointer to the variable where pointer to the meta structure is
- *   placed in. This structure contains info about received message such as its
- *   type or if it caries an error.
- * @param timeout: Number of seconds we wait before we stop waiting.
- * @returns `true` if response received or `false` otherwise (timeout
- *   encountered).
- */
-bool rpcresponse_waitfor(rpcresponse_t response, struct rpcreceive **receive,
-	const struct rpcmsg_meta **meta, int timeout) __attribute__((nonnull));
-
-/*! Validate the response message.
- *
- * This also frees the RPC Response from RPC Responses Handler.
- *
- * @param response: Respond object to wait for.
- * @returns `true` if message is valid and `false` otherwise.
- */
-bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
 
 
 #endif

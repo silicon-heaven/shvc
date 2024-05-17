@@ -114,22 +114,6 @@ void rpcresponse_discard(rpchandler_responses_t responses, rpcresponse_t respons
 	pthread_mutex_unlock(&responses->lock);
 }
 
-rpcresponse_t rpcresponse_send_request_void(rpchandler_t handler,
-	rpchandler_responses_t responses, const char *path, const char *method) {
-	cp_pack_t packer = rpchandler_msg_new(handler);
-	int request_id = rpchandler_next_request_id(handler);
-	if (!rpcmsg_pack_request_void(packer, path, method, request_id)) {
-		rpchandler_msg_drop(handler); /* Release the lock */
-		return NULL;
-	}
-	rpcresponse_t res = rpcresponse_expect(responses, request_id);
-	if (!rpchandler_msg_send(handler)) {
-		rpcresponse_discard(responses, res);
-		return NULL;
-	}
-	return res;
-}
-
 int rpcresponse_request_id(rpcresponse_t response) {
 	return response->request_id;
 }
@@ -152,5 +136,19 @@ bool rpcresponse_waitfor(rpcresponse_t response, struct rpcreceive **receive,
 bool rpcresponse_validmsg(rpcresponse_t response) {
 	bool res = rpcreceive_validmsg(response->receive);
 	sem_post(&response->sem_complete);
+	return res;
+}
+
+
+rpcresponse_t rpcresponse_send_request_void(rpchandler_t handler,
+	rpchandler_responses_t responses, const char *path, const char *method) {
+	int request_id = rpchandler_next_request_id(handler);
+	if (!rpchandler_msg_new_request_void(handler, path, method, request_id))
+		return NULL;
+	rpcresponse_t res = rpcresponse_expect(responses, request_id);
+	if (!rpchandler_msg_send(handler)) {
+		rpcresponse_discard(responses, res);
+		return NULL;
+	}
 	return res;
 }

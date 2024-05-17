@@ -47,6 +47,8 @@ V0.0 {
 		rpchandler_spawn_thread;
 		rpchandler_next_request_id;
 		rpchandler_msg_new;
+		rpchandler_msg_new_request;
+		rpchandler_msg_new_request_void;
 		rpchandler_msg_send;
 		rpchandler_msg_drop;
 		rpcreceive_validmsg;

@@ -299,6 +299,26 @@ cp_pack_t rpchandler_msg_new(rpchandler_t rpchandler) {
 	return rpcclient_pack(rpchandler->client);
 }
 
+cp_pack_t rpchandler_msg_new_request(rpchandler_t rpchandler, const char *path,
+	const char *method, int request_id) {
+	cp_pack_t res = rpchandler_msg_new(rpchandler);
+	if (!rpcmsg_pack_request(res, path, method, request_id)) {
+		rpchandler_msg_drop(rpchandler);
+		return NULL;
+	}
+	return res;
+}
+
+bool rpchandler_msg_new_request_void(rpchandler_t rpchandler, const char *path,
+	const char *method, int request_id) {
+	cp_pack_t pack = rpchandler_msg_new(rpchandler);
+	if (!rpcmsg_pack_request_void(pack, path, method, request_id)) {
+		rpchandler_msg_drop(rpchandler);
+		return false;
+	}
+	return true;
+}
+
 bool rpchandler_msg_send(rpchandler_t rpchandler) {
 	bool res = rpcclient_sendmsg(rpchandler->client);
 	unlock(rpchandler);
@@ -358,6 +378,14 @@ void rpchandler_ls_const(struct rpchandler_ls_ctx *ctx, const char *name) {
 		ctx->x.located = !strcmp(ctx->x.name, name);
 	else
 		shv_strset_add_const(&ctx->strset, name);
+}
+
+void rpchandler_ls_result_fmt(
+	struct rpchandler_ls_ctx *context, const char *fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	rpchandler_ls_result_vfmt(context, fmt, args);
+	va_end(args);
 }
 
 void rpchandler_ls_result_vfmt(
