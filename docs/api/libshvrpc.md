@@ -11,4 +11,5 @@ rpclogger
 rpcurl
 rpcmsg
 rpchandler
+rpccall
 ```
