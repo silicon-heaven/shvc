@@ -1,40 +1,73 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
 #include <shv/rpcurl.h>
 #include <shv/rpcclient.h>
 #include <shv/rpchandler_app.h>
 #include <shv/rpchandler_responses.h>
-#include <malloc.h>
+#include <shv/rpccall.h>
 #include "opts.h"
-#include "rpc_device_operations.h"
-#include "rpc_connection.h"
-#include "rpc_request.h"
-#include "rpc_error_logging.h"
-#include "utils.h"
+#include "rpc_connect.h"
+
+#define TIMEOUT 300
+#define TRACK_ID "4"
+
+
+/* Common error handling for RPC method calls */
+#define CASE_ERROR(METHOD) \
+	case RPCCALL_COMERR: \
+	case RPCCALL_TIMEOUT: \
+		comerr = true; \
+		fprintf(stderr, "Error: Failed to call '" METHOD "'\n"); \
+		break; \
+	case RPCCALL_ERROR: { \
+		char *errmsg; \
+		rpcmsg_unpack_error(CCTX_UNPACK, &CCTX_ITEM, NULL, &errmsg); \
+		fprintf(stderr, "Error: Call to " METHOD ": %s\n", errmsg); \
+		free(errmsg); \
+		comerr = true; \
+		break; \
+	}
+
+static bool track_get(rpchandler_t handler, rpchandler_responses_t responses,
+	long long **track, size_t *track_siz, size_t *track_cnt) {
+	bool comerr = false;
+	rpccall_void(
+		handler, responses, "test/device/track/" TRACK_ID, "get", 3, TIMEOUT) {
+		case RPCCALL_RESULT:
+			*track_cnt = 0;
+			for_cp_unpack_list(CCTX_UNPACK, &CCTX_ITEM) {
+				if (*track_siz <= *track_cnt) {
+					long long *new_track =
+						realloc(*track, (*track_siz *= 2) * sizeof *track);
+					assert(new_track);
+					*track = new_track;
+				}
+				if (CCTX_ITEM.type == CPITEM_INT)
+					(*track)[(*track_cnt)++] = CCTX_ITEM.as.Int;
+			}
+			break;
+		case RPCCALL_VOID_RESULT:
+			*track_cnt = 0;
+			break;
+		case RPCCALL_PARAM:
+			CASE_ERROR("test/device/track/" TRACK_ID ":get")
+	}
+	return !comerr;
+}
 
 int main(int argc, char **argv) {
-	int return_value = 1;
+	int exit_code = 1;
 	struct conf conf;
 	parse_opts(argc, argv, &conf);
 
-	/* Parse URL that's stored in `conf` structure */
-	struct rpcurl *rpcurl;
-	if (!parse_rpcurl(conf.url, &rpcurl))
-		goto parse_rpcurl_cleanup;
+	/* Setup client connection. */
+	rpcclient_t client = rpc_connect(&conf);
+	if (client == NULL)
+		return exit_code;
 
-	/* Connect to the RPC URL, initializing client in the process */
-	rpcclient_t client;
-	if (!connect_to_rpcurl(rpcurl, &client))
-		goto connect_to_rpcurl_cleanup;
-
-	/* Create a logger that's also supplied to our client instance */
-	rpclogger_t logger = initiate_logger_if_verbose(conf, client);
-
-	/* Log in using the client to a valid RPC URL */
-	if (!login_with_rpcclient(client, rpcurl))
-		goto login_with_rpcclient_cleanup;
-
-	/* Define a stage for RPC Handler using App and Responses Handler */
+	/* Define a stages for RPC Handler using App and Responses Handler */
 	rpchandler_app_t app = rpchandler_app_new("demo-client", PROJECT_VERSION);
 	rpchandler_responses_t responses_handler = rpchandler_responses_new();
 	const struct rpchandler_stage stages[] = {
@@ -46,80 +79,99 @@ int main(int argc, char **argv) {
 	/* Initialize and run RPC Handler */
 	rpchandler_t handler = rpchandler_new(client, stages, NULL);
 	pthread_t rpchandler_thread;
-	rpchandler_spawn_thread(handler, &error_handler, &rpchandler_thread, NULL);
+	rpchandler_spawn_thread(handler, NULL, &rpchandler_thread, NULL);
 
-	rpc_request_ctx ctx = {.handler = handler,
-		.responses_handler = responses_handler,
-		.timeout = CALL_TIMEOUT};
 
-	if (!is_device_mounted(&ctx)) {
+	bool comerr = false;
+
+	/* Query the name of the broker we are connected to */
+	char *app_name = NULL;
+	rpccall_void(handler, responses_handler, ".app", "name", 3, TIMEOUT) {
+		case RPCCALL_RESULT:
+			free(app_name);
+			app_name = cp_unpack_strdup(CCTX_UNPACK, &CCTX_ITEM);
+			break;
+		case RPCCALL_VOID_RESULT:
+		case RPCCALL_PARAM:
+			CASE_ERROR(".app:name")
+	}
+	if (comerr)
+		goto cleanup;
+	fprintf(stdout, "The '.app:name' is: %s\n", app_name);
+	free(app_name);
+
+	/* Check if demo device is available */
+	bool has_device = false;
+	rpccall(handler, responses_handler, "test", "ls", 3, TIMEOUT) {
+		case RPCCALL_PARAM:
+			cp_pack_str(cctx.pack, "device");
+			break;
+		case RPCCALL_RESULT:
+			has_device = cp_unpack_type(CCTX_UNPACK, &CCTX_ITEM) == CPITEM_BOOL &&
+				CCTX_ITEM.as.Bool;
+			break;
+		case RPCCALL_VOID_RESULT:
+			has_device = false;
+			break;
+			CASE_ERROR("test:ls")
+	}
+	if (comerr)
+		goto cleanup;
+	if (!has_device) {
 		fprintf(stderr, "Error: Device not mounted at 'test/device'.\n");
 		fprintf(stderr, "Hint: Make sure the device is connected to the broker.\n");
 		goto cleanup;
 	}
 
-	char *app_name = NULL;
-	if (!get_app_name(&ctx, &app_name) || app_name == NULL) {
-		fprintf(stderr, "Error: Couldn't obtain '.app:name'.\n");
+	/* Get the track state */
+	size_t track_siz = 4, track_cnt = 0;
+	long long *track = malloc(track_siz * sizeof *track);
+	if (!track_get(handler, responses_handler, &track, &track_siz, &track_cnt))
 		goto cleanup;
+	printf("Demo device's track " TRACK_ID ":");
+	for (size_t i = 0; i < track_cnt; i++)
+		printf(" %lld", track[i]);
+	putchar('\n');
+
+
+	/* Increase track */
+	for (size_t i = 0; i < track_cnt; i++)
+		track[i]++;
+	rpccall(handler, responses_handler, "test/device/track/" TRACK_ID, "set", 3,
+		TIMEOUT) {
+		case RPCCALL_PARAM:
+			cp_pack_list_begin(CCTX_PACK);
+			for (size_t i = 0; i < track_cnt; i++)
+				cp_pack_int(CCTX_PACK, track[i]);
+			cp_pack_container_end(CCTX_PACK);
+			break;
+		case RPCCALL_RESULT:
+		case RPCCALL_VOID_RESULT:
+			break;
+			CASE_ERROR("test:ls")
 	}
-
-	fprintf(stdout, "The '.app:name' is: %s\n", app_name);
-	free(app_name);
-
-	if (rpcclient_errno(client) != RPCMSG_E_NO_ERROR) {
-		fprintf(stderr, "Error: %s\n", strerror(rpcclient_errno(client)));
+	if (comerr)
 		goto cleanup;
-	}
 
-	if (!track_getter_call(&ctx)) {
-		fprintf(stderr, "Error: Call to 'track/" TRACK_ID ":get' failed.\n");
+	/* Get the updated version. */
+	if (!track_get(handler, responses_handler, &track, &track_siz, &track_cnt))
 		goto cleanup;
-	}
+	printf("New demo device's track " TRACK_ID ":");
+	for (size_t i = 0; i < track_cnt; i++)
+		printf(" %lld", track[i]);
+	putchar('\n');
 
-	size_t buf_length = 0;
-	long long *data_buf = malloc(sizeof(long long) * 2);
-	assert(data_buf);
+	exit_code = 0;
 
-	if (!track_getter_result(&ctx, &data_buf, &buf_length)) {
-		fprintf(stderr,
-			"Error: Parsing response from 'track/" TRACK_ID ":get' failed.\n");
-		goto vector_cleanup;
-	}
-
-	printf("The value of track/" TRACK_ID " is: ");
-	print_ll_array(data_buf, buf_length);
-
-	if (rpcclient_errno(client) != RPCMSG_E_NO_ERROR) {
-		fprintf(stderr, "Error: %s\n", strerror(rpcclient_errno(client)));
-	}
-
-	const long long array_to_set[] = {2, 3, 4, 8};
-	const size_t length = sizeof(array_to_set) / sizeof(array_to_set[0]);
-
-	if (!try_set_track(&ctx, array_to_set, length)) {
-		fprintf(stderr, "Error: Call to 'track/" TRACK_ID ":set' failed.\n");
-		goto vector_cleanup;
-	}
-
-	fprintf(stdout,
-		"The value of track/" TRACK_ID " has successfully been set to: ");
-	print_ll_array(array_to_set, length);
-
-	return_value = 0;
-
-vector_cleanup:
-	free(data_buf);
 cleanup:
+	// TODO rpcclient_disconnect(client); instead of cancel
+	pthread_cancel(rpchandler_thread);
+	pthread_join(rpchandler_thread, NULL);
 	rpchandler_destroy(handler);
 	rpchandler_responses_destroy(responses_handler);
 	rpchandler_app_destroy(app);
-login_with_rpcclient_cleanup:
-	rpclogger_destroy(logger);
-connect_to_rpcurl_cleanup:
+	rpclogger_destroy(client->logger);
 	rpcclient_destroy(client);
-parse_rpcurl_cleanup:
-	rpcurl_free(rpcurl);
 
-	return return_value;
+	return exit_code;
 }
