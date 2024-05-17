@@ -10,11 +10,12 @@ async def test_shvc_help(shvc_exec):
     assert stdout == [b""]
     assert stderr == [
         f"{shvc_exec[-1]} [-ujvqdVh] [PATH] [METHOD] [PARAM]".encode(),
-        b"SHV RPC client.",
+        b"SHV RPC client call.",
         b"",
         b"Arguments:",
         b"  -u URL   Where to connect to (default tcp://test@localhost?password=test)",
-        b"  -j       Output in JSON format instead of CPON",
+        b"  -t SEC   Number of seconds before call is abandoned (default 300)",
+        b"  -i       Read parameter from STDIN instead of argument",
         b"  -v       Increase logging level of the communication",
         b"  -q       Decrease logging level of the communication",
         b"  -d       Set maximul logging level of the communication",

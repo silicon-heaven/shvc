@@ -7,8 +7,9 @@ struct conf {
 	const char *path;
 	const char *method;
 	const char *param;
+	bool stdin_param;
 	unsigned verbose;
-	bool json;
+	unsigned timeout;
 };
 
 /* Parse arguments. */
