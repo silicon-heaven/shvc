@@ -4,6 +4,7 @@ libshvcp_sources = files(
   'common.c',
   'cp_pack.c',
   'cp_unpack.c',
+  'cp_unpack_pack.c',
   'cpdatetime.c',
   'cpdecimal.c',
   'cpitem.c',
@@ -13,7 +14,7 @@ libshvcp_sources = files(
 libshvcp_dependencies = [m]
 
 libshvcp = library(
-  'shvchainpack',
+  'shvcp',
   libshvcp_sources,
   version: '0.0.0',
   dependencies: libshvcp_dependencies,

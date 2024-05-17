@@ -9,5 +9,6 @@ serialize and deserialize the ChainPack and CPON data formats.
 cp
 cp_pack
 cp_unpack
+cp_unpack_pack
 chainpack
 ```

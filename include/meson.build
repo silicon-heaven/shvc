@@ -5,6 +5,7 @@ libshvcp_headers = files(
   'shv/cp.h',
   'shv/cp_pack.h',
   'shv/cp_unpack.h',
+  'shv/cp_unpack_pack.h',
 )
 libshvrpc_headers = files(
   'shv/rpcclient.h',
