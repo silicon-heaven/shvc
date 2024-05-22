@@ -25,5 +25,4 @@ libfoo_dep = declare_dependency(
 )
 
 
-pkg_mod = import('pkgconfig')
 pkg_mod.generate(libfoo, description: 'Library counting foos..')

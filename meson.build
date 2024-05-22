@@ -8,6 +8,7 @@ project(
 )
 cc = meson.get_compiler('c')
 isnuttx = cc.get_define('__NuttX__') != '' # Won't be defined outside NuttX
+pkg_mod = import('pkgconfig')
 fs = import('fs')
 
 if not isnuttx

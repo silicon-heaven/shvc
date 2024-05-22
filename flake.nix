@@ -92,6 +92,11 @@
       packages.default = pkgs.template-c;
       legacyPackages = pkgs;
 
+      apps.default = mkApp {
+        drv = self.packages.${system}.default;
+        name = "foo";
+      };
+
       devShells = filterPackages system {
         default = pkgs.mkShell {
           packages = with pkgs; [
@@ -116,11 +121,6 @@
           inputsFrom = [self.packages.${system}.default];
           meta.platforms = platforms.linux;
         };
-      };
-
-      apps.default = mkApp {
-        drv = self.packages.${system}.default;
-        name = "foo";
       };
 
       checks.default = self.packages.${system}.default;
