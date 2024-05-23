@@ -25,6 +25,12 @@ they provide complete SHV RPC toolkit.
   application. It can be used to create logging facility that is part of SHV
   RPC. (NOT IMPLEMENTED YET)
 * **shvc** is CLI tool to call SHV RPC methods.
+* **shvcsub** is CLI tool for receiving the SHV RPC signals. (NOT IMPLEMENTED
+  YET)
+* **shvcp** is CLI tool for working with file nodes in SHV RPC. (NOT IMPLEMENTED
+  YET)
+* **shvctio** is CLI tool for attaching console to the exchange nodes in SHV
+  RPC. (NOT IMPLEMENTED YET)
 * **shvcbroker** is standalone SHV RPC Broker application. (NOT IMPLEMENTED YET)
 
 ## Dependencies

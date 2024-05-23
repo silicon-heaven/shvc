@@ -81,26 +81,6 @@ int main(int argc, char **argv) {
 	struct conf conf;
 	parse_opts(argc, argv, &conf);
 
-	struct ctx ctx;
-	ctx.conf = &conf;
-	ctx.output = NULL;
-	ctx.error = RPCMSG_E_NO_ERROR;
-
-	uint8_t *stdin_param = NULL;
-	size_t stdin_param_siz = 0;
-	if (conf.stdin_param) {
-		ctx.fparam = open_memstream((char **)&stdin_param, &stdin_param_siz);
-		{
-			char buf[BUFSIZ];
-			size_t rsiz;
-			while ((rsiz = fread(buf, 1, BUFSIZ, stdin)))
-				fwrite(buf, rsiz, 1, ctx.fparam);
-		}
-	} else if (conf.param)
-		ctx.fparam = fmemopen((void *)conf.param, strlen(conf.param), "r");
-	else
-		ctx.fparam = NULL;
-
 	const char *errpos;
 	struct rpcurl *rpcurl = rpcurl_parse(conf.url, &errpos);
 	if (rpcurl == NULL) {
@@ -121,8 +101,9 @@ int main(int argc, char **argv) {
 
 	if (!rpcclient_login(client, &rpcurl->login, &loginerr)) {
 		if (loginerr) {
-			fprintf(stderr, "Invalid login for connecting to the: %s\n", conf.url);
+			fprintf(stderr, "Failed to login to: %s\n", conf.url);
 			fprintf(stderr, "%s\n", loginerr);
+			free(loginerr);
 		} else {
 			fprintf(stderr, "Communication error with server\n");
 		}
@@ -143,6 +124,26 @@ int main(int argc, char **argv) {
 
 	pthread_t handler_thread;
 	assert(!rpchandler_spawn_thread(handler, NULL, &handler_thread, NULL));
+
+	struct ctx ctx;
+	ctx.conf = &conf;
+	ctx.output = NULL;
+	ctx.error = RPCMSG_E_NO_ERROR;
+
+	uint8_t *stdin_param = NULL;
+	size_t stdin_param_siz = 0;
+	if (conf.stdin_param) {
+		ctx.fparam = open_memstream((char **)&stdin_param, &stdin_param_siz);
+		{
+			char buf[BUFSIZ];
+			size_t rsiz;
+			while ((rsiz = fread(buf, 1, BUFSIZ, stdin)))
+				fwrite(buf, rsiz, 1, ctx.fparam);
+		}
+	} else if (conf.param)
+		ctx.fparam = fmemopen((void *)conf.param, strlen(conf.param), "r");
+	else
+		ctx.fparam = NULL;
 
 	rpccall(handler, responses, response_callback, &ctx);
 

@@ -20,24 +20,21 @@ static bool rpc_msg(
 	if (meta->type != RPCMSG_T_RESPONSE && meta->type != RPCMSG_T_ERROR)
 		return false;
 	pthread_mutex_lock(&resp->lock);
-	rpcresponse_t pr = NULL;
-	rpcresponse_t r = resp->resp;
-	while (r) {
+	rpcresponse_t *pr = &resp->resp;
+	while (*pr) {
+		rpcresponse_t r = *pr;
 		if (r->request_id == meta->request_id) {
 			if (r->callback(receive, meta, r->ctx)) {
+				*pr = r->next;
 				sem_post(&r->sem);
-				if (pr)
-					pr->next = r->next;
-				else
-					resp->resp = r->next;
 			}
-			break;
+			pthread_mutex_unlock(&resp->lock);
+			return true;
 		}
-		pr = r;
-		r = r->next;
+		pr = &r->next;
 	};
 	pthread_mutex_unlock(&resp->lock);
-	return true;
+	return false;
 }
 
 static struct rpchandler_funcs rpc_funcs = {.msg = rpc_msg};

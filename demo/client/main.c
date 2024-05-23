@@ -193,6 +193,8 @@ int main(int argc, char **argv) {
 	print_track(&track);
 	putchar('\n');
 
+	free(track.buf);
+
 	exit_code = 0;
 
 cleanup:

@@ -13,4 +13,4 @@ unittests_env = [
 subdir('utils')
 subdir('libshvcp')
 subdir('libshvrpc')
-subdir('libshvclient')
+subdir('libshvcaller')
