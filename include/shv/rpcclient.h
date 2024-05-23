@@ -5,10 +5,8 @@
  * Handle managing a single connection for SHV RPC.
  */
 
-#include <stdio.h>
 #include <stdbool.h>
 #include <time.h>
-#include <errno.h>
 #include <shv/rpcurl.h>
 #include <shv/cp_pack.h>
 #include <shv/cp_unpack.h>
@@ -260,8 +258,7 @@ rpcclient_t rpcclient_serial_unix_connect(const char *location)
  * after they receive the complete message, not during the transport. The
  * received bytes can be invalid but still be a valid packing format, or other
  * side can decide to drop the already almost sent message and thus you should
- * always parse the whole message and validate it before you proceed to act on
- * the data received.
+ * always validate message before you proceed to act on the data received.
  *
  * You won't be able to unpack any more items from the message after you call
  * this!

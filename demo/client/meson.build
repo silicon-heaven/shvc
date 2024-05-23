@@ -2,7 +2,7 @@ demo_client_sources = files(
   'opts.c',
   'rpc_connect.c',
 )
-demo_client_dependencies = [libshvrpc_dep]
+demo_client_dependencies = [libshvclient_dep]
 
 
 demo_client = executable(

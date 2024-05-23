@@ -5,11 +5,10 @@
 struct rpchandler_responses {
 	struct rpcresponse {
 		int request_id;
-		struct rpcreceive *receive;
-		cp_unpack_t unpack;
-		struct cpitem *item;
-		const struct rpcmsg_meta *meta;
-		sem_t sem, sem_complete;
+		rpcresponse_callback_t callback;
+		void *ctx;
+		sem_t sem;
+		struct rpchandler_responses *owner;
 		struct rpcresponse *next;
 	} *resp;
 	pthread_mutex_t lock;
@@ -25,17 +24,13 @@ static bool rpc_msg(
 	rpcresponse_t r = resp->resp;
 	while (r) {
 		if (r->request_id == meta->request_id) {
-			r->receive = receive;
-			r->meta = meta;
-			sem_post(&r->sem);
-			sem_wait(&r->sem_complete);
-			sem_destroy(&r->sem);
-			sem_destroy(&r->sem_complete);
-			if (pr)
-				pr->next = r->next;
-			else
-				resp->resp = r->next;
-			free(r);
+			if (r->callback(receive, meta, r->ctx)) {
+				sem_post(&r->sem);
+				if (pr)
+					pr->next = r->next;
+				else
+					resp->resp = r->next;
+			}
 			break;
 		}
 		pr = r;
@@ -71,12 +66,14 @@ struct rpchandler_stage rpchandler_responses_stage(
 }
 
 
-rpcresponse_t rpcresponse_expect(rpchandler_responses_t responses, int request_id) {
+rpcresponse_t rpcresponse_expect(rpchandler_responses_t responses,
+	int request_id, rpcresponse_callback_t func, void *ctx) {
 	rpcresponse_t res = malloc(sizeof *res);
 	res->request_id = request_id;
-	res->receive = NULL;
+	res->callback = func;
+	res->ctx = ctx;
 	sem_init(&res->sem, false, 0);
-	sem_init(&res->sem_complete, false, 0);
+	res->owner = responses;
 	res->next = NULL;
 
 	pthread_mutex_lock(&responses->lock);
@@ -89,65 +86,51 @@ rpcresponse_t rpcresponse_expect(rpchandler_responses_t responses, int request_i
 	return res;
 }
 
-void rpcresponse_discard(rpchandler_responses_t responses, rpcresponse_t response) {
-	if (response == NULL)
-		return;
-	pthread_mutex_lock(&responses->lock);
-
-	/* The response might have already been received and if so we must only
-	 * release the read lock here. We do this inside mutex lock to prevent race
-	 * condition where rpc_msg would submit it after we checked it.
-	 */
-	if (sem_trywait(&response->sem) == 0) {
-		sem_post(&response->sem_complete);
-	} else {
-		rpcresponse_t r = responses->resp;
-		while (r && r->next != response)
-			r = r->next;
-		if (r)
-			r->next = r->next->next;
-		sem_destroy(&response->sem);
-		sem_destroy(&response->sem_complete);
-		free(response);
-	}
-
-	pthread_mutex_unlock(&responses->lock);
-}
-
 int rpcresponse_request_id(rpcresponse_t response) {
 	return response->request_id;
 }
 
-bool rpcresponse_waitfor(rpcresponse_t response, struct rpcreceive **receive,
-	const struct rpcmsg_meta **meta, int timeout) {
+void rpcresponse_discard(rpcresponse_t response) {
+	if (response == NULL)
+		return;
+
+	pthread_mutex_t *lock = &response->owner->lock;
+	pthread_mutex_lock(lock);
+	if (response->owner->resp != response) {
+		rpcresponse_t r = response->owner->resp;
+		while (r && r->next != response)
+			r = r->next;
+		if (r)
+			r->next = r->next->next;
+	} else
+		response->owner->resp = NULL;
+	sem_destroy(&response->sem);
+	free(response);
+	pthread_mutex_unlock(lock);
+}
+
+bool rpcresponse_waitfor(rpcresponse_t response, int timeout) {
 	struct timespec ts_timeout;
 	clock_gettime(CLOCK_REALTIME, &ts_timeout);
 	ts_timeout.tv_sec += timeout;
-
-	int sem_ret = sem_timedwait(&response->sem, &ts_timeout);
-	if (sem_ret != 0)
-		return false;
-
-	*meta = response->meta;
-	*receive = response->receive;
-	return true;
-}
-
-bool rpcresponse_validmsg(rpcresponse_t response) {
-	bool res = rpcreceive_validmsg(response->receive);
-	sem_post(&response->sem_complete);
+	bool res = sem_timedwait(&response->sem, &ts_timeout) == 0;
+	if (res) {
+		sem_destroy(&response->sem);
+		free(response);
+	}
 	return res;
 }
 
 
 rpcresponse_t rpcresponse_send_request_void(rpchandler_t handler,
-	rpchandler_responses_t responses, const char *path, const char *method) {
+	rpchandler_responses_t responses, const char *path, const char *method,
+	rpcresponse_callback_t func, void *ctx) {
 	int request_id = rpchandler_next_request_id(handler);
 	if (!rpchandler_msg_new_request_void(handler, path, method, request_id))
 		return NULL;
-	rpcresponse_t res = rpcresponse_expect(responses, request_id);
+	rpcresponse_t res = rpcresponse_expect(responses, request_id, func, ctx);
 	if (!rpchandler_msg_send(handler)) {
-		rpcresponse_discard(responses, res);
+		rpcresponse_discard(res);
 		return NULL;
 	}
 	return res;

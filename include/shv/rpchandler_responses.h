@@ -2,13 +2,7 @@
 #ifndef SHV_RPCHANDLER_RESPONSES_H
 #define SHV_RPCHANDLER_RESPONSES_H
 /*! @file
- * RPC Handler that delivers responses to the thread waiting for them.
- *
- * RPC Handler is implemented to handle all received messages in the primary
- * thread. If you want get data on some other thread then you must synchronize
- * these two threads and pass all parameters needed to receive the message. This
- * is potentially a common action and for that reason this handler stage is
- * provided to give you this functionality.
+ * RPC Handler that delivers responses to the callbacks waiting for them.
  */
 
 #include <shv/rpchandler.h>
@@ -45,29 +39,24 @@ struct rpchandler_stage rpchandler_responses_stage(
 /*! Object representing a single response in RPC Responses Handler. */
 typedef struct rpcresponse *rpcresponse_t;
 
+/*! The prototype for the callbacks that are called by response handler */
+typedef bool (*rpcresponse_callback_t)(
+	struct rpcreceive *receive, const struct rpcmsg_meta *meta, void *ctx);
+
 /*! Register that new response will be received.
  *
- * You should call this right before you send (ref rpchandler_msg_send) the
+ * You should call this before you send (ref rpchandler_msg_send) the
  * message to prevent race condition where response might have been already
  * received.
  *
  * @param responses: RPC Responses Handler object.
  * @param request_id: Request ID of response to be waited for.
+ * @param func: The callback function that is called when response is received.
+ * @param ctx: Pointer passed as an extra argument to the callback function.
  * @returns Object you need to use to reference to this response.
  */
-rpcresponse_t rpcresponse_expect(rpchandler_responses_t responses, int request_id)
-	__attribute__((nonnull));
-
-/*! Discard the expectation of the response.
- *
- * The usage is when you send request but later decide that you no longer need
- * the response for whatever reason.
- *
- * @param responses:
- * @param reponse: The response to discard.
- */
-void rpcresponse_discard(rpchandler_responses_t responses, rpcresponse_t response)
-	__attribute__((nonnull(1)));
+rpcresponse_t rpcresponse_expect(rpchandler_responses_t responses, int request_id,
+	rpcresponse_callback_t func, void *ctx) __attribute__((nonnull));
 
 /*! Provide request ID of the given response.
  *
@@ -76,23 +65,30 @@ void rpcresponse_discard(rpchandler_responses_t responses, rpcresponse_t respons
  */
 int rpcresponse_request_id(rpcresponse_t response) __attribute__((nonnull));
 
+/*! Discard the expectation of the response.
+ *
+ * The usage is when you send request but later decide that you no longer need
+ * the response for whatever reason.
+ *
+ * @param reponse: The response to discard.
+ */
+void rpcresponse_discard(rpcresponse_t response);
+
 /*! Wait for the response to be received.
  *
  * This blocks execution of the thread for up to the given timeout.
  *
+ * On success the response is automatically freed and thus after this function
+ * returns `true` the response pointer will no longer be valid. At the same time
+ * you can be sure that callback was executed.
+ *
  * @param response: Response object to wait for.
- * @param receive: Pointer to the variable where pointer to the receive
- *   structure is placed in. This structure provides you with reference you need
- *   to receive message just like in @ref rpchandler_funcs.msg.
- * @param meta: Pointer to the variable where pointer to the meta structure is
- *   placed in. This structure contains info about received message such as its
- *   type or if it caries an error.
  * @param timeout: Number of seconds we wait before we stop waiting.
  * @returns `true` if response received or `false` otherwise (timeout
  *   encountered).
  */
-bool rpcresponse_waitfor(rpcresponse_t response, struct rpcreceive **receive,
-	const struct rpcmsg_meta **meta, int timeout) __attribute__((nonnull));
+bool rpcresponse_waitfor(rpcresponse_t response, int timeout)
+	__attribute__((nonnull));
 
 /*! Validate the response message.
  *
@@ -134,11 +130,14 @@ bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
  * @param responses: The @ref rpchandler_responses_t object.
  * @param path: Null terminated string with SHV path.
  * @param method: Null terminated script with method name.
+ * @param func: The callback passed to @ref rpcresponse_expect.
+ * @param ctx: The pointer passed to the callback.
  * @param response: The variable name where @ref rpcresponse_t object will be
  *   stored. This is set to `NULL` if packing or sending fails.
  */
 // clang-format on
-#define rpcresponse_send_request(handler, responses, path, method, response) \
+#define rpcresponse_send_request( \
+	handler, responses, path, method, func, ctx, response) \
 	for (int request_id = rpchandler_next_request_id(handler), __ = 1; __; ({ \
 			 if (__) { \
 				 rpchandler_msg_drop(handler); \
@@ -151,7 +150,8 @@ bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
 			 packer; ({ \
 				 cp_pack_container_end(packer); \
 				 packer = NULL; \
-				 response = rpcresponse_expect((responses), request_id); \
+				 response = \
+					 rpcresponse_expect((responses), request_id, func, ctx); \
 				 __ = 0; \
 				 if (!rpchandler_msg_send(handler)) { \
 					 rpcresponse_discard(responses, response); \
@@ -172,12 +172,14 @@ bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
  * @param responses: The RPC Responses Handler object to be used.
  * @param path: The SHV path to the node with method to be called.
  * @param method: The method name to be called.
+ * @param func: The callback passed to @ref rpcresponse_expect.
+ * @param ctx: The pointer passed to the callback.
  * @returns Object referencing response to this request or `NULL` in case
  *   request sending failed.
  */
 rpcresponse_t rpcresponse_send_request_void(rpchandler_t handler,
-	rpchandler_responses_t responses, const char *path, const char *method)
-	__attribute__((nonnull));
+	rpchandler_responses_t responses, const char *path, const char *method,
+	rpcresponse_callback_t func, void *ctx) __attribute__((nonnull));
 
 
 #endif

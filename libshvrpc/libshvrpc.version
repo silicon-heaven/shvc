@@ -65,15 +65,5 @@ V0.0 {
 		rpchandler_app_new;
 		rpchandler_app_stage;
 
-		# shv/rpchandler_responses.h
-		rpchandler_responses_new;
-		rpchandler_responses_destroy;
-		rpchandler_responses_stage;
-		rpcresponse_expect;
-		rpcresponse_discard;
-		rpcresponse_send_request_void;
-		rpcresponse_waitfor;
-		rpcresponse_validmsg;
-
 	local: *;
 };

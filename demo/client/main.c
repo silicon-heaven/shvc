@@ -10,51 +10,123 @@
 #include "opts.h"
 #include "rpc_connect.h"
 
-#define TIMEOUT 300
 #define TRACK_ID "4"
 
+struct track {
+	long long *buf;
+	size_t len, siz;
+};
 
-/* Common error handling for RPC method calls */
-#define CASE_ERROR(METHOD) \
-	case RPCCALL_COMERR: \
-	case RPCCALL_TIMEOUT: \
-		comerr = true; \
-		fprintf(stderr, "Error: Failed to call '" METHOD "'\n"); \
-		break; \
-	case RPCCALL_ERROR: { \
-		char *errmsg; \
-		rpcmsg_unpack_error(CCTX_UNPACK, &CCTX_ITEM, NULL, &errmsg); \
-		fprintf(stderr, "Error: Call to " METHOD ": %s\n", errmsg); \
-		free(errmsg); \
-		comerr = true; \
-		break; \
+static void print_track(struct track *track) {
+	for (size_t i = 0; i < track->len; i++)
+		printf(" %lld", track->buf[i]);
+}
+
+static int rpccall_app_name(enum rpccall_stage stage, cp_pack_t pack,
+	int request_id, cp_unpack_t unpack, struct cpitem *item, void *ctx) {
+	char **name = ctx;
+	switch (stage) {
+		case CALL_S_PACK:
+			rpcmsg_pack_request_void(pack, ".app", "name", request_id);
+			return 0;
+		case CALL_S_RESULT:
+			free(*name);
+			*name = cp_unpack_strdup(unpack, item);
+			return 0;
+		case CALL_S_VOID_RESULT:
+			free(*name);
+			*name = NULL;
+			return 0;
+		case CALL_S_ERROR:
+			// TODO possibly store error string somewhere?
+			return 1;
+		case CALL_S_COMERR:
+		case CALL_S_TIMERR:
+			return -1;
 	}
+	return 0;
+}
 
-static bool track_get(rpchandler_t handler, rpchandler_responses_t responses,
-	long long **track, size_t *track_siz, size_t *track_cnt) {
-	bool comerr = false;
-	rpccall_void(
-		handler, responses, "test/device/track/" TRACK_ID, "get", 3, TIMEOUT) {
-		case RPCCALL_RESULT:
-			*track_cnt = 0;
-			for_cp_unpack_list(CCTX_UNPACK, &CCTX_ITEM) {
-				if (*track_siz <= *track_cnt) {
-					long long *new_track =
-						realloc(*track, (*track_siz *= 2) * sizeof *track);
+static int rpccall_has_device(enum rpccall_stage stage, cp_pack_t pack,
+	int request_id, cp_unpack_t unpack, struct cpitem *item, void *ctx) {
+	bool *has_device = ctx;
+	switch (stage) {
+		case CALL_S_PACK:
+			rpcmsg_pack_request(pack, "test", "ls", request_id);
+			cp_pack_str(pack, "device");
+			cp_pack_container_end(pack);
+			return 0;
+		case CALL_S_RESULT:
+			*has_device = cp_unpack_type(unpack, item) == CPITEM_BOOL &&
+				item->as.Bool;
+		case CALL_S_VOID_RESULT:
+		case CALL_S_ERROR:
+			return 0;
+		case CALL_S_COMERR:
+		case CALL_S_TIMERR:
+			return -1;
+	}
+	return 0;
+}
+
+static int rpccall_track_get(enum rpccall_stage stage, cp_pack_t pack,
+	int request_id, cp_unpack_t unpack, struct cpitem *item, void *ctx) {
+	struct track *track = ctx;
+	switch (stage) {
+		case CALL_S_PACK:
+			rpcmsg_pack_request_void(
+				pack, "test/device/track/" TRACK_ID, "get", request_id);
+			return 0;
+		case CALL_S_RESULT:
+			track->len = 0;
+			for_cp_unpack_list(unpack, item) {
+				if (track->siz <= track->len) {
+					long long *new_track = realloc(
+						track->buf, (track->siz *= 2) * sizeof *track->buf);
 					assert(new_track);
-					*track = new_track;
+					track->buf = new_track;
 				}
-				if (CCTX_ITEM.type == CPITEM_INT)
-					(*track)[(*track_cnt)++] = CCTX_ITEM.as.Int;
+				if (item->type == CPITEM_INT)
+					track->buf[track->len++] = item->as.Int;
 			}
-			break;
-		case RPCCALL_VOID_RESULT:
-			*track_cnt = 0;
-			break;
-		case RPCCALL_PARAM:
-			CASE_ERROR("test/device/track/" TRACK_ID ":get")
+			return 0;
+		case CALL_S_VOID_RESULT:
+			track->len = 0;
+			return 0;
+		case CALL_S_ERROR:
+			// TODO possibly store error string somewhere?
+			return 1;
+		case CALL_S_COMERR:
+		case CALL_S_TIMERR:
+			return -1;
 	}
-	return !comerr;
+	return 0;
+}
+
+static int rpccall_track_set(enum rpccall_stage stage, cp_pack_t pack,
+	int request_id, cp_unpack_t unpack, struct cpitem *item, void *ctx) {
+	struct track *track = ctx;
+	switch (stage) {
+		case CALL_S_PACK:
+			rpcmsg_pack_request(
+				pack, "test/device/track/" TRACK_ID, "set", request_id);
+			cp_pack_list_begin(pack);
+			for (size_t i = 0; i < track->len; i++)
+				cp_pack_int(pack, track->buf[i]);
+			cp_pack_container_end(pack);
+			cp_pack_container_end(pack);
+			break;
+		case CALL_S_RESULT:
+		case CALL_S_VOID_RESULT:
+			return 0;
+		case CALL_S_ERROR:
+			// TODO possibly store error string somewhere?
+			return 1;
+		case CALL_S_COMERR:
+		case CALL_S_TIMERR:
+			return -1;
+	}
+	return 0;
 }
 
 int main(int argc, char **argv) {
@@ -82,40 +154,16 @@ int main(int argc, char **argv) {
 	rpchandler_spawn_thread(handler, NULL, &rpchandler_thread, NULL);
 
 
-	bool comerr = false;
-
 	/* Query the name of the broker we are connected to */
 	char *app_name = NULL;
-	rpccall_void(handler, responses_handler, ".app", "name", 3, TIMEOUT) {
-		case RPCCALL_RESULT:
-			free(app_name);
-			app_name = cp_unpack_strdup(CCTX_UNPACK, &CCTX_ITEM);
-			break;
-		case RPCCALL_VOID_RESULT:
-		case RPCCALL_PARAM:
-			CASE_ERROR(".app:name")
-	}
-	if (comerr)
+	if (rpccall(handler, responses_handler, rpccall_app_name, &app_name))
 		goto cleanup;
 	fprintf(stdout, "The '.app:name' is: %s\n", app_name);
 	free(app_name);
 
 	/* Check if demo device is available */
 	bool has_device = false;
-	rpccall(handler, responses_handler, "test", "ls", 3, TIMEOUT) {
-		case RPCCALL_PARAM:
-			cp_pack_str(cctx.pack, "device");
-			break;
-		case RPCCALL_RESULT:
-			has_device = cp_unpack_type(CCTX_UNPACK, &CCTX_ITEM) == CPITEM_BOOL &&
-				CCTX_ITEM.as.Bool;
-			break;
-		case RPCCALL_VOID_RESULT:
-			has_device = false;
-			break;
-			CASE_ERROR("test:ls")
-	}
-	if (comerr)
+	if (rpccall(handler, responses_handler, rpccall_has_device, &has_device))
 		goto cleanup;
 	if (!has_device) {
 		fprintf(stderr, "Error: Device not mounted at 'test/device'.\n");
@@ -124,41 +172,25 @@ int main(int argc, char **argv) {
 	}
 
 	/* Get the track state */
-	size_t track_siz = 4, track_cnt = 0;
-	long long *track = malloc(track_siz * sizeof *track);
-	if (!track_get(handler, responses_handler, &track, &track_siz, &track_cnt))
+	struct track track = {.siz = 4};
+	track.buf = malloc(track.siz * sizeof *track.buf);
+	if (rpccall(handler, responses_handler, rpccall_track_get, &track))
 		goto cleanup;
 	printf("Demo device's track " TRACK_ID ":");
-	for (size_t i = 0; i < track_cnt; i++)
-		printf(" %lld", track[i]);
+	print_track(&track);
 	putchar('\n');
 
-
 	/* Increase track */
-	for (size_t i = 0; i < track_cnt; i++)
-		track[i]++;
-	rpccall(handler, responses_handler, "test/device/track/" TRACK_ID, "set", 3,
-		TIMEOUT) {
-		case RPCCALL_PARAM:
-			cp_pack_list_begin(CCTX_PACK);
-			for (size_t i = 0; i < track_cnt; i++)
-				cp_pack_int(CCTX_PACK, track[i]);
-			cp_pack_container_end(CCTX_PACK);
-			break;
-		case RPCCALL_RESULT:
-		case RPCCALL_VOID_RESULT:
-			break;
-			CASE_ERROR("test:ls")
-	}
-	if (comerr)
+	for (size_t i = 0; i < track.len; i++)
+		track.buf[i]++;
+	if (rpccall(handler, responses_handler, rpccall_track_set, &track))
 		goto cleanup;
 
 	/* Get the updated version. */
-	if (!track_get(handler, responses_handler, &track, &track_siz, &track_cnt))
+	if (rpccall(handler, responses_handler, rpccall_track_get, &track))
 		goto cleanup;
 	printf("New demo device's track " TRACK_ID ":");
-	for (size_t i = 0; i < track_cnt; i++)
-		printf(" %lld", track[i]);
+	print_track(&track);
 	putchar('\n');
 
 	exit_code = 0;

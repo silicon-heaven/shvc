@@ -8,129 +8,39 @@
 
 #include <shv/rpchandler_responses.h>
 
+/*! The default number of attempts for RPC call */
+#define RPCCALL_ATTEMPTS (3)
+/*! The default timeout in seconds for a single RPC call attempt */
+#define RPCCALL_TIMEOUT (300)
 
-#define CCTX_PACK (cctx.pack)
-#define CCTX_UNPACK (cctx.receive->unpack)
-#define CCTX_ITEM (cctx.receive->item)
-#define CCTX_META (cctx.meta)
 
-enum rpccall_state {
-	RPCCALL_PARAM,
-	RPCCALL_VOID_RESULT,
-	RPCCALL_RESULT,
-	RPCCALL_ERROR,
-	RPCCALL_COMERR,
-	RPCCALL_TIMEOUT,
+enum rpccall_stage {
+	CALL_S_PACK,
+	CALL_S_RESULT,
+	CALL_S_VOID_RESULT,
+	CALL_S_ERROR,
+	CALL_S_COMERR,
+	CALL_S_TIMERR,
 };
 
-struct rpccall_ctx {
-	enum rpccall_state state;
-	cp_pack_t pack;
-	rpcresponse_t response;
-	struct rpcreceive *receive;
-	const struct rpcmsg_meta *meta;
-	/*! The attempt number starting with zero. */
-	unsigned attempt;
-};
+typedef int (*rpccall_func_t)(enum rpccall_stage stage, cp_pack_t pack,
+	int request_id, cp_unpack_t unpack, struct cpitem *item, void *ctx);
 
-#define rpccall(handler, responses, path, method, attempts, timeout) \
-	for (struct rpccall_ctx cctx = {.state = RPCCALL_ERROR, .attempt = 0}; ({ \
-			 bool __continue = true; \
-			 switch (cctx.state) { \
-				 case RPCCALL_PARAM: \
-					 cp_pack_container_end(cctx.pack); \
-					 cctx.pack = NULL; \
-					 if (!rpchandler_msg_send(handler)) { \
-						 rpcresponse_discard((responses), cctx.response); \
-						 cctx.state = RPCCALL_COMERR; \
-						 break; \
-					 } \
-					 cctx.attempt++; \
-					 if (rpcresponse_waitfor(cctx.response, &cctx.receive, \
-							 &cctx.meta, timeout)) { \
-						 cctx.state = cctx.meta->type == RPCMSG_T_ERROR \
-							 ? RPCCALL_ERROR \
-							 : (rpcreceive_has_param(cctx.receive) \
-									   ? RPCCALL_RESULT \
-									   : RPCCALL_VOID_RESULT); \
-						 break; \
-					 } \
-					 rpcresponse_discard((responses), cctx.response); \
-					 cctx.response = NULL; \
-					 if (cctx.attempt >= (attempts)) { \
-						 cctx.state = RPCCALL_TIMEOUT; \
-						 break; \
-					 } \
-				 case RPCCALL_RESULT: \
-				 case RPCCALL_VOID_RESULT: \
-				 case RPCCALL_ERROR: \
-					 if (cctx.response != NULL && \
-						 rpcresponse_validmsg(cctx.response)) { \
-						 __continue = false; \
-						 break; \
-					 } \
-					 int request_id = rpchandler_next_request_id(handler); \
-					 cctx.pack = rpchandler_msg_new_request( \
-						 (handler), (path), (method), request_id); \
-					 if (cctx.pack) { \
-						 cctx.state = RPCCALL_PARAM; \
-						 cctx.response = \
-							 rpcresponse_expect((responses), request_id); \
-					 } else \
-						 cctx.state = RPCCALL_COMERR; \
-					 break; \
-				 case RPCCALL_COMERR: \
-				 case RPCCALL_TIMEOUT: \
-					 __continue = false; \
-					 break; \
-			 } \
-			 __continue; \
-		 });) \
-		switch (cctx.state)
+/// @cond
+int _rpccall(rpchandler_t handler, rpchandler_responses_t responses,
+	rpccall_func_t func, void *ctx, int attempts, int timeout)
+	__attribute__((nonnull));
+#define __rpccall_deft(...) _rpccall(__VA_ARGS__, RPCCALL_TIMEOUT)
+#define __rpccall_def(...) __rpccall_deft(__VA_ARGS__, RPCCALL_ATTEMPTS)
+#define __rpccall_noctx(...) __rpccall_def(__VA_ARGS__, NULL)
+#define __rpccall_value_select(_1, _2, _3, X, ...) X
+/// @endcond
+/*!
+ */
+#define rpccall(HANDLER, RESPONSES, FUNC, ...) \
+	__rpccall_value_select(__VA_ARGS_ __VA_OPT__(, ) _rpccall, __rpccall_deft, \
+		__rpccall_def, \
+		__rpccall_noctx)(HANDLER, RESPONSES, FUNC __VA_OPT__(, ) __VA_ARGS__)
 
-
-#define rpccall_void(handler, responses, path, method, attempts, timeout) \
-	for (struct rpccall_ctx cctx = {.state = RPCCALL_ERROR, .attempt = 0}; ({ \
-			 bool __continue = true; \
-			 switch (cctx.state) { \
-				 case RPCCALL_PARAM: \
-					 abort(); \
-				 case RPCCALL_RESULT: \
-				 case RPCCALL_VOID_RESULT: \
-				 case RPCCALL_ERROR: \
-					 if (cctx.response != NULL && \
-						 rpcresponse_validmsg(cctx.response)) { \
-						 __continue = false; \
-						 break; \
-					 } \
-					 cctx.state = RPCCALL_TIMEOUT; \
-					 while (cctx.attempt < (attempts)) { \
-						 cctx.response = rpcresponse_send_request_void( \
-							 (handler), (responses), (path), (method)); \
-						 if (cctx.response == NULL) { \
-							 cctx.state = RPCCALL_COMERR; \
-							 break; \
-						 } \
-						 cctx.attempt++; \
-						 if (rpcresponse_waitfor(cctx.response, &cctx.receive, \
-								 &cctx.meta, timeout)) { \
-							 cctx.state = cctx.meta->type == RPCMSG_T_ERROR \
-								 ? RPCCALL_ERROR \
-								 : (rpcreceive_has_param(cctx.receive) \
-										   ? RPCCALL_RESULT \
-										   : RPCCALL_VOID_RESULT); \
-							 break; \
-						 } \
-						 rpcresponse_discard((responses), cctx.response); \
-					 } \
-					 break; \
-				 case RPCCALL_COMERR: \
-				 case RPCCALL_TIMEOUT: \
-					 __continue = false; \
-					 break; \
-			 } \
-			 __continue; \
-		 });) \
-		switch (cctx.state)
 
 #endif

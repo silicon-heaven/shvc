@@ -17,7 +17,7 @@ async def fixture_demo_device(demo_device_exec, broker, url):
         demo_device_exec[0],
         *demo_device_exec[1:],
         f"{url}&devmount=test/device",
-        "-v",
+        "-d",
     ]
     logger.debug("%s", " ".join(cmd))
     proc = await asyncio.create_subprocess_exec(*cmd)
@@ -124,9 +124,9 @@ async def test_set(demo_device, client, i):
 async def test_demo_client(demo_device, demo_client_exec, url):
     stdout, stderr = await subproc(*demo_client_exec, str(url))
     assert stdout == [
-        b"The '.app:name' is: demo-device",
-        b"The value of track/4 is: [1, 2, 3, 4]",
-        b"The value of track/4 has successfully been set to: [2, 3, 4, 8]",
+        b"The '.app:name' is: pyshvbroker",
+        b"Demo device's track 4: 1 2 3 4",
+        b"New demo device's track 4: 2 3 4 5",
         b"",
     ]
     assert stderr == [b""]
@@ -134,7 +134,10 @@ async def test_demo_client(demo_device, demo_client_exec, url):
 
 async def test_demo_client_without_device(broker, demo_client_exec, url):
     stdout, stderr = await subproc(*demo_client_exec, str(url), exit_code=1)
-    assert stdout == [b""]
+    assert stdout == [
+        b"The '.app:name' is: pyshvbroker",
+        b"",
+    ]
     assert stderr == [
         b"Error: Device not mounted at 'test/device'.",
         b"Hint: Make sure the device is connected to the broker.",

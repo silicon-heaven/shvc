@@ -51,7 +51,7 @@ void parse_opts(int argc, char **argv, struct conf *conf) {
 				conf->timeout = strtol(argv[optind], &end, 10);
 				if (*end != '\0') {
 					fprintf(stderr, "Invalid timeout: %s\n", argv[optind]);
-					exit(2);
+					exit(-1);
 				}
 				optind++;
 				break;
@@ -79,7 +79,7 @@ void parse_opts(int argc, char **argv, struct conf *conf) {
 			default:
 				print_usage(argv[0]);
 				fprintf(stderr, "Invalid option: -%c\n", c);
-				exit(2);
+				exit(-1);
 		}
 	}
 	if (optind < argc)
@@ -90,6 +90,6 @@ void parse_opts(int argc, char **argv, struct conf *conf) {
 		conf->param = argv[optind++];
 	if (optind < argc) {
 		fprintf(stderr, "Invalid argument: %s\n", argv[optind]);
-		exit(2);
+		exit(-1);
 	}
 }

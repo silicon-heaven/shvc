@@ -6,7 +6,6 @@ libshvrpc_sources = [
     'rpcclient_stream.c',
     'rpchandler.c',
     'rpchandler_app.c',
-    'rpchandler_responses.c',
     'rpclogger.c',
     'rpcmsg_access.c',
     'rpcmsg_head.c',
@@ -48,7 +47,6 @@ libshvrpc_dep = declare_dependency(
 )
 
 
-pkg_mod = import('pkgconfig')
 pkg_mod.generate(
   libshvrpc,
   libraries: [libshvcp],

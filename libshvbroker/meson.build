@@ -19,7 +19,6 @@ libshvbroker_dep = declare_dependency(
 )
 
 
-pkg_mod = import('pkgconfig')
 pkg_mod.generate(
   libshvbroker,
   description: 'Silicon Heaven Broker',

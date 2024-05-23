@@ -10,6 +10,7 @@ cc = meson.get_compiler('c')
 isnuttx = (
   cc.get_define('__NuttX__') != '' # Won't be defined outside NuttX
 )
+pkg_mod = import('pkgconfig')
 fs = import('fs')
 cmake = import('cmake')
 python = import('python')
@@ -49,6 +50,7 @@ gperf = generator(
 subdir('include')
 subdir('libshvcp')
 subdir('libshvrpc')
+subdir('libshvclient')
 subdir('libshvbroker')
 
 shvc_opt = get_option('shvc')

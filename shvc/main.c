@@ -1,22 +1,105 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
-#include <shv/cp_unpack_pack.h>
+#include <shv/cp_tools.h>
 #include <shv/rpcurl.h>
 #include <shv/rpcclient.h>
 #include <shv/rpcmsg.h>
 #include <shv/rpchandler_app.h>
-#include <shv/rpchandler_responses.h>
-#include <obstack.h>
+#include <shv/rpccall.h>
 #include "opts.h"
-#define obstack_chunk_alloc malloc
-#define obstack_chunk_free free
 
+#define ERR_COM (RPCMSG_E_USER_CODE + 1)
+#define ERR_TIM (RPCMSG_E_USER_CODE + 2)
+#define ERR_PARAM (RPCMSG_E_USER_CODE + 3)
+
+struct ctx {
+	struct conf *conf;
+	FILE *fparam;
+	char *output;
+	int error;
+};
+
+int response_callback(enum rpccall_stage stage, cp_pack_t pack, int request_id,
+	cp_unpack_t unpack, struct cpitem *item, void *ctx) {
+	struct ctx *c = ctx;
+	switch (stage) {
+		case CALL_S_PACK: {
+			if (c->fparam) {
+				rpcmsg_pack_request(
+					pack, c->conf->path, c->conf->method, request_id);
+				fseek(c->fparam, 0, SEEK_SET);
+				struct cp_unpack_cpon cp_unpack_cpon;
+				cp_unpack_t cpon_unpack =
+					cp_unpack_cpon_init(&cp_unpack_cpon, c->fparam);
+				struct cpitem item;
+				cpitem_unpack_init(&item);
+				if (!cp_repack(cpon_unpack, &item, pack)) {
+					c->error = ERR_PARAM;
+					return 1;
+				}
+				free(cp_unpack_cpon.state.ctx);
+				cp_pack_container_end(pack);
+			} else
+				rpcmsg_pack_request_void(
+					pack, c->conf->path, c->conf->method, request_id);
+			break;
+		}
+		case CALL_S_RESULT: {
+			free(c->output);
+			size_t outputsiz = 0;
+			FILE *f = open_memstream(&c->output, &outputsiz);
+			struct cp_pack_cpon cp_pack_cpon;
+			cp_pack_t cpon_pack = cp_pack_cpon_init(&cp_pack_cpon, f, "\t");
+			/* Note: We ignore repack error here because we can't act on it. */
+			cp_repack(unpack, item, cpon_pack);
+			free(cp_pack_cpon.state.ctx);
+			fclose(f);
+			return 0;
+		}
+		case CALL_S_VOID_RESULT:
+			free(c->output);
+			c->output = NULL;
+			return 0;
+		case CALL_S_ERROR: {
+			enum rpcmsg_error err = RPCMSG_E_UNKNOWN;
+			rpcmsg_unpack_error(unpack, item, &err, &c->output);
+			c->error = err;
+			break;
+		}
+		case CALL_S_COMERR:
+			c->error = ERR_COM;
+			break;
+		case CALL_S_TIMERR:
+			c->error = ERR_TIM;
+			break;
+	}
+	return 0;
+}
 
 int main(int argc, char **argv) {
 	struct conf conf;
 	parse_opts(argc, argv, &conf);
+
+	struct ctx ctx;
+	ctx.conf = &conf;
+	ctx.output = NULL;
+	ctx.error = RPCMSG_E_NO_ERROR;
+
+	uint8_t *stdin_param = NULL;
+	size_t stdin_param_siz = 0;
+	if (conf.stdin_param) {
+		ctx.fparam = open_memstream((char **)&stdin_param, &stdin_param_siz);
+		{
+			char buf[BUFSIZ];
+			size_t rsiz;
+			while ((rsiz = fread(buf, 1, BUFSIZ, stdin)))
+				fwrite(buf, rsiz, 1, ctx.fparam);
+		}
+	} else if (conf.param)
+		ctx.fparam = fmemopen((void *)conf.param, strlen(conf.param), "r");
+	else
+		ctx.fparam = NULL;
 
 	const char *errpos;
 	struct rpcurl *rpcurl = rpcurl_parse(conf.url, &errpos);
@@ -35,6 +118,7 @@ int main(int argc, char **argv) {
 	if (conf.verbose > 0)
 		client->logger = rpclogger_new(stderr, conf.verbose);
 	char *loginerr;
+
 	if (!rpcclient_login(client, &rpcurl->login, &loginerr)) {
 		if (loginerr) {
 			fprintf(stderr, "Invalid login for connecting to the: %s\n", conf.url);
@@ -46,13 +130,12 @@ int main(int argc, char **argv) {
 		rpcurl_free(rpcurl);
 		return 3;
 	}
-	rpcurl_free(rpcurl);
 
 	rpchandler_app_t app = rpchandler_app_new("shvc", PROJECT_VERSION);
-	rpchandler_responses_t resps = rpchandler_responses_new();
+	rpchandler_responses_t responses = rpchandler_responses_new();
 	const struct rpchandler_stage stages[] = {
 		rpchandler_app_stage(app),
-		rpchandler_responses_stage(resps),
+		rpchandler_responses_stage(responses),
 		{},
 	};
 	rpchandler_t handler = rpchandler_new(client, stages, NULL);
@@ -61,77 +144,47 @@ int main(int argc, char **argv) {
 	pthread_t handler_thread;
 	assert(!rpchandler_spawn_thread(handler, NULL, &handler_thread, NULL));
 
-	int ec = 1;
+	rpccall(handler, responses, response_callback, &ctx);
 
-	rpcresponse_t response;
-	if (conf.param || conf.stdin_param) {
-		FILE *f = conf.stdin_param
-			? stdin
-			: fmemopen((void *)conf.param, strlen(conf.param), "r");
-		rpcresponse_send_request(handler, resps, conf.path, conf.method, response) {
-			struct cp_unpack_cpon cp_cpon_unpack;
-			cp_unpack_t unpack = cp_unpack_cpon_init(&cp_cpon_unpack, f);
-			struct cpitem item;
-			cpitem_unpack_init(&item);
-			cp_unpack_pack(unpack, &item, packer);
-			free(cp_cpon_unpack.state.ctx);
-			fclose(f);
-			// TODO we should probably check that we process all input
-			switch (item.as.Error) {
-				case CPERR_EOF:
-				case CPERR_NONE:
-					break;
-				case CPERR_INVALID:
-					fprintf(stderr,
-						"Invalid CPON passed as parameter on byte %ld!", ftell(f));
-					break;
-				case CPERR_OVERFLOW:
-					/* Some value is outside of our capabilities */
-					fprintf(stderr,
-						"The CPON parameter can't be handled by SHVC\n");
-					break;
-				case CPERR_IO:
-					abort(); /* This should not happen */
-			}
-		}
-	} else
-		response = rpcresponse_send_request_void(
-			handler, resps, conf.path, conf.method);
+	if (ctx.fparam)
+		fclose(ctx.fparam);
+	free(stdin_param);
 
-
-	if (response == NULL) {
-		fprintf(stderr, "Failed to send message: %s\n", strerror(errno));
-		goto err;
+	int ec = 0;
+	switch (ctx.error) {
+		case RPCMSG_E_NO_ERROR:
+			if (ctx.output)
+				puts(ctx.output);
+			else
+				puts("null");
+			break;
+		case ERR_PARAM:
+			fprintf(stderr, "Invalid CPON provided as parameter\n");
+			ec = -2;
+			break;
+		case ERR_COM:
+			fprintf(stderr, "Communication error\n");
+			ec = -3;
+			break;
+		case ERR_TIM:
+			fprintf(stderr, "Communication timeout\n");
+			ec = -4;
+			break;
+		default:
+			fprintf(stderr, "SHV Error: %s\n", ctx.output);
+			ec = ctx.error;
+			break;
 	}
+	free(ctx.output);
 
-	struct rpcreceive *receive;
-	const struct rpcmsg_meta *meta;
-	if (!rpcresponse_waitfor(response, &receive, &meta, conf.timeout)) {
-		fprintf(stderr, "Request timed out\n");
-		goto err;
-	}
-
-	struct cp_pack_cpon cp_pack_cpon;
-	cp_pack_t pack = cp_pack_cpon_init(&cp_pack_cpon, stdout, "\t");
-	if (rpcreceive_has_param(receive)) {
-		struct cpitem item;
-		cpitem_unpack_init(&item);
-		cp_unpack_pack(receive->unpack, &item, pack);
-	} else
-		cp_pack_null(pack);
-	fputc('\n', stdout);
-	free(cp_pack_cpon.state.ctx);
-
-	ec = rpcreceive_validmsg(receive) && meta->type == RPCMSG_T_RESPONSE ? 0 : ec;
-
-err:
 	// TODO rpcclient_disconnect(client); instead of cancel
 	pthread_cancel(handler_thread);
 	pthread_join(handler_thread, NULL);
 	rpchandler_destroy(handler);
 	rpchandler_app_destroy(app);
-	rpchandler_responses_destroy(resps);
+	rpchandler_responses_destroy(responses);
 	rpclogger_destroy(client->logger);
 	rpcclient_destroy(client);
+	rpcurl_free(rpcurl);
 	return ec;
 }

@@ -97,19 +97,17 @@ cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *unpack, FILE *f)
  * The calling is described in @ref cp_unpack_func_t. You want to repeatedly
  * pass the same @ref cpitem instance to unpack multiple items.
  *
- * @param UNPACK: Generic unpacker to be used for unpacking.
- * @param ITEM: Item where info about the unpacked item and its value is placed
+ * @param unpack: Generic unpacker to be used for unpacking.
+ * @param item: Item where info about the unpacked item and its value is placed
  *   to.
  * @returns Boolean signaling if unpack was successful (non-invalid item was
  *   unpacked).
  */
-#define cp_unpack(UNPACK, ITEM) \
-	({ \
-		cp_unpack_t __unpack = UNPACK; \
-		struct cpitem *__item = ITEM; \
-		(*__unpack)(__unpack, __item); \
-		__item->type != CPITEM_INVALID; \
-	})
+__attribute__((nonnull)) static inline bool cp_unpack(
+	cp_unpack_t unpack, struct cpitem *item) {
+	(*unpack)(unpack, item);
+	return item->type != CPITEM_INVALID;
+}
 
 /*! Unpack item with generic unpacker and provide its type.
  *
@@ -121,13 +119,11 @@ cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *unpack, FILE *f)
  *   to.
  * @returns Type of the unpacked item.
  */
-#define cp_unpack_type(UNPACK, ITEM) \
-	({ \
-		cp_unpack_t __unpack = UNPACK; \
-		struct cpitem *__item = ITEM; \
-		(*__unpack)(__unpack, __item); \
-		__item->type; \
-	})
+__attribute__((nonnull)) static inline enum cpitem_type cp_unpack_type(
+	cp_unpack_t unpack, struct cpitem *item) {
+	(*unpack)(unpack, item);
+	return item->type;
+}
 
 /*! Instead of getting next item this drops the any unread blocks from current
  * one. The effect is that next unpack will unpack a new item instead of next
@@ -409,6 +405,25 @@ __attribute__((nonnull(1, 2))) static inline ssize_t cp_unpack_memcpy(
 	item->bufsiz = 0;
 	if (item->type != CPITEM_BLOB)
 		return -1;
+	return item->as.Blob.len;
+}
+
+void cp_unpack_rawdup(cp_unpack_t unpack, struct cpitem *item, uint8_t **data,
+	size_t *size) __attribute__((nonnull));
+
+void cp_unpack_rawndup(cp_unpack_t unpack, struct cpitem *item, uint8_t **data,
+	size_t *size) __attribute__((nonnull));
+
+void cp_unpack_rawdupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **data,
+	size_t *size, struct obstack *obstack) __attribute__((nonnull));
+
+__attribute__((nonnull(1, 2))) static inline ssize_t cp_unpack_rawcpy(
+	cp_unpack_t unpack, struct cpitem *item, uint8_t *dest, size_t siz) {
+	item->type = CPITEM_RAW;
+	item->buf = dest;
+	item->bufsiz = siz;
+	cp_unpack(unpack, item);
+	item->bufsiz = 0;
 	return item->as.Blob.len;
 }
 

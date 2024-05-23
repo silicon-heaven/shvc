@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: MIT */
-#ifndef SHV_CP_UNPACK_PACK_H
-#define SHV_CP_UNPACK_PACK_H
+#ifndef SHV_CP_TOOLS_H
+#define SHV_CP_TOOLS_H
 /*! @file
  * The utilities for both unpack and pack.
  */
@@ -20,7 +20,7 @@
  * @returns Signals if copy of item was successful. The reason for the failure
  *   is store in `item` or is pack failure.
  */
-bool cp_unpack_pack(cp_unpack_t unpack, struct cpitem *item, cp_pack_t pack)
+bool cp_repack(cp_unpack_t unpack, struct cpitem *item, cp_pack_t pack)
 	__attribute__((nonnull));
 
 #endif

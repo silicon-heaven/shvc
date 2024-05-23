@@ -458,6 +458,26 @@ static inline bool cp_pack_container_end(cp_pack_t pack) {
 	return cp_pack(pack, &i);
 }
 
+/*! Pack raw data to the generic packer.
+ *
+ * This is a special packing that skips the the packing scheme and writes
+ * provided data directly. This is used for example when you are copying from
+ * know unpacker to know packer. Make sure that packing scheme matches.
+ *
+ * @param pack: Generic packer.
+ * @param buf: Pointer to the data to be written to the stream wrapped in the
+ *   generic packer.
+ * @param siz: Number of bytes to be taken from buffer.
+ * @returns Boolean signaling the pack success or failure.
+ */
+static inline bool cp_pack_raw(cp_pack_t pack, const uint8_t *buf, size_t len) {
+	struct cpitem i;
+	i.type = CPITEM_RAW;
+	i.rbuf = buf;
+	i.as.Blob.len = len;
+	return cp_pack(pack, &i);
+}
+
 /*! Open `FILE` stream that you can use for writing strings or blobs.
  *
  * This has overhead of establishing a `FILE` object but on the other hand it

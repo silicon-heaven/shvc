@@ -54,22 +54,23 @@ async def test_param_stdin(shvc_exec, url, broker):
 
 
 @pytest.mark.parametrize(
-    "path,method,result",
+    "path,method,error,exit_code",
     (
-        ("test", "ls", 'i{1:2,2:"No such node: test"}'),
+        ("test", "ls", 'No such node: test', 2),
         (
             ".app",
             "invalid",
-            "i{1:2,2:\"No such path '.app' or method 'invalid' or access rights.\"}",
+            "No such path '.app' or method 'invalid' or access rights.",
+            2,
         ),
     ),
 )
-async def test_invalid(shvc_exec, url, broker, path, method, result):
+async def test_invalid(shvc_exec, url, broker, path, method, error, exit_code):
     stdout, stderr = await subproc(
-        *shvc_exec, "-u", str(url), path, method, exit_code=1
+        *shvc_exec, "-u", str(url), path, method, exit_code=exit_code
     )
-    assert stdout == [result.encode(), b""]
-    assert stderr == [b""]
+    assert stdout == [b""]
+    assert stderr == [f"SHV Error: {error}".encode(), b""]
 
 
 async def test_invalid_url(shvc_exec):

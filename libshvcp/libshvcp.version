@@ -33,10 +33,14 @@ V0.0 {
 		cp_unpack_memndup;
 		cp_unpack_memdupo;
 		cp_unpack_memndupo;
+		cp_unpack_rawdup;
+		cp_unpack_rawndup;
+		cp_unpack_rawdupo;
+		cp_unpack_rawndupo;
 		cp_unpack_fopen;
 
-		# shv/cp_unpack_pack.h
-		cp_unpack_pack;
+		# shv/cp_tools.h
+		cp_repack;
 
 	local: *;
 };

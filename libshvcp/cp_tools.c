@@ -1,6 +1,6 @@
-#include <shv/cp_unpack_pack.h>
+#include <shv/cp_tools.h>
 
-bool cp_unpack_pack(cp_unpack_t unpack, struct cpitem *item, cp_pack_t pack) {
+bool cp_repack(cp_unpack_t unpack, struct cpitem *item, cp_pack_t pack) {
 	uint8_t buf[BUFSIZ];
 	item->buf = buf;
 	item->bufsiz = BUFSIZ;

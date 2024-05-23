@@ -15,12 +15,21 @@ bool rpcmsg_unpack_error(cp_unpack_t unpack, struct cpitem *item,
 		return false;
 	for_cp_unpack_imap(unpack, item) {
 		switch (item->as.Int) {
-			case RPCMSG_ERR_KEY_CODE:
-				if (cp_unpack_type(unpack, item) != CPITEM_INT)
-					return false;
-				if (errnum)
-					cpitem_extract_uint(item, *errnum);
+			case RPCMSG_ERR_KEY_CODE: {
+				switch (cp_unpack_type(unpack, item)) {
+					case CPITEM_UINT:
+						if (errnum)
+							cpitem_extract_uint(item, *errnum);
+						break;
+					case CPITEM_INT:
+						if (errnum)
+							cpitem_extract_int(item, *errnum);
+						break;
+					default:
+						return false;
+				}
 				break;
+			}
 			case RPCMSG_ERR_KEY_MESSAGE:
 				if (cp_unpack_type(unpack, item) != CPITEM_STRING)
 					return false;

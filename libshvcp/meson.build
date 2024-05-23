@@ -3,8 +3,8 @@ libshvcp_sources = files(
   'chainpack_unpack.c',
   'common.c',
   'cp_pack.c',
+  'cp_tools.c',
   'cp_unpack.c',
-  'cp_unpack_pack.c',
   'cpdatetime.c',
   'cpdecimal.c',
   'cpitem.c',
@@ -34,7 +34,6 @@ libshvcp_dep = declare_dependency(
 )
 
 
-pkg_mod = import('pkgconfig')
 pkg_mod.generate(
   libshvcp,
   description: 'Silicon Heaven Chainpack packer and unpacker',
