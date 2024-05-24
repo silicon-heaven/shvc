@@ -1,8 +1,9 @@
 #include <shv/rpchandler.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <semaphore.h>
+#include <time.h>
 #include <poll.h>
+#include <semaphore.h>
 #include <obstack.h>
 #define obstack_chunk_alloc malloc
 #define obstack_chunk_free free
@@ -11,18 +12,30 @@
 struct rpchandler {
 	struct rpcreceive recv;
 
-	const struct rpchandler_stage *stages;
-	const struct rpcmsg_meta_limits *meta_limits;
+	const struct rpchandler_stage *_Atomic stages;
+	const struct rpcmsg_meta_limits *_Atomic meta_limits;
 
 	rpcclient_t client;
-	/* Prevent from sending multiple messages.
+	/* Allow sending messages only after requests.
 	 * Sending in the receive thread can very easily result in deadlock if
 	 * two SHVC handlers are put against each other. On the other hand it is
 	 * very convenient to immediately respond to the request and thus we do
-	 * a compromise, we allow sending one message after request and nothing
-	 * more.
+	 * a compromise, we allow sending messages after request and not after
+	 * responses and signals.
 	 */
-	bool can_respond;
+	bool can_send;
+	/*! The last time we received message.
+	 *
+	 * This can be used by RPC Broker to detect inactive clients.
+	 */
+	struct timespec last_receive;
+	/*! Last time we sent message.
+	 *
+	 * This can be used by RPC clients to detect that thay should perform some
+	 * activity to stay connected to the RPC Broker.
+	 */
+	struct timespec last_send;
+
 	/* We use two mutexes to implement priority locking. The thread
 	 * receiving messages needs to have priority over others and thus it has
 	 * a dedicated lock. Regular locks need to check if they can lock the
@@ -30,7 +43,8 @@ struct rpchandler {
 	 * priority thread takes priority lock to force others to yield the
 	 * primary lock.
 	 */
-	pthread_mutex_t mutex, pmutex;
+	pthread_mutex_t mutex;
+	_Atomic bool priority_lock;
 
 	int nextrid;
 };
@@ -58,8 +72,10 @@ rpchandler_t rpchandler_new(rpcclient_t client,
 	res->meta_limits = limits;
 
 	res->client = client;
+	clock_gettime(CLOCK_MONOTONIC, &res->last_receive);
+	clock_gettime(CLOCK_MONOTONIC, &res->last_send);
 	pthread_mutex_init(&res->mutex, NULL);
-	pthread_mutex_init(&res->pmutex, NULL);
+	res->priority_lock = false;
 
 	/* There can be login in front of this which uses 1-3 as request ID.
 	 * Technically we could use here even 1, because those requests are already
@@ -75,24 +91,22 @@ void rpchandler_destroy(rpchandler_t rpchandler) {
 		return;
 	obstack_free(&rpchandler->recv.obstack, NULL);
 	pthread_mutex_destroy(&rpchandler->mutex);
-	pthread_mutex_destroy(&rpchandler->pmutex);
 	free(rpchandler);
 }
 
 static void priority_lock(rpchandler_t rpchandler) {
-	pthread_mutex_lock(&rpchandler->pmutex);
+	rpchandler->priority_lock = true;
 	pthread_mutex_lock(&rpchandler->mutex);
-	pthread_mutex_unlock(&rpchandler->pmutex);
+	rpchandler->priority_lock = false;
 }
 
 static void lock(rpchandler_t rpchandler) {
 	while (true) {
 		pthread_mutex_lock(&rpchandler->mutex);
-		if (pthread_mutex_trylock(&rpchandler->pmutex) == 0) {
-			pthread_mutex_unlock(&rpchandler->pmutex);
+		if (!rpchandler->priority_lock)
 			break;
-		} else
-			pthread_mutex_unlock(&rpchandler->mutex);
+		pthread_mutex_unlock(&rpchandler->mutex);
+		sched_yield(); /* Just so we would not try to lock it immediatelly */
 	}
 }
 
@@ -125,11 +139,11 @@ static bool parse_ls_dir(struct rpcreceive *recv, struct rpcmsg_meta *meta,
 	if (!rpcreceive_validmsg(recv))
 		return false;
 
-	cp_pack_t pack = rpcreceive_response_new(recv);
+	cp_pack_t pack = rpcreceive_msg_new(recv);
 	if (invalid_param) {
 		rpcmsg_pack_error(pack, meta, RPCMSG_E_INVALID_PARAMS,
 			"Use Null or String with node name");
-		rpcreceive_response_send(recv);
+		rpcreceive_msg_send(recv);
 		return false;
 	} else
 		ctx->pack = pack;
@@ -147,7 +161,6 @@ static void handle_ls(const struct rpchandler_stage *stages,
 	for (const struct rpchandler_stage *s = stages; s->funcs; s++)
 		if (s->funcs->ls)
 			s->funcs->ls(s->cookie, meta->path, &ctx);
-	// TODO when empty we need to validate that path exists
 	rpcmsg_pack_response(ctx.x.pack, meta);
 	if (ctx.x.name == NULL) {
 		cp_pack_list_begin(ctx.x.pack);
@@ -159,7 +172,7 @@ static void handle_ls(const struct rpchandler_stage *stages,
 	} else
 		cp_pack_bool(ctx.x.pack, ctx.x.located);
 	cp_pack_container_end(ctx.x.pack);
-	rpcreceive_response_send(recv);
+	rpcreceive_msg_send(recv);
 }
 
 static void handle_dir(const struct rpchandler_stage *stages,
@@ -188,7 +201,7 @@ static void handle_dir(const struct rpchandler_stage *stages,
 	else if (!ctx.x.located)
 		cp_pack_null(ctx.x.pack);
 	cp_pack_container_end(ctx.x.pack);
-	rpcreceive_response_send(recv);
+	rpcreceive_msg_send(recv);
 }
 
 static void handle_msg(const struct rpchandler_stage *stages,
@@ -200,10 +213,10 @@ static void handle_msg(const struct rpchandler_stage *stages,
 		/* Default handler for requests, other types are dropped. */
 		if (!rpcreceive_validmsg(recv))
 			return;
-		cp_pack_t pack = rpcreceive_response_new(recv);
+		cp_pack_t pack = rpcreceive_msg_new(recv);
 		rpcmsg_pack_ferror(pack, meta, RPCMSG_E_METHOD_NOT_FOUND,
 			"No such method '%s' on path '%s'", meta->method, meta->path);
-		rpcreceive_response_send(recv);
+		rpcreceive_msg_send(recv);
 	}
 }
 
@@ -217,7 +230,7 @@ bool rpchandler_next(struct rpchandler *rpchandler) {
 	if (rpcmsg_head_unpack(rpcclient_unpack(rpchandler->client),
 			&rpchandler->recv.item, &meta, NULL, &rpchandler->recv.obstack)) {
 		rpchandler->recv.unpack = rpcclient_unpack(rpchandler->client);
-		rpchandler->can_respond = meta.type == RPCMSG_T_REQUEST;
+		rpchandler->can_send = meta.type == RPCMSG_T_REQUEST;
 		if (meta.method && !strcmp(meta.method, "ls"))
 			handle_ls(rpchandler->stages, &rpchandler->recv, &meta);
 		else if (meta.method && !strcmp(meta.method, "dir"))
@@ -227,7 +240,20 @@ bool rpchandler_next(struct rpchandler *rpchandler) {
 	}
 
 	obstack_free(&rpchandler->recv.obstack, obs_base);
+	clock_gettime(CLOCK_MONOTONIC, &rpchandler->last_receive);
 	return rpcclient_connected(rpchandler->client);
+}
+
+/* Calculate the maximum sleep before we need to send ping. */
+static int maxsleep(rpchandler_t handler) {
+	priority_lock(handler);
+	struct timespec t;
+	assert(clock_gettime(CLOCK_MONOTONIC, &t) == 0);
+	// TODO make idle time configurable
+	/* The seconds precission is enough for us */
+	int res = (RPC_DEFAULT_IDLE_TIME / 2) - t.tv_sec + handler->last_send.tv_sec;
+	unlock(handler);
+	return res > 0 ? (res * 1000) : 0;
 }
 
 void rpchandler_run(rpchandler_t rpchandler,
@@ -238,9 +264,7 @@ void rpchandler_run(rpchandler_t rpchandler,
 				.fd = rpcclient_pollfd(rpchandler->client),
 				.events = POLLIN | POLLHUP,
 			};
-			int pr = poll(&pfd, 1,
-				rpcclient_maxsleep(rpchandler->client, RPC_DEFAULT_IDLE_TIME) *
-					1000);
+			int pr = poll(&pfd, 1, maxsleep(rpchandler));
 			if (pr == 0) { /* Timeout */
 				priority_lock(rpchandler);
 				if (onerr)
@@ -249,6 +273,7 @@ void rpchandler_run(rpchandler_t rpchandler,
 					rpcmsg_pack_request_void(
 						rpcclient_pack(rpchandler->client), ".app", "ping", 0);
 					rpcclient_sendmsg(rpchandler->client);
+					clock_gettime(CLOCK_MONOTONIC, &rpchandler->last_send);
 				}
 				unlock(rpchandler);
 			} else if (pr == -1 || pfd.revents & POLLERR) {
@@ -283,6 +308,9 @@ static void *thread_loop(void *_ctx) {
 
 int rpchandler_spawn_thread(rpchandler_t rpchandler,
 	void (*onerr)(rpchandler_t, rpcclient_t, enum rpchandler_error),
+	// TODO set higher priority to this thread than parent has. This is to
+	// hopefully win all locks withut having other threads to release it when
+	// this one waits for it.
 	pthread_t *restrict thread, const pthread_attr_t *restrict attr) {
 	struct thread_ctx *ctx = malloc(sizeof *ctx);
 	*ctx = (struct thread_ctx){.handler = rpchandler, .onerr = onerr};
@@ -321,6 +349,7 @@ bool rpchandler_msg_new_request_void(rpchandler_t rpchandler, const char *path,
 
 bool rpchandler_msg_send(rpchandler_t rpchandler) {
 	bool res = rpcclient_sendmsg(rpchandler->client);
+	clock_gettime(CLOCK_MONOTONIC, &rpchandler->last_send);
 	unlock(rpchandler);
 	return res;
 }
@@ -338,29 +367,28 @@ bool rpcreceive_validmsg(struct rpcreceive *receive) {
 	return rpcclient_validmsg(rpchandler->client);
 }
 
-cp_pack_t rpcreceive_response_new(struct rpcreceive *receive) {
+cp_pack_t rpcreceive_msg_new(struct rpcreceive *receive) {
 	struct rpchandler *rpchandler = (struct rpchandler *)receive;
-	/* Due to the logging the message needs to be first read to release the lock
-	 * for the logging before we start writing.
-	 */
-	assert(receive->unpack == NULL);
-	assert(rpchandler->can_respond);
+	if (receive->unpack != NULL || !rpchandler->can_send)
+		return NULL;
 	priority_lock(rpchandler);
 	return rpcclient_pack(rpchandler->client);
 }
 
-bool rpcreceive_response_send(struct rpcreceive *receive) {
+bool rpcreceive_msg_send(struct rpcreceive *receive) {
 	struct rpchandler *rpchandler = (struct rpchandler *)receive;
-	assert(rpchandler->can_respond);
+	if (!rpchandler->can_send)
+		return false;
 	bool res = rpcclient_sendmsg(rpchandler->client);
-	rpchandler->can_respond = false;
+	clock_gettime(CLOCK_MONOTONIC, &rpchandler->last_send);
 	unlock(rpchandler);
 	return res;
 }
 
-bool rpcreceive_response_drop(struct rpcreceive *receive) {
+bool rpcreceive_msg_drop(struct rpcreceive *receive) {
 	struct rpchandler *rpchandler = (struct rpchandler *)receive;
-	assert(rpchandler->can_respond);
+	if (!rpchandler->can_send)
+		return false;
 	bool res = rpcclient_dropmsg(rpchandler->client);
 	unlock(rpchandler);
 	return res;

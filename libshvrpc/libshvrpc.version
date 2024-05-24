@@ -52,9 +52,9 @@ V0.0 {
 		rpchandler_msg_send;
 		rpchandler_msg_drop;
 		rpcreceive_validmsg;
-		rpcreceive_response_new;
-		rpcreceive_response_send;
-		rpcreceive_response_drop;
+		rpcreceive_msg_new;
+		rpcreceive_msg_send;
+		rpcreceive_msg_drop;
 		rpchandler_ls_result;
 		rpchandler_ls_name;
 		rpchandler_dir_result;

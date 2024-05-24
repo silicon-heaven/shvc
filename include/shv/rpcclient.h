@@ -52,20 +52,9 @@ struct rpcclient {
 
 	/*! Unpack function. Please use @ref rpcclient_unpack instead. */
 	cp_unpack_func_t unpack;
-	/*! The last time we received message.
-	 *
-	 * This is used by RPC Broker to detect inactive clients.
-	 */
-	struct timespec last_receive;
 
 	/*! Pack function. Please use @ref rpcclient_pack instead. */
 	cp_pack_func_t pack;
-	/*! Last time we sent message.
-	 *
-	 * This is used by RPC clients to detect that thay should perform some
-	 * activity to stay connected to the RPC Broker.
-	 */
-	struct timespec last_send;
 
 	/*! Logger used to log communication happenning with this client.
 	 *
@@ -325,47 +314,5 @@ rpcclient_t rpcclient_serial_unix_connect(const char *location)
  *   connection.
  */
 #define rpcclient_pollfd(CLIENT) ((CLIENT)->ctl(CLIENT, RPCC_CTRLOP_POLLFD))
-
-/*! Calculate maximum sleep before some message needs to be sent.
- *
- * This time is the number of seconds until the half of the disconnect delay
- * seconds is reached.
- *
- * @param client: Client handle.
- * @param idle_time: Number of seconds before
- * @returns number of seconds before you should send some message.
- */
-static inline int rpcclient_maxsleep(rpcclient_t client, int idle_time) {
-	struct timespec t;
-	assert(clock_gettime(CLOCK_MONOTONIC, &t) == 0);
-	int period = idle_time / 2;
-	if (t.tv_sec > client->last_send.tv_sec + period)
-		return 0;
-	return period - t.tv_sec + client->last_send.tv_sec;
-}
-
-/*! Update @ref rpcclient.last_receive to current time.
- *
- * This is available mostly for implementation of additional RPC Clients.
- * Existing implementations are already calling this internally in the
- * appropriate places and thus you do not need to call it on your own.
- *
- * @param client: Client handle.
- */
-static inline void rpcclient_last_receive_update(struct rpcclient *client) {
-	clock_gettime(CLOCK_MONOTONIC, &client->last_receive);
-}
-
-/*! Update @ref rpcclient.last_send to current time.
- *
- * This is available mostly for implementation of additional RPC Clients.
- * Existing implementations are already calling this internally in the
- * appropriate places and thus you do not need to call it on your own.
- *
- * @param client: Client handle.
- */
-static inline void rpcclient_last_send_update(struct rpcclient *client) {
-	clock_gettime(CLOCK_MONOTONIC, &client->last_send);
-}
 
 #endif

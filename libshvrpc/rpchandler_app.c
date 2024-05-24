@@ -52,7 +52,7 @@ static bool rpc_msg(
 	// TODO possibly be pedantic about not having parameter
 	if (!rpcreceive_validmsg(receive))
 		return true;
-	cp_pack_t pack = rpcreceive_response_new(receive);
+	cp_pack_t pack = rpcreceive_msg_new(receive);
 	rpcmsg_pack_response(pack, meta);
 	switch (method) {
 		case SHV_VERSION_MAJOR:
@@ -71,7 +71,7 @@ static bool rpc_msg(
 			abort(); /* Can't happen */
 	}
 	cp_pack_container_end(pack);
-	rpcreceive_response_send(receive);
+	rpcreceive_msg_send(receive);
 	return true;
 }
 

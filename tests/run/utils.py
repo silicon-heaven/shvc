@@ -3,12 +3,15 @@
 import subprocess
 import asyncio
 import collections.abc
+import re
+
+__valgrind_line = re.compile(b"(==|--)[0-9]+(==|--) ")
 
 
 def filter_stderr_iter(
     data: collections.abc.Sequence[bytes],
 ) -> collections.abc.Iterator[bytes]:
-    return (line for line in data if not line.startswith(b"=="))
+    return (line for line in data if not __valgrind_line.match(line))
 
 
 def filter_stderr(data: bytes) -> bytes:

@@ -33,6 +33,7 @@
       ninja,
       pkg-config,
       doxygen,
+      graphviz-nox,
       sphinxHook,
       python3Packages,
       uriparser,
@@ -61,9 +62,10 @@
           ninja
           pkg-config
           doxygen
+          graphviz-nox
           (sphinxHook.overrideAttrs {
             propagatedBuildInputs = with python3Packages; [
-              sphinx_rtd_theme
+              sphinx-book-theme
               myst-parser
               breathe
             ];

@@ -1,14 +1,14 @@
 #include <shv/rpchandler_responses.h>
 #include <stdlib.h>
-#include <semaphore.h>
+#include <errno.h>
 
 struct rpchandler_responses {
 	struct rpcresponse {
 		int request_id;
 		rpcresponse_callback_t callback;
 		void *ctx;
-		sem_t sem;
-		struct rpchandler_responses *owner;
+		pthread_cond_t cond;
+		struct rpchandler_responses *_Atomic owner;
 		struct rpcresponse *next;
 	} *resp;
 	pthread_mutex_t lock;
@@ -26,7 +26,8 @@ static bool rpc_msg(
 		if (r->request_id == meta->request_id) {
 			if (r->callback(receive, meta, r->ctx)) {
 				*pr = r->next;
-				sem_post(&r->sem);
+				r->owner = NULL;
+				pthread_cond_signal(&r->cond);
 			}
 			pthread_mutex_unlock(&resp->lock);
 			return true;
@@ -69,7 +70,11 @@ rpcresponse_t rpcresponse_expect(rpchandler_responses_t responses,
 	res->request_id = request_id;
 	res->callback = func;
 	res->ctx = ctx;
-	sem_init(&res->sem, false, 0);
+	pthread_condattr_t attr;
+	pthread_condattr_init(&attr);
+	pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
+	pthread_cond_init(&res->cond, &attr);
+	pthread_condattr_destroy(&attr);
 	res->owner = responses;
 	res->next = NULL;
 
@@ -91,31 +96,41 @@ void rpcresponse_discard(rpcresponse_t response) {
 	if (response == NULL)
 		return;
 
-	pthread_mutex_t *lock = &response->owner->lock;
-	pthread_mutex_lock(lock);
-	if (response->owner->resp != response) {
-		rpcresponse_t r = response->owner->resp;
-		while (r && r->next != response)
-			r = r->next;
-		if (r)
-			r->next = r->next->next;
-	} else
-		response->owner->resp = NULL;
-	sem_destroy(&response->sem);
+	struct rpchandler_responses *responses = response->owner;
+	if (responses) {
+		pthread_mutex_lock(&responses->lock);
+		rpcresponse_t *pr = &responses->resp;
+		while (*pr) {
+			if (*pr == response) {
+				*pr = response->next;
+				break;
+			}
+			pr = &(*pr)->next;
+		}
+		pthread_mutex_unlock(&responses->lock);
+	}
+	pthread_cond_destroy(&response->cond);
 	free(response);
-	pthread_mutex_unlock(lock);
 }
 
 bool rpcresponse_waitfor(rpcresponse_t response, int timeout) {
-	struct timespec ts_timeout;
-	clock_gettime(CLOCK_REALTIME, &ts_timeout);
-	ts_timeout.tv_sec += timeout;
-	bool res = sem_timedwait(&response->sem, &ts_timeout) == 0;
-	if (res) {
-		sem_destroy(&response->sem);
-		free(response);
+	struct rpchandler_responses *responses = response->owner;
+	if (responses != NULL) {
+		struct timespec ts_timeout;
+		clock_gettime(CLOCK_MONOTONIC, &ts_timeout);
+		ts_timeout.tv_sec += timeout / 1000;
+		ts_timeout.tv_nsec += (timeout % 1000) * 1000000;
+		pthread_mutex_lock(&responses->lock);
+		/* Note that sporadic wakeup can't because we are the only one waiting */
+		int cr = pthread_cond_timedwait(
+			&response->cond, &responses->lock, &ts_timeout);
+		pthread_mutex_unlock(&responses->lock);
+		if (cr != 0) /* Covers timeout as well as interrupt */
+			return false;
 	}
-	return res;
+	pthread_cond_destroy(&response->cond);
+	free(response);
+	return true;
 }
 
 

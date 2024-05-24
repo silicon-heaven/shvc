@@ -118,19 +118,15 @@ static bool nextmsg_stream(struct rpcclient_stream *c) {
 	clearerr(c->rf);
 	if (fgetc(c->rf) != CP_ChainPack) {
 		flushmsg(c);
-		rpcclient_last_receive_update(&c->c); /* Still valid receive */
 		return false;
 	}
 	rpclogger_log_lock(c->c.logger, true);
-	rpcclient_last_receive_update(&c->c);
 	return ok;
 }
 
 static bool validmsg_stream(struct rpcclient_stream *c) {
-	rpcclient_last_receive_update(&c->c);
 	rpclogger_log_unlock(c->c.logger);
 	flushmsg(c);
-	rpcclient_last_receive_update(&c->c);
 	return true; /* Always valid for stream as we relly on lower layer */
 }
 
@@ -164,7 +160,6 @@ static bool msgflush_stream(struct rpcclient_stream *c, bool send) {
 		if (!xwrite(c, &cpf, 1) || !xwrite(c, c->buf, len))
 			return false;
 		tcpflush(c->wfd);
-		rpcclient_last_send_update(&c->c);
 	}
 	fseek(c->fbuf, 0, SEEK_SET);
 	return true;

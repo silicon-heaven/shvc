@@ -338,32 +338,37 @@ __attribute__((nonnull)) static inline bool rpcreceive_has_param(
  */
 bool rpcreceive_validmsg(struct rpcreceive *receive) __attribute__((nonnull));
 
-/*! Start packing response.
+/*! Start packing message.
  *
  * Make sure that you call this only if you received request and only after you
- * called @ref rpcreceive_validmsg.
+ * called @ref rpcreceive_validmsg. It will return `NULL` otherwise.
+ *
+ * __You must only send responses and signals! Do not send requests!__ This
+ * is to solve the deadlock that would happen when two SHVC Handlers are pointed
+ * to each other. Request would cause the other handler to send response and
+ * thus would not be able to receive next message before the current one
+ * receives the response, but current one is bussy sending the next message.
  *
  * @param receive: Receive handle passed to @ref rpchandler_funcs.msg.
  * @returns Packer used to pack response message.
  */
-cp_pack_t rpcreceive_response_new(struct rpcreceive *receive)
-	__attribute__((nonnull));
+cp_pack_t rpcreceive_msg_new(struct rpcreceive *receive) __attribute__((nonnull));
 
-/*! Send packed response message.
+/*! Send packed message.
  *
  * @param receive: Receive handle passed to @ref rpchandler_funcs.msg.
  * @returns `true` if send is successful and `false` otherwise.
  */
-bool rpcreceive_response_send(struct rpcreceive *receive) __attribute__((nonnull));
+bool rpcreceive_msg_send(struct rpcreceive *receive) __attribute__((nonnull));
 
-/*! Drop packed response message.
+/*! Drop packed message.
  *
  * You can pack a different message instead.
  *
  * @param receive: Receive handle passed to @ref rpchandler_funcs.msg.
  * @returns `true` if send is successful and `false` otherwise.
  */
-bool rpcreceive_response_drop(struct rpcreceive *receive) __attribute__((nonnull));
+bool rpcreceive_msg_drop(struct rpcreceive *receive) __attribute__((nonnull));
 
 
 /*! Add result of `ls`.

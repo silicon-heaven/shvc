@@ -44,14 +44,14 @@ static bool rpc_msg(
 		if (!strcmp(meta->method, "get")) {
 			if (!rpcreceive_validmsg(receive))
 				return true;
-			cp_pack_t pack = rpcreceive_response_new(receive);
+			cp_pack_t pack = rpcreceive_msg_new(receive);
 			rpcmsg_pack_response(pack, meta);
 			cp_pack_list_begin(pack);
 			for (size_t i = 0; i < state->tracks[tid].cnt; i++)
 				cp_pack_int(pack, state->tracks[tid].values[i]);
 			cp_pack_container_end(pack);
 			cp_pack_container_end(pack);
-			rpcreceive_response_send(receive);
+			rpcreceive_msg_send(receive);
 			return true;
 		} else if (!strcmp(meta->method, "set")) {
 			size_t siz = 2;
@@ -80,18 +80,31 @@ static bool rpc_msg(
 			if (!rpcreceive_validmsg(receive))
 				return true;
 
-			// TODO signal
-			cp_pack_t pack = rpcreceive_response_new(receive);
+			bool value_changed = false;
+			cp_pack_t pack = rpcreceive_msg_new(receive);
 			if (invalid_param)
 				rpcmsg_pack_error(pack, meta, RPCMSG_E_INVALID_PARAMS,
 					"Only list of integers is allowed");
 			else {
+				value_changed = state->tracks[tid].cnt != cnt ||
+					memcmp(state->tracks[tid].values, res, cnt);
 				free(state->tracks[tid].values);
 				state->tracks[tid].values = res;
 				state->tracks[tid].cnt = cnt;
 				rpcmsg_pack_response_void(pack, meta);
 			}
-			rpcreceive_response_send(receive);
+			rpcreceive_msg_send(receive);
+
+			if (value_changed) {
+				pack = rpcreceive_msg_new(receive);
+				rpcmsg_pack_signal(pack, meta->path, "chng");
+				cp_pack_list_begin(pack);
+				for (size_t i = 0; i < cnt; i++)
+					cp_pack_int(pack, res[i]);
+				cp_pack_container_end(pack);
+				cp_pack_container_end(pack);
+				rpcreceive_msg_send(receive);
+			}
 			return true;
 		}
 	}

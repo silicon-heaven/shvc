@@ -1,6 +1,7 @@
 # libshvrpc
 
-This is API provided by libshvrpc library.
+This is API provided by libshvrpc library. It implements core for the SHV RPC
+communication protocol.
 
 ```{toctree}
 :maxdepth: 2
@@ -11,5 +12,4 @@ rpclogger
 rpcurl
 rpcmsg
 rpchandler
-rpccall
 ```

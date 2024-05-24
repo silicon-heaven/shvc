@@ -13,5 +13,4 @@ For the RPC Handler there are some prepared handlers you want to use:
 :maxdepth: 2
 
 rpchandler_app
-rpchandler_responses
 ```
