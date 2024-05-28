@@ -29,7 +29,7 @@ static const struct {
 			.request_id = 42,
 			.path = ".app",
 			.method = "ping",
-			.access_grant = RPCMSG_ACC_DEVEL,
+			.access = RPCMSG_ACC_DEVEL,
 		},
 		true,
 	},
@@ -100,7 +100,7 @@ static const struct {
 			.path = "",
 			.method = "ls",
 			.cids = {.ptr = (void *)(const uint8_t[]){0x44}, .siz = 1},
-			.access_grant = RPCMSG_ACC_DEVEL,
+			.access = RPCMSG_ACC_DEVEL,
 		},
 		true,
 	},
@@ -117,7 +117,7 @@ ARRAY_TEST(all, unpack_obstack) {
 	ck_assert_int_eq(meta.request_id, _d.meta.request_id);
 	ck_assert_pstr_eq(meta.path, _d.meta.path);
 	ck_assert_pstr_eq(meta.method, _d.meta.method);
-	ck_assert_int_eq(meta.access_grant, _d.meta.access_grant);
+	ck_assert_int_eq(meta.access, _d.meta.access);
 	ck_assert_int_eq(meta.cids.siz, _d.meta.cids.siz);
 	ck_assert_mem_eq(meta.cids.ptr, _d.meta.cids.ptr, _d.meta.cids.siz);
 	if (item.type != CPITEM_CONTAINER_END) {

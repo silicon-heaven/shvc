@@ -1,5 +1,5 @@
 demo_device_sources = files(
-  'device_handler.c',
+  'handler.c',
   'opts.c',
 )
 demo_device_dependencies = [libshvrpc_dep]

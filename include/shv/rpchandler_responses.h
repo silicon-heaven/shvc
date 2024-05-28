@@ -6,6 +6,7 @@
  */
 
 #include <shv/rpchandler.h>
+#include <shv/rpchandler_impl.h>
 
 
 /*! Object representing RPC Responses Handler. */
@@ -39,9 +40,29 @@ struct rpchandler_stage rpchandler_responses_stage(
 /*! Object representing a single response in RPC Responses Handler. */
 typedef struct rpcresponse *rpcresponse_t;
 
-/*! The prototype for the callbacks that are called by response handler */
-typedef bool (*rpcresponse_callback_t)(
-	struct rpcreceive *receive, const struct rpcmsg_meta *meta, void *ctx);
+/*! The prototype for the callbacks that are called by response handler.
+ *
+ * It is called only if request ID matches for the response message this
+ * callback got registered.
+ *
+ * You should first use @ref rpcmsg_has_param to check if response even has any
+ * parameter. You can unpack it if so after that.
+ *
+ * You must call @ref rpchandler_msg_valid to fully handle the message. Do not
+ * act upon received response if @ref rpchandler_msg_valid returns `false`.
+ *
+ * The returned boolean signals if associated expectation should be removed from
+ * responses handler or not. In general you want to return result of @ref
+ * rpchandler_msg_valid. In case that function returns `true` then no subsequent
+ * message with this request ID will be received and in case of `false` this
+ * might be an abandoned response and new response will be sent instead and
+ * thus we should keep waiting for it.
+ *
+ * @param ctx This is @ref rpchandler_funcs.msg context.
+ * @param cookie This is the pointer provided as context when response
+ * expectation is being registered.
+ */
+typedef bool (*rpcresponse_callback_t)(struct rpchandler_msg *ctx, void *cookie);
 
 /*! Register that new response will be received.
  *
@@ -52,11 +73,11 @@ typedef bool (*rpcresponse_callback_t)(
  * @param responses: RPC Responses Handler object.
  * @param request_id: Request ID of response to be waited for.
  * @param func: The callback function that is called when response is received.
- * @param ctx: Pointer passed as an extra argument to the callback function.
+ * @param cookie: Pointer passed as an extra argument to the callback function.
  * @returns Object you need to use to reference to this response.
  */
 rpcresponse_t rpcresponse_expect(rpchandler_responses_t responses, int request_id,
-	rpcresponse_callback_t func, void *ctx) __attribute__((nonnull));
+	rpcresponse_callback_t func, void *cookie) __attribute__((nonnull));
 
 /*! Provide request ID of the given response.
  *
@@ -70,7 +91,7 @@ int rpcresponse_request_id(rpcresponse_t response) __attribute__((nonnull));
  * The usage is when you send request but later decide that you no longer need
  * the response for whatever reason.
  *
- * @param reponse: The response to discard.
+ * @param response: The response to discard.
  */
 void rpcresponse_discard(rpcresponse_t response);
 

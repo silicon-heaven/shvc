@@ -26,7 +26,7 @@ async def test_param(shvc_exec, url, broker):
         *shvc_exec, "-d", "-u", str(url), ".broker/currentClient", "subscribe", "{}"
     )
     assert stdout == [b"true", b""]
-    assert stderr[0] == b'=> <1:1,8:1,10:"hello">i{1:null}'
+    assert stderr[0] == b'=> <1:1,8:1,10:"hello">i{}'
     # Note we skip the nonce message line because that is not predictable
     assert stderr[2:] == [
         b'=> <1:1,8:2,10:"login">i{1:{"login":{"password":"test","user":"test","ty'

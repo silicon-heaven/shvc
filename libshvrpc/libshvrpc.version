@@ -1,6 +1,7 @@
 V0.0 {
 	global:
 		# shv/rpcmsg.h
+		rpcmsg_request_id;
 		rpcmsg_pack_request;
 		rpcmsg_pack_request_void;
 		rpcmsg_pack_signal;
@@ -14,6 +15,10 @@ V0.0 {
 		rpcmsg_pack_ferror;
 		rpcmsg_pack_vferror;
 		rpcmsg_unpack_error;
+
+		# shv/rpcdir.h
+		rpcdir_pack;
+		rpcdir_unpack;
 
 		# shv/rpcclient.h
 		rpcclient_connect;
@@ -40,30 +45,41 @@ V0.0 {
 		rpcurl_str;
 
 		# shv/rpchandler.h
-		rpchandler_destroy;
 		rpchandler_new;
+		rpchandler_destroy;
+		rpchandler_change_stages;
 		rpchandler_next;
 		rpchandler_run;
 		rpchandler_spawn_thread;
 		rpchandler_next_request_id;
-		rpchandler_msg_new;
-		rpchandler_msg_new_request;
-		rpchandler_msg_new_request_void;
-		rpchandler_msg_send;
-		rpchandler_msg_drop;
-		rpcreceive_validmsg;
-		rpcreceive_msg_new;
-		rpcreceive_msg_send;
-		rpcreceive_msg_drop;
+		_rpchandler_msg_new;
+		_rpchandler_msg_send;
+		_rpchandler_msg_drop;
+		_rpchandler_impl_msg_new;
+		_rpchandler_impl_msg_send;
+		_rpchandler_impl_msg_drop;
+		_rpchandler_idle_msg_new;
+		_rpchandler_idle_msg_send;
+		_rpchandler_idle_msg_drop;
+		rpchandler_msg_valid;
 		rpchandler_ls_result;
-		rpchandler_ls_name;
+		rpchandler_ls_result_const;
+		rpchandler_ls_result_fmt;
+		rpchandler_ls_result_vfmt;
 		rpchandler_dir_result;
-		rpchandler_dir_name;
+		_rpchandler_obstack;
 
 		# shv/rpchandler_app.h
-		rpchandler_app_destroy;
 		rpchandler_app_new;
+		rpchandler_app_destroy;
 		rpchandler_app_stage;
+
+		# shv/rpchandler_login.h
+		rpchandler_login_new;
+		rpchandler_login_destroy;
+		rpchandler_login_stage;
+		rpchandler_login_status;
+		rpchandler_login_wait;
 
 	local: *;
 };

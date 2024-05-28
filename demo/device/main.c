@@ -2,14 +2,14 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
-#include <errno.h>
 #include <limits.h>
 #include <poll.h>
 #include <shv/rpcurl.h>
 #include <shv/rpcclient.h>
 #include <shv/rpchandler_app.h>
+#include <shv/rpchandler_login.h>
 #include "opts.h"
-#include "device_handler.h"
+#include "handler.h"
 
 
 int main(int argc, char **argv) {
@@ -35,25 +35,14 @@ int main(int argc, char **argv) {
 		logger = rpclogger_new(stderr, conf.verbose);
 		client->logger = logger;
 	}
-	char *loginerr;
-	if (!rpcclient_login(client, &rpcurl->login, &loginerr)) {
-		if (loginerr) {
-			fprintf(stderr, "Invalid login for connecting to the: %s\n", conf.url);
-			fprintf(stderr, "%s\n", loginerr);
-		} else {
-			fprintf(stderr, "Communication error with server\n");
-		}
-		rpcclient_destroy(client);
-		rpcurl_free(rpcurl);
-		return 1;
-	}
-	rpcurl_free(rpcurl);
 
 	struct device_state *state = device_state_new();
 
+	rpchandler_login_t login = rpchandler_login_new(&rpcurl->login);
 	rpchandler_app_t app = rpchandler_app_new("demo-device", PROJECT_VERSION);
 
 	const struct rpchandler_stage stages[] = {
+		rpchandler_login_stage(login),
 		rpchandler_app_stage(app),
 		(struct rpchandler_stage){.funcs = &device_handler_funcs, .cookie = state},
 		{},
@@ -61,14 +50,18 @@ int main(int argc, char **argv) {
 	rpchandler_t handler = rpchandler_new(client, stages, NULL);
 	assert(handler);
 
-	rpchandler_run(handler, NULL);
+	// TODO terminate on failed login?
+
+	rpchandler_run(handler);
 	printf("Terminating due to: %s\n", strerror(rpcclient_errno(client)));
 
 	rpchandler_destroy(handler);
 	rpchandler_app_destroy(app);
+	rpchandler_login_destroy(login);
 	device_state_free(state);
 	rpcclient_destroy(client);
 	if (conf.verbose > 0)
 		rpclogger_destroy(logger);
+	rpcurl_free(rpcurl);
 	return 0;
 }

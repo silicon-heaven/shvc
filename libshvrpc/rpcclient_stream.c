@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
@@ -31,9 +32,9 @@ struct rpcclient_stream {
 
 static ssize_t xread(struct rpcclient_stream *c, char *buf, size_t siz) {
 	ssize_t i;
-	do
+	do {
 		i = read(c->rfd, buf, siz);
-	while (i == -1 && errno == EINTR);
+	} while (i == -1 && errno == EINTR);
 	if (i == -1)
 		c->errnum = errno;
 	return i;
@@ -110,7 +111,7 @@ static void flushmsg(struct rpcclient_stream *c) {
 }
 
 static bool nextmsg_stream(struct rpcclient_stream *c) {
-	bool ok = true;
+	flushmsg(c);
 	ssize_t msgsiz = read_size(c);
 	if (msgsiz == -1)
 		return false;
@@ -121,7 +122,7 @@ static bool nextmsg_stream(struct rpcclient_stream *c) {
 		return false;
 	}
 	rpclogger_log_lock(c->c.logger, true);
-	return ok;
+	return true;
 }
 
 static bool validmsg_stream(struct rpcclient_stream *c) {

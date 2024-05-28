@@ -1,4 +1,5 @@
 #include <shv/rpchandler_app.h>
+#include <shv/rpchandler_impl.h>
 #include <stdlib.h>
 
 struct rpchandler_app {
@@ -7,27 +8,46 @@ struct rpchandler_app {
 };
 
 
-static void rpc_ls(void *cookie, const char *path, struct rpchandler_ls_ctx *ctx) {
-	if (path == NULL || *path == '\0')
+static void rpc_ls(void *cookie, struct rpchandler_ls *ctx) {
+	if (ctx->path && ctx->path[0] == '\0')
 		rpchandler_ls_result(ctx, ".app");
 }
 
 
-static void rpc_dir(void *cookie, const char *path, struct rpchandler_dir_ctx *ctx) {
-	if (!strcmp(path, ".app")) {
-		rpchandler_dir_result(ctx, "shvVersionMajor", RPCNODE_DIR_RET_VOID,
-			RPCNODE_DIR_F_GETTER, RPCMSG_ACC_BROWSE, NULL);
-		rpchandler_dir_result(ctx, "shvVersionMinor", RPCNODE_DIR_RET_VOID,
-			RPCNODE_DIR_F_GETTER, RPCMSG_ACC_BROWSE, NULL);
-		rpchandler_dir_result(ctx, "name", RPCNODE_DIR_RET_VOID,
-			RPCNODE_DIR_F_GETTER, RPCMSG_ACC_BROWSE, NULL);
-		rpchandler_dir_result(ctx, "version", RPCNODE_DIR_RET_VOID,
-			RPCNODE_DIR_F_GETTER, RPCMSG_ACC_BROWSE, NULL);
+static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
+	if (ctx->path && !strcmp(ctx->path, ".app")) {
+		rpchandler_dir_result(ctx,
+			&(const struct rpcdir){
+				.name = "shvVersionMajor",
+				.result = "Int",
+				.flags = RPCDIR_F_GETTER,
+				.access = RPCMSG_ACC_BROWSE,
+			});
+		rpchandler_dir_result(ctx,
+			&(const struct rpcdir){
+				.name = "shvVersionMinor",
+				.result = "Int",
+				.flags = RPCDIR_F_GETTER,
+				.access = RPCMSG_ACC_BROWSE,
+			});
+		rpchandler_dir_result(ctx,
+			&(const struct rpcdir){
+				.name = "name",
+				.result = "String",
+				.flags = RPCDIR_F_GETTER,
+				.access = RPCMSG_ACC_BROWSE,
+			});
+		rpchandler_dir_result(ctx,
+			&(const struct rpcdir){
+				.name = "version",
+				.result = "String",
+				.flags = RPCDIR_F_GETTER,
+				.access = RPCMSG_ACC_BROWSE,
+			});
 	}
 }
 
-static bool rpc_msg(
-	void *cookie, struct rpcreceive *receive, const struct rpcmsg_meta *meta) {
+static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 	struct rpchandler_app *rpchandler_app = cookie;
 	enum methods {
 		UNKNOWN,
@@ -36,24 +56,23 @@ static bool rpc_msg(
 		APP_NAME,
 		APP_VERSION,
 	} method = UNKNOWN;
-	if (meta->path && !strcmp(meta->path, ".app")) {
-		if (!strcmp(meta->method, "shvVersionMajor"))
+	if (ctx->meta.path && !strcmp(ctx->meta.path, ".app")) {
+		if (!strcmp(ctx->meta.method, "shvVersionMajor"))
 			method = SHV_VERSION_MAJOR;
-		else if (!strcmp(meta->method, "shvVersionMinor"))
+		else if (!strcmp(ctx->meta.method, "shvVersionMinor"))
 			method = SHV_VERSION_MINOR;
-		else if (!strcmp(meta->method, "name"))
+		else if (!strcmp(ctx->meta.method, "name"))
 			method = APP_NAME;
-		else if (!strcmp(meta->method, "version"))
+		else if (!strcmp(ctx->meta.method, "version"))
 			method = APP_VERSION;
 	}
 	if (method == UNKNOWN)
 		return false;
-
 	// TODO possibly be pedantic about not having parameter
-	if (!rpcreceive_validmsg(receive))
+	if (!rpchandler_msg_valid(ctx))
 		return true;
-	cp_pack_t pack = rpcreceive_msg_new(receive);
-	rpcmsg_pack_response(pack, meta);
+
+	cp_pack_t pack = rpchandler_msg_new_response(ctx);
 	switch (method) {
 		case SHV_VERSION_MAJOR:
 			cp_pack_int(pack, 3);
@@ -62,20 +81,20 @@ static bool rpc_msg(
 			cp_pack_int(pack, 0);
 			break;
 		case APP_NAME:
-			cp_pack_str(pack, rpchandler_app->name ?: "shvc"); // TODO
+			cp_pack_str(pack, rpchandler_app->name ?: "shvc");
 			break;
 		case APP_VERSION:
-			cp_pack_str(pack, rpchandler_app->version ?: PROJECT_VERSION); // TODO
+			cp_pack_str(pack, rpchandler_app->version ?: PROJECT_VERSION);
 			break;
 		case UNKNOWN:
 			abort(); /* Can't happen */
 	}
 	cp_pack_container_end(pack);
-	rpcreceive_msg_send(receive);
+	rpchandler_msg_send(ctx);
 	return true;
 }
 
-const struct rpchandler_funcs rpc_funcs = {
+static const struct rpchandler_funcs rpc_funcs = {
 	.ls = rpc_ls,
 	.dir = rpc_dir,
 	.msg = rpc_msg,

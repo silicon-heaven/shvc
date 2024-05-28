@@ -17,7 +17,7 @@
 %{
 struct gperf_rpcmsg_access_match {
     int offset;
-	enum rpcmsg_access acc;
+	rpcmsg_access acc;
 };
 %}
 

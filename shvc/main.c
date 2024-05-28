@@ -6,6 +6,7 @@
 #include <shv/rpcclient.h>
 #include <shv/rpcmsg.h>
 #include <shv/rpchandler_app.h>
+#include <shv/rpchandler_login.h>
 #include <shv/rpccall.h>
 #include "opts.h"
 
@@ -62,7 +63,7 @@ int response_callback(enum rpccall_stage stage, cp_pack_t pack, int request_id,
 			c->output = NULL;
 			return 0;
 		case CALL_S_ERROR: {
-			enum rpcmsg_error err = RPCMSG_E_UNKNOWN;
+			rpcmsg_error err = RPCMSG_E_UNKNOWN;
 			rpcmsg_unpack_error(unpack, item, &err, &c->output);
 			c->error = err;
 			break;
@@ -97,24 +98,12 @@ int main(int argc, char **argv) {
 	}
 	if (conf.verbose > 0)
 		client->logger = rpclogger_new(stderr, conf.verbose);
-	char *loginerr;
 
-	if (!rpcclient_login(client, &rpcurl->login, &loginerr)) {
-		if (loginerr) {
-			fprintf(stderr, "Failed to login to: %s\n", conf.url);
-			fprintf(stderr, "%s\n", loginerr);
-			free(loginerr);
-		} else {
-			fprintf(stderr, "Communication error with server\n");
-		}
-		rpcclient_destroy(client);
-		rpcurl_free(rpcurl);
-		return 3;
-	}
-
+	rpchandler_login_t login = rpchandler_login_new(&rpcurl->login);
 	rpchandler_app_t app = rpchandler_app_new("shvc", PROJECT_VERSION);
 	rpchandler_responses_t responses = rpchandler_responses_new();
 	const struct rpchandler_stage stages[] = {
+		rpchandler_login_stage(login),
 		rpchandler_app_stage(app),
 		rpchandler_responses_stage(responses),
 		{},
@@ -123,7 +112,18 @@ int main(int argc, char **argv) {
 	assert(handler);
 
 	pthread_t handler_thread;
-	assert(!rpchandler_spawn_thread(handler, NULL, &handler_thread, NULL));
+	assert(!rpchandler_spawn_thread(handler, &handler_thread, NULL));
+
+	int ec = 0;
+
+	rpcmsg_error login_err;
+	const char *login_errmsg;
+	if (!rpchandler_login_wait(login, &login_err, &login_errmsg, NULL)) {
+		ec = 3;
+		fprintf(stderr, "Failed to login to: %s\n", conf.url);
+		fprintf(stderr, "%s\n", login_errmsg);
+		goto cleanup;
+	}
 
 	struct ctx ctx;
 	ctx.conf = &conf;
@@ -151,7 +151,6 @@ int main(int argc, char **argv) {
 		fclose(ctx.fparam);
 	free(stdin_param);
 
-	int ec = 0;
 	switch (ctx.error) {
 		case RPCMSG_E_NO_ERROR:
 			if (ctx.output)
@@ -178,11 +177,13 @@ int main(int argc, char **argv) {
 	}
 	free(ctx.output);
 
+cleanup:
 	// TODO rpcclient_disconnect(client); instead of cancel
 	pthread_cancel(handler_thread);
 	pthread_join(handler_thread, NULL);
 	rpchandler_destroy(handler);
 	rpchandler_app_destroy(app);
+	rpchandler_login_destroy(login);
 	rpchandler_responses_destroy(responses);
 	rpclogger_destroy(client->logger);
 	rpcclient_destroy(client);

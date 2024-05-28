@@ -7,7 +7,7 @@
 #include "shv/cp.h"
 
 
-const char *rpcmsg_access_str(enum rpcmsg_access acc) {
+const char *rpcmsg_access_str(rpcmsg_access acc) {
 	switch (acc) {
 		case RPCMSG_ACC_BROWSE:
 			return "bws";
@@ -33,7 +33,7 @@ const char *rpcmsg_access_str(enum rpcmsg_access acc) {
 }
 
 
-enum rpcmsg_access rpcmsg_access_extract(const char *str) {
+rpcmsg_access rpcmsg_access_extract(const char *str) {
 	char *term;
 	do {
 		term = strchrnul(str, ',');
@@ -46,7 +46,7 @@ enum rpcmsg_access rpcmsg_access_extract(const char *str) {
 	return RPCMSG_ACC_INVALID;
 }
 
-enum rpcmsg_access rpcmsg_access_unpack(cp_unpack_t unpack, struct cpitem *item) {
+rpcmsg_access rpcmsg_access_unpack(cp_unpack_t unpack, struct cpitem *item) {
 	FILE *f = cp_unpack_fopen(unpack, item);
 	if (item->type != CPITEM_STRING)
 		goto error;

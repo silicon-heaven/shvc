@@ -100,7 +100,7 @@ bool rpcmsg_pack_response_void(cp_pack_t pack, const struct rpcmsg_meta *meta) {
 }
 
 bool rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	enum rpcmsg_error error, const char *msg) {
+	rpcmsg_error error, const char *msg) {
 	G(_pack_response(pack, meta));
 	G(cp_pack_int(pack, RPCMSG_KEY_ERROR));
 	G(cp_pack_imap_begin(pack));
@@ -114,7 +114,7 @@ bool rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
 }
 
 bool rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	enum rpcmsg_error error, const char *fmt, ...) {
+	rpcmsg_error error, const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
 	bool res = rpcmsg_pack_vferror(pack, meta, error, fmt, args);
@@ -123,7 +123,7 @@ bool rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
 }
 
 bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	enum rpcmsg_error error, const char *fmt, va_list args) {
+	rpcmsg_error error, const char *fmt, va_list args) {
 	va_list argsdup;
 	va_copy(argsdup, args);
 	size_t siz = vsnprintf(NULL, 0, fmt, argsdup);

@@ -100,7 +100,7 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 		return false;
 
 	meta->request_id = INT64_MIN;
-	meta->access_grant = RPCMSG_ACC_INVALID;
+	meta->access = RPCMSG_ACC_INVALID;
 	meta->cids.siz = 0;
 	if (obstack) {
 		meta->path = NULL;
@@ -143,7 +143,7 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 					limits ? limits->cids : -1, obstack);
 				break;
 			case RPCMSG_TAG_ACCESS:
-				meta->access_grant = rpcmsg_access_unpack(unpack, item);
+				meta->access = rpcmsg_access_unpack(unpack, item);
 				break;
 			default:
 				if (limits && limits->extra)
@@ -159,6 +159,7 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 	if (cp_unpack_type(unpack, item) != CPITEM_CONTAINER_END &&
 		!cpitem_extract_int(item, key))
 		return false;
+
 	if (has_rid) {
 		if (valid_method) {
 			meta->type = RPCMSG_T_REQUEST;

@@ -1,7 +1,4 @@
-demo_client_sources = files(
-  'opts.c',
-  'rpc_connect.c',
-)
+demo_client_sources = files('opts.c')
 demo_client_dependencies = [libshvcaller_dep]
 
 

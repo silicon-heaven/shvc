@@ -3,32 +3,31 @@
 
 struct callctx {
 	rpccall_func_t func;
-	void *ctx;
+	void *cookie;
 	int res;
 };
 
-static bool response_callback(
-	struct rpcreceive *receive, const struct rpcmsg_meta *meta, void *ctx) {
-	struct callctx *cctx = ctx;
-	cctx->res = cctx->func(meta->type == RPCMSG_T_RESPONSE
-			? (rpcreceive_has_param(receive) ? CALL_S_RESULT : CALL_S_VOID_RESULT)
+static bool response_callback(struct rpchandler_msg *ctx, void *cookie) {
+	struct callctx *c = cookie;
+	c->res = c->func(ctx->meta.type == RPCMSG_T_RESPONSE
+			? (rpcmsg_has_param(ctx->item) ? CALL_S_RESULT : CALL_S_VOID_RESULT)
 			: CALL_S_ERROR,
-		NULL, meta->request_id, receive->unpack, &receive->item, cctx->ctx);
-	return rpcreceive_validmsg(receive);
+		NULL, ctx->meta.request_id, ctx->unpack, ctx->item, c->cookie);
+	return rpchandler_msg_valid(ctx);
 }
 
 int _rpccall(rpchandler_t handler, rpchandler_responses_t responses,
-	rpccall_func_t func, void *ctx, int attempts, int timeout) {
+	rpccall_func_t func, void *cookie, int attempts, int timeout) {
 	struct callctx cctx;
 	cctx.func = func;
-	cctx.ctx = ctx;
+	cctx.cookie = cookie;
 
-	int request_id = rpchandler_next_request_id(handler);
+	int request_id = rpcmsg_request_id();
 	rpcresponse_t response =
 		rpcresponse_expect(responses, request_id, response_callback, &cctx);
 	for (int attempt = 0; attempt < attempts; attempt++) {
 		cp_pack_t pack = rpchandler_msg_new(handler);
-		int res = func(CALL_S_PACK, pack, request_id, NULL, NULL, ctx);
+		int res = func(CALL_S_PACK, pack, request_id, NULL, NULL, cookie);
 		if (res) {
 			rpchandler_msg_drop(handler);
 			rpcresponse_discard(response);
@@ -36,12 +35,12 @@ int _rpccall(rpchandler_t handler, rpchandler_responses_t responses,
 		}
 		if (!rpchandler_msg_send(handler)) {
 			rpcresponse_discard(response);
-			return func(CALL_S_COMERR, NULL, request_id, NULL, NULL, ctx);
+			return func(CALL_S_COMERR, NULL, request_id, NULL, NULL, cookie);
 		}
 		if (rpcresponse_waitfor(response, timeout)) {
 			return cctx.res;
 		}
 	}
 	rpcresponse_discard(response);
-	return func(CALL_S_TIMERR, NULL, request_id, NULL, NULL, ctx);
+	return func(CALL_S_TIMERR, NULL, request_id, NULL, NULL, cookie);
 }

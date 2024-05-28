@@ -40,7 +40,7 @@ cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *unpack, FILE *f) {
 	return &unpack->func;
 }
 
-void cp_unpack_drop(cp_unpack_t unpack, struct cpitem *item) {
+void cp_unpack_drop1(cp_unpack_t unpack, struct cpitem *item) {
 	item->buf = NULL;
 	item->bufsiz = SIZE_MAX;
 	while ((item->type == CPITEM_STRING || item->type == CPITEM_BLOB) &&
@@ -49,12 +49,26 @@ void cp_unpack_drop(cp_unpack_t unpack, struct cpitem *item) {
 	item->bufsiz = 0;
 }
 
+void cp_unpack_drop(cp_unpack_t unpack, struct cpitem *item) {
+	switch (item->type) {
+		case CPITEM_LIST:
+		case CPITEM_MAP:
+		case CPITEM_IMAP:
+		case CPITEM_META:
+			cp_unpack_finish(unpack, item, 1);
+			break;
+		default:
+			cp_unpack_drop1(unpack, item);
+			break;
+	}
+}
+
 void cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item) {
 	cp_unpack_finish(unpack, item, 0);
 }
 
 void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth) {
-	cp_unpack_drop(unpack, item);
+	cp_unpack_drop1(unpack, item);
 	item->bufsiz = SIZE_MAX;
 	do {
 		cp_unpack(unpack, item);
@@ -83,6 +97,32 @@ void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth) {
 		}
 	} while (depth);
 	item->bufsiz = 0;
+}
+
+ssize_t cp_unpack_strncpy(
+	cp_unpack_t unpack, struct cpitem *item, char *dest, size_t n) {
+	item->chr = dest;
+	item->bufsiz = n;
+	cp_unpack(unpack, item);
+	if (item->type != CPITEM_STRING) {
+		item->bufsiz = 0;
+		return -1;
+	}
+	if (item->as.String.len < n)
+		dest[item->as.String.len] = '\0';
+	item->bufsiz = 0;
+	return item->as.String.len;
+}
+
+ssize_t cp_unpack_memcpy(
+	cp_unpack_t unpack, struct cpitem *item, uint8_t *dest, size_t siz) {
+	item->buf = dest;
+	item->bufsiz = siz;
+	cp_unpack(unpack, item);
+	item->bufsiz = 0;
+	if (item->type != CPITEM_BLOB)
+		return -1;
+	return item->as.Blob.len;
 }
 
 static void *cp_unpack_dup(cp_unpack_t unpack, struct cpitem *item,
@@ -143,18 +183,8 @@ void cp_unpack_memndup(
 	*buf = cp_unpack_dup(unpack, item, CPITEM_BLOB, siz, *siz);
 }
 
-void cp_unpack_rawdup(
-	cp_unpack_t unpack, struct cpitem *item, uint8_t **data, size_t *siz) {
-	*data = cp_unpack_dup(unpack, item, CPITEM_RAW, siz, SIZE_MAX);
-}
-
-void cp_unpack_rawndup(
-	cp_unpack_t unpack, struct cpitem *item, uint8_t **data, size_t *siz) {
-	*data = cp_unpack_dup(unpack, item, CPITEM_RAW, siz, *siz);
-}
-
-static void *cp_unpack_dupo(cp_unpack_t unpack, struct cpitem *item,
-	enum cpitem_type type, size_t *size, size_t len, struct obstack *obstack) {
+static bool cp_unpack_dupog(cp_unpack_t unpack, struct cpitem *item,
+	enum cpitem_type type, size_t len, struct obstack *obstack) {
 	int zeropad = 0;
 	do {
 		/* We are using here fast growing in a reverse way. We first store
@@ -175,7 +205,7 @@ static void *cp_unpack_dupo(cp_unpack_t unpack, struct cpitem *item,
 		if (item->type != type) {
 			obstack_free(obstack, obstack_base(obstack));
 			item->bufsiz = 0;
-			return NULL;
+			return false;
 		}
 		if (item->as.Blob.len > 0) {
 			obstack_blank_fast(obstack, item->as.Blob.len - zeropad);
@@ -184,41 +214,62 @@ static void *cp_unpack_dupo(cp_unpack_t unpack, struct cpitem *item,
 	} while (obstack_object_size(obstack) < len &&
 		!(item->as.Blob.flags & CPBI_F_LAST));
 	item->bufsiz = 0;
-	if (size)
-		*size = obstack_object_size(obstack) - zeropad;
-	else if (zeropad == 0)
-		obstack_1grow(obstack, '\0');
-	return obstack_finish(obstack);
+	if (zeropad) {
+		if (type != CPITEM_STRING)
+			obstack_blank(obstack, -zeropad);
+	} else {
+		if (type == CPITEM_STRING)
+			obstack_1grow(obstack, '\0');
+	}
+	return true;
 }
 
 char *cp_unpack_strdupo(
 	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack) {
-	return cp_unpack_dupo(unpack, item, CPITEM_STRING, NULL, SIZE_MAX, obstack);
+	if (cp_unpack_strdupog(unpack, item, obstack))
+		return obstack_finish(obstack);
+	return NULL;
+}
+
+bool cp_unpack_strdupog(
+	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack) {
+	return cp_unpack_dupog(unpack, item, CPITEM_STRING, SIZE_MAX, obstack);
 }
 
 char *cp_unpack_strndupo(cp_unpack_t unpack, struct cpitem *item, size_t len,
 	struct obstack *obstack) {
-	return cp_unpack_dupo(unpack, item, CPITEM_STRING, NULL, len, obstack);
+	if (cp_unpack_strndupog(unpack, item, len, obstack))
+		return obstack_finish(obstack);
+	return NULL;
+}
+
+bool cp_unpack_strndupog(cp_unpack_t unpack, struct cpitem *item, size_t len,
+	struct obstack *obstack) {
+	return cp_unpack_dupog(unpack, item, CPITEM_STRING, len, obstack);
 }
 
 void cp_unpack_memdupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
 	size_t *siz, struct obstack *obstack) {
-	*buf = cp_unpack_dupo(unpack, item, CPITEM_BLOB, siz, SIZE_MAX, obstack);
+	cp_unpack_memdupog(unpack, item, obstack);
+	*siz = obstack_object_size(obstack);
+	*buf = obstack_finish(obstack);
+}
+
+bool cp_unpack_memdupog(
+	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack) {
+	return cp_unpack_dupog(unpack, item, CPITEM_BLOB, SIZE_MAX, obstack);
 }
 
 void cp_unpack_memndupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
 	size_t *siz, struct obstack *obstack) {
-	*buf = cp_unpack_dupo(unpack, item, CPITEM_BLOB, siz, *siz, obstack);
+	cp_unpack_memndupog(unpack, item, *siz, obstack);
+	*siz = obstack_object_size(obstack);
+	*buf = obstack_finish(obstack);
 }
 
-void cp_unpack_rawdupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
-	size_t *siz, struct obstack *obstack) {
-	*buf = cp_unpack_dupo(unpack, item, CPITEM_RAW, siz, SIZE_MAX, obstack);
-}
-
-void cp_unpack_rawndupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
-	size_t *siz, struct obstack *obstack) {
-	*buf = cp_unpack_dupo(unpack, item, CPITEM_RAW, siz, *siz, obstack);
+bool cp_unpack_memndupog(cp_unpack_t unpack, struct cpitem *item, size_t siz,
+	struct obstack *obstack) {
+	return cp_unpack_dupog(unpack, item, CPITEM_BLOB, siz, obstack);
 }
 
 

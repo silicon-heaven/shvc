@@ -1,7 +1,6 @@
 #include "strset.h"
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 
 static unsigned strhash(const char *str) {
@@ -28,12 +27,12 @@ static size_t strpos(const struct strset *set, int hsh) {
 	return min + 1;
 }
 
-static void add(struct strset *set, const char *str, bool dyn) {
+static bool add(struct strset *set, const char *str, bool dyn) {
 	unsigned hsh = strhash(str);
 	size_t pos = strpos(set, hsh);
 	if (pos < set->cnt && set->items[pos].hash == hsh &&
 		!strcmp(set->items[pos].str, str))
-		return; /* Already in the set */
+		return false; /* Already in the set */
 
 	if (set->cnt >= set->siz) {
 		set->siz = set->siz * 2 ?: 2;
@@ -44,6 +43,7 @@ static void add(struct strset *set, const char *str, bool dyn) {
 			(set->cnt - pos) * sizeof *set->items);
 	set->items[pos] = (struct strset_item){.hash = hsh, .str = str, .dyn = dyn};
 	set->cnt++;
+	return true;
 }
 
 
@@ -57,7 +57,9 @@ void shv_strset_free(struct strset *set) {
 }
 
 void shv_strset_add(struct strset *set, const char *str) {
-	add(set, strdup(str), true);
+	char *s = strdup(str);
+	if (!add(set, s, true))
+		free(s);
 }
 
 void shv_strset_add_const(struct strset *set, const char *str) {

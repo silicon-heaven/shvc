@@ -12,7 +12,7 @@ TEST_CASE(all) {}
 
 
 static const struct {
-	enum rpcmsg_access acc;
+	rpcmsg_access acc;
 	const char *str;
 } acc_str_d[] = {
 	{RPCMSG_ACC_BROWSE, "bws"},
@@ -33,7 +33,7 @@ END_TEST
 
 static const struct {
 	const char *str;
-	enum rpcmsg_access acc;
+	rpcmsg_access acc;
 } acc_extract_d[] = {
 	{"bws", RPCMSG_ACC_BROWSE},
 	{"rd", RPCMSG_ACC_READ},

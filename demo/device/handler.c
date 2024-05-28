@@ -1,11 +1,12 @@
-#include "device_handler.h"
+#include "handler.h"
+#include <shv/rpchandler_impl.h>
 #include <stdlib.h>
 
 
-static void rpc_ls(void *cookie, const char *path, struct rpchandler_ls_ctx *ctx) {
-	if (path == NULL || *path == '\0')
+static void rpc_ls(void *cookie, struct rpchandler_ls *ctx) {
+	if (ctx->path && ctx->path[0] == '\0')
 		rpchandler_ls_result(ctx, "track");
-	else if (!strcmp(path, "track")) {
+	else if (ctx->path && !strcmp(ctx->path, "track")) {
 		char str[2];
 		str[1] = '\0';
 		for (int i = 1; i <= 9; i++) {
@@ -27,83 +28,90 @@ static int trackid(const char *path) {
 }
 
 
-static void rpc_dir(void *cookie, const char *path, struct rpchandler_dir_ctx *ctx) {
-	if (trackid(path) != -1) {
-		rpchandler_dir_result(ctx, "get", RPCNODE_DIR_RET_PARAM,
-			RPCNODE_DIR_F_GETTER, RPCMSG_ACC_READ, NULL);
-		rpchandler_dir_result(ctx, "set", RPCNODE_DIR_VOID_PARAM,
-			RPCNODE_DIR_F_SETTER, RPCMSG_ACC_WRITE, NULL);
+static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
+	if (trackid(ctx->path) != -1) {
+		rpchandler_dir_result(ctx,
+			&(const struct rpcdir){
+				.name = "get",
+				.result = "[Int]",
+				.flags = RPCDIR_F_GETTER,
+				.access = RPCMSG_ACC_READ,
+				.signals = (const struct rpcdirsig[]){{.name = "chng"}, {}},
+			});
+		rpchandler_dir_result(ctx,
+			&(const struct rpcdir){
+				.name = "set",
+				.param = "[Int]",
+				.flags = RPCDIR_F_SETTER,
+				.access = RPCMSG_ACC_WRITE,
+			});
 	}
 }
 
-static bool rpc_msg(
-	void *cookie, struct rpcreceive *receive, const struct rpcmsg_meta *meta) {
+static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 	struct device_state *state = cookie;
-	int tid = trackid(meta->path);
+	int tid = trackid(ctx->meta.path);
 	if (tid != -1) {
-		if (!strcmp(meta->method, "get")) {
-			if (!rpcreceive_validmsg(receive))
+		if (!strcmp(ctx->meta.method, "get")) {
+			if (!rpchandler_msg_valid(ctx))
 				return true;
-			cp_pack_t pack = rpcreceive_msg_new(receive);
-			rpcmsg_pack_response(pack, meta);
+			cp_pack_t pack = rpchandler_msg_new_response(ctx);
 			cp_pack_list_begin(pack);
 			for (size_t i = 0; i < state->tracks[tid].cnt; i++)
 				cp_pack_int(pack, state->tracks[tid].values[i]);
 			cp_pack_container_end(pack);
 			cp_pack_container_end(pack);
-			rpcreceive_msg_send(receive);
+			rpchandler_msg_send(ctx);
 			return true;
-		} else if (!strcmp(meta->method, "set")) {
+		} else if (!strcmp(ctx->meta.method, "set")) {
 			size_t siz = 2;
 			size_t cnt = 0;
 			int *res = malloc(sizeof(int) * siz);
 			bool invalid_param = false;
-			cp_unpack(receive->unpack, &receive->item);
-			if (receive->item.type == CPITEM_LIST) {
-				do {
-					cp_unpack(receive->unpack, &receive->item);
-					if (receive->item.type == CPITEM_INT) {
-						if (cnt >= siz) {
-							int *tmp_res = realloc(res, sizeof(int) * (siz *= 2));
-							assert(tmp_res);
-							res = tmp_res;
-						}
-						res[cnt++] = receive->item.as.Int;
-						continue;
-					} else if (receive->item.type != CPITEM_CONTAINER_END) {
-						free(res);
+			cp_unpack(ctx->unpack, ctx->item);
+			if (ctx->item->type == CPITEM_LIST) {
+				for_cp_unpack_list(ctx->unpack, ctx->item) {
+					if (ctx->item->type != CPITEM_INT) {
 						invalid_param = true;
+						break;
 					}
-				} while (receive->item.type != CPITEM_CONTAINER_END);
+					if (cnt >= siz) {
+						int *tmp_res = realloc(res, sizeof(int) * (siz *= 2));
+						assert(tmp_res);
+						res = tmp_res;
+					}
+					res[cnt++] = ctx->item->as.Int;
+				}
 			} else
 				invalid_param = true;
-			if (!rpcreceive_validmsg(receive))
+			if (!rpchandler_msg_valid(ctx)) {
+				free(res);
 				return true;
+			}
 
 			bool value_changed = false;
-			cp_pack_t pack = rpcreceive_msg_new(receive);
-			if (invalid_param)
-				rpcmsg_pack_error(pack, meta, RPCMSG_E_INVALID_PARAMS,
+			if (invalid_param) {
+				free(res);
+				rpchandler_msg_send_error(ctx, RPCMSG_E_INVALID_PARAMS,
 					"Only list of integers is allowed");
-			else {
+			} else {
 				value_changed = state->tracks[tid].cnt != cnt ||
 					memcmp(state->tracks[tid].values, res, cnt);
 				free(state->tracks[tid].values);
 				state->tracks[tid].values = res;
 				state->tracks[tid].cnt = cnt;
-				rpcmsg_pack_response_void(pack, meta);
+				rpchandler_msg_send_response_void(ctx);
 			}
-			rpcreceive_msg_send(receive);
 
 			if (value_changed) {
-				pack = rpcreceive_msg_new(receive);
-				rpcmsg_pack_signal(pack, meta->path, "chng");
+				cp_pack_t pack = rpchandler_msg_new(ctx);
+				rpcmsg_pack_signal(pack, ctx->meta.path, "chng");
 				cp_pack_list_begin(pack);
 				for (size_t i = 0; i < cnt; i++)
 					cp_pack_int(pack, res[i]);
 				cp_pack_container_end(pack);
 				cp_pack_container_end(pack);
-				rpcreceive_msg_send(receive);
+				rpchandler_msg_send(ctx);
 			}
 			return true;
 		}

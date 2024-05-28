@@ -467,7 +467,7 @@ static inline bool cp_pack_container_end(cp_pack_t pack) {
  * @param pack: Generic packer.
  * @param buf: Pointer to the data to be written to the stream wrapped in the
  *   generic packer.
- * @param siz: Number of bytes to be taken from buffer.
+ * @param len: Number of bytes to be taken from buffer.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_raw(cp_pack_t pack, const uint8_t *buf, size_t len) {

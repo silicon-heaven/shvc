@@ -52,6 +52,17 @@ enum rpcmsg_error_key {
 	RPCMSG_ERR_KEY_MESSAGE,
 };
 
+/*! Get new request ID.
+ *
+ * This is program wide global variable access protected to be thread safe. The
+ * request ID goes from 4 to 63 and then it wraps. The 1 - 3 is reserved for
+ * login and ping operations. The upper limit of 63 comes from ChainPack where
+ * it is the largest value still packed as a single integer.
+ *
+ * @returns Request ID.
+ */
+int rpcmsg_request_id(void);
+
 /*! Pack request message meta and open imap. The followup packed data are
  * parameters provided to the method call request. The message needs to be
  * terminated with container end (@ref cp_pack_container_end).
@@ -114,32 +125,74 @@ __attribute__((nonnull(1))) static inline bool rpcmsg_pack_chng(
 
 
 /*! Access levels supported by SHVC. */
-enum rpcmsg_access {
-	RPCMSG_ACC_INVALID,
-	RPCMSG_ACC_BROWSE,
-	RPCMSG_ACC_READ,
-	RPCMSG_ACC_WRITE,
-	RPCMSG_ACC_COMMAND,
-	RPCMSG_ACC_CONFIG,
-	RPCMSG_ACC_SERVICE,
-	RPCMSG_ACC_SUPER_SERVICE,
-	RPCMSG_ACC_DEVEL,
-	RPCMSG_ACC_ADMIN,
-};
+typedef uint8_t rpcmsg_access;
+
+/*! Alias for invalid access level that is not used in SHV RPC. */
+#define RPCMSG_ACC_INVALID (0)
+/*! Access level for @ref rpcmsg_access.
+ *
+ * The lowest possible access level. This level allows user to list SHV nodes
+ * and to discover methods. Nothing more is allowed.
+ */
+#define RPCMSG_ACC_BROWSE (1)
+/*! Access level for @ref rpcmsg_access.
+ *
+ * Provides user with read access and thus access should be allowed only to
+ * methods that perform reading of values. Those methods should not have side
+ * effects.
+ */
+#define RPCMSG_ACC_READ (8)
+/*! Access level for @ref rpcmsg_access.
+ *
+ * Provides user with write access and thus access should be allowed to the
+ * method that modify some values.
+ */
+#define RPCMSG_ACC_WRITE (16)
+/*! Access level for @ref rpcmsg_access.
+ *
+ * Provides user with access to methods that control and command.
+ */
+#define RPCMSG_ACC_COMMAND (24)
+/*! Access level for @ref rpcmsg_access.
+ *
+ * Provides user with access to methods used to modify configuration.
+ */
+#define RPCMSG_ACC_CONFIG (32)
+/*! Access level for @ref rpcmsg_access.
+ *
+ * Provides user with access to methods used to service devices and SHV network.
+ */
+#define RPCMSG_ACC_SERVICE (40)
+/*! Access level for @ref rpcmsg_access.
+ *
+ * Provides user with access to methods used to service devices and SHV network
+ * that can harm the network or device.
+ */
+#define RPCMSG_ACC_SUPER_SERVICE (48)
+/*! Access level for @ref rpcmsg_access.
+ *
+ * Provides user with access to methods used only for development purposes.
+ */
+#define RPCMSG_ACC_DEVEL (56)
+/*! Access level for @ref rpcmsg_access.
+ *
+ * Provides user with access to all methods.
+ */
+#define RPCMSG_ACC_ADMIN (63)
 
 /*! Convert access level to its string representation.
  *
  * @param access: Access level to be converted.
  * @returns Pointer to string constant representing the access level.
  */
-const char *rpcmsg_access_str(enum rpcmsg_access access);
+const char *rpcmsg_access_str(rpcmsg_access access);
 
 /*! Extract access level from string.
  *
  * @param str: String with access specifier.
  * @returns Access level.
  */
-enum rpcmsg_access rpcmsg_access_extract(const char *str);
+rpcmsg_access rpcmsg_access_extract(const char *str);
 
 /*! Unpack access string and extract access level from it.
  *
@@ -150,7 +203,7 @@ enum rpcmsg_access rpcmsg_access_extract(const char *str);
  *   one.
  * @returns Access level.
  */
-enum rpcmsg_access rpcmsg_access_unpack(cp_unpack_t unpack, struct cpitem *item);
+rpcmsg_access rpcmsg_access_unpack(cp_unpack_t unpack, struct cpitem *item);
 
 
 
@@ -185,12 +238,12 @@ struct rpcmsg_meta {
 	enum rpcmsg_type type;
 	/*! Request ID if message is request or response. */
 	int64_t request_id;
-	/*! Path to the SHV node. Can be `NULL`. */
+	/*! Path to the SHV node. */
 	char *path;
 	/*! Method name if message is request or signal. */
 	char *method;
 	/*! Granted access level for request messages. */
-	enum rpcmsg_access access_grant;
+	rpcmsg_access access;
 	/*! Client IDs in Chainpack if message is request. */
 	struct rpcmsg_ptr cids;
 
@@ -294,6 +347,22 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 	struct rpcmsg_meta *meta, struct rpcmsg_meta_limits *limits,
 	struct obstack *obstack);
 
+/*! Query if message has parameter to unpack.
+ *
+ * Use this right after @ref rpcmsg_head_unpack to check if parameter can be
+ * unpacked.
+ *
+ * Technically this only checks if currently unpacked item is @ref
+ * CPITEM_CONTAINER_END. The message that doesn't have argument will end
+ * immediately and thus subsequent unpacks will most likely result into an
+ * error.
+ *
+ * @param item: Item used for the @ref rpcmsg_head_unpack call.
+ * @returns `true` if there is parameter to unpack and `false` if there are not.
+ */
+__attribute__((nonnull)) static inline bool rpcmsg_has_param(struct cpitem *item) {
+	return item->type != CPITEM_CONTAINER_END;
+}
 
 /*! Pack response message meta based on the provided meta.
  *
@@ -317,35 +386,41 @@ bool rpcmsg_pack_response(cp_pack_t pack, const struct rpcmsg_meta *meta)
 bool rpcmsg_pack_response_void(cp_pack_t pack, const struct rpcmsg_meta *meta)
 	__attribute__((nonnull));
 
-/*! Known error codes defined in SHV. */
-enum rpcmsg_error {
-	/*! No error that is mostly internally used to identify no errors. */
-	RPCMSG_E_NO_ERROR,
-	/*! Sent request is invalid in its format. */
-	RPCMSG_E_INVALID_REQUEST,
-	/*! Method is can't be found or you do not have access to it. */
-	RPCMSG_E_METHOD_NOT_FOUND,
-	/*! Request received but with invalid parameters. */
-	RPCMSG_E_INVALID_PARAMS,
-	/*! Request can't be processes due to the internal error. */
-	RPCMSG_E_INTERNAL_ERR,
-	/*! Message content can't be parsed correctly. */
-	RPCMSG_E_PARSE_ERR,
-	/*! Request timed out without response. */
-	RPCMSG_E_METHOD_CALL_TIMEOUT,
-	/*! Request got canceled. */
-	RPCMSG_E_METHOD_CALL_CANCELLED,
-	/*! Request was received successfully but issue was encountered when it was
-	 * being acted upon it.
-	 */
-	RPCMSG_E_METHOD_CALL_EXCEPTION,
-	/*! Generic unknown error assigned when we are not aware what happened. */
-	RPCMSG_E_UNKNOWN,
-	/*! The first user defined error code. The lower values are reserved for the
-	 * SHV defined errors.
-	 */
-	RPCMSG_E_USER_CODE = 32,
-};
+/*! Type alias for RPC error codes. */
+typedef unsigned rpcmsg_error;
+
+/*! No error that is mostly internally used to identify no errors. */
+#define RPCMSG_E_NO_ERROR (0)
+/*! Sent request is invalid in its format. */
+#define RPCMSG_E_INVALID_REQUEST (1)
+/*! Method is can't be found or you do not have access to it. */
+#define RPCMSG_E_METHOD_NOT_FOUND (2)
+/*! Request received but with invalid parameters. */
+#define RPCMSG_E_INVALID_PARAMS (3)
+/*! Request can't be processes due to the internal error. */
+#define RPCMSG_E_INTERNAL_ERR (4)
+/*! Message content can't be parsed correctly. */
+#define RPCMSG_E_PARSE_ERR (5)
+/*! Request timed out without response. */
+#define RPCMSG_E_METHOD_CALL_TIMEOUT (6)
+/*! Request got canceled. */
+#define RPCMSG_E_METHOD_CALL_CANCELLED (7)
+/*! Request was received successfully but issue was encountered when it was
+ * being acted upon it.
+ */
+#define RPCMSG_E_METHOD_CALL_EXCEPTION (8)
+/*! Generic unknown error assigned when we are not aware what happened. */
+#define RPCMSG_E_UNKNOWN (9)
+/*! Method call without previous successful login. */
+#define RPCMSG_E_LOGIN_REQUIRED (10)
+/*! Method call requires UserID to be present in the request message. */
+#define RPCMSG_E_USER_ID_REQUIRED (11)
+/*! Can be used if method is valid but not implemented for whatever reason. */
+#define RPCMSG_E_NOT_IMPLEMENTED (12)
+/*! The first user defined error code. The lower values are reserved for the
+ * SHV defined errors.
+ */
+#define RPCMSG_E_USER_CODE (32)
 
 /*! Pack error response message based on the provided meta.
  *
@@ -359,7 +434,7 @@ enum rpcmsg_error {
  * @returns Boolean signaling the pack success or failure.
  */
 bool rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	enum rpcmsg_error error, const char *msg) __attribute__((nonnull(1, 2)));
+	rpcmsg_error error, const char *msg) __attribute__((nonnull(1, 2)));
 
 /*! Pack error response message based on the provided meta.
  *
@@ -374,7 +449,7 @@ bool rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
  * @returns Boolean signaling the pack success or failure.
  */
 bool rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	enum rpcmsg_error error, const char *fmt, ...) __attribute__((nonnull(1, 2)));
+	rpcmsg_error error, const char *fmt, ...) __attribute__((nonnull(1, 2)));
 
 /*! Pack error response message based on the provided meta.
  *
@@ -390,7 +465,7 @@ bool rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
  * @returns Boolean signaling the pack success or failure.
  */
 bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	enum rpcmsg_error error, const char *fmt, va_list args)
+	rpcmsg_error error, const char *fmt, va_list args)
 	__attribute__((nonnull(1, 2)));
 
 /*! Unpack error.
@@ -410,6 +485,6 @@ bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
  * @returns `true` if error was unpacked correctly, `false` otherwise.
  */
 bool rpcmsg_unpack_error(cp_unpack_t unpack, struct cpitem *item,
-	enum rpcmsg_error *errnum, char **errmsg) __attribute__((nonnull(1, 2)));
+	rpcmsg_error *errnum, char **errmsg) __attribute__((nonnull(1, 2)));
 
 #endif

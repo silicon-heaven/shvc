@@ -59,7 +59,7 @@ TEST(unpack, drop_string) {
 
 	cp_unpack(unpack, &item);
 	ck_assert_item_type(item, CPITEM_STRING);
-	cp_unpack_drop(unpack, &item);
+	cp_unpack_drop1(unpack, &item);
 	ck_assert_item_type(item, CPITEM_STRING);
 	ck_assert(item.as.String.flags & CPBI_F_LAST);
 	cp_unpack(unpack, &item);

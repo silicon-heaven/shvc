@@ -1,15 +1,17 @@
 libshvrpc_sources = [
   files(
     'rpcclient_connect.c',
-    'rpcclient_login.c',
     'rpcclient_serial.c',
     'rpcclient_stream.c',
+    'rpcdir.c',
     'rpchandler.c',
     'rpchandler_app.c',
+    'rpchandler_login.c',
     'rpclogger.c',
     'rpcmsg_access.c',
     'rpcmsg_head.c',
     'rpcmsg_pack.c',
+    'rpcmsg_request_id.c',
     'rpcmsg_unpack.c',
     'rpcurl.c',
     'strset.c',
@@ -19,9 +21,9 @@ libshvrpc_sources = [
   gperf.process('rpcurl_scheme.gperf'),
 ]
 if not isnuttx
-  libshvrpc_sources += files('sha1_openssl.c')
+  libshvrpc_sources += files('sha1/openssl.c')
 else
-  libshvrpc_sources += files('sha1_nuttx.c')
+  libshvrpc_sources += files('sha1/nuttx.c')
 endif
 libshvrpc_dependencies = [libshvcp_dep, openssl, uriparser]
 libshvrpc_internal_includes = include_directories('.')

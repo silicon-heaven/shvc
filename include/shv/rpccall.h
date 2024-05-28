@@ -154,8 +154,7 @@ int _rpccall(rpchandler_t handler, rpchandler_responses_t responses,
  */
 #define rpccall(HANDLER, RESPONSES, FUNC, ...) \
 	__rpccall_value_select(__VA_ARGS_ __VA_OPT__(, ) _rpccall, __rpccall_deft, \
-		__rpccall_def, \
-		__rpccall_noctx)(HANDLER, RESPONSES, FUNC, ##__VA_ARGS__)
+		__rpccall_def, __rpccall_noctx)(HANDLER, RESPONSES, FUNC, ##__VA_ARGS__)
 
 
 #endif

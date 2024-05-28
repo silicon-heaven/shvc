@@ -12,34 +12,64 @@
 #include <stdarg.h>
 #include <shv/rpcclient.h>
 #include <shv/rpcmsg.h>
-#include <shv/rpcnode.h>
 
 
-/*! Handle passed to the message handling functions @ref rpchandler_funcs.msg.
+/*! RPC Handler object.
  *
- * It provides access to functionality needed to receive message and optionally
- * also to send single message back. The full access is intentionally limited
- * to reduce the time it takes to receive message. If you need to pass some
- * handle to the message handling function then you might not be doing what you
- * should.
+ * Handler provides a wrapper for receiving messages from the connected peer and
+ * process them.
  */
-struct rpcreceive {
-	/*! Unpack handle for reading parameter of the received message. */
-	cp_unpack_t unpack;
-	/*! Item to be used to read parameter of the received message. */
-	struct cpitem item;
-	/*! Obstack instance used to store values in **meta**. You are free to use
-	 * it in the message handling function. All that is allocated in it will be
-	 * freed after message is fully handled.
+typedef struct rpchandler *rpchandler_t;
+
+/*! Context passed to the callbacks @ref rpchandler_funcs.msg */
+struct rpchandler_msg {
+	/*! The unpacked meta for the received message. */
+	const struct rpcmsg_meta meta;
+	/*! Unpacker that can be used to unpack parameter and result (depending on
+	 * the message type).
 	 */
-	struct obstack obstack;
+	cp_unpack_t unpack;
+	/*! Item that must be used for unpacking. */
+	struct cpitem *item;
 };
 
-/*! Handle passed to the ls handling functions @ref rpchandler_funcs.ls. */
-struct rpchandler_ls_ctx;
+/*! Context passed to the callbacks @ref rpchandler_funcs.ls */
+struct rpchandler_ls {
+	/*! SHV Path that is requested to be listed. */
+	const char *const path;
+	/*!
+	 * There are two uses for call of *ls* method. One when all nodes on given
+	 * path are requested and second where you use it to validate existence of
+	 * the node in some path. The second usage can sometimes be optimised
+	 * because you might not need to call @ref rpchandler_ls_result for every
+	 * single node name when we are interested only in one of them. This
+	 * function provides you that name.
+	 *
+	 * Note that if you plan to use it to compare against names one at a time
+	 * then you can just use @ref rpchandler_ls_result that does exactly
+	 * that. On the other hand if you have some more efficient way (such as
+	 * cache) to detecting if node exists then you can speed up the process by
+	 * using this function.
+	 */
+	const char *const name;
+};
 
-/*! Handle passed to the dir handling functions @ref rpchandler_funcs.dir. */
-struct rpchandler_dir_ctx;
+/*! Context passed to the callbacks @ref rpchandler_funcs.dir */
+struct rpchandler_dir {
+	/*! SHV Path for which directory is requrested. */
+	const char *const path;
+	/*! There are two uses for call of *dir* method such as for *ls*. The same
+	 * remarks such as for @ref rpchandler_ls.name apply here just with @ref
+	 * rpchandler_dir_result function.
+	 */
+	const char *const name;
+};
+
+/*! Context passed to the callbacks @ref rpchandler_funcs.idle */
+struct rpchandler_idle {
+	/*! Last our activity. This is `CLOCK_MONOTONIC` time. */
+	struct timespec last_send;
+};
 
 /*! Pointers to the functions called by RPC Handler.
  *
@@ -53,33 +83,32 @@ struct rpchandler_funcs {
 	 * RPC Handler calls this for received requests in sequence given by stages
 	 * array until some function returns `true`.
 	 *
-	 * This function must investigate **meta** to see if it should handle that
-	 * message. It can immediately return `false` or it can proceed to handle
-	 * it. It is prohibited to touch the **receive** if it returns `false`.
+	 * This function must investigate @ref rpchandler_msg.meta to see if it
+	 * should handle that message. It can immediately return `false` or it can
+	 * proceed to handle it. It is prohibited to use @ref rpchandler_msg.unpack
+	 * if it returns `false`.
 	 *
 	 * The handling of the message consist of receiving the message parameters
 	 * and validating the message. Handler is allowed to pack response or it
-	 * needs to copy **meta** for sending response later on. It is not allowed
-	 * to pack any other message to the RPC Client this handler manages to
-	 * minimize the time handler is blocked.
+	 * needs to copy @ref rpcmsg_meta.request_id for sending response later on.
+	 * It is not allowed to pack any requests!
 	 *
-	 * The message parameters are parsed with @ref rpcreceive.unpack and @ref
-	 * rpcreceive.item. Before you invoke first @ref cp_unpack you must make
-	 * sure that there is actually parameter to unpack with @ref
-	 * rpcreceive_has_param (otherwise you can get unpack error even for valid
+	 * The message parameters are parsed with @ref rpchandler_msg.unpack and
+	 * @ref rpchandler_msg.item. Before you invoke first @ref cp_unpack you must
+	 * make sure that there is actually parameter to unpack with @ref
+	 * rpcmsg_has_param (otherwise you can get unpack error even for valid
 	 * message). Next you can use unpack functions to unpack parameters any way
 	 * you wish.
 	 *
 	 * The received message needs to be validated after unpack with @ref
-	 * rpcreceive_validmsg (internally uses @ref rpcclient_validmsg).
+	 * rpchandler_msg_valid (internally uses @ref rpcclient_validmsg).
 	 *
 	 * If you encounter error on receive or sending then you need to still
 	 * return `true`. The invalid messages are dropped this way (unpack error
 	 * due to the invalid data) and communication error is recorded in RPC
 	 * Client that RPC Handler uses.
 	 */
-	bool (*msg)(void *cookie, struct rpcreceive *receive,
-		const struct rpcmsg_meta *meta);
+	bool (*msg)(void *cookie, struct rpchandler_msg *ctx);
 	/*! ls method implementation.
 	 *
 	 * RPC Handler handles all calls to the *ls* methods, It only needs to know
@@ -90,10 +119,8 @@ struct rpchandler_funcs {
 	 * The implementation needs to call @ref rpchandler_ls_result and variants
 	 * of that function for every node in the requested path.
 	 */
-	void (*ls)(void *cookie, const char *path, struct rpchandler_ls_ctx *ctx);
+	void (*ls)(void *cookie, struct rpchandler_ls *ctx);
 	/*! dir method implementation.
-	 *
-	 * @ref rpchandler_destroy
 	 *
 	 * RPC Handler handles all calls to the *dir* methods, It only needs to know
 	 * methods that are associated with node on the given path. This function
@@ -103,7 +130,18 @@ struct rpchandler_funcs {
 	 * The implementation needs to call @ref rpchandler_dir_result and variants
 	 * of that function for every method on the requested path.
 	 */
-	void (*dir)(void *cookie, const char *path, struct rpchandler_dir_ctx *ctx);
+	void (*dir)(void *cookie, struct rpchandler_dir *ctx);
+	/*! The implementation of the idle operations.
+	 *
+	 * Idle is called when there is no message to be handled. It has two major
+	 * use cases:
+	 * - It decudes the maximal time we can just wait for message without
+	 *   idle beeing called again.
+	 * - Can send various messages including requests but with limitation that
+	 *   only one message can be send by all stages together at one idle
+	 *   invocation.
+	 */
+	int (*idle)(void *cookie, struct rpchandler_idle *ctx);
 };
 
 /*! Single stage in the RPC Handler.
@@ -122,13 +160,6 @@ struct rpchandler_stage {
 	 */
 	void *cookie;
 };
-
-/*! RPC Handler object.
- *
- * Handler provides a wrapper for receiving messages from the connected peer and
- * process them.
- */
-typedef struct rpchandler *rpchandler_t;
 
 
 /*! Create new RPC message handle.
@@ -161,13 +192,10 @@ void rpchandler_destroy(rpchandler_t rpchandler);
 
 /*! This allows you to change the current array of stages.
  *
- * You can change stages anytime you want but it will have no effect on the
- * currently handled messages. The primary issue in multithreading with this is
- * that you can't just free the previous stages array, you must wait for the
- * current message to be processed and with @ref rpchandler_spawn_thread that is
- * not easily known. If you are using loop with @ref rpchandler_next, then you
- * can be sure that between calls to that function there is no message being
- * processed.
+ * Be aware that this uses locks internally and waits for any concurrent thread
+ * indefinitely, this primarily includes the primary handler's thread and thus
+ * it is not possible to change stages from withing the @ref rpchandler_funcs
+ * functions.
  *
  * @param handler: RPC Handler instance.
  * @param stages: Stages array to be used for now on with this handler.
@@ -177,7 +205,10 @@ void rpchandler_change_stages(rpchandler_t handler,
 
 /*! Handle next message.
  *
- * This blocks until the next message is received and fully handled.
+ * This blocks until the next message is received and fully handled. In general
+ * you should not use this directly because you must in between also call @ref
+ * rpchandler_idle. These two steps are provided separatelly to allow handler to
+ * be included in poll based even loops.
  *
  * @param rpchandler: RPC Handler instance.
  * @returns `true` if message handled (even by dropping) and `false` if
@@ -187,13 +218,18 @@ void rpchandler_change_stages(rpchandler_t handler,
  */
 bool rpchandler_next(rpchandler_t rpchandler) __attribute__((nonnull));
 
-/*! RPC Handler errors */
-enum rpchandler_error {
-	/*! Disconnect is reported by RPC Client. */
-	RPCHANDLER_DISCONNECT,
-	/*! Detected too long inactivity. */
-	RPCHANDLER_TIMEOUT,
-};
+/*! Call idle callbacks and determine maximal timeout.
+ *
+ * This should be used in combination with @ref rpchandler_next if you are
+ * integrating RPC Handler to some poll based event loop. This function should
+ * be called every time there is nothing to be received and determines timeout
+ * for which it doesn't have to be called again.
+ *
+ * @param rpchandler: RPC Handler instance.
+ * @returns The maximal time during which idle doesn't have to be called (unless
+ *   new message is received). It is in milliseconds.
+ */
+int rpchandler_idle(rpchandler_t rpchandler) __attribute__((nonnull));
 
 /*! Run the RPC Handler loop.
  *
@@ -201,53 +237,33 @@ enum rpchandler_error {
  * suggested way unless you plan to use some poll based loop and multiple
  * handlers.
  *
- * Loop performs the following actions:
- * * Wait for data to be read from client and calls @ref rpchandler_next.
- * * On inactivity longer than half of the @ref RPC_DEFAULT_IDLE_TIME it calls
- * **onerr** with @ref RPCHANDLER_TIMEOUT. Then it continues executing (fail
- * was either resolved or this will lead to disconnect by other side).
- * * On disconnect it calls **onerr** with @ref RPCHANDLER_DISCONNECT. It
- * continues only if client is connected afterwards, otherwise it terminates the
- * loop.
- *
  * @param rpchandler: RPC Handler instance.
- * @param onerr: Callback called when some error is detected. It allows you to
- *   act on that error and possibly clear it before return from callback to
- *   continue the loop. Callback gets the RPC Handler object and RPC Client
- *   object it wraps. You can pass `NULL` in which case default function is used
- *   that ignores disconnects and sends ping requests on timeout.
  */
-void rpchandler_run(rpchandler_t rpchandler,
-	void (*onerr)(rpchandler_t, rpcclient_t, enum rpchandler_error))
-	__attribute__((nonnull(1)));
+void rpchandler_run(rpchandler_t rpchandler) __attribute__((nonnull));
 
 /*! Spawn thread that runs @ref rpchandler_run.
  *
- * It is common to run handler in separate thread and perform work on primary
+ * It is common to run handler in a separate thread and perform work on primary
  * one. This simplifies this setup by spawning that thread for you.
  *
  * @param rpchandler: RPC Handler instance.
- * @param onerr: Passed to @ref rpchandler_run.
  * @param thread: Pointer to the variable where handle for the pthread is
  *   stored. You can use this to control thread.
  * @param attr: Pointer to the pthread attributes or `NULL` for the inherited
  *   defaults.
  * @returns Integer value returned from `pthread_create`.
  */
-int rpchandler_spawn_thread(rpchandler_t rpchandler,
-	void (*onerr)(rpchandler_t, rpcclient_t, enum rpchandler_error),
-	pthread_t *restrict thread, const pthread_attr_t *restrict attr)
-	__attribute__((nonnull(1, 3)));
+int rpchandler_spawn_thread(rpchandler_t rpchandler, pthread_t *restrict thread,
+	const pthread_attr_t *restrict attr) __attribute__((nonnull(1, 2)));
 
 
-/*! Get next unused request ID.
- *
- * @param rpchandler: RPC Handler instance.
- * @returns New request ID.
- */
-int rpchandler_next_request_id(rpchandler_t rpchandler) __attribute__((nonnull));
-
-
+/// @cond
+cp_pack_t _rpchandler_msg_new(rpchandler_t rpchandler) __attribute__((nonnull));
+cp_pack_t _rpchandler_impl_msg_new(struct rpchandler_msg *ctx)
+	__attribute__((nonnull));
+cp_pack_t _rpchandler_idle_msg_new(struct rpchandler_idle *ctx)
+	__attribute__((nonnull));
+/// @endcond
 /*! Start sending new message.
  *
  * This is used to send messages from multiple threads. It ensures that lock is
@@ -255,222 +271,108 @@ int rpchandler_next_request_id(rpchandler_t rpchandler) __attribute__((nonnull))
  * released either with @ref rpchandler_msg_send or with @ref
  * rpchandler_msg_drop.
  *
- * @param rpchandler: RPC Handler instance.
+ * This is implemented as macro that based on the `HANDLER` parameter expands to
+ * an appropriate internal method call. Thanks to that it can be used for the
+ * same usage in the different contexts:
+ * - @ref rpchandler_funcs.msg (@ref rpchandler_msg) can be used to send
+ *   responses and signals when request message is received. This function
+ *   always provides `NULL` if received message is either signal or response.
+ * - @ref rpchandler_funcs.idle (@ref rpchandler_idle) can be used to send one
+ *   message per invocation. This way you can send only one message per
+ *   invocation and thus subsequent usages will provide `NULL`.
+ * - @ref rpchandler_funcs.ls and @ref rpchandler_funcs.dir are disallowed from
+ *   sending messages and thus this won't work with @ref rpchandler_ls and @ref
+ *   rpchandler_dir.
+ * - Any function that is not called from @ref rpchandler_funcs functions can
+ *   use this to send messages.
+ *
+ * @param HANDLER: RPC Handler instance or context.
  * @returns Packer you need to use to pack message.
  */
-cp_pack_t rpchandler_msg_new(rpchandler_t rpchandler) __attribute__((nonnull));
+#define rpchandler_msg_new(HANDLER) \
+	_Generic((HANDLER), \
+		rpchandler_t: _rpchandler_msg_new, \
+		struct rpchandler_msg *: _rpchandler_impl_msg_new, \
+		struct rpchandler_idle *: _rpchandler_idle_msg_new)(HANDLER)
 
-/*! Start sending the request message.
- *
- * This combines @ref rpchandler_msg_new with @ref rpcmsg_pack_request in a
- * convenient single function.
- *
- * @param rpchandler: RPC Handler instance.
- * @param path: The SHV path request will be sent to.
- * @param method: The method name this request call of.
- * @param request_id: Unique request ID (@ref rpchandler_next_request_id)
- * @returns Packer you need to use to pack parameters. The message must be
- * closed with @ref cp_pack_container_end and sent with @ref
- * rpchandler_msg_send.
- */
-cp_pack_t rpchandler_msg_new_request(rpchandler_t rpchandler, const char *path,
-	const char *method, int request_id) __attribute__((nonnull));
-
-/*! Start sending the request message without any parameter.
- *
- * This combines @ref rpchandler_msg_new with @ref rpcmsg_pack_request_void in a
- * convenient single function. The message is not immediately sent to allow
- * caller to register expectation for response message.
- *
- * @param rpchandler: RPC Handler instance.
- * @param path: The SHV path request will be sent to.
- * @param method: The method name this request call of.
- * @param request_id: Unique request ID (@ref rpchandler_next_request_id)
- * @returns `true` if message was packed successfully and `false` otherwise. The
- * message will be sent after @ref rpchandler_msg_send. You can also decide
- * to drop it with @ref rpchandler_msg_drop.
- */
-bool rpchandler_msg_new_request_void(rpchandler_t rpchandler, const char *path,
-	const char *method, int request_id) __attribute__((nonnull));
-
+/// @cond
+bool _rpchandler_msg_send(rpchandler_t rpchandler) __attribute__((nonnull));
+bool _rpchandler_impl_msg_send(struct rpchandler_msg *ctx)
+	__attribute__((nonnull));
+bool _rpchandler_idle_msg_send(struct rpchandler_idle *ctx)
+	__attribute__((nonnull));
+/// @endcond
 /*! Send the packed message.
  *
  * This calls @ref rpcclient_sendmsg under the hood and releases the lock taken
  * by @ref rpchandler_msg_new.
  *
- * @param rpchandler: RPC Handler instance.
+ * @param HANDLER: RPC Handler instance or context.
  * @returns `true` if send was successful and `false` otherwise.
  */
-bool rpchandler_msg_send(rpchandler_t rpchandler) __attribute__((nonnull));
+#define rpchandler_msg_send(HANDLER) \
+	_Generic((HANDLER), \
+		rpchandler_t: _rpchandler_msg_send, \
+		struct rpchandler_msg *: _rpchandler_impl_msg_send, \
+		struct rpchandler_idle *: _rpchandler_idle_msg_send)(HANDLER)
 
+/// @cond
+bool _rpchandler_msg_drop(rpchandler_t rpchandler) __attribute__((nonnull));
+bool _rpchandler_impl_msg_drop(struct rpchandler_msg *ctx)
+	__attribute__((nonnull));
+bool _rpchandler_idle_msg_drop(struct rpchandler_idle *ctx)
+	__attribute__((nonnull));
+/// @endcond
 /*! Drop the packed message.
  *
  * This calls @ref rpcclient_dropmsg under the hood and releases the lock taken
  * by @ref rpchandler_msg_new.
  *
- * @param rpchandler: RPC Handler instance.
+ * @param HANDLER: RPC Handler instance or context.
  * @returns `true` if send was successful and `false` otherwise.
  */
-bool rpchandler_msg_drop(rpchandler_t rpchandler) __attribute__((nonnull));
+#define rpchandler_msg_drop(HANDLER) \
+	_Generic((HANDLER), \
+		rpchandler_t: _rpchandler_msg_drop, \
+		struct rpchandler_msg *: _rpchandler_impl_msg_drop, \
+		struct rpchandler_idle *: _rpchandler_idle_msg_drop)(HANDLER)
 
 
-/*! Query if received message has parameter to unpack.
+/*! Utility combination of @ref rpchandler_msg_new and @ref rpcmsg_pack_request.
  *
- * You should use this right before you start unpacking parameters to ensure
- * that there are some.
- *
- * @param receive: Receive handle passed to @ref rpchandler_funcs.msg.
- * @returns `true` if there is parameter to unpack and `false` if there are not.
+ * @param HANDLER: RPC Handler instance or context.
+ * @param PATH: SHV path to the node the method we want to request is associated
+ *   with.
+ * @param METHOD: name of the method we request to call.
+ * @param REQUEST_ID: request identifier. Thanks to this number you can
+ *   associate response with requests.
+ * @returns @ref cp_pack_t or `NULL` on error.
  */
-__attribute__((nonnull)) static inline bool rpcreceive_has_param(
-	struct rpcreceive *receive) {
-	return receive->item.type != CPITEM_CONTAINER_END;
-}
+#define rpchandler_msg_new_request(HANDLER, PATH, METHOD, REQUEST_ID) \
+	({ \
+		cp_pack_t __pack = rpchandler_msg_new(HANDLER); \
+		if (__pack) \
+			rpcmsg_pack_request(__pack, (PATH), (METHOD), (REQUEST_ID)); \
+		__pack \
+	})
 
-/*! Validate the received message.
+/*! Utility combination of @ref rpchandler_msg_new and @ref
+ * rpcmsg_pack_request_void.
  *
- * This calls @ref rpcclient_validmsg under the hood. You must call it to
- * validate that message is valid. Do not act on the received data if this
- * function returns `false`.
- *
- * @param receive: Receive handle passed to @ref rpchandler_funcs.msg.
- * @returns `true` if message is valid and `false` otherwise.
+ * @param HANDLER: RPC Handler instance or context.
+ * @param PATH: SHV path to the node the method we want to request is associated
+ *   with.
+ * @param METHOD: name of the method we request to call.
+ * @param REQUEST_ID: request identifier. Thanks to this number you can
+ *   associate response with requests.
+ * @returns @ref cp_pack_t or `NULL` on error.
  */
-bool rpcreceive_validmsg(struct rpcreceive *receive) __attribute__((nonnull));
-
-/*! Start packing message.
- *
- * Make sure that you call this only if you received request and only after you
- * called @ref rpcreceive_validmsg. It will return `NULL` otherwise.
- *
- * __You must only send responses and signals! Do not send requests!__ This
- * is to solve the deadlock that would happen when two SHVC Handlers are pointed
- * to each other. Request would cause the other handler to send response and
- * thus would not be able to receive next message before the current one
- * receives the response, but current one is bussy sending the next message.
- *
- * @param receive: Receive handle passed to @ref rpchandler_funcs.msg.
- * @returns Packer used to pack response message.
- */
-cp_pack_t rpcreceive_msg_new(struct rpcreceive *receive) __attribute__((nonnull));
-
-/*! Send packed message.
- *
- * @param receive: Receive handle passed to @ref rpchandler_funcs.msg.
- * @returns `true` if send is successful and `false` otherwise.
- */
-bool rpcreceive_msg_send(struct rpcreceive *receive) __attribute__((nonnull));
-
-/*! Drop packed message.
- *
- * You can pack a different message instead.
- *
- * @param receive: Receive handle passed to @ref rpchandler_funcs.msg.
- * @returns `true` if send is successful and `false` otherwise.
- */
-bool rpcreceive_msg_drop(struct rpcreceive *receive) __attribute__((nonnull));
-
-
-/*! Add result of `ls`.
- *
- * This is intended to be called only from @ref rpchandler_funcs.ls functions.
- *
- * The same **name** can be specified multiple times but it is added only once.
- * The reason for this is because in the tree the same node might belong to
- * multiple handlers and thus multiple handlers would report it and because they
- * can't know about each other we just need to prevent from duplicates to be
- * added.
- *
- * @param context: Context passed to the @ref rpchandler_funcs.ls.
- * @param name: Name of the node.
- */
-void rpchandler_ls_result(struct rpchandler_ls_ctx *context, const char *name)
-	__attribute__((nonnull));
-
-/*! The variant of the @ref rpchandler_ls_result with constant string.
- *
- * @ref rpchandler_dir_result needs to duplicate **name** to filter out
- * duplicates. That is not required if string is constant or can be considered
- * such for the time of ls method handling. This function simply takes pointer
- * to the **name** and uses it internally in RPC Handler without copying it.
- *
- * @param context: Context passed to the @ref rpchandler_funcs.ls.
- * @param name: Name of the node (must be pointer to memory that is kept valid
- *   for the duration of ls method handler).
- */
-void rpchandler_ls_result_const(struct rpchandler_ls_ctx *context,
-	const char *name) __attribute__((nonnull));
-
-/*! The variant of the @ref rpchandler_ls_result with name generated from format
- * string.
- *
- * @param context: Context passed to the @ref rpchandler_funcs.ls.
- * @param fmt: Format string used to generate node name.
- */
-void rpchandler_ls_result_fmt(struct rpchandler_ls_ctx *context,
-	const char *fmt, ...) __attribute__((nonnull));
-
-/*! The variant of the @ref rpchandler_ls_result with name generated from format
- * string.
- *
- * @param context: Context passed to the @ref rpchandler_funcs.ls.
- * @param fmt: Format string used to generate node name.
- * @param args: List of variable arguments used in format string.
- */
-void rpchandler_ls_result_vfmt(struct rpchandler_ls_ctx *context,
-	const char *fmt, va_list args) __attribute__((nonnull));
-
-/*! Access name of the node ls should validate that it exists.
- *
- * There are two uses for call of *ls* method. One when all nodes on given path
- * are requested and second where you use it to validate existence of the node
- * in some path. The second usage can sometimes be optimised because you might
- * not need to call @ref rpchandler_ls_result for every single node name when
- * we are interested only in one of them. This function provides you that name.
- *
- * Note that if you plan to use it to compare against names one at a time then
- * you can just use @ref rpchandler_ls_result that does exactly that. On the
- * other hand if you have some more efficient way to detecting if node exists
- * than you can speed up the process by using this function.
- *
- * @param context: Context passed to the @ref rpchandler_funcs.ls.
- * @returns Pointer to the node name or `NULL` if all nodes should be listed.
- */
-const char *rpchandler_ls_name(struct rpchandler_ls_ctx *context)
-	__attribute__((nonnull));
-
-/*! Add result of `dir`.
- *
- * This is intended to be called only from @ref rpchandler_funcs.dir functions.
- *
- * Compared to the @ref rpchandler_ls_result is not filtering duplicates,
- * because handlers should not have duplicate methods between each other. There
- * is also no need for function like @ref rpchandler_ls_result_const because
- * **name** is used immediately without need to preserve it.
- *
- * @param context: Context passed to the @ref rpchandler_funcs.dir.
- * @param name: Name of the method.
- * @param signature: Signature the method has.
- * @param flags: Combination of flags for the method.
- * @param access: Minimal access level needed to access this method.
- * @param description: Optional description of the method.
- */
-void rpchandler_dir_result(struct rpchandler_dir_ctx *context, const char *name,
-	enum rpcnode_dir_signature signature, int flags, enum rpcmsg_access access,
-	const char *description) __attribute__((nonnull(1, 2)));
-
-/*! Access name of the method dir should query info about.
- *
- * The same case as in @ref rpchandler_ls_name but instead of validating dir
- * with method name is used to query info about a specific method. The
- * effective use is the same: You can implement more efficient algorithm for
- * searching for method based on the name and that way increase performance.
- *
- * @param context: Context passed to the @ref rpchandler_funcs.ls.
- * @returns Pointer to the method name or `NULL` if all methods should be
- * listed.
- */
-const char *rpchandler_dir_name(struct rpchandler_ls_ctx *context)
-	__attribute__((nonnull));
+#define rpchandler_msg_new_request_void(HANDLER, PATH, METHOD, REQUEST_ID) \
+	({ \
+		cp_pack_t __pack = rpchandler_msg_new(HANDLER); \
+		if (__pack) \
+			rpcmsg_pack_request_void(__pack, (PATH), (METHOD), (REQUEST_ID)); \
+		__pack != NULL \
+	})
 
 #endif

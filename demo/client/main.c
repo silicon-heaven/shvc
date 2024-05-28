@@ -5,10 +5,10 @@
 #include <shv/rpcurl.h>
 #include <shv/rpcclient.h>
 #include <shv/rpchandler_app.h>
+#include <shv/rpchandler_login.h>
 #include <shv/rpchandler_responses.h>
 #include <shv/rpccall.h>
 #include "opts.h"
-#include "rpc_connect.h"
 
 #define TRACK_ID "4"
 
@@ -81,6 +81,7 @@ static int rpccall_track_get(enum rpccall_stage stage, cp_pack_t pack,
 			track->len = 0;
 			for_cp_unpack_list(unpack, item) {
 				if (track->siz <= track->len) {
+					assert(track->siz > 0);
 					long long *new_track = realloc(
 						track->buf, (track->siz *= 2) * sizeof *track->buf);
 					assert(new_track);
@@ -135,35 +136,62 @@ int main(int argc, char **argv) {
 	parse_opts(argc, argv, &conf);
 
 	/* Setup client connection. */
-	rpcclient_t client = rpc_connect(&conf);
-	if (client == NULL)
+	const char *errpos;
+	struct rpcurl *url = rpcurl_parse(conf.url, &errpos);
+	if (url == NULL) {
+		fprintf(stderr, "Error: Invalid URL: '%s'.\n", conf.url);
+		/* The number 21 in this case refers to the number of chars that precede
+		 * the string format specifier on the line above to print URL */
+		size_t offset = errpos ? errpos - conf.url : 0;
+		fprintf(stderr, "%*s^\n", 21 + (unsigned)offset, "");
 		return exit_code;
+	}
+	rpcclient_t client = rpcclient_connect(url);
+	if (client == NULL) {
+		fprintf(stderr, "Error: Connection failed to: '%s'.\n", conf.url);
+		fprintf(stderr, "Hint: Make sure broker is running and URL is correct.\n");
+		rpcurl_free(url);
+		return exit_code;
+	}
+	if (conf.verbose > 0)
+		client->logger = rpclogger_new(stderr, conf.verbose);
 
 	/* Define a stages for RPC Handler using App and Responses Handler */
+	rpchandler_login_t login = rpchandler_login_new(&url->login);
 	rpchandler_app_t app = rpchandler_app_new("demo-client", PROJECT_VERSION);
-	rpchandler_responses_t responses_handler = rpchandler_responses_new();
+	rpchandler_responses_t responses = rpchandler_responses_new();
 	const struct rpchandler_stage stages[] = {
+		rpchandler_login_stage(login),
 		rpchandler_app_stage(app),
-		rpchandler_responses_stage(responses_handler),
+		rpchandler_responses_stage(responses),
 		{},
 	};
 
 	/* Initialize and run RPC Handler */
 	rpchandler_t handler = rpchandler_new(client, stages, NULL);
 	pthread_t rpchandler_thread;
-	rpchandler_spawn_thread(handler, NULL, &rpchandler_thread, NULL);
+	rpchandler_spawn_thread(handler, &rpchandler_thread, NULL);
 
+	/* Wait for login to be performed */
+	rpcmsg_error login_err;
+	const char *login_errmsg;
+	if (!rpchandler_login_wait(login, &login_err, &login_errmsg, NULL)) {
+		exit_code = 3;
+		fprintf(stderr, "Failed to login to: %s\n", conf.url);
+		fprintf(stderr, "%s\n", login_errmsg);
+		goto cleanup;
+	}
 
 	/* Query the name of the broker we are connected to */
 	char *app_name = NULL;
-	if (rpccall(handler, responses_handler, rpccall_app_name, &app_name))
+	if (rpccall(handler, responses, rpccall_app_name, &app_name))
 		goto cleanup;
 	fprintf(stdout, "The '.app:name' is: %s\n", app_name);
 	free(app_name);
 
 	/* Check if demo device is available */
 	bool has_device = false;
-	if (rpccall(handler, responses_handler, rpccall_has_device, &has_device))
+	if (rpccall(handler, responses, rpccall_has_device, &has_device))
 		goto cleanup;
 	if (!has_device) {
 		fprintf(stderr, "Error: Device not mounted at 'test/device'.\n");
@@ -174,7 +202,7 @@ int main(int argc, char **argv) {
 	/* Get the track state */
 	struct track track = {.siz = 4};
 	track.buf = malloc(track.siz * sizeof *track.buf);
-	if (rpccall(handler, responses_handler, rpccall_track_get, &track))
+	if (rpccall(handler, responses, rpccall_track_get, &track))
 		goto cleanup;
 	printf("Demo device's track " TRACK_ID ":");
 	print_track(&track);
@@ -183,11 +211,11 @@ int main(int argc, char **argv) {
 	/* Increase track */
 	for (size_t i = 0; i < track.len; i++)
 		track.buf[i]++;
-	if (rpccall(handler, responses_handler, rpccall_track_set, &track))
+	if (rpccall(handler, responses, rpccall_track_set, &track))
 		goto cleanup;
 
 	/* Get the updated version. */
-	if (rpccall(handler, responses_handler, rpccall_track_get, &track))
+	if (rpccall(handler, responses, rpccall_track_get, &track))
 		goto cleanup;
 	printf("New demo device's track " TRACK_ID ":");
 	print_track(&track);
@@ -202,10 +230,12 @@ cleanup:
 	pthread_cancel(rpchandler_thread);
 	pthread_join(rpchandler_thread, NULL);
 	rpchandler_destroy(handler);
-	rpchandler_responses_destroy(responses_handler);
+	rpchandler_responses_destroy(responses);
 	rpchandler_app_destroy(app);
+	rpchandler_login_destroy(login);
 	rpclogger_destroy(client->logger);
 	rpcclient_destroy(client);
+	rpcurl_free(url);
 
 	return exit_code;
 }

@@ -5,7 +5,7 @@
 
 
 bool rpcmsg_unpack_error(cp_unpack_t unpack, struct cpitem *item,
-	enum rpcmsg_error *errnum, char **errmsg) {
+	rpcmsg_error *errnum, char **errmsg) {
 	if (errnum)
 		*errnum = RPCMSG_E_NO_ERROR;
 	if (errmsg)
@@ -13,13 +13,14 @@ bool rpcmsg_unpack_error(cp_unpack_t unpack, struct cpitem *item,
 
 	if (cp_unpack_type(unpack, item) != CPITEM_IMAP)
 		return false;
-	for_cp_unpack_imap(unpack, item) {
-		switch (item->as.Int) {
+	for_cp_unpack_imap(unpack, item, ikey) {
+		switch (ikey) {
 			case RPCMSG_ERR_KEY_CODE: {
 				switch (cp_unpack_type(unpack, item)) {
 					case CPITEM_UINT:
-						if (errnum)
+						if (errnum) {
 							cpitem_extract_uint(item, *errnum);
+						}
 						break;
 					case CPITEM_INT:
 						if (errnum)
@@ -37,6 +38,7 @@ bool rpcmsg_unpack_error(cp_unpack_t unpack, struct cpitem *item,
 					*errmsg = cp_unpack_strdup(unpack, item);
 				break;
 			default: /* Just ignore any unknown key */
+				cp_unpack_skip(unpack, item);
 				break;
 		}
 	}

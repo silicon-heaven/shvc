@@ -85,24 +85,6 @@ typedef struct rpcclient *rpcclient_t;
  */
 rpcclient_t rpcclient_connect(const struct rpcurl *url);
 
-/*! Perform login on the newly established connection.
- *
- * @param client: The RPC client object.
- * @param opts: RPC login options. It is common to get this directly from the
- *   RPC URL.
- * @param errmsg: Pointer to the string pointer to which we optionally place the
- *   error message sent by the SHV Broker. Otherwise the pointer to the string
- *   is set to `NULL`. The error message is allocated using `malloc` and you
- *   must free it after use. You can pass `NULL` if you are not interested in
- *   error message at all.
- * @returns `true` if login is successful and `false` otherwise. The login can
- *   fail either due to the communication error or because of SHV Broker
- *   declining the login for any reason. The difference can be detected with
- *   **errmsg** and @ref rpcclient_connected.
- */
-bool rpcclient_login(rpcclient_t client, const struct rpclogin_options *opts,
-	char **errmsg) __attribute__((nonnull(1, 2)));
-
 
 /*! Create new RPC Client with Stream transport layer.
  *
@@ -214,15 +196,14 @@ rpcclient_t rpcclient_serial_unix_connect(const char *location)
  */
 #define rpcclient_errno(CLIENT) ((CLIENT)->ctl(CLIENT, RPCC_CTRLOP_ERRNO))
 
-/*! Wait for the next message to be ready for reading.
+/*! Seek for the next message to for reading.
  *
  * Note that this only says that start of the new message was received. The
  * unpack of the message can still block, because the complete message might
  * not be received yet. This is done to allow stream processing of big messages.
  *
  * @param CLIENT: The RPC client object.
- * @returns `true` if next message is received and `false` if client is no
- * longer connected.
+ * @returns `true` if next message is received and `false` if not.
  */
 #define rpcclient_nextmsg(CLIENT) ((CLIENT)->ctl(CLIENT, RPCC_CTRLOP_NEXTMSG))
 

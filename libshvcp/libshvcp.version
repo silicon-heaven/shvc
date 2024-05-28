@@ -22,21 +22,24 @@ V0.0 {
 		# shv/cp_unpack.h
 		cp_unpack_chainpack_init;
 		cp_unpack_cpon_init;
+		cp_unpack_drop1;
 		cp_unpack_drop;
 		cp_unpack_skip;
 		cp_unpack_finish;
+		cp_unpack_strncpy;
 		cp_unpack_strdup;
 		cp_unpack_strndup;
 		cp_unpack_strdupo;
+		cp_unpack_strdupog;
 		cp_unpack_strndupo;
+		cp_unpack_strndupog;
+		cp_unpack_memcpy;
 		cp_unpack_memdup;
 		cp_unpack_memndup;
 		cp_unpack_memdupo;
+		cp_unpack_memdupog;
 		cp_unpack_memndupo;
-		cp_unpack_rawdup;
-		cp_unpack_rawndup;
-		cp_unpack_rawdupo;
-		cp_unpack_rawndupo;
+		cp_unpack_memndupog;
 		cp_unpack_fopen;
 
 		# shv/cp_tools.h

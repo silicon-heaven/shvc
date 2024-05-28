@@ -18,10 +18,11 @@ bool common_unpack(size_t *res, FILE *f, struct cpitem *item) {
 		*res += item->as.Blob.len;
 	} else {
 		size_t siz = item->bufsiz;
-		uint8_t buf[MIN(BUFSIZ, item->bufsiz)];
+		size_t bufsiz = MIN(BUFSIZ, siz);
+		uint8_t buf[bufsiz];
 		size_t i;
 		do {
-			i = fread(buf, 1, MIN(BUFSIZ, siz), f);
+			i = fread(buf, 1, bufsiz, f);
 			siz -= i;
 			*res += i;
 		} while (i != 0);
@@ -30,7 +31,7 @@ bool common_unpack(size_t *res, FILE *f, struct cpitem *item) {
 }
 
 bool common_pack(size_t *res, FILE *f, const struct cpitem *item) {
-	if (f && ferror(f)) /* No reason to write to file in error */
+	if (ferror(f)) /* No reason to write to file in error */
 		return true;
 	switch (item->type) {
 		case CPITEM_INVALID:

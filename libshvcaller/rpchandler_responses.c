@@ -1,12 +1,12 @@
 #include <shv/rpchandler_responses.h>
 #include <stdlib.h>
-#include <errno.h>
+
 
 struct rpchandler_responses {
 	struct rpcresponse {
 		int request_id;
 		rpcresponse_callback_t callback;
-		void *ctx;
+		void *cookie;
 		pthread_cond_t cond;
 		struct rpchandler_responses *_Atomic owner;
 		struct rpcresponse *next;
@@ -14,17 +14,16 @@ struct rpchandler_responses {
 	pthread_mutex_t lock;
 };
 
-static bool rpc_msg(
-	void *cookie, struct rpcreceive *receive, const struct rpcmsg_meta *meta) {
+static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 	struct rpchandler_responses *resp = cookie;
-	if (meta->type != RPCMSG_T_RESPONSE && meta->type != RPCMSG_T_ERROR)
+	if (ctx->meta.type != RPCMSG_T_RESPONSE && ctx->meta.type != RPCMSG_T_ERROR)
 		return false;
 	pthread_mutex_lock(&resp->lock);
 	rpcresponse_t *pr = &resp->resp;
 	while (*pr) {
 		rpcresponse_t r = *pr;
-		if (r->request_id == meta->request_id) {
-			if (r->callback(receive, meta, r->ctx)) {
+		if (r->request_id == ctx->meta.request_id) {
+			if (r->callback(ctx, r->cookie)) {
 				*pr = r->next;
 				r->owner = NULL;
 				pthread_cond_signal(&r->cond);
@@ -65,11 +64,11 @@ struct rpchandler_stage rpchandler_responses_stage(
 
 
 rpcresponse_t rpcresponse_expect(rpchandler_responses_t responses,
-	int request_id, rpcresponse_callback_t func, void *ctx) {
+	int request_id, rpcresponse_callback_t func, void *cookie) {
 	rpcresponse_t res = malloc(sizeof *res);
 	res->request_id = request_id;
 	res->callback = func;
-	res->ctx = ctx;
+	res->cookie = cookie;
 	pthread_condattr_t attr;
 	pthread_condattr_init(&attr);
 	pthread_condattr_setclock(&attr, CLOCK_MONOTONIC);
@@ -137,9 +136,14 @@ bool rpcresponse_waitfor(rpcresponse_t response, int timeout) {
 rpcresponse_t rpcresponse_send_request_void(rpchandler_t handler,
 	rpchandler_responses_t responses, const char *path, const char *method,
 	rpcresponse_callback_t func, void *ctx) {
-	int request_id = rpchandler_next_request_id(handler);
-	if (!rpchandler_msg_new_request_void(handler, path, method, request_id))
+	cp_pack_t pack = rpchandler_msg_new(handler);
+	if (pack == NULL)
 		return NULL;
+	int request_id = rpcmsg_request_id();
+	if (!rpcmsg_pack_request_void(pack, path, method, request_id)) {
+		rpchandler_msg_drop(handler);
+		return NULL;
+	}
 	rpcresponse_t res = rpcresponse_expect(responses, request_id, func, ctx);
 	if (!rpchandler_msg_send(handler)) {
 		rpcresponse_discard(res);

@@ -1,7 +1,7 @@
 #include <shv/rpcclient.h>
 #include <stdlib.h>
 #include <assert.h>
-#include <semaphore.h>
+#include <pthread.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -13,7 +13,7 @@ struct rpclogger {
 	bool ellipsis;
 	struct cpon_state cpon_state;
 	unsigned maxdepth;
-	sem_t semaphore;
+	pthread_mutex_t lock;
 };
 
 
@@ -21,17 +21,14 @@ void rpclogger_log_lock(struct rpclogger *logger, bool in) {
 	if (logger == NULL)
 		return;
 	// TODO signal interrupt
-	sem_wait(&logger->semaphore);
+	// TODO try lock instead of just lock and identify if we are the one
+	pthread_mutex_lock(&logger->lock);
 	fputs(in ? "<= " : "=> ", logger->f);
 }
 
 void rpclogger_log_item(struct rpclogger *logger, const struct cpitem *item) {
 	if (logger == NULL)
 		return;
-	int semval;
-	assert(sem_getvalue(&logger->semaphore, &semval) == 0);
-	if (semval > 0)
-		return; /* Semaphore is not taken so do not log */
 
 	if (item->type == CPITEM_RAW) {
 		/* We do not want to print raw data and thus just replace it with dots */
@@ -63,7 +60,7 @@ void rpclogger_log_unlock(struct rpclogger *logger) {
 		logger->ellipsis = false;
 	}
 	fputc('\n', logger->f);
-	sem_post(&logger->semaphore);
+	pthread_mutex_unlock(&logger->lock);
 }
 
 
@@ -85,7 +82,7 @@ rpclogger_t rpclogger_new(FILE *f, unsigned maxdepth) {
 	res->ellipsis = false;
 	res->cpon_state = (struct cpon_state){.realloc = cpon_state_realloc};
 	res->maxdepth = maxdepth;
-	sem_init(&res->semaphore, false, 1);
+	pthread_mutex_init(&res->lock, NULL);
 	return res;
 }
 
@@ -94,6 +91,6 @@ void rpclogger_destroy(rpclogger_t logger) {
 		return;
 
 	free(logger->cpon_state.ctx);
-	sem_destroy(&logger->semaphore);
+	pthread_mutex_destroy(&logger->lock);
 	free(logger);
 }
