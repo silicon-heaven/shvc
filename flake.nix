@@ -57,7 +57,7 @@
           doxygen
           (sphinxHook.overrideAttrs {
             propagatedBuildInputs = with python3Packages; [
-              sphinx_rtd_theme
+              sphinx-book-theme
               myst-parser
               breathe
             ];

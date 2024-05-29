@@ -18,7 +18,7 @@ extensions = [
     "sphinx.ext.intersphinx",
     "sphinx.ext.viewcode",
     "sphinx.ext.todo",
-    "sphinx_rtd_theme",
+    "sphinx_book_theme",
     "myst_parser",
     "breathe",
 ]
@@ -31,7 +31,7 @@ exclude_patterns = ["_build"]
 html_copy_source = True
 html_show_sourcelink = True
 html_show_copyright = False
-html_theme = "sphinx_rtd_theme"
+html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
 
 
