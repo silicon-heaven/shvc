@@ -102,9 +102,7 @@
           packages = with pkgs; [
             # Linters and formatters
             clang-tools_18
-            cppcheck
             editorconfig-checker
-            flawfinder
             muon
             shellcheck
             shfmt

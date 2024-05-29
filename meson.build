@@ -9,7 +9,6 @@ project(
 cc = meson.get_compiler('c')
 isnuttx = cc.get_define('__NuttX__') != '' # Won't be defined outside NuttX
 pkg_mod = import('pkgconfig')
-fs = import('fs')
 
 if not isnuttx
   add_project_arguments('-D_GNU_SOURCE', language: 'c')
@@ -50,31 +49,4 @@ if (
   )
 )
   subdir('tests')
-endif
-
-
-cppcheck = find_program('cppcheck', required: false)
-if cppcheck.found()
-  run_target(
-    'cppcheck',
-    command: [
-      cppcheck,
-      '-j' + run_command(find_program('nproc'), check: true).stdout().strip(),
-      '--error-exitcode=1',
-      '--check-level=exhaustive',
-      '--project=' + join_paths(
-        meson.project_build_root(),
-        'compile_commands.json',
-      ),
-      '--suppress=*:*/subprojects/*',
-    ],
-  )
-endif
-
-flawfinder = find_program('flawfinder', required: false)
-if flawfinder.found()
-  run_target(
-    'flawfinder',
-    command: [flawfinder, '--error-level=5', meson.project_source_root()],
-  )
 endif

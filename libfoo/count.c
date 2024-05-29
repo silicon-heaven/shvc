@@ -15,8 +15,7 @@ unsigned count_foo(FILE *f) {
 	unsigned res = 0;
 	char *line = NULL;
 	size_t len = 0;
-	ssize_t nread;
-	while ((nread = getline(&line, &len, f)) != -1) {
+	while ((getline(&line, &len, f)) != -1) {
 		char *colon = strchr(line, ':');
 		if (colon == NULL)
 			continue; // ignore lines without colon
