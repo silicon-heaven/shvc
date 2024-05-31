@@ -35,9 +35,10 @@ V0.0 {
 		# shv/rpclogger.h
 		rpclogger_new;
 		rpclogger_destroy;
-		rpclogger_log_lock;
 		rpclogger_log_item;
-		rpclogger_log_unlock;
+		rpclogger_log_end;
+		rpclogger_log_flush;
+		rpclogger_func_stderr;
 
 		# shv/rpcurl.h
 		rpcurl_parse;

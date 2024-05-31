@@ -12,6 +12,8 @@
 
 #define TRACK_ID "4"
 
+static size_t logsiz = BUFSIZ > 128 ? BUFSIZ : 128;
+
 struct track {
 	long long *buf;
 	size_t len, siz;
@@ -21,6 +23,7 @@ static void print_track(struct track *track) {
 	for (size_t i = 0; i < track->len; i++)
 		printf(" %lld", track->buf[i]);
 }
+
 
 static int rpccall_app_name(enum rpccall_stage stage, cp_pack_t pack,
 	int request_id, cp_unpack_t unpack, struct cpitem *item, void *ctx) {
@@ -153,8 +156,10 @@ int main(int argc, char **argv) {
 		rpcurl_free(url);
 		return exit_code;
 	}
-	if (conf.verbose > 0)
-		client->logger = rpclogger_new(stderr, conf.verbose);
+	client->logger_in =
+		rpclogger_new(rpclogger_func_stderr, "<= ", logsiz, conf.verbose);
+	client->logger_out =
+		rpclogger_new(rpclogger_func_stderr, "=> ", logsiz, conf.verbose);
 
 	/* Define a stages for RPC Handler using App and Responses Handler */
 	rpchandler_login_t login = rpchandler_login_new(&url->login);
@@ -233,7 +238,8 @@ cleanup:
 	rpchandler_responses_destroy(responses);
 	rpchandler_app_destroy(app);
 	rpchandler_login_destroy(login);
-	rpclogger_destroy(client->logger);
+	rpclogger_destroy(client->logger_in);
+	rpclogger_destroy(client->logger_out);
 	rpcclient_destroy(client);
 	rpcurl_free(url);
 

@@ -4,6 +4,9 @@ import subprocess
 import asyncio
 import collections.abc
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 __valgrind_line = re.compile(b"(==|--)[0-9]+(==|--) ")
 
@@ -31,6 +34,10 @@ async def subproc(
     )
     stdout, stderr = await proc.communicate(stdin)
     assert proc.returncode is not None
+    for line in stdout.splitlines():
+        logger.debug("stdout:%s", line)
+    for line in stderr.splitlines():
+        logger.debug("stderr:%s", line)
     if proc.returncode != exit_code:
         raise subprocess.CalledProcessError(proc.returncode, cmd, stdout, stderr)
     return stdout.split(b"\n"), list(filter_stderr_iter(stderr.split(b"\n")))

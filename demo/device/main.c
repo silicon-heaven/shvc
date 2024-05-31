@@ -11,6 +11,8 @@
 #include "opts.h"
 #include "handler.h"
 
+static size_t logsiz = BUFSIZ > 128 ? BUFSIZ : 128;
+
 
 int main(int argc, char **argv) {
 	struct conf conf;
@@ -30,11 +32,10 @@ int main(int argc, char **argv) {
 		rpcurl_free(rpcurl);
 		return 1;
 	}
-	rpclogger_t logger = NULL;
-	if (conf.verbose > 0) {
-		logger = rpclogger_new(stderr, conf.verbose);
-		client->logger = logger;
-	}
+	client->logger_in =
+		rpclogger_new(rpclogger_func_stderr, "<= ", logsiz, conf.verbose);
+	client->logger_out =
+		rpclogger_new(rpclogger_func_stderr, "=> ", logsiz, conf.verbose);
 
 	struct device_state *state = device_state_new();
 
@@ -59,9 +60,9 @@ int main(int argc, char **argv) {
 	rpchandler_app_destroy(app);
 	rpchandler_login_destroy(login);
 	device_state_free(state);
+	rpclogger_destroy(client->logger_in);
+	rpclogger_destroy(client->logger_out);
 	rpcclient_destroy(client);
-	if (conf.verbose > 0)
-		rpclogger_destroy(logger);
 	rpcurl_free(rpcurl);
 	return 0;
 }

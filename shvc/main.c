@@ -14,6 +14,8 @@
 #define ERR_TIM (RPCMSG_E_USER_CODE + 2)
 #define ERR_PARAM (RPCMSG_E_USER_CODE + 3)
 
+static size_t logsiz = BUFSIZ > 128 ? BUFSIZ : 128;
+
 struct ctx {
 	struct conf *conf;
 	FILE *fparam;
@@ -96,8 +98,10 @@ int main(int argc, char **argv) {
 		rpcurl_free(rpcurl);
 		return 3;
 	}
-	if (conf.verbose > 0)
-		client->logger = rpclogger_new(stderr, conf.verbose);
+	client->logger_in =
+		rpclogger_new(rpclogger_func_stderr, "<= ", logsiz, conf.verbose);
+	client->logger_out =
+		rpclogger_new(rpclogger_func_stderr, "=> ", logsiz, conf.verbose);
 
 	rpchandler_login_t login = rpchandler_login_new(&rpcurl->login);
 	rpchandler_app_t app = rpchandler_app_new("shvc", PROJECT_VERSION);
@@ -185,7 +189,8 @@ cleanup:
 	rpchandler_app_destroy(app);
 	rpchandler_login_destroy(login);
 	rpchandler_responses_destroy(responses);
-	rpclogger_destroy(client->logger);
+	rpclogger_destroy(client->logger_in);
+	rpclogger_destroy(client->logger_out);
 	rpcclient_destroy(client);
 	rpcurl_free(rpcurl);
 	return ec;

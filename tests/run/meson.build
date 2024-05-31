@@ -37,6 +37,7 @@ test(
     '-m',
     'pytest',
     '--tap-stream',
+    '-vv',
     meson.current_source_dir(),
   ],
   env: pytest_env,

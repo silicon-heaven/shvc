@@ -87,7 +87,8 @@ static ssize_t cookie_read(void *cookie, char *buf, size_t size) {
 static void cp_unpack_stream(void *ptr, struct cpitem *item) {
 	struct rpcclient_stream *c = ptr - offsetof(struct rpcclient_stream, c.unpack);
 	chainpack_unpack(c->rf, item);
-	rpclogger_log_item(c->c.logger, item);
+	if (c->c.logger_in)
+		rpclogger_log_item(c->c.logger_in, item);
 }
 
 static ssize_t read_size(struct rpcclient_stream *c) {
@@ -121,21 +122,22 @@ static bool nextmsg_stream(struct rpcclient_stream *c) {
 		flushmsg(c);
 		return false;
 	}
-	rpclogger_log_lock(c->c.logger, true);
+	if (c->c.logger_in)
+		rpclogger_log_end(c->c.logger_in, RPCLOGGER_ET_UNKNOWN);
 	return true;
 }
 
 static bool validmsg_stream(struct rpcclient_stream *c) {
-	rpclogger_log_unlock(c->c.logger);
 	flushmsg(c);
+	if (c->c.logger_in)
+		rpclogger_log_end(c->c.logger_in, RPCLOGGER_ET_VALID);
 	return true; /* Always valid for stream as we relly on lower layer */
 }
 
 static bool cp_pack_stream(void *ptr, const struct cpitem *item) {
 	struct rpcclient_stream *c = ptr - offsetof(struct rpcclient_stream, c.pack);
-	if (ftell(c->fbuf) == 0)
-		rpclogger_log_lock(c->c.logger, false);
-	rpclogger_log_item(c->c.logger, item);
+	if (c->c.logger_out)
+		rpclogger_log_item(c->c.logger_out, item);
 	return chainpack_pack(c->fbuf, item) > 0;
 }
 
@@ -151,7 +153,9 @@ static bool write_size(struct rpcclient_stream *c, size_t len) {
 }
 
 static bool msgflush_stream(struct rpcclient_stream *c, bool send) {
-	rpclogger_log_unlock(c->c.logger);
+	if (c->c.logger_out)
+		rpclogger_log_end(
+			c->c.logger_out, send ? RPCLOGGER_ET_VALID : RPCLOGGER_ET_INVALID);
 	fflush(c->fbuf);
 	if (send) {
 		size_t len = ftell(c->fbuf);
@@ -211,7 +215,6 @@ rpcclient_t rpcclient_stream_new(int readfd, int writefd) {
 				.ctl = ctl_stream,
 				.unpack = cp_unpack_stream,
 				.pack = cp_pack_stream,
-				.logger = NULL,
 			},
 		.rfd = readfd,
 		.rf = f,
