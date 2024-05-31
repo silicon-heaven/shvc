@@ -174,7 +174,7 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 			item->as.String.eoff = 0;
 			CALL(cpon_unpack_buf, item);
 			break;
-		case 'd':
+		case 'd': {
 			struct tm tm = (struct tm){};
 			unsigned msecs;
 			int sres = SCANF("\"%u-%u-%uT%u:%u:%u.%u", &tm.tm_year, &tm.tm_mon,
@@ -200,6 +200,7 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 			item->as.Datetime = cptmtodt(tm);
 			item->as.Datetime.msecs += msecs;
 			break;
+		}
 		case '"':
 			item->type = CPITEM_STRING;
 			item->as.String.flags = CPBI_F_FIRST | CPBI_F_STREAM;

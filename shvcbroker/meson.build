@@ -8,5 +8,3 @@ shvcbroker = executable(
   dependencies: shvcbroker_dependencies,
   install: true,
 )
-
-shvcbroker_internal_includes = include_directories('.')

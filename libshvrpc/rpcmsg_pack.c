@@ -126,7 +126,9 @@ bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
 	rpcmsg_error error, const char *fmt, va_list args) {
 	va_list argsdup;
 	va_copy(argsdup, args);
-	size_t siz = vsnprintf(NULL, 0, fmt, argsdup);
+	// https://github.com/llvm/llvm-project/issues/40656
+	size_t siz = vsnprintf( // NOLINT(clang-analyzer-valist.Uninitialized)
+		NULL, 0, fmt, argsdup);
 	va_end(argsdup);
 
 	char msg[siz + 1];

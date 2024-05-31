@@ -419,7 +419,9 @@ void rpchandler_ls_result_vfmt(
 			return;
 		va_list cargs;
 		va_copy(cargs, args);
-		int siz = snprintf(NULL, 0, fmt, cargs);
+		// https://github.com/llvm/llvm-project/issues/40656
+		int siz = vsnprintf( // NOLINT(clang-analyzer-valist.Uninitialized)
+			NULL, 0, fmt, cargs);
 		va_end(cargs);
 		if (siz != strlen(ctx->name)) {
 			return;

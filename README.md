@@ -51,11 +51,6 @@ For code coverage report:
 
 * [gcovr](https://gcovr.com)
 
-For linting:
-
-* [cppcheck](https://github.com/danmar/cppcheck)
-* [flawfinder](https://dwheeler.com/flawfinder/)
-
 
 ## Compilation
 
@@ -108,16 +103,19 @@ $ ninja -C builddir coverage-html
 The coverage report is generated in directory:
 `builddir/meson-logs/coveragereport`.
 
-## Linting the code
+## Linting and formatting the code
 
-The code can also be linted if linters are installed. There are two linter
-supported at the moment. There is `cppcheck` and `flawfinder`. To run them you
-can do:
+The code can also be linted and formatted if clang tools are installed.
 
 ```console
 $ meson setup builddir
-$ meson compile -C builddir cppcheck
-$ meson compile -C builddir flawfinder
+$ ninja -C builddir clang-format
+```
+
+```console
+$ meson setup builddir
+$ meson compile -C builddir
+$ ninja -C builddir clang-tidy
 ```
 
 ## Using Nix development environment

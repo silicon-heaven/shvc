@@ -11,5 +11,3 @@ demo_device = executable(
   dependencies: demo_device_dependencies,
   install: true,
 )
-
-demo_internal_includes = include_directories('.')

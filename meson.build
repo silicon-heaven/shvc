@@ -3,13 +3,12 @@ project(
   'c',
   version: run_command(find_program('bash'), './.version.sh', check: true).stdout().strip(),
   license: 'GPL-3.0-or-later',
-  default_options: 'c_std=gnu17',
+  default_options: 'c_std=gnu2x',
   meson_version: '>=0.63.0',
 )
 cc = meson.get_compiler('c')
 isnuttx = cc.get_define('__NuttX__') != '' # Won't be defined outside NuttX
 pkg_mod = import('pkgconfig')
-fs = import('fs')
 cmake = import('cmake')
 python = import('python')
 
@@ -88,33 +87,4 @@ if (
   )
 )
   subdir('tests')
-endif
-
-
-cppcheck = find_program('cppcheck', required: false)
-if cppcheck.found()
-  run_target(
-    'cppcheck',
-    command: [
-      cppcheck,
-      '-j' + run_command(find_program('nproc'), check: true).stdout().strip(),
-      '--error-exitcode=1',
-      '--check-level=exhaustive',
-      '--project=' + join_paths(
-        meson.project_build_root(),
-        'compile_commands.json',
-      ),
-      '--suppress=*:*/subprojects/*',
-      '-D__BYTE_ORDER__',
-      '-DPROJECT_VERSION=""',
-    ],
-  )
-endif
-
-flawfinder = find_program('flawfinder', required: false)
-if flawfinder.found()
-  run_target(
-    'flawfinder',
-    command: [flawfinder, '--error-level=5', meson.project_source_root()],
-  )
 endif

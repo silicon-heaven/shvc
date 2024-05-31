@@ -112,7 +112,7 @@ size_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) {
 				if (item->as.Blob.flags & CPBI_F_LAST)
 					PUTC('\"');
 				break;
-			case CPITEM_DATETIME:
+			case CPITEM_DATETIME: {
 				struct tm tm = cpdttotm(item->as.Datetime);
 				PRINTF("d\"%d-%.2d-%.2dT%.2d:%.2d:%.2d.%.3d", tm.tm_year + 1900,
 					tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec,
@@ -124,6 +124,7 @@ size_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) {
 				else
 					PUTS("Z\"");
 				break;
+			}
 			case CPITEM_LIST:
 				CALL(ctxpush, state, CPITEM_LIST, "[");
 				break;

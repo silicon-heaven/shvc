@@ -72,7 +72,7 @@ rpclogger_t rpclogger_new(rpclogger_func_t callback, const char *prefix,
 		.maxdepth = maxdepth,
 	};
 	setbuf(res->f, NULL);
-	strcpy(res->buf, prefix);
+	strncpy(res->buf, prefix, prefixlen + 1);
 	return res;
 }
 

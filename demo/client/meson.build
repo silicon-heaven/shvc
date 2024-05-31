@@ -8,5 +8,3 @@ demo_client = executable(
   dependencies: demo_client_dependencies,
   install: true,
 )
-
-demo_internal_includes = include_directories('.')

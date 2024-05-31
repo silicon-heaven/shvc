@@ -8,5 +8,3 @@ shvctio = executable(
   dependencies: shvctio_dependencies,
   install: true,
 )
-
-shvctio_internal_includes = include_directories('.')

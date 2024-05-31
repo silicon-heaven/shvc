@@ -145,21 +145,11 @@ include:
   needs: ["devenv"]
   allow_failure: true
 
-.mesonlinter:
+clang-tidy:
   extends: .linter
+  needs: ["build"]
   script:
-    - nix develop --quiet -c meson setup build -Doptimization=plain
-    - nix develop --quiet -c meson compile -C build $COMPILE_ARG
-
-cppcheck:
-  extends: .mesonlinter
-  variables:
-    COMPILE_ARG: ./cppcheck
-
-flawfinder:
-  extends: .mesonlinter
-  variables:
-    COMPILE_ARG: ./flawfinder
+    - nix develop --quiet -c ninja -C build clang-tidy
 
 shellcheck:
   extends: .linter
@@ -181,13 +171,16 @@ statix:
 muon:
   extends: .style
   script:
-    - git ls-files '**/meson.build' meson_options.txt | nix develop --quiet -c xargs -n 1 muon fmt -c .muon_fmt.ini -i
+    - |
+      git ls-files '**/meson.build' meson_options.txt |
+        nix develop --quiet -c xargs muon fmt -c .muon_fmt.ini -i
     - git diff --exit-code
 
 clang-format:
   extends: .style
   script:
-    - git ls-files '**.[ch]' | xargs nix develop --quiet -c clang-format -i
+    - nix develop --quiet -c meson setup build
+    - nix develop --quiet -c ninja -C build clang-format
     - git diff --exit-code
 
 shell-format:

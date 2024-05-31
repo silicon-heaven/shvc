@@ -8,5 +8,3 @@ shvcsub = executable(
   dependencies: shvcsub_dependencies,
   install: true,
 )
-
-shvcsub_internal_includes = include_directories('.')
