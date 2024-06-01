@@ -19,8 +19,8 @@ static void sha1_password(const char *nonce, const char *password, char *res) {
 
 struct rpchandler_login {
 	const struct rpclogin_options *opts;
-	_Atomic bool logged;
-	_Atomic rpcmsg_error errnum;
+	volatile _Atomic bool logged;
+	volatile _Atomic rpcmsg_error errnum;
 	char *errmsg;
 	pthread_cond_t cond;
 	pthread_mutex_t condm;

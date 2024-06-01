@@ -8,6 +8,7 @@
 
 #include "shv/cp.h"
 #include <stdbool.h>
+#include <signal.h>
 #include <pthread.h>
 #include <stdarg.h>
 #include <shv/rpcclient.h>
@@ -227,7 +228,9 @@ bool rpchandler_next(rpchandler_t rpchandler) __attribute__((nonnull));
  *
  * @param rpchandler: RPC Handler instance.
  * @returns The maximal time during which idle doesn't have to be called (unless
- *   new message is received). It is in milliseconds.
+ *   new message is received). It is in milliseconds. Negative number can be
+ *   returned that signals error and should be handled same as `false` in @ref
+ *   rpchandler_next.
  */
 int rpchandler_idle(rpchandler_t rpchandler) __attribute__((nonnull));
 
@@ -238,13 +241,20 @@ int rpchandler_idle(rpchandler_t rpchandler) __attribute__((nonnull));
  * handlers.
  *
  * @param rpchandler: RPC Handler instance.
+ * @param halt: Pointer to the variable that can be set non-zero to halt
+ *   handler's loop on next iteration. You can pass `NULL` if you do not plan on
+ *   terminating loop this way.
  */
-void rpchandler_run(rpchandler_t rpchandler) __attribute__((nonnull));
+void rpchandler_run(rpchandler_t rpchandler, volatile sig_atomic_t *halt)
+	__attribute__((nonnull(1)));
 
 /*! Spawn thread that runs @ref rpchandler_run.
  *
  * It is common to run handler in a separate thread and perform work on primary
  * one. This simplifies this setup by spawning that thread for you.
+ *
+ * To terminate the thread you can use `pthread_cancel`. Note that it allows
+ * cancel only when message is not being handled.
  *
  * @param rpchandler: RPC Handler instance.
  * @param thread: Pointer to the variable where handle for the pthread is

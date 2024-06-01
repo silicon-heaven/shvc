@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <signal.h>
 #include <limits.h>
 #include <poll.h>
 #include <shv/rpcurl.h>
@@ -13,6 +14,11 @@
 
 static size_t logsiz = BUFSIZ > 128 ? BUFSIZ : 128;
 
+static volatile sig_atomic_t halt = false;
+
+static void sigint_handler(int status) {
+	halt = true;
+}
 
 int main(int argc, char **argv) {
 	struct conf conf;
@@ -50,10 +56,13 @@ int main(int argc, char **argv) {
 	};
 	rpchandler_t handler = rpchandler_new(client, stages, NULL);
 	assert(handler);
+	signal(SIGINT, sigint_handler);
+	signal(SIGHUP, sigint_handler);
+	signal(SIGTERM, sigint_handler);
 
-	// TODO terminate on failed login?
+	// TODO terminate on failed login
 
-	rpchandler_run(handler);
+	rpchandler_run(handler, &halt);
 	printf("Terminating due to: %s\n", strerror(rpcclient_errno(client)));
 
 	rpchandler_destroy(handler);

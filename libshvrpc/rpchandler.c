@@ -1,7 +1,9 @@
 #include <shv/rpchandler.h>
 #include <shv/rpchandler_impl.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <time.h>
+#include <signal.h>
 #include <poll.h>
 #include <semaphore.h>
 #include <limits.h>
@@ -38,7 +40,7 @@ struct rpchandler {
 	 * `send_priority` is `true`.
 	 */
 	pthread_mutex_t send_lock;
-	_Atomic bool send_priority;
+	volatile _Atomic bool send_priority;
 };
 
 struct msg_ctx {
@@ -280,35 +282,37 @@ int rpchandler_idle(rpchandler_t handler) {
 	return res;
 }
 
-void rpchandler_run(rpchandler_t handler) {
-	while (rpcclient_connected(handler->client)) {
-		int timeout = 1;
+void rpchandler_run(rpchandler_t handler, volatile sig_atomic_t *halt) {
+	while ((!halt || !*halt) && rpcclient_connected(handler->client)) {
+		// TODO attempt client reset when that is implemented
+		int timeout = 0;
 		struct pollfd pfd = {
 			.fd = rpcclient_pollfd(handler->client),
 			.events = POLLIN | POLLHUP,
 		};
-		while (true) {
+		while (timeout >= 0 && (!halt || !*halt)) {
 			int pr = poll(&pfd, 1, timeout);
-			if (pr == 0) { /* Timeout */
-				timeout = rpchandler_idle(handler);
-			} else if (pr == -1 || pfd.revents & POLLERR) {
-				abort(); // TODO
-			} else if (pfd.revents & (POLLIN | POLLHUP)) {
-				/* Even on POLLHUP we request so RPC Client actually detest the
-				 * disconnect not just us.
-				 */
-				if (!rpchandler_next(handler))
-					break;
+			int cancelstate;
+			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cancelstate);
+			if (pr != 0) {
 				timeout = 0;
-			}
+				if ((pr == -1 && errno != EINTR) || pfd.revents & POLLERR)
+					abort(); // TODO
+				/* Even on POLLHUP we request so RPC Client actually detest
+				 * the disconnect not just us.
+				 */
+				if (pfd.revents & (POLLIN | POLLHUP) && !rpchandler_next(handler))
+					timeout = -1;
+			} else
+				timeout = rpchandler_idle(handler);
+			pthread_setcancelstate(cancelstate, NULL);
 		}
-		// TODO attempt client reset when that is implemented
 	}
 }
 
 static void *thread_loop(void *_ctx) {
 	rpchandler_t handler = _ctx;
-	rpchandler_run(handler);
+	rpchandler_run(handler, NULL);
 	return NULL;
 }
 

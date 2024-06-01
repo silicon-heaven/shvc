@@ -52,6 +52,7 @@ V0.0 {
 		rpchandler_next;
 		rpchandler_run;
 		rpchandler_spawn_thread;
+		rpchandler_halt;
 		rpchandler_next_request_id;
 		_rpchandler_msg_new;
 		_rpchandler_msg_send;

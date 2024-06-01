@@ -182,7 +182,6 @@ int main(int argc, char **argv) {
 	free(ctx.output);
 
 cleanup:
-	// TODO rpcclient_disconnect(client); instead of cancel
 	pthread_cancel(handler_thread);
 	pthread_join(handler_thread, NULL);
 	rpchandler_destroy(handler);

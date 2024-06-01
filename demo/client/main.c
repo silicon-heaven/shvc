@@ -231,7 +231,6 @@ int main(int argc, char **argv) {
 	exit_code = 0;
 
 cleanup:
-	// TODO rpcclient_disconnect(client); instead of cancel
 	pthread_cancel(rpchandler_thread);
 	pthread_join(rpchandler_thread, NULL);
 	rpchandler_destroy(handler);
