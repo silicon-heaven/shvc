@@ -186,8 +186,8 @@ bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
  * response.
  *
  * The used functions in this order: @ref rpchandler_msg_new, @ref
- * rpchandler_next_request_id, @ref rpcmsg_pack_request_void, @ref
- * rpcresponse_expect, and @ref rpchandler_msg_send.
+ * rpcmsg_request_id, @ref rpcmsg_pack_request_void, @ref rpcresponse_expect,
+ * and @ref rpchandler_msg_send.
  *
  * @param handler: The RPC Handler responses object is registered in.
  * @param responses: The RPC Responses Handler object to be used.

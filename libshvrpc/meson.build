@@ -16,6 +16,7 @@ libshvrpc_sources = [
     'rpcurl.c',
     'strset.c',
   ),
+  gperf.process('rpcdir_key.gperf'),
   gperf.process('rpcmsg_access.gperf'),
   gperf.process('rpcurl_query.gperf'),
   gperf.process('rpcurl_scheme.gperf'),

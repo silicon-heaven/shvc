@@ -516,8 +516,9 @@ bool cp_unpack_memndupog(cp_unpack_t unpack, struct cpitem *item, size_t siz,
 /*! Helper macro for unpacking maps.
  *
  * This provides loop that unpacks and validates key. The key value is copied
- * to temporally buffer named `KEY` of `SIZ + 1` size. The additional byte is
- * reserved for null byte and thus `SIZ` is only a maximal length of the string.
+ * to temporally buffer named `KEY` of `SIZ + 2` size. The additional byte is
+ * reserved for additional character to recognize longer strings and null byte
+ * and thus `SIZ` is only a maximal length of the string.
  *
  * Make sure that you unpack value to not desynchronize the key value pairs
  * order. You can skip or drop unneeded items (@ref cp_unpack_skip).
@@ -526,11 +527,14 @@ bool cp_unpack_memndupog(cp_unpack_t unpack, struct cpitem *item, size_t siz,
  *
  * @param UNPACK: Generic unpacker.
  * @param ITEM: Pointer to the @ref cpitem that was used to unpack last item.
+ * @param KEY: Name of the variable for the temporally string buffer. It is
+ *   defined in the loop.
+ * @param SIZ: Maximal length of the key that is expected.
  */
 #define for_cp_unpack_map(UNPACK, ITEM, KEY, SIZ) \
-	for (char(KEY)[SIZ + 1]; ({ \
+	for (char(KEY)[SIZ + 2]; ({ \
 			 (ITEM)->chr = KEY; \
-			 (ITEM)->bufsiz = SIZ; \
+			 (ITEM)->bufsiz = SIZ + 1; \
 			 cp_unpack((UNPACK), (ITEM)); \
 			 (ITEM)->bufsiz = 0; \
 			 if ((ITEM)->type == CPITEM_STRING) \

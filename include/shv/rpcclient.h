@@ -56,14 +56,10 @@ struct rpcclient {
 	/*! Pack function. Please use @ref rpcclient_pack instead. */
 	cp_pack_func_t pack;
 
-	/*! Loggers used to log communication happenning with this client.
-	 *
-	 * You can change logger while client is handling some message but you must
-	 * ensure that previous logger stays valid for some time so the running
-	 * function can finish with the old log. Thew new log will take effect only
-	 * with next message processed.
-	 */
-	rpclogger_t logger_in, logger_out;
+	/*! Loggers used to log messages received by this client. */
+	rpclogger_t logger_in;
+	/*! Loggers used to log message sent by this client. */
+	rpclogger_t logger_out;
 };
 
 /*! Handle used to manage SHV RPC client. */

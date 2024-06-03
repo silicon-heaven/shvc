@@ -25,10 +25,12 @@ typedef void (*rpclogger_func_t)(const char *line);
  *
  * @param callback: Function called when line should be outputed.
  * @param prefix: The prefix to be added before every line.
+ * @param bufsiz: Size of the buffer for this logger.
  * @param maxdepth: The output is in CPON format and this allows you to limit
  *   the maximum depth of containers you want to see in the logs. By specifying
  *   low enough number the logger can skip unnecessary data and still show you
  *   enough info about the message so you can recognize it.
+ * @returns New logger handle or `NULL` in case `0` was passed to `maxdepth`.
  */
 rpclogger_t rpclogger_new(rpclogger_func_t callback, const char *prefix,
 	size_t bufsiz, unsigned maxdepth) __attribute__((nonnull(1), malloc));
@@ -44,9 +46,6 @@ void rpclogger_destroy(rpclogger_t logger);
  *
  * This is API intended to be called by RPC Client implementations. It is not
  * desirable to call this outside of that context.
- *
- * Do not forget to use @ref rpclogger_log_lock before you start calling this
- * fuinction.
  *
  * For consistency you need to log every single item you unpack otherwise log
  * might be invalid.

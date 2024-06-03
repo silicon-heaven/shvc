@@ -1,0 +1,32 @@
+%pic
+%enum
+%readonly-tables
+%switch=1
+%language=ANSI-C
+
+%define hash-function-name gperf_rpcdir_key_hash
+%define lookup-function-name gperf_rpcdir_key
+%define string-pool-name gperf_rpcdir_key_string
+%define constants-prefix GPERF_RPCDIR_KEY_
+%define slot-name offset
+
+%struct-type
+%{
+struct gperf_rpcdir_key_match {
+	int offset;
+	enum rpcdir_keys key;
+};
+%}
+
+struct gperf_rpcdir_key_match;
+
+%%
+name, RPCDIR_KEY_NAME
+flags, RPCDIR_KEY_FLAGS
+param, RPCDIR_KEY_PARAM
+result, RPCDIR_KEY_RESULT
+access, RPCDIR_KEY_ACCESS
+accessGrant, RPCDIR_KEY_ACCESS
+signals, RPCDIR_KEY_SIGNALS
+tags, RPCDIR_KEY_EXTRA
+%%

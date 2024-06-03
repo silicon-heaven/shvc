@@ -37,7 +37,7 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 			case 1: /* hello */
 				// TODO has param check
 				if (cp_unpack_type(ctx->unpack, ctx->item) == CPITEM_MAP) {
-					for_cp_unpack_map(ctx->unpack, ctx->item, key, 6) {
+					for_cp_unpack_map(ctx->unpack, ctx->item, key, 5) {
 						if (!strcmp("nonce", key)) {
 							cp_unpack_strncpy(ctx->unpack, ctx->item,
 								handler_login->nonce, 32);
