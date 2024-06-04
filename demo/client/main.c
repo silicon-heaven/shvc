@@ -30,7 +30,7 @@ static int rpccall_app_name(enum rpccall_stage stage, cp_pack_t pack,
 	char **name = ctx;
 	switch (stage) {
 		case CALL_S_PACK:
-			rpcmsg_pack_request_void(pack, ".app", "name", request_id);
+			rpcmsg_pack_request_void(pack, ".app", "name", NULL, request_id);
 			return 0;
 		case CALL_S_RESULT:
 			free(*name);
@@ -55,7 +55,7 @@ static int rpccall_has_device(enum rpccall_stage stage, cp_pack_t pack,
 	bool *has_device = ctx;
 	switch (stage) {
 		case CALL_S_PACK:
-			rpcmsg_pack_request(pack, "test", "ls", request_id);
+			rpcmsg_pack_request(pack, "test", "ls", NULL, request_id);
 			cp_pack_str(pack, "device");
 			cp_pack_container_end(pack);
 			return 0;
@@ -78,7 +78,7 @@ static int rpccall_track_get(enum rpccall_stage stage, cp_pack_t pack,
 	switch (stage) {
 		case CALL_S_PACK:
 			rpcmsg_pack_request_void(
-				pack, "test/device/track/" TRACK_ID, "get", request_id);
+				pack, "test/device/track/" TRACK_ID, "get", NULL, request_id);
 			return 0;
 		case CALL_S_RESULT:
 			track->len = 0;
@@ -113,7 +113,7 @@ static int rpccall_track_set(enum rpccall_stage stage, cp_pack_t pack,
 	switch (stage) {
 		case CALL_S_PACK:
 			rpcmsg_pack_request(
-				pack, "test/device/track/" TRACK_ID, "set", request_id);
+				pack, "test/device/track/" TRACK_ID, "set", NULL, request_id);
 			cp_pack_list_begin(pack);
 			for (size_t i = 0; i < track->len; i++)
 				cp_pack_int(pack, track->buf[i]);
@@ -178,7 +178,7 @@ int main(int argc, char **argv) {
 	rpchandler_spawn_thread(handler, &rpchandler_thread, NULL);
 
 	/* Wait for login to be performed */
-	rpcmsg_error login_err;
+	rpcerrno_t login_err;
 	const char *login_errmsg;
 	if (!rpchandler_login_wait(login, &login_err, &login_errmsg, NULL)) {
 		exit_code = 3;

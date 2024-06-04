@@ -38,8 +38,8 @@ async def fixture_demo_device(demo_device_exec, broker, url):
             "test/device",
             "dir",
             [
-                {1: "dir", 2: 0, 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 2: 0, 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "lsmod"}},
+                {1: "dir", 3: "idir", 4: "odir", 5: 1},
+                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
             ],
         ),
         ("test/device", "ls", [".app", "track"]),
@@ -47,8 +47,8 @@ async def fixture_demo_device(demo_device_exec, broker, url):
             "test/device/.app",
             "dir",
             [
-                {1: "dir", 2: 0, 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 2: 0, 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "lsmod"}},
+                {1: "dir", 3: "idir", 4: "odir", 5: 1},
+                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
                 {1: "shvVersionMajor", 2: 2, 4: "Int", 5: 1},
                 {1: "shvVersionMinor", 2: 2, 4: "Int", 5: 1},
                 {1: "name", 2: 2, 4: "String", 5: 1},
@@ -64,8 +64,8 @@ async def fixture_demo_device(demo_device_exec, broker, url):
             "test/device/track",
             "dir",
             [
-                {1: "dir", 2: 0, 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 2: 0, 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "lsmod"}},
+                {1: "dir", 3: "idir", 4: "odir", 5: 1},
+                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
             ],
         ),
         ("test/device/track", "ls", [str(i) for i in range(1, 10)]),
@@ -75,8 +75,8 @@ async def fixture_demo_device(demo_device_exec, broker, url):
                 f"test/device/track/{i}",
                 "dir",
                 [
-                    {1: "dir", 2: 0, 3: "idir", 4: "odir", 5: 1},
-                    {1: "ls", 2: 0, 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "lsmod"}},
+                    {1: "dir", 3: "idir", 4: "odir", 5: 1},
+                    {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
                     {1: "get", 2: 2, 4: "[Int]", 5: 8, 6: {"chng": None}},
                     {1: "set", 2: 4, 3: "[Int]", 5: 16},
                 ],
@@ -107,8 +107,11 @@ async def test_set(demo_device, client, i):
     client.on_change(path, callback)
     await client.subscribe(shv.RpcSubscription(paths=path))
     await client.prop_set(path, [32, 42, 52])
+    logger.error("Before signal for change")
     assert await signal == [path, [32, 42, 52]]
+    logger.error("Waiting for change")
     client.on_change(path, None)
+    logger.error("Change done")
     await client.prop_get(path) == [32, 42, 52]
 
 

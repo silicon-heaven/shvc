@@ -2,7 +2,6 @@
 #define PACKSTREAM_H
 #include <stdlib.h>
 #include <stdio.h>
-#include <stdint.h>
 #include <shv/cp_pack.h>
 
 

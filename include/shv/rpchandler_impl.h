@@ -152,7 +152,7 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_send_response_void(
  * @returns Value returned from @ref rpchandler_msg_send.
  */
 __attribute__((nonnull)) static inline bool rpchandler_msg_send_error(
-	struct rpchandler_msg *ctx, rpcmsg_error error, const char *msg) {
+	struct rpchandler_msg *ctx, rpcerrno_t error, const char *msg) {
 	cp_pack_t pack = rpchandler_msg_new(ctx);
 	if (pack == NULL)
 		return false;
@@ -170,7 +170,7 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_send_error(
  * @returns Value returned from @ref rpchandler_msg_send.
  */
 __attribute__((nonnull)) static inline bool rpchandler_msg_send_vferror(
-	struct rpchandler_msg *ctx, rpcmsg_error error, const char *fmt, va_list args) {
+	struct rpchandler_msg *ctx, rpcerrno_t error, const char *fmt, va_list args) {
 	cp_pack_t pack = rpchandler_msg_new(ctx);
 	if (pack == NULL)
 		return false;
@@ -187,7 +187,7 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_send_vferror(
  * @returns Value returned from @ref rpchandler_msg_send.
  */
 __attribute__((nonnull)) static inline bool rpchandler_msg_send_ferror(
-	struct rpchandler_msg *ctx, rpcmsg_error error, const char *fmt, ...) {
+	struct rpchandler_msg *ctx, rpcerrno_t error, const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
 	bool res = rpchandler_msg_send_vferror(ctx, error, fmt, args);

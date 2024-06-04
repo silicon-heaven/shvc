@@ -30,7 +30,7 @@ int response_callback(enum rpccall_stage stage, cp_pack_t pack, int request_id,
 		case CALL_S_PACK: {
 			if (c->fparam) {
 				rpcmsg_pack_request(
-					pack, c->conf->path, c->conf->method, request_id);
+					pack, c->conf->path, c->conf->method, NULL, request_id);
 				fseek(c->fparam, 0, SEEK_SET);
 				struct cp_unpack_cpon cp_unpack_cpon;
 				cp_unpack_t cpon_unpack =
@@ -45,7 +45,7 @@ int response_callback(enum rpccall_stage stage, cp_pack_t pack, int request_id,
 				cp_pack_container_end(pack);
 			} else
 				rpcmsg_pack_request_void(
-					pack, c->conf->path, c->conf->method, request_id);
+					pack, c->conf->path, c->conf->method, NULL, request_id);
 			break;
 		}
 		case CALL_S_RESULT: {
@@ -65,8 +65,8 @@ int response_callback(enum rpccall_stage stage, cp_pack_t pack, int request_id,
 			c->output = NULL;
 			return 0;
 		case CALL_S_ERROR: {
-			rpcmsg_error err = RPCMSG_E_UNKNOWN;
-			rpcmsg_unpack_error(unpack, item, &err, &c->output);
+			rpcerrno_t err = RPCMSG_E_UNKNOWN;
+			rpcerror_unpack(unpack, item, &err, &c->output);
 			c->error = err;
 			break;
 		}
@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
 
 	int ec = 0;
 
-	rpcmsg_error login_err;
+	rpcerrno_t login_err;
 	const char *login_errmsg;
 	if (!rpchandler_login_wait(login, &login_err, &login_errmsg, NULL)) {
 		ec = 3;

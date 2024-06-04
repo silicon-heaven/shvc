@@ -135,12 +135,12 @@ bool rpcresponse_waitfor(rpcresponse_t response, int timeout) {
 
 rpcresponse_t rpcresponse_send_request_void(rpchandler_t handler,
 	rpchandler_responses_t responses, const char *path, const char *method,
-	rpcresponse_callback_t func, void *ctx) {
+	const char *uid, rpcresponse_callback_t func, void *ctx) {
 	cp_pack_t pack = rpchandler_msg_new(handler);
 	if (pack == NULL)
 		return NULL;
 	int request_id = rpcmsg_request_id();
-	if (!rpcmsg_pack_request_void(pack, path, method, request_id)) {
+	if (!rpcmsg_pack_request_void(pack, path, method, uid, request_id)) {
 		rpchandler_msg_drop(handler);
 		return NULL;
 	}

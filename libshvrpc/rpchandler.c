@@ -254,16 +254,15 @@ bool rpchandler_next(struct rpchandler *handler) {
 				handle_dir(&ctx);
 			else
 				handle_msg(&ctx);
+			clock_gettime(CLOCK_MONOTONIC, &handler->last_receive);
 		}
-
 		obstack_free(&handler->obstack, obs_base);
-		clock_gettime(CLOCK_MONOTONIC, &handler->last_receive);
 	}
 	pthread_mutex_unlock(&handler->lock);
 	return rpcclient_connected(handler->client);
 }
 
-int rpchandler_idle(rpchandler_t handler) {
+int rpchandler_idling(rpchandler_t handler) {
 	pthread_mutex_lock(&handler->lock);
 	struct idle_ctx ctx = {
 		.ctx.last_send = handler->last_send,
@@ -304,7 +303,7 @@ void rpchandler_run(rpchandler_t handler, volatile sig_atomic_t *halt) {
 				if (pfd.revents & (POLLIN | POLLHUP) && !rpchandler_next(handler))
 					timeout = -1;
 			} else
-				timeout = rpchandler_idle(handler);
+				timeout = rpchandler_idling(handler);
 			pthread_setcancelstate(cancelstate, NULL);
 		}
 	}

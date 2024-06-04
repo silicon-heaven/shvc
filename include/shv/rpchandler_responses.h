@@ -151,6 +151,8 @@ bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
  * @param responses: The @ref rpchandler_responses_t object.
  * @param path: Null terminated string with SHV path.
  * @param method: Null terminated script with method name.
+ * @param uid: User's  ID to be added to the request. It can be `NULL` and in
+ *   such case User ID won't be part of the message.
  * @param func: The callback passed to @ref rpcresponse_expect.
  * @param ctx: The pointer passed to the callback.
  * @param response: The variable name where @ref rpcresponse_t object will be
@@ -158,7 +160,7 @@ bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
  */
 // clang-format on
 #define rpcresponse_send_request( \
-	handler, responses, path, method, func, ctx, response) \
+	handler, responses, path, method, uid, func, ctx, response) \
 	for (int request_id = rpchandler_next_request_id(handler), __ = 1; __; ({ \
 			 if (__) { \
 				 rpchandler_msg_drop(handler); \
@@ -167,7 +169,7 @@ bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
 			 } \
 		 })) \
 		for (cp_pack_t packer = rpchandler_msg_new_request( \
-				 (handler), (path), (method), request_id); \
+				 (handler), (path), (method), (uid), request_id); \
 			 packer; ({ \
 				 cp_pack_container_end(packer); \
 				 packer = NULL; \
@@ -193,6 +195,8 @@ bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
  * @param responses: The RPC Responses Handler object to be used.
  * @param path: The SHV path to the node with method to be called.
  * @param method: The method name to be called.
+ * @param uid: User's  ID to be added to the request. It can be `NULL` and in
+ *   such case User ID won't be part of the message.
  * @param func: The callback passed to @ref rpcresponse_expect.
  * @param ctx: The pointer passed to the callback.
  * @returns Object referencing response to this request or `NULL` in case
@@ -200,7 +204,8 @@ bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
  */
 rpcresponse_t rpcresponse_send_request_void(rpchandler_t handler,
 	rpchandler_responses_t responses, const char *path, const char *method,
-	rpcresponse_callback_t func, void *ctx) __attribute__((nonnull));
+	const char *uid, rpcresponse_callback_t func, void *ctx)
+	__attribute__((nonnull));
 
 
 #endif

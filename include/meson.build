@@ -8,11 +8,13 @@ libshvcp_headers = files(
   'shv/cp_unpack.h',
 )
 libshvrpc_headers = files(
+  'shv/rpcaccess.h',
   'shv/rpcclient.h',
   'shv/rpcdir.h',
-  'shv/rpcdir.h',
+  'shv/rpcerror.h',
   'shv/rpchandler.h',
   'shv/rpchandler_app.h',
+  'shv/rpchandler_impl.h',
   'shv/rpchandler_login.h',
   'shv/rpclogger.h',
   'shv/rpcmsg.h',

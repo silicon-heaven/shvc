@@ -208,8 +208,8 @@ void rpchandler_change_stages(rpchandler_t handler,
  *
  * This blocks until the next message is received and fully handled. In general
  * you should not use this directly because you must in between also call @ref
- * rpchandler_idle. These two steps are provided separatelly to allow handler to
- * be included in poll based even loops.
+ * rpchandler_idling. These two steps are provided separatelly to allow handler
+ * to be included in poll based even loops.
  *
  * @param rpchandler: RPC Handler instance.
  * @returns `true` if message handled (even by dropping) and `false` if
@@ -232,7 +232,7 @@ bool rpchandler_next(rpchandler_t rpchandler) __attribute__((nonnull));
  *   returned that signals error and should be handled same as `false` in @ref
  *   rpchandler_next.
  */
-int rpchandler_idle(rpchandler_t rpchandler) __attribute__((nonnull));
+int rpchandler_idling(rpchandler_t rpchandler) __attribute__((nonnull));
 
 /*! Run the RPC Handler loop.
  *

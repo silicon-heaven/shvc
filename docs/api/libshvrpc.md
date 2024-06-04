@@ -11,5 +11,7 @@ rpcserver
 rpclogger
 rpcurl
 rpcmsg
+rpcerror
+rpcaccess
 rpchandler
 ```

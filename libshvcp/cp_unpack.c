@@ -69,33 +69,9 @@ void cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item) {
 
 void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth) {
 	cp_unpack_drop1(unpack, item);
+	item->buf = NULL;
 	item->bufsiz = SIZE_MAX;
-	do {
-		cp_unpack(unpack, item);
-		switch (item->type) {
-			case CPITEM_BLOB:
-			case CPITEM_STRING:
-				if (item->as.Blob.flags & CPBI_F_FIRST)
-					depth++;
-				if (item->as.Blob.flags & CPBI_F_LAST)
-					depth--;
-				break;
-			case CPITEM_LIST:
-			case CPITEM_MAP:
-			case CPITEM_IMAP:
-			case CPITEM_META:
-				depth++;
-				break;
-			case CPITEM_CONTAINER_END:
-				depth--;
-				break;
-			case CPITEM_INVALID:
-				item->bufsiz = 0;
-				return;
-			default:
-				break;
-		}
-	} while (depth);
+	for_cp_unpack_item(unpack, item, depth);
 	item->bufsiz = 0;
 }
 

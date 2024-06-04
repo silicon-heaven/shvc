@@ -70,9 +70,8 @@ bool rpchandler_login_status(rpchandler_login_t rpchandler_login)
  * @returns `true` if login was performed and `false` if wait timed out or
  *   failed. You can inspect `errnum` to identify why.
  */
-bool rpchandler_login_wait(rpchandler_login_t rpchandler_login,
-	rpcmsg_error *errnum, const char **errmsg, struct timespec *abstime)
-	__attribute__((nonnull(1)));
+bool rpchandler_login_wait(rpchandler_login_t rpchandler_login, rpcerrno_t *errnum,
+	const char **errmsg, struct timespec *abstime) __attribute__((nonnull(1)));
 
 // TODO disable rpchandler_msg_new when not signed in
 

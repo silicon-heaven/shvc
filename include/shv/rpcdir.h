@@ -72,7 +72,7 @@ struct rpcdir {
 	/*! Bitwise combination of the `RPCDIR_F_*` flags. */
 	int flags;
 	/*! Minimal access level needed for this method. */
-	rpcmsg_access access;
+	rpcaccess_t access;
 	/*! Pair of the signal's name and its parameter type description. */
 	const struct rpcdirsig {
 		/*! Signal name */
@@ -84,9 +84,11 @@ struct rpcdir {
 	}
 		/*! Signals associated with this method.
 		 *
-		 * This must be an array terminated with field `name == NULL`.
+		 * This must be an array of size @ref rpcdir.signals_cnt.
 		 */
 		*signals;
+	/*! Size of the @ref rpcdir.signals array. */
+	size_t signals_cnt;
 };
 
 /*! Method description for the standard `ls` and `dir` methods. */

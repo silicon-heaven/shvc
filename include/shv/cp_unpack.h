@@ -224,7 +224,7 @@ void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth)
 		cpitem_extract_uint(___item, DEST); \
 	})
 
-/*! Unpack a single by from string.
+/*! Unpack a single byte from string.
  *
  * @param unpack: Unpack handle.
  * @param item: Item used for the `cp_unpack` calls and was used in the last
@@ -474,6 +474,54 @@ void cp_unpack_memndupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
  */
 bool cp_unpack_memndupog(cp_unpack_t unpack, struct cpitem *item, size_t siz,
 	struct obstack *obstack) __attribute__((nonnull));
+
+/*! Helper macro that iterates over complete items.
+ *
+ * This is same as @ref cp_unpack_finish expect that item is always available to
+ * you.
+ *
+ * You must set @ref cpitem.bufsiz to also immediatelly copy or drop strings and
+ * blobs, or you must extract them on your own. The unpacking will get stuck on
+ * strings and blobs if you do not do this!
+ *
+ * @param UNPACK: Generic unpacker.
+ * @param ITEM: Pointer to the @ref cpitem that was used to unpack last item.
+ * @param DEPTH: How many containers we should got from the currently unpacked
+ * one.
+ */
+#define for_cp_unpack_item(UNPACK, ITEM, DEPTH) \
+	for (int __depth = ({ \
+			 cp_unpack((UNPACK), (ITEM)); \
+			 DEPTH; \
+		 }); \
+		 __depth >= 0 && (ITEM)->type != CPITEM_INVALID; ({ \
+			 switch ((ITEM)->type) { \
+				 case CPITEM_BLOB: \
+				 case CPITEM_STRING: \
+					 if (item->as.Blob.flags & CPBI_F_FIRST) \
+						 __depth++; \
+					 if (item->as.Blob.flags & CPBI_F_LAST) \
+						 __depth--; \
+					 break; \
+				 case CPITEM_LIST: \
+				 case CPITEM_MAP: \
+				 case CPITEM_IMAP: \
+				 case CPITEM_META: \
+					 __depth++; \
+					 break; \
+				 case CPITEM_CONTAINER_END: \
+					 __depth--; \
+					 break; \
+				 case CPITEM_INVALID: \
+					 __depth = -1; \
+				 default: \
+					 break; \
+			 } \
+			 if (__depth > 0) \
+				 cp_unpack((UNPACK), (ITEM)); \
+			 else \
+				 __depth = -1; \
+		 }))
 
 /*! Helper macro for unpacking lists.
  *

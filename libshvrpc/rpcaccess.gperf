@@ -1,0 +1,36 @@
+%compare-lengths
+%compare-strncmp
+
+%pic
+%enum
+%readonly-tables
+%switch=1
+%language=ANSI-C
+
+%define hash-function-name gperf_rpcaccess_hash
+%define lookup-function-name gperf_rpcaccess
+%define string-pool-name gperf_rpcaccess_string
+%define constants-prefix GPERF_RPCMSG_ACCESS_
+%define slot-name offset
+
+%struct-type
+%{
+struct gperf_rpcaccess_match {
+    int offset;
+	rpcaccess_t acc;
+};
+%}
+
+struct gperf_rpcaccess_match;
+
+%%
+bws, RPCACCESS_BROWSE
+rd, RPCACCESS_READ
+wr, RPCACCESS_WRITE
+cmd, RPCACCESS_COMMAND
+cfg, RPCACCESS_CONFIG
+srv, RPCACCESS_SERVICE
+ssrv, RPCACCESS_SUPER_SERVICE
+dev, RPCACCESS_DEVEL
+su, RPCACCESS_ADMIN
+%%

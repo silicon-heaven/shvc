@@ -315,9 +315,9 @@ static inline bool cp_pack_vfstr(cp_pack_t pack, const char *fmt, va_list args) 
 	va_copy(cargs, args);
 	int siz = vsnprintf(NULL, 0, fmt, cargs);
 	va_end(cargs);
-	char str[siz];
-	assert(vsnprintf(str, siz, fmt, args) == siz);
-	return cp_pack_string(pack, str, siz - 1);
+	char str[siz + 1];
+	assert(vsnprintf(str, siz + 1, fmt, args) == siz);
+	return cp_pack_string(pack, str, siz);
 }
 
 /*! Pack *String* generated from format string to the generic packer.

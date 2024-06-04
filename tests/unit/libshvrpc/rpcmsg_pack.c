@@ -8,36 +8,51 @@
 TEST_CASE(all, setup_packstream_pack_cpon, teardown_packstream_pack) {}
 
 TEST(all, request) {
-	rpcmsg_pack_request(packstream_pack, ".app", "echo", 42);
+	rpcmsg_pack_request(packstream_pack, ".app", "echo", NULL, 42);
 	ck_assert_packstr("<1:1,8:42,9:\".app\",10:\"echo\">i{1");
 }
 END_TEST
 
 TEST(all, request_void) {
-	rpcmsg_pack_request_void(packstream_pack, ".broker/app", "ping", 42);
-	ck_assert_packstr("<1:1,8:42,9:\".broker/app\",10:\"ping\">i{}");
+	rpcmsg_pack_request_void(packstream_pack, ".broker/app", "ping", "fanda", 42);
+	ck_assert_packstr("<1:1,8:42,9:\".broker/app\",10:\"ping\",16:\"fanda\">i{}");
 }
 END_TEST
 
 TEST(all, signal) {
-	rpcmsg_pack_signal(packstream_pack, "value", "qchng");
+	rpcmsg_pack_signal(
+		packstream_pack, "value", "get", "qchng", NULL, RPCACCESS_READ);
 	ck_assert_packstr("<1:1,9:\"value\",10:\"qchng\">i{1");
 }
 END_TEST
 
-TEST(all, chng) {
-	rpcmsg_pack_chng(packstream_pack, "value");
-	ck_assert_packstr("<1:1,9:\"value\",10:\"chng\">i{1");
+TEST(all, signal_void) {
+	rpcmsg_pack_signal_void(
+		packstream_pack, "node", "version", "chng", "foo", RPCACCESS_COMMAND);
+	ck_assert_packstr(
+		"<1:1,9:\"node\",10:\"chng\",19:\"version\",16:\"foo\",17:24>i{}");
 }
 END_TEST
 
 TEST(all, resp) {
 	struct rpcmsg_meta meta = {
 		.request_id = 42,
-		.cids = {.ptr = (void *)(const uint8_t[]){0x88, 0x40, 0x43, 0xff}, .siz = 4},
+		.cids = (long long[]){0, 3},
+		.cids_cnt = 2,
 	};
 	rpcmsg_pack_response(packstream_pack, &meta);
 	ck_assert_packstr("<1:1,8:42,11:[0,3]>i{2");
+}
+END_TEST
+
+TEST(all, resp_void) {
+	struct rpcmsg_meta meta = {
+		.request_id = 42,
+		.cids = (long long[]){3},
+		.cids_cnt = 1,
+	};
+	rpcmsg_pack_response_void(packstream_pack, &meta);
+	ck_assert_packstr("<1:1,8:42,11:3>i{}");
 }
 END_TEST
 

@@ -26,10 +26,10 @@ async def test_param(shvc_exec, url, broker):
         *shvc_exec, "-d", "-u", str(url), ".broker/currentClient", "subscribe", "{}"
     )
     assert stdout == [b"true", b""]
-    assert stderr[0] == b'=> <1:1,8:1,10:"hello">i{}'
+    assert stderr[0] == b'=> <1:1,8:1,9:"",10:"hello">i{}'
     # Note we skip the nonce message line because that is not predictable
     assert stderr[2:] == [
-        b'=> <1:1,8:2,10:"login">i{1:{"login":{"password":"test","user":"test","ty'
+        b'=> <1:1,8:2,9:"",10:"login">i{1:{"login":{"password":"test","user":"test","ty'
         b'pe":"PLAIN"}}}',
         b"<= <8:2>i{2...",
         b'=> <1:1,8:4,9:".broker/currentClient",10:"subscribe">i{1:{}}',
@@ -56,7 +56,7 @@ async def test_param_stdin(shvc_exec, url, broker):
 @pytest.mark.parametrize(
     "path,method,error,exit_code",
     (
-        ("test", "ls", 'No such node: test', 2),
+        ("test", "ls", "No such node: test", 2),
         (
             ".app",
             "invalid",

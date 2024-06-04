@@ -35,15 +35,16 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 				.name = "get",
 				.result = "[Int]",
 				.flags = RPCDIR_F_GETTER,
-				.access = RPCMSG_ACC_READ,
-				.signals = (const struct rpcdirsig[]){{.name = "chng"}, {}},
+				.access = RPCACCESS_READ,
+				.signals = (const struct rpcdirsig[]){{.name = "chng"}},
+				.signals_cnt = 1,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "set",
 				.param = "[Int]",
 				.flags = RPCDIR_F_SETTER,
-				.access = RPCMSG_ACC_WRITE,
+				.access = RPCACCESS_WRITE,
 			});
 	}
 }
@@ -105,7 +106,8 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 
 			if (value_changed) {
 				cp_pack_t pack = rpchandler_msg_new(ctx);
-				rpcmsg_pack_signal(pack, ctx->meta.path, "chng");
+				rpcmsg_pack_signal(
+					pack, ctx->meta.path, "get", "chng", NULL, RPCACCESS_READ);
 				cp_pack_list_begin(pack);
 				for (size_t i = 0; i < cnt; i++)
 					cp_pack_int(pack, res[i]);

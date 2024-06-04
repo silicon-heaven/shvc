@@ -51,14 +51,32 @@ void rpclogger_destroy(rpclogger_t logger);
  * might be invalid.
  *
  * @param logger: Logger handle.
- * @param item: RPC item to be logged.
+ * @param item: RPC item to be logged*str != '\0'
  */
 void rpclogger_log_item(rpclogger_t logger, const struct cpitem *item)
 	__attribute__((nonnull));
 
+/*! Identification of the message end type.
+ *
+ * This controls hinting at the end of the line to identify if this message.
+ */
 enum rpclogger_end_type {
+	/*! This is standard message end. The message was correctly received or
+	 * sent.
+	 */
 	RPCLOGGER_ET_VALID,
+	/*! This informs logger that messages was identified as invalid. This can be
+	 * due to transmission error (only for receive) or because message sending
+	 * was aborted.
+	 *
+	 * Some client implementations might not even send a byte until message gets
+	 * confirmed for sending but that is not know to the logger and is still
+	 * logged as invalid message.
+	 */
 	RPCLOGGER_ET_INVALID,
+	/*! This is used in case the message state is unknown. We just don't know if
+	 * the message was valid or not.
+	 */
 	RPCLOGGER_ET_UNKNOWN,
 };
 

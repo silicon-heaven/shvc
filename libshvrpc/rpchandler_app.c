@@ -21,28 +21,28 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 				.name = "shvVersionMajor",
 				.result = "Int",
 				.flags = RPCDIR_F_GETTER,
-				.access = RPCMSG_ACC_BROWSE,
+				.access = RPCACCESS_BROWSE,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "shvVersionMinor",
 				.result = "Int",
 				.flags = RPCDIR_F_GETTER,
-				.access = RPCMSG_ACC_BROWSE,
+				.access = RPCACCESS_BROWSE,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "name",
 				.result = "String",
 				.flags = RPCDIR_F_GETTER,
-				.access = RPCMSG_ACC_BROWSE,
+				.access = RPCACCESS_BROWSE,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "version",
 				.result = "String",
 				.flags = RPCDIR_F_GETTER,
-				.access = RPCMSG_ACC_BROWSE,
+				.access = RPCACCESS_BROWSE,
 			});
 	}
 }

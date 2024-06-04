@@ -1,24 +1,31 @@
 V0.0 {
 	global:
 		# shv/rpcmsg.h
+		rpcmsg_meta_limits_default;
+		rpcmsg_head_unpack;
 		rpcmsg_request_id;
 		rpcmsg_pack_request;
 		rpcmsg_pack_request_void;
 		rpcmsg_pack_signal;
-		rpcmsg_access_str;
-		rpcmsg_access_extract;
-		rpcmsg_access_unpack;
-		rpcmsg_head_unpack;
+		rpcmsg_pack_signal_void;
 		rpcmsg_pack_response;
 		rpcmsg_pack_response_void;
 		rpcmsg_pack_error;
 		rpcmsg_pack_ferror;
 		rpcmsg_pack_vferror;
-		rpcmsg_unpack_error;
+
+		# shv/rpcaccess.h
+		rpcaccess_granted_str;
+		rpcaccess_granted_extract;
+
+		# shv/rpcerror.h
+		rpcerror_unpack;
 
 		# shv/rpcdir.h
 		rpcdir_pack;
 		rpcdir_unpack;
+		rpcdir_ls;
+		rpcdir_dir;
 
 		# shv/rpcclient.h
 		rpcclient_connect;
@@ -50,6 +57,7 @@ V0.0 {
 		rpchandler_destroy;
 		rpchandler_change_stages;
 		rpchandler_next;
+		rpchandler_idling;
 		rpchandler_run;
 		rpchandler_spawn_thread;
 		rpchandler_halt;

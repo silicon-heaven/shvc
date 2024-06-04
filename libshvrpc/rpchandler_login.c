@@ -20,7 +20,7 @@ static void sha1_password(const char *nonce, const char *password, char *res) {
 struct rpchandler_login {
 	const struct rpclogin_options *opts;
 	volatile _Atomic bool logged;
-	volatile _Atomic rpcmsg_error errnum;
+	volatile _Atomic rpcerrno_t errnum;
 	char *errmsg;
 	pthread_cond_t cond;
 	pthread_mutex_t condm;
@@ -59,9 +59,9 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 				return true;
 		}
 	} else if (ctx->meta.type == RPCMSG_T_ERROR) {
-		rpcmsg_error errnum;
+		rpcerrno_t errnum;
 		char *errmsg;
-		rpcmsg_unpack_error(ctx->unpack, ctx->item, &errnum, &errmsg);
+		rpcerror_unpack(ctx->unpack, ctx->item, &errnum, &errmsg);
 		if (rpchandler_msg_valid(ctx)) {
 			pthread_mutex_lock(&handler_login->condm);
 			handler_login->errmsg = errmsg;
@@ -90,7 +90,7 @@ int rpc_idle(void *cookie, struct rpchandler_idle *ctx) {
 			cp_pack_t pack = rpchandler_msg_new(ctx);
 			if (pack == NULL)
 				return 0;
-			rpcmsg_pack_request_void(pack, ".app", "ping", 3);
+			rpcmsg_pack_request_void(pack, ".app", "ping", NULL, 3);
 			rpchandler_msg_send(ctx);
 			return (RPC_DEFAULT_IDLE_TIME / 2) * 1000;
 		} else
@@ -106,14 +106,14 @@ int rpc_idle(void *cookie, struct rpchandler_idle *ctx) {
 
 	if (handler_login->nonce[0] == '\0') {
 		/* Hello */
-		rpcmsg_pack_request_void(pack, NULL, "hello", 1);
+		rpcmsg_pack_request_void(pack, "", "hello", NULL, 1);
 		rpchandler_msg_send(ctx);
 		return HELLO_TIMEOUT;
 	}
 
 
 	/* Login */
-	rpcmsg_pack_request(pack, NULL, "login", 2);
+	rpcmsg_pack_request(pack, "", "login", NULL, 2);
 	cp_pack_map_begin(pack);
 
 	cp_pack_str(pack, "login");
@@ -195,7 +195,7 @@ bool rpchandler_login_status(rpchandler_login_t rpchandler_login) {
 }
 
 bool rpchandler_login_wait(rpchandler_login_t rpchandler_login,
-	rpcmsg_error *errnum, const char **errmsg, struct timespec *abstime) {
+	rpcerrno_t *errnum, const char **errmsg, struct timespec *abstime) {
 	bool res = true;
 	pthread_mutex_lock(&rpchandler_login->condm);
 
