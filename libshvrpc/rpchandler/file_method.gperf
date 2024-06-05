@@ -1,0 +1,44 @@
+%compare-lengths
+%compare-strncmp
+
+%pic
+%enum
+%readonly-tables
+%switch=1
+%language=ANSI-C
+
+%define hash-function-name gperf_rpchandler_file_method_hash
+%define lookup-function-name gperf_rpchandler_file_method
+%define string-pool-name gperf_rpchandler_file_method_string
+%define constants-prefix GPERF_RPCHANDLER_FILE_METHOD_
+%define slot-name offset
+
+%struct-type
+%{
+struct gperf_rpchandler_file_method_match {
+	int offset;
+	enum methods {
+		M_STAT,
+		M_SIZE,
+		M_WRITE,
+		M_TRUNCATE,
+		M_READ,
+		M_APPEND,
+		M_CRC,
+		M_SHA1,
+	} method;
+};
+%}
+
+struct gperf_rpchandler_file_method_match;
+
+%%
+stat, M_STAT
+size, M_SIZE
+write, M_WRITE
+truncate, M_TRUNCATE
+read, M_READ
+append, M_APPEND
+crc, M_CRC
+sha1, M_SHA1
+%%

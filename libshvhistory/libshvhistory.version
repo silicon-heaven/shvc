@@ -1,0 +1,17 @@
+V0.0 {
+	global:
+		rpchandler_files_destroy;
+		rpchandler_files_new;
+		rpchandler_files_stage;
+		rpchandler_records_destroy;
+		rpchandler_records_new;
+		rpchandler_records_stage;
+		rpchistory_record_pack_begin;
+		rpchistory_record_pack_end;
+		rpchistory_fetch;
+		rpchistory_span;
+		rpchistory_getlog;
+		rpchistory_sync;
+		rpchistory_lastsync;
+	local: *;
+};

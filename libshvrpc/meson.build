@@ -30,6 +30,7 @@ libshvrpc_sources = [
   gperf.process('rpcdir_key.gperf'),
   gperf.process('rpchandler/app_method.gperf'),
   gperf.process('rpchandler/device_method.gperf'),
+  gperf.process('rpchandler/file_method.gperf'),
   gperf.process('rpcurl_query.gperf'),
   gperf.process('rpcurl_scheme.gperf'),
 ]

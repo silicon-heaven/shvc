@@ -51,6 +51,7 @@ subdir('include')
 subdir('libshvcp')
 subdir('libshvrpc')
 subdir('libshvbroker')
+subdir('libshvhistory')
 
 shvc_opt = get_option('shvc')
 if shvc_opt

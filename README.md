@@ -25,7 +25,7 @@ they provide complete SHV RPC toolkit.
   applications providing SHV RPC broker functionality.
 * **libshvhistory** is a library that provides implementation for history
   application. It can be used to create logging facility that is part of SHV
-  RPC. (NOT IMPLEMENTED YET)
+  RPC.
 * **shvc** is CLI tool to call SHV RPC methods.
 * **shvcs** is CLI tool for receiving the SHV RPC signals.
 * **shvcp** is CLI tool for working with file nodes in SHV RPC. (NOT IMPLEMENTED
