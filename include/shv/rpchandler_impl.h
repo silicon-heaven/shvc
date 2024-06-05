@@ -75,6 +75,16 @@ void rpchandler_ls_result_fmt(struct rpchandler_ls *ctx, const char *fmt, ...)
 void rpchandler_ls_result_vfmt(struct rpchandler_ls *ctx, const char *fmt,
 	va_list args) __attribute__((nonnull));
 
+/*! Mark the node @ref rpchandler_ls.name as existing.
+ *
+ * This should be used only if @ref rpchandler_ls.name is not `NULL`. After
+ * calling this you should return from @ref rpchandler_funcs.ls to allow
+ * handler immediately act upon it.
+ *
+ * @param ctx: Context passed to the @ref rpchandler_funcs.ls.
+ */
+void rpchandler_ls_exists(struct rpchandler_ls *ctx) __attribute__((nonnull));
+
 
 /*! Add result of `dir`.
  *
@@ -90,6 +100,16 @@ void rpchandler_ls_result_vfmt(struct rpchandler_ls *ctx, const char *fmt,
  */
 void rpchandler_dir_result(struct rpchandler_dir *ctx,
 	const struct rpcdir *method) __attribute__((nonnull));
+
+/*! Mark the method @ref rpchandler_dir.name as existing.
+ *
+ * This should be used only if @ref rpchandler_dir.name is not `NULL`. After
+ * calling this you should return from @ref rpchandler_funcs.dir to allow
+ * handler immediately act upon it.
+ *
+ * @param ctx: Context passed to the @ref rpchandler_funcs.dir.
+ */
+void rpchandler_dir_exists(struct rpchandler_dir *ctx) __attribute__((nonnull));
 
 
 /// @cond
@@ -114,8 +134,9 @@ struct obstack *_rpchandler_obstack(rpchandler_t rpchandler)
 
 /*! Combined call to the @ref rpchandler_msg_new and @ref rpcmsg_pack_response.
  *
- * This function should be followed by packing of response result value, message
- * closing @ref cp_pack_container_end and sent with @ref rpchandler_msg_send.
+ * This function should be followed by packing of response result value and call
+ * to @ref rpchandler_msg_send_response. You can abandon this message with @ref
+ * rpchandler_msg_drop.
  *
  * @param ctx: Context passed to @ref rpchandler_funcs.msg
  * @returns Packer object or `NULL` in case resposne can't be sent.
@@ -126,6 +147,21 @@ __attribute__((nonnull)) static inline cp_pack_t rpchandler_msg_new_response(
 	if (res)
 		rpcmsg_pack_response(res, &ctx->meta);
 	return res;
+}
+
+/*! Combined call to the @ref cp_pack_container_end and @ref
+ * rpchandler_msg_send.
+ *
+ * @param ctx: Context passed to @ref rpchandler_funcs.msg
+ * @param pack: Packer returned from @ref rpchandler_msg_new_response.
+ * @returns Packer object or `NULL` in case resposne can't be sent.
+ */
+__attribute__((nonnull(1))) static inline bool rpchandler_msg_send_response(
+	struct rpchandler_msg *ctx, cp_pack_t pack) {
+	if (pack == NULL)
+		return false;
+	cp_pack_container_end(pack);
+	return rpchandler_msg_send(ctx);
 }
 
 /*! Combined call to the @ref rpchandler_msg_new, @ref
@@ -193,6 +229,32 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_send_ferror(
 	bool res = rpchandler_msg_send_vferror(ctx, error, fmt, args);
 	va_end(args);
 	return res;
+}
+
+/*! Send error that method is not found as a response.
+ *
+ * This should be used if method is valid but access level is too low.
+ *
+ * @param ctx: Context passed to @ref rpchandler_funcs.msg
+ * @returns Value returned from @ref rpchandler_msg_send.
+ */
+bool rpchandler_msg_send_method_not_found(struct rpchandler_msg *ctx)
+	__attribute__((nonnull));
+
+/*! Utility to check if received request has sufficient access level.
+ *
+ * @ref rpchandler_msg_send_method_not_found if access level is not suffient.
+ *
+ * @param ctx: Context passed to @ref rpchandler_funcs.msg
+ * @param access: The minimal required access level.
+ * @returns `true` if access is sufficient and `false` otherwise.
+ */
+__attribute__((nonnull)) static inline bool rpchandler_msg_access_level(
+	struct rpchandler_msg *ctx, rpcaccess_t access) {
+	if (ctx->meta.access >= access)
+		return true;
+	rpchandler_msg_send_method_not_found(ctx);
+	return false;
 }
 
 #endif

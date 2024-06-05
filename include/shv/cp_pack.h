@@ -281,7 +281,8 @@ static inline bool cp_pack_blob_data(
  * @param len: Size of the **buf** (valid number of characters to be packed).
  * @returns Boolean signaling the pack success or failure.
  */
-static inline bool cp_pack_string(cp_pack_t pack, const char *buf, size_t len) {
+__attribute__((nonnull)) static inline bool cp_pack_string(
+	cp_pack_t pack, const char *buf, size_t len) {
 	struct cpitem i;
 	i.type = CPITEM_STRING;
 	i.rchr = buf;
@@ -296,11 +297,12 @@ static inline bool cp_pack_string(cp_pack_t pack, const char *buf, size_t len) {
 /*! Pack C-*String* to the generic packer.
  *
  * @param pack: Generic packer.
- * @param str: C-String (null terminated string) to be packed.
+ * @param str: C-String (null terminated string) to be packed. It can be `NULL`
+ *   and in such case Null is packed instead.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_str(cp_pack_t pack, const char *str) {
-	return cp_pack_string(pack, str, strlen(str));
+	return str ? cp_pack_string(pack, str, strlen(str)) : cp_pack_null(pack);
 }
 
 /*! Pack *String* generated from format string to the generic packer.

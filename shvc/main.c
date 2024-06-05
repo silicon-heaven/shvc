@@ -10,9 +10,9 @@
 #include <shv/rpccall.h>
 #include "opts.h"
 
-#define ERR_COM (RPCMSG_E_USER_CODE + 1)
-#define ERR_TIM (RPCMSG_E_USER_CODE + 2)
-#define ERR_PARAM (RPCMSG_E_USER_CODE + 3)
+#define ERR_COM (RPCERR_USER_CODE + 1)
+#define ERR_TIM (RPCERR_USER_CODE + 2)
+#define ERR_PARAM (RPCERR_USER_CODE + 3)
 
 static size_t logsiz = BUFSIZ > 128 ? BUFSIZ : 128;
 
@@ -65,7 +65,7 @@ int response_callback(enum rpccall_stage stage, cp_pack_t pack, int request_id,
 			c->output = NULL;
 			return 0;
 		case CALL_S_ERROR: {
-			rpcerrno_t err = RPCMSG_E_UNKNOWN;
+			rpcerrno_t err = RPCERR_UNKNOWN;
 			rpcerror_unpack(unpack, item, &err, &c->output);
 			c->error = err;
 			break;
@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
 	struct ctx ctx;
 	ctx.conf = &conf;
 	ctx.output = NULL;
-	ctx.error = RPCMSG_E_NO_ERROR;
+	ctx.error = RPCERR_NO_ERROR;
 
 	uint8_t *stdin_param = NULL;
 	size_t stdin_param_siz = 0;
@@ -156,7 +156,7 @@ int main(int argc, char **argv) {
 	free(stdin_param);
 
 	switch (ctx.error) {
-		case RPCMSG_E_NO_ERROR:
+		case RPCERR_NO_ERROR:
 			if (ctx.output)
 				puts(ctx.output);
 			else

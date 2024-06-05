@@ -215,6 +215,12 @@ struct tm cpdttotm(struct cpdatetime v);
  */
 struct cpdatetime cptmtodt(struct tm v);
 
+/*! Get the current clock in @ref cpdatetime format.
+ *
+ * @returns Current date and time.
+ */
+struct cpdatetime clock_cpdatetime(void);
+
 
 /*! Errors reported by unpack functions.
  *

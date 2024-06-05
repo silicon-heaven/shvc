@@ -3,7 +3,7 @@
 bool rpcerror_unpack(
 	cp_unpack_t unpack, struct cpitem *item, rpcerrno_t *errno, char **errmsg) {
 	if (errno)
-		*errno = RPCMSG_E_NO_ERROR;
+		*errno = RPCERR_NO_ERROR;
 	if (errmsg)
 		*errmsg = NULL;
 

@@ -58,7 +58,7 @@ END_TEST
 
 TEST(all, error) {
 	struct rpcmsg_meta meta = {.request_id = 42};
-	rpcmsg_pack_error(packstream_pack, &meta, RPCMSG_E_UNKNOWN, "Our error");
+	rpcmsg_pack_error(packstream_pack, &meta, RPCERR_UNKNOWN, "Our error");
 	ck_assert_packstr("<1:1,8:42>i{3:i{1:9,2:\"Our error\"}}");
 }
 END_TEST
@@ -66,7 +66,7 @@ END_TEST
 TEST(all, ferr) {
 	struct rpcmsg_meta meta = {.request_id = 24};
 	rpcmsg_pack_ferror(
-		packstream_pack, &meta, RPCMSG_E_INTERNAL_ERR, "Fail of %d", 42);
+		packstream_pack, &meta, RPCERR_INTERNAL_ERR, "Fail of %d", 42);
 	ck_assert_packstr("<1:1,8:24>i{3:i{1:4,2:\"Fail of 42\"}}");
 }
 END_TEST

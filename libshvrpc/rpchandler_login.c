@@ -97,7 +97,7 @@ int rpc_idle(void *cookie, struct rpchandler_idle *ctx) {
 			return res * 1000;
 	}
 
-	if (handler_login->errnum != RPCMSG_E_NO_ERROR)
+	if (handler_login->errnum != RPCERR_NO_ERROR)
 		return INT_MAX; /* Just bail out */
 
 	cp_pack_t pack = rpchandler_msg_new(ctx);
@@ -172,7 +172,7 @@ rpchandler_login_t rpchandler_login_new(const struct rpclogin_options *login) {
 	res->logged = false;
 	res->nonce[0] = '\0';
 	res->nonce[32] = '\0'; /* We do not use this byte except as end of string */
-	res->errnum = RPCMSG_E_NO_ERROR;
+	res->errnum = RPCERR_NO_ERROR;
 	res->errmsg = NULL;
 	pthread_mutex_init(&res->condm, NULL);
 	pthread_cond_init(&res->cond, NULL);
@@ -199,7 +199,7 @@ bool rpchandler_login_wait(rpchandler_login_t rpchandler_login,
 	bool res = true;
 	pthread_mutex_lock(&rpchandler_login->condm);
 
-	if (!rpchandler_login->logged && rpchandler_login->errnum == RPCMSG_E_NO_ERROR) {
+	if (!rpchandler_login->logged && rpchandler_login->errnum == RPCERR_NO_ERROR) {
 		if (abstime)
 			res = pthread_cond_timedwait(&rpchandler_login->cond,
 					  &rpchandler_login->condm, abstime) == 0;
@@ -212,7 +212,7 @@ bool rpchandler_login_wait(rpchandler_login_t rpchandler_login,
 		*errnum = tmp;
 	if (errmsg)
 		*errmsg = rpchandler_login->errmsg;
-	res = res && tmp == RPCMSG_E_NO_ERROR;
+	res = res && tmp == RPCERR_NO_ERROR;
 	pthread_mutex_unlock(&rpchandler_login->condm);
 	return res;
 }

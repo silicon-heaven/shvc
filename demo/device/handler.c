@@ -56,6 +56,8 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 		if (!strcmp(ctx->meta.method, "get")) {
 			if (!rpchandler_msg_valid(ctx))
 				return true;
+			if (!rpchandler_msg_access_level(ctx, RPCACCESS_READ))
+				return true;
 			cp_pack_t pack = rpchandler_msg_new_response(ctx);
 			cp_pack_list_begin(pack);
 			for (size_t i = 0; i < state->tracks[tid].cnt; i++)
@@ -89,11 +91,13 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 				free(res);
 				return true;
 			}
+			if (!rpchandler_msg_access_level(ctx, RPCACCESS_WRITE))
+				return true;
 
 			bool value_changed = false;
 			if (invalid_param) {
 				free(res);
-				rpchandler_msg_send_error(ctx, RPCMSG_E_INVALID_PARAMS,
+				rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAMS,
 					"Only list of integers is allowed");
 			} else {
 				value_changed = state->tracks[tid].cnt != cnt ||

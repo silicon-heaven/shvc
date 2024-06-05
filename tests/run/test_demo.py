@@ -53,6 +53,8 @@ async def fixture_demo_device(demo_device_exec, broker, url):
                 {1: "shvVersionMinor", 2: 2, 4: "Int", 5: 1},
                 {1: "name", 2: 2, 4: "String", 5: 1},
                 {1: "version", 2: 2, 4: "String", 5: 1},
+                {1: "ping", 5: 1},
+                {1: "date", 2: 2, 4: "DateTime", 5: 1},
             ],
         ),
         ("test/device/.app", "ls", []),
@@ -60,6 +62,7 @@ async def fixture_demo_device(demo_device_exec, broker, url):
         ("test/device/.app", "shvVersionMinor", 0),
         ("test/device/.app", "name", "demo-device"),
         ("test/device/.app", "version", version),
+        ("test/device/.app", "ping", None),
         (
             "test/device/track",
             "dir",

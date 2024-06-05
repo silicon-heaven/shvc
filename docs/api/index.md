@@ -6,4 +6,5 @@
 libshvcp
 libshvrpc
 libshvcaller
+libshvcallee
 ```

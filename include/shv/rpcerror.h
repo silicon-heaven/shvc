@@ -9,41 +9,41 @@
 #include <shv/cp_unpack.h>
 
 /*! Type alias for RPC error codes. Predefined errors are provided as macros
- * prefixed with `RPCMSG_E_`. */
+ * prefixed with `RPCERR_`. */
 typedef unsigned rpcerrno_t;
 
 /*! No error that is mostly internally used to identify no errors. */
-#define RPCMSG_E_NO_ERROR (0)
+#define RPCERR_NO_ERROR (0)
 /*! Sent request is invalid in its format. */
-#define RPCMSG_E_INVALID_REQUEST (1)
+#define RPCERR_INVALID_REQUEST (1)
 /*! Method is can't be found or you do not have access to it. */
-#define RPCMSG_E_METHOD_NOT_FOUND (2)
+#define RPCERR_METHOD_NOT_FOUND (2)
 /*! Request received but with invalid parameters. */
-#define RPCMSG_E_INVALID_PARAMS (3)
+#define RPCERR_INVALID_PARAMS (3)
 /*! Request can't be processes due to the internal error. */
-#define RPCMSG_E_INTERNAL_ERR (4)
+#define RPCERR_INTERNAL_ERR (4)
 /*! Message content can't be parsed correctly. */
-#define RPCMSG_E_PARSE_ERR (5)
+#define RPCERR_PARSE_ERR (5)
 /*! Request timed out without response. */
-#define RPCMSG_E_METHOD_CALL_TIMEOUT (6)
+#define RPCERR_METHOD_CALL_TIMEOUT (6)
 /*! Request got canceled. */
-#define RPCMSG_E_METHOD_CALL_CANCELLED (7)
+#define RPCERR_METHOD_CALL_CANCELLED (7)
 /*! Request was received successfully but issue was encountered when it was
  * being acted upon it.
  */
-#define RPCMSG_E_METHOD_CALL_EXCEPTION (8)
+#define RPCERR_METHOD_CALL_EXCEPTION (8)
 /*! Generic unknown error assigned when we are not aware what happened. */
-#define RPCMSG_E_UNKNOWN (9)
+#define RPCERR_UNKNOWN (9)
 /*! Method call without previous successful login. */
-#define RPCMSG_E_LOGIN_REQUIRED (10)
+#define RPCERR_LOGIN_REQUIRED (10)
 /*! Method call requires UserID to be present in the request message. */
-#define RPCMSG_E_USER_ID_REQUIRED (11)
+#define RPCERR_USER_ID_REQUIRED (11)
 /*! Can be used if method is valid but not implemented for whatever reason. */
-#define RPCMSG_E_NOT_IMPLEMENTED (12)
+#define RPCERR_NOT_IMPLEMENTED (12)
 /*! The first user defined error code. The lower values are reserved for the
  * SHV defined errors.
  */
-#define RPCMSG_E_USER_CODE (32)
+#define RPCERR_USER_CODE (32)
 
 /*! Keys used in RPC error *IMap*, that follows @ref RPCMSG_KEY_ERROR. */
 enum rpcmsg_error_key {

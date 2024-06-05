@@ -20,9 +20,13 @@ libshvrpc_headers = files(
   'shv/rpcmsg.h',
   'shv/rpcserver.h',
   'shv/rpcurl.h',
+  'shv/version.h',
 )
 libshvcaller_headers = files(
   'shv/rpccall.h',
   'shv/rpchandler_responses.h',
+)
+libshvcallee_headers = files(
+  'shv/rpchandler_device.h'
 )
 libshvbroker_headers = files('shv/rpcbroker.h')

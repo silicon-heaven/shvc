@@ -60,7 +60,6 @@ V0.0 {
 		rpchandler_idling;
 		rpchandler_run;
 		rpchandler_spawn_thread;
-		rpchandler_halt;
 		rpchandler_next_request_id;
 		_rpchandler_msg_new;
 		_rpchandler_msg_send;
@@ -71,13 +70,18 @@ V0.0 {
 		_rpchandler_idle_msg_new;
 		_rpchandler_idle_msg_send;
 		_rpchandler_idle_msg_drop;
+
+		# shv/rpchandler_impl.h
 		rpchandler_msg_valid;
 		rpchandler_ls_result;
 		rpchandler_ls_result_const;
 		rpchandler_ls_result_fmt;
 		rpchandler_ls_result_vfmt;
+		rpchandler_ls_exists;
 		rpchandler_dir_result;
+		rpchandler_dir_exists;
 		_rpchandler_obstack;
+		rpchandler_msg_send_method_not_found;
 
 		# shv/rpchandler_app.h
 		rpchandler_app_new;

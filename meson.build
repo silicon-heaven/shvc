@@ -48,6 +48,7 @@ subdir('include')
 subdir('libshvcp')
 subdir('libshvrpc')
 subdir('libshvcaller')
+subdir('libshvcallee')
 subdir('libshvbroker')
 
 shvc_opt = get_option('shvc')

@@ -144,8 +144,8 @@ static bool common_ls_dir(struct msg_ctx *ctx, char **name) {
 
 	if (!invalid_param)
 		return true;
-	rpchandler_msg_send_error(&ctx->ctx, RPCMSG_E_INVALID_PARAMS,
-		"Use Null or String with node name");
+	rpchandler_msg_send_error(
+		&ctx->ctx, RPCERR_INVALID_PARAMS, "Use Null or String with node name");
 	return false;
 }
 
@@ -189,7 +189,7 @@ static void handle_ls(struct msg_ctx *ctx) {
 	if (!lsctx.located && lsctx.strset.cnt == 0 &&
 		!valid_path(ctx->handler, ctx->ctx.meta.path)) {
 		rpchandler_msg_send_error(
-			&ctx->ctx, RPCMSG_E_METHOD_NOT_FOUND, "No such node");
+			&ctx->ctx, RPCERR_METHOD_NOT_FOUND, "No such node");
 		return;
 	}
 	cp_pack_t pack = rpchandler_msg_new_response(&ctx->ctx);
@@ -212,7 +212,7 @@ static void handle_dir(struct msg_ctx *ctx) {
 		return;
 	if (!valid_path(ctx->handler, ctx->ctx.meta.path)) {
 		rpchandler_msg_send_error(
-			&ctx->ctx, RPCMSG_E_METHOD_NOT_FOUND, "No such node");
+			&ctx->ctx, RPCERR_METHOD_NOT_FOUND, "No such node");
 		return;
 	}
 
@@ -246,13 +246,8 @@ static void handle_msg(struct msg_ctx *ctx) {
 			return;
 	if (!rpchandler_msg_valid(&ctx->ctx))
 		return;
-	if (ctx->ctx.meta.type == RPCMSG_T_REQUEST) {
-		cp_pack_t pack = rpchandler_msg_new(&ctx->ctx);
-		rpcmsg_pack_ferror(pack, &ctx->ctx.meta, RPCMSG_E_METHOD_NOT_FOUND,
-			"No such method '%s' on path '%s'", ctx->ctx.meta.method,
-			ctx->ctx.meta.path);
-		rpchandler_msg_send(&ctx->ctx);
-	}
+	if (ctx->ctx.meta.type == RPCMSG_T_REQUEST)
+		rpchandler_msg_send_method_not_found(&ctx->ctx);
 }
 
 bool rpchandler_next(struct rpchandler *handler) {
@@ -271,9 +266,9 @@ bool rpchandler_next(struct rpchandler *handler) {
 				.ctx.item = &item,
 				.handler = handler,
 			};
-			if (meta.method && !strcmp(meta.method, "ls"))
+			if (meta.type == RPCMSG_T_REQUEST && !strcmp(meta.method, "ls"))
 				handle_ls(&ctx);
-			else if (meta.method && !strcmp(meta.method, "dir"))
+			else if (meta.type == RPCMSG_T_REQUEST && !strcmp(meta.method, "dir"))
 				handle_dir(&ctx);
 			else
 				handle_msg(&ctx);
@@ -462,12 +457,31 @@ void rpchandler_ls_result_vfmt(
 	}
 }
 
+void rpchandler_ls_exists(struct rpchandler_ls *ctx) {
+	struct ls_ctx *lsctx = (struct ls_ctx *)ctx;
+	if (ctx->name)
+		lsctx->located = true;
+}
+
 void rpchandler_dir_result(struct rpchandler_dir *ctx, const struct rpcdir *method) {
 	struct dir_ctx *dirctx = (struct dir_ctx *)ctx;
 	if (ctx->name)
 		dirctx->located = dirctx->located || !strcmp(ctx->name, method->name);
 	else
 		rpcdir_pack(dirctx->pack, method);
+}
+
+void rpchandler_dir_exists(struct rpchandler_dir *ctx) {
+	struct dir_ctx *dirctx = (struct dir_ctx *)ctx;
+	if (ctx->name)
+		dirctx->located = true;
+}
+
+bool rpchandler_msg_send_method_not_found(struct rpchandler_msg *ctx) {
+	cp_pack_t pack = rpchandler_msg_new(ctx);
+	rpcmsg_pack_ferror(pack, &ctx->meta, RPCERR_METHOD_NOT_FOUND,
+		"No such method '%s' on path '%s'", ctx->meta.method, ctx->meta.path);
+	return rpchandler_msg_send(ctx);
 }
 
 

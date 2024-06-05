@@ -1,0 +1,38 @@
+%compare-lengths
+%compare-strncmp
+
+%pic
+%enum
+%readonly-tables
+%switch=1
+%language=ANSI-C
+
+%define hash-function-name gperf_rpchandler_device_method_hash
+%define lookup-function-name gperf_rpchandler_device_method
+%define string-pool-name gperf_rpchandler_device_method_string
+%define constants-prefix GPERF_RPCHANDLER_DEVICE_METHOD_
+%define slot-name offset
+
+%struct-type
+%{
+struct gperf_rpchandler_device_method_match {
+	int offset;
+	enum methods {
+		M_NAME,
+		M_VERSION,
+		M_SERIAL_NUMBER,
+		M_UPTIME,
+		M_RESET,
+	} method;
+};
+%}
+
+struct gperf_rpchandler_device_method_match;
+
+%%
+name, M_NAME
+version, M_VERSION
+serialNumber, M_SERIAL_NUMBER
+uptime, M_UPTIME
+reset, M_RESET
+%%

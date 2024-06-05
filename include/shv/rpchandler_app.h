@@ -17,6 +17,7 @@
  * * `.app:name`
  * * `.app:version`
  * * `.app:ping`
+ * * `.app:date`
  */
 typedef struct rpchandler_app *rpchandler_app_t;
 
@@ -46,6 +47,8 @@ void rpchandler_app_destroy(rpchandler_app_t rpchandler_app);
  *
  * This provides you with stage to be used in list of stages for the RPC
  * handler.
+ *
+ * This stage can be reused in multiple handlers.
  *
  * @param rpchandler_app: RPC Application Handler object.
  * @returns Stage to be used in array of stages for RPC Handler.

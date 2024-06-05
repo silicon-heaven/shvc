@@ -1,0 +1,40 @@
+%compare-lengths
+%compare-strncmp
+
+%pic
+%enum
+%readonly-tables
+%switch=1
+%language=ANSI-C
+
+%define hash-function-name gperf_rpchandler_app_method_hash
+%define lookup-function-name gperf_rpchandler_app_method
+%define string-pool-name gperf_rpchandler_app_method_string
+%define constants-prefix GPERF_RPCHANDLER_APP_METHOD_
+%define slot-name offset
+
+%struct-type
+%{
+struct gperf_rpchandler_app_method_match {
+	int offset;
+	enum methods {
+		M_SHV_VERSION_MAJOR,
+		M_SHV_VERSION_MINOR,
+		M_NAME,
+		M_VERSION,
+		M_PING,
+		M_DATE,
+	} method;
+};
+%}
+
+struct gperf_rpchandler_app_method_match;
+
+%%
+shvVersionMajor, M_SHV_VERSION_MAJOR
+shvVersionMinor, M_SHV_VERSION_MINOR
+name, M_NAME
+version, M_VERSION
+ping, M_PING
+date, M_DATE
+%%
