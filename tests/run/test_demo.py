@@ -94,6 +94,21 @@ async def test_call(demo_device, client, path, method, result):
     assert await client.call(path, method) == result
 
 
+@pytest.mark.parametrize(
+    "path,method,param,error",
+    (
+        ("test/device/track/none", "ls", None, shv.RpcMethodNotFoundError),
+        ("test/device/track/none", "dir", None, shv.RpcMethodNotFoundError),
+        ("test/device/track/none", "set", None, shv.RpcMethodNotFoundError),
+        ("test/device/track/1", "set", None, shv.RpcInvalidParamsError),
+    ),
+)
+async def test_call_error(demo_device, client, path, method, param, error):
+    """Call various methods from Python."""
+    with pytest.raises(error):
+        assert await client.call(path, method, param)
+
+
 @pytest.mark.parametrize("i", range(1, 10))
 async def test_set(demo_device, client, i):
     """Test that track nodes can be modified."""

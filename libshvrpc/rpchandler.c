@@ -13,9 +13,6 @@
 #include "strset.h"
 
 struct rpchandler {
-	struct rpchandler_impl {
-	} _internal; /* THIS MUST STAY FIRST! */
-
 	const struct rpchandler_stage *stages;
 	const struct rpcmsg_meta_limits *meta_limits;
 	rpcclient_t client;
@@ -51,7 +48,6 @@ struct msg_ctx {
 
 struct ls_ctx {
 	struct rpchandler_ls ctx;
-	struct msg_ctx *mctx;
 	struct strset strset;
 	bool located;
 };
@@ -126,7 +122,7 @@ static void send_unlock(rpchandler_t handler) {
 }
 
 
-static bool common_ls_dir(struct msg_ctx *ctx, char **name, cp_pack_t *pack) {
+static bool common_ls_dir(struct msg_ctx *ctx, char **name) {
 	*name = NULL;
 	bool invalid_param = false;
 	if (rpcmsg_has_param(ctx->ctx.item)) {
@@ -146,40 +142,62 @@ static bool common_ls_dir(struct msg_ctx *ctx, char **name, cp_pack_t *pack) {
 	if (!rpchandler_msg_valid(&ctx->ctx))
 		return false;
 
-	*pack = rpchandler_msg_new(&ctx->ctx);
-	assert(*pack);
-	if (invalid_param) {
-		rpcmsg_pack_error(*pack, &ctx->ctx.meta, RPCMSG_E_INVALID_PARAMS,
-			"Use Null or String with node name");
-		rpchandler_msg_send(&ctx->ctx);
-		return false;
-	} else {
-		rpcmsg_pack_response(*pack, &ctx->ctx.meta);
+	if (!invalid_param)
 		return true;
-	}
+	rpchandler_msg_send_error(&ctx->ctx, RPCMSG_E_INVALID_PARAMS,
+		"Use Null or String with node name");
+	return false;
+}
+
+static bool valid_path(rpchandler_t handler, char *path) {
+	if (*path == '\0')
+		return true; /* root node is always valid */
+	char *slash = strrchr(path, '/');
+	if (slash)
+		*slash = '\0';
+	struct ls_ctx lsctx = (struct ls_ctx){
+		.ctx.path = slash ? path : "",
+		.ctx.name = slash ? slash + 1 : path,
+		.strset = (struct strset){},
+		.located = false,
+	};
+	for (const struct rpchandler_stage *s = handler->stages;
+		 s->funcs && !lsctx.located; s++)
+		if (s->funcs->ls)
+			s->funcs->ls(s->cookie, &lsctx.ctx);
+	if (slash)
+		*slash = '/';
+	return lsctx.located;
 }
 
 static void handle_ls(struct msg_ctx *ctx) {
 	char *name;
-	cp_pack_t pack;
-	if (!common_ls_dir(ctx, &name, &pack))
+	if (!common_ls_dir(ctx, &name))
 		return;
 
 	struct ls_ctx lsctx = (struct ls_ctx){
 		.ctx.path = ctx->ctx.meta.path ?: "",
 		.ctx.name = name,
-		.mctx = ctx,
 		.strset = (struct strset){},
 		.located = false,
 	};
-	for (const struct rpchandler_stage *s = ctx->handler->stages; s->funcs; s++)
+	for (const struct rpchandler_stage *s = ctx->handler->stages;
+		 s->funcs && !lsctx.located; s++)
 		if (s->funcs->ls)
 			s->funcs->ls(s->cookie, &lsctx.ctx);
+
+	if (!lsctx.located && lsctx.strset.cnt == 0 &&
+		!valid_path(ctx->handler, ctx->ctx.meta.path)) {
+		rpchandler_msg_send_error(
+			&ctx->ctx, RPCMSG_E_METHOD_NOT_FOUND, "No such node");
+		return;
+	}
+	cp_pack_t pack = rpchandler_msg_new_response(&ctx->ctx);
+	assert(pack);
 	if (lsctx.ctx.name == NULL) {
 		cp_pack_list_begin(pack);
-		for (size_t i = 0; i < lsctx.strset.cnt; i++) {
+		for (size_t i = 0; i < lsctx.strset.cnt; i++)
 			cp_pack_str(pack, lsctx.strset.items[i].str);
-		}
 		cp_pack_container_end(pack);
 		shv_strset_free(&lsctx.strset);
 	} else
@@ -190,10 +208,15 @@ static void handle_ls(struct msg_ctx *ctx) {
 
 static void handle_dir(struct msg_ctx *ctx) {
 	char *name;
-	cp_pack_t pack;
-	if (!common_ls_dir(ctx, &name, &pack))
+	if (!common_ls_dir(ctx, &name))
 		return;
+	if (!valid_path(ctx->handler, ctx->ctx.meta.path)) {
+		rpchandler_msg_send_error(
+			&ctx->ctx, RPCMSG_E_METHOD_NOT_FOUND, "No such node");
+		return;
+	}
 
+	cp_pack_t pack = rpchandler_msg_new_response(&ctx->ctx);
 	struct dir_ctx dirctx = (struct dir_ctx){
 		.ctx.name = name,
 		.ctx.path = ctx->ctx.meta.path,
@@ -205,8 +228,8 @@ static void handle_dir(struct msg_ctx *ctx) {
 		cp_pack_list_begin(dirctx.pack);
 	rpchandler_dir_result(&dirctx.ctx, &rpcdir_dir);
 	rpchandler_dir_result(&dirctx.ctx, &rpcdir_ls);
-
-	for (const struct rpchandler_stage *s = ctx->handler->stages; s->funcs; s++)
+	for (const struct rpchandler_stage *s = ctx->handler->stages;
+		 s->funcs && !dirctx.located; s++)
 		if (s->funcs->dir)
 			s->funcs->dir(s->cookie, &dirctx.ctx);
 	if (dirctx.ctx.name == NULL)
