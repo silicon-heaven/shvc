@@ -45,7 +45,7 @@ typedef struct rpcresponse *rpcresponse_t;
  * It is called only if request ID matches for the response message this
  * callback got registered.
  *
- * You should first use @ref rpcmsg_has_param to check if response even has any
+ * You should first use @ref rpcmsg_has_value to check if response even has any
  * parameter. You can unpack it if so after that.
  *
  * You must call @ref rpchandler_msg_valid to fully handle the message. Do not

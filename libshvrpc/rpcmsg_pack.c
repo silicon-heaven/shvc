@@ -121,27 +121,12 @@ bool rpcmsg_pack_response_void(cp_pack_t pack, const struct rpcmsg_meta *meta) {
 	return true;
 }
 
-__attribute__((nonnull)) static bool _rpcmsg_pack_error_head(
-	cp_pack_t pack, const struct rpcmsg_meta *meta, rpcerrno_t errno) {
-	G(_pack_response(pack, meta));
-	G(cp_pack_int(pack, RPCMSG_KEY_ERROR));
-	G(cp_pack_imap_begin(pack));
-	G(cp_pack_int(pack, RPCMSG_ERR_KEY_CODE));
-	G(cp_pack_int(pack, errno));
-	G(cp_pack_int(pack, RPCMSG_ERR_KEY_MESSAGE));
-	return true;
-}
-__attribute__((nonnull)) static bool _rpcmsg_pack_error_tail(cp_pack_t pack) {
-	G(cp_pack_container_end(pack));
-	G(cp_pack_container_end(pack));
-	return true;
-}
-
 bool rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
 	rpcerrno_t errno, const char *msg) {
-	G(_rpcmsg_pack_error_head(pack, meta, errno));
-	G(cp_pack_str(pack, msg));
-	G(_rpcmsg_pack_error_tail(pack));
+	G(_pack_response(pack, meta));
+	G(cp_pack_int(pack, RPCMSG_KEY_ERROR));
+	G(rpcerror_pack(pack, errno, msg));
+	G(cp_pack_container_end(pack));
 	return true;
 }
 
@@ -156,8 +141,17 @@ bool rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
 
 bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
 	rpcerrno_t errno, const char *fmt, va_list args) {
-	G(_rpcmsg_pack_error_head(pack, meta, errno));
-	G(cp_pack_vfstr(pack, fmt, args));
-	G(_rpcmsg_pack_error_tail(pack));
+	G(_pack_response(pack, meta));
+	G(cp_pack_int(pack, RPCMSG_KEY_ERROR));
+
+	va_list cargs;
+	va_copy(cargs, args);
+	int siz = vsnprintf(NULL, 0, fmt, cargs);
+	va_end(cargs);
+	char msg[siz + 1];
+	assert(vsnprintf(msg, siz + 1, fmt, args) == siz);
+	G(rpcerror_pack(pack, errno, msg));
+
+	G(cp_pack_container_end(pack));
 	return true;
 }

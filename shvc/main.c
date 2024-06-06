@@ -20,62 +20,49 @@ struct ctx {
 	struct conf *conf;
 	FILE *fparam;
 	char *output;
-	int error;
 };
 
-int response_callback(enum rpccall_stage stage, cp_pack_t pack, int request_id,
-	cp_unpack_t unpack, struct cpitem *item, void *ctx) {
-	struct ctx *c = ctx;
+int response_callback(enum rpccall_stage stage, struct rpccall_ctx *ctx) {
+	struct ctx *c = ctx->cookie;
 	switch (stage) {
-		case CALL_S_PACK: {
+		case CALL_S_REQUEST:
 			if (c->fparam) {
-				rpcmsg_pack_request(
-					pack, c->conf->path, c->conf->method, NULL, request_id);
+				rpcmsg_pack_request(ctx->pack, c->conf->path, c->conf->method,
+					NULL, ctx->request_id);
 				fseek(c->fparam, 0, SEEK_SET);
 				struct cp_unpack_cpon cp_unpack_cpon;
 				cp_unpack_t cpon_unpack =
 					cp_unpack_cpon_init(&cp_unpack_cpon, c->fparam);
 				struct cpitem item;
 				cpitem_unpack_init(&item);
-				if (!cp_repack(cpon_unpack, &item, pack)) {
-					c->error = ERR_PARAM;
-					return 1;
-				}
+				if (!cp_repack(cpon_unpack, &item, ctx->pack))
+					return ERR_PARAM;
 				free(cp_unpack_cpon.state.ctx);
-				cp_pack_container_end(pack);
+				cp_pack_container_end(ctx->pack);
 			} else
-				rpcmsg_pack_request_void(
-					pack, c->conf->path, c->conf->method, NULL, request_id);
-			break;
-		}
-		case CALL_S_RESULT: {
+				rpcmsg_pack_request_void(ctx->pack, c->conf->path,
+					c->conf->method, NULL, ctx->request_id);
 			free(c->output);
+			c->output = NULL;
+			break;
+		case CALL_S_RESULT:
 			size_t outputsiz = 0;
 			FILE *f = open_memstream(&c->output, &outputsiz);
 			struct cp_pack_cpon cp_pack_cpon;
 			cp_pack_t cpon_pack = cp_pack_cpon_init(&cp_pack_cpon, f, "\t");
 			/* Note: We ignore repack error here because we can't act on it. */
-			cp_repack(unpack, item, cpon_pack);
+			cp_repack(ctx->unpack, ctx->item, cpon_pack);
 			free(cp_pack_cpon.state.ctx);
 			fclose(f);
-			return 0;
-		}
-		case CALL_S_VOID_RESULT:
-			free(c->output);
-			c->output = NULL;
-			return 0;
-		case CALL_S_ERROR: {
-			rpcerrno_t err = RPCERR_UNKNOWN;
-			rpcerror_unpack(unpack, item, &err, &c->output);
-			c->error = err;
-			break;
-		}
+			return RPCERR_NO_ERROR;
+		case CALL_S_DONE:
+			if (ctx->errno != RPCERR_NO_ERROR && ctx->errmsg)
+				c->output = strdup(ctx->errmsg);
+			return ctx->errno;
 		case CALL_S_COMERR:
-			c->error = ERR_COM;
-			break;
+			return ERR_COM;
 		case CALL_S_TIMERR:
-			c->error = ERR_TIM;
-			break;
+			return ERR_TIM;
 	}
 	return 0;
 }
@@ -132,7 +119,6 @@ int main(int argc, char **argv) {
 	struct ctx ctx;
 	ctx.conf = &conf;
 	ctx.output = NULL;
-	ctx.error = RPCERR_NO_ERROR;
 
 	uint8_t *stdin_param = NULL;
 	size_t stdin_param_siz = 0;
@@ -149,13 +135,13 @@ int main(int argc, char **argv) {
 	else
 		ctx.fparam = NULL;
 
-	rpccall(handler, responses, response_callback, &ctx);
+	ec = rpccall(handler, responses, response_callback, &ctx);
 
 	if (ctx.fparam)
 		fclose(ctx.fparam);
 	free(stdin_param);
 
-	switch (ctx.error) {
+	switch (ec) {
 		case RPCERR_NO_ERROR:
 			if (ctx.output)
 				puts(ctx.output);
@@ -176,7 +162,6 @@ int main(int argc, char **argv) {
 			break;
 		default:
 			fprintf(stderr, "SHV Error: %s\n", ctx.output);
-			ec = ctx.error;
 			break;
 	}
 	free(ctx.output);

@@ -19,7 +19,7 @@
  * The SHV Method Call does the following:
  * 1. Creates response expectation (@ref rpcresponse_expect)
  * 2. Prepares for request packing (@ref rpchandler_msg_new)
- * 3. Calls the provided function with @ref CALL_S_PACK stage. The call is
+ * 3. Calls the provided function with @ref CALL_S_REQUEST stage. The call is
  * terminated if this stage returns non-zero value (@ref rpchandler_msg_drop).
  * 4. Sends packed message (@ref rpchandler_msg_send). In case of an error the
  * provided function is called with @ref CALL_S_COMERR and call is terminated.
@@ -27,8 +27,13 @@
  * the call is attempted again by going back to step 2 until the attempts limit
  * is reached; in such case the provided function is called with @ref
  * CALL_S_TIMERR and call terminated.
- * 6. Calls the provided function with either @ref CALL_S_RESULT, or @ref
- * CALL_S_VOID_RESULT, or @ref CALL_S_ERROR and terminates the call.
+ * 6. Calls the provided function with @ref CALL_S_RESULT to unpack value. This
+ * step is skipped if received response carried no value or if it carried an
+ * error.
+ * 7. Validates the received response with @ref rpchandler_msg_valid. In case of
+ * validation failure it goes back to step 5.
+ * 8. Calls the provided function with @ref CALL_S_DONE and returns integer this
+ * function.
  */
 
 #include <shv/rpchandler_responses.h>
@@ -46,79 +51,126 @@ enum rpccall_stage {
 	 * Be aware that this stage can be called multiple times (once for every
 	 * call attempt).
 	 *
-	 * When @ref rpccall_func_t is called with this stage the `pack` will
-	 * contain the packer to be used to pack request message. `request_id` will
-	 * contain the request ID that must be used for this request message (so it
-	 * can be paired with response).
-	 *
-	 * `unpack` and `item` will be `NULL`. `ctx` is the context passed to @ref
-	 * rpccall.
+	 * When @ref rpccall_func_t is called with this stage the @ref
+	 * rpccall_ctx.pack will contain the packer to be used to pack request
+	 * message that must be request with ID @ref rpccall_ctx.request_id.
 	 *
 	 * @ref rpccall_func_t can return non-zero value to abort the call. This
 	 * value is later returned from @ref rpccall. Zero means "continue".
 	 */
-	CALL_S_PACK,
+	CALL_S_REQUEST,
 	/*! Response was received and result value can be unpacked.
 	 *
 	 * Note that at this point we are not sure if message is complete or even
-	 * valid and thus you should only process received result to some prepared
-	 * buffer and wait with acting on it until after @ref rpccall.
+	 * valid and thus you should only process received result and wait with
+	 * acting on it only in @ref CALL_S_DONE.
 	 *
 	 * Be aware that this stage might be called multiple times and if you
 	 * allocated any data you should be able to free it or reuse the allocated
-	 * memory on subsequent iterations.
+	 * memory on subsequent iterations. Considering the sequence of the stages
+	 * the best place to reset state is in @ref CALL_S_REQUEST.
 	 *
-	 * When @ref rpccall_func_t is called with this stage the `unpack` and
-	 * `item` will be provided. The `request_id` is provided as well but that
-	 * is only for informative usages.
+	 * When @ref rpccall_func_t is called with this stage the @ref
+	 * rpccall_ctx.unpack and @ref rpccall_ctx.item will be provided.
 	 *
-	 * `pack` will be `NULL`. `ctx` is the context passed to @ref rpccall.
+	 * The returned value from @ref rpccall_func_t has no effect.
 	 */
 	CALL_S_RESULT,
-	/*! Response was received and caries no result value to unpack.
+	/*! The method call is done.
 	 *
-	 * This informs you that result was received and that it has to parameter.
+	 * Here you can act upon anything you received in @ref CALL_S_RESULT.
 	 *
-	 * Dot not act on this immediately. Store info about this somewhere and
-	 * perform any followup actions only after @ref rpccall.
+	 * You should check @ref rpccall_ctx.errno to see if there was an error
+	 * detected or not.
 	 *
-	 * `pack`, `unpack`, and `item` will be `NULL`. `request_id` is provided for
-	 * informative purposes.`ctx` is the context passed to @ref rpccall.
+	 * The value returned from @ref rpccall_func_t is returned by @ref rpccall.
 	 */
-	CALL_S_VOID_RESULT,
-	/*! Response was received and it caries an error.
-	 *
-	 * This the same as @ref CALL_S_RESULT with difference that instead of
-	 * result value an error value should be unpacked. Please refer to the @ref
-	 * CALL_S_RESULT documentation.
-	 */
-	CALL_S_ERROR,
+	CALL_S_DONE,
 	/*! Communication error was encountered when sending message.
 	 *
 	 * There will be no further call attempts.
 	 *
-	 * `pack`, `unpack`, and `item` will be `NULL`. `request_id` is provided for
-	 * informative purposes.`ctx` is the context passed to @ref rpccall.
+	 * The value returned from @ref rpccall_func_t is returned by @ref rpccall.
 	 */
 	CALL_S_COMERR,
 	/*! Call timeout.
 	 *
 	 * Too many call attempts failed and thus call is concluded with timeout.
 	 *
-	 * `pack`, `unpack`, and `item` will be `NULL`. `request_id` is provided for
-	 * informative purposes.`ctx` is the context passed to @ref rpccall.
+	 * The value returned from @ref rpccall_func_t is returned by @ref rpccall.
 	 */
 	CALL_S_TIMERR,
+};
+
+/*! Context passsed to the @ref rpccall_func_t. */
+struct rpccall_ctx {
+	/*! Cookie passed to the @ref rpccall.
+	 *
+	 * You can even modify this because this structure is kept for duration of
+	 * the @ref rpccall execution.
+	 */
+	void *cookie;
+	/*! Local cookie where you can save anything you need in between the calls.
+	 *
+	 * Make sure that anything you allocate you will also free in @ref
+	 * CALL_S_DONE, @ref CALL_S_COMERR, and @ref CALL_S_TIMERR stages.
+	 */
+	void *lcookie;
+	/*! The request ID for this RPC call. */
+	const int request_id;
+	// @cond
+	union {
+		// @endcond
+		/*! Packer you should use to pack request message.
+		 *
+		 * This must be used only in @ref CALL_S_REQUEST stage!
+		 */
+		cp_pack_t pack;
+		// @cond
+		struct {
+			// @endcond
+			/*! Unpacker you should use to unpack result.
+			 *
+			 * This must be used only in @ref CALL_S_RESULT.
+			 */
+			cp_unpack_t unpack;
+			/*! Item used to unpack result message.
+			 *
+			 * This must be used only in @ref CALL_S_RESULT.
+			 */
+			struct cpitem *item;
+			// @cond
+		};
+		struct {
+			// @endcond
+			/*! RPC Error number.
+			 *
+			 * This is @ref RPCERR_NO_ERROR in case no error.
+			 *
+			 * This must be used only in @ref CALL_S_DONE.
+			 */
+			rpcerrno_t errno;
+			/*! RPC Error message.
+			 *
+			 * This can be `NULL` if there was no error or when error had no
+			 * message.
+			 *
+			 * This must be used only in @ref CALL_S_DONE.
+			 */
+			char *errmsg;
+			// @cond
+		};
+	};
+	// @endcond
 };
 
 /*! Functions matching this prototype will be called in various stages of the
  * call execution to pack request, handle response, and manage errors.
  *
  * The returned integer is the value to be returned from @ref rpccall with
- * notable exception for `0` in case of @ref CALL_S_PACK.
+ * notable exception for `0` in case of @ref CALL_S_REQUEST.
  */
-typedef int (*rpccall_func_t)(enum rpccall_stage stage, cp_pack_t pack,
-	int request_id, cp_unpack_t unpack, struct cpitem *item, void *ctx);
+typedef int (*rpccall_func_t)(enum rpccall_stage stage, struct rpccall_ctx *ctx);
 
 /// @cond
 int _rpccall(rpchandler_t handler, rpchandler_responses_t responses,
@@ -155,6 +207,5 @@ int _rpccall(rpchandler_t handler, rpchandler_responses_t responses,
 #define rpccall(HANDLER, RESPONSES, FUNC, ...) \
 	__rpccall_value_select(__VA_ARGS_ __VA_OPT__(, ) _rpccall, __rpccall_deft, \
 		__rpccall_def, __rpccall_noctx)(HANDLER, RESPONSES, FUNC, ##__VA_ARGS__)
-
 
 #endif

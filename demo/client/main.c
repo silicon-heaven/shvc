@@ -25,64 +25,63 @@ static void print_track(struct track *track) {
 }
 
 
-static int rpccall_app_name(enum rpccall_stage stage, cp_pack_t pack,
-	int request_id, cp_unpack_t unpack, struct cpitem *item, void *ctx) {
-	char **name = ctx;
+static int rpccall_app_name(enum rpccall_stage stage, struct rpccall_ctx *ctx) {
+	char **name = ctx->cookie;
 	switch (stage) {
-		case CALL_S_PACK:
-			rpcmsg_pack_request_void(pack, ".app", "name", NULL, request_id);
-			return 0;
-		case CALL_S_RESULT:
-			free(*name);
-			*name = cp_unpack_strdup(unpack, item);
-			return 0;
-		case CALL_S_VOID_RESULT:
-			free(*name);
-			*name = NULL;
-			return 0;
-		case CALL_S_ERROR:
-			// TODO possibly store error string somewhere?
-			return 1;
-		case CALL_S_COMERR:
-		case CALL_S_TIMERR:
-			return -1;
-	}
-	return 0;
-}
-
-static int rpccall_has_device(enum rpccall_stage stage, cp_pack_t pack,
-	int request_id, cp_unpack_t unpack, struct cpitem *item, void *ctx) {
-	bool *has_device = ctx;
-	switch (stage) {
-		case CALL_S_PACK:
-			rpcmsg_pack_request(pack, "test", "ls", NULL, request_id);
-			cp_pack_str(pack, "device");
-			cp_pack_container_end(pack);
-			return 0;
-		case CALL_S_RESULT:
-			*has_device = cp_unpack_type(unpack, item) == CPITEM_BOOL &&
-				item->as.Bool;
-		case CALL_S_VOID_RESULT:
-		case CALL_S_ERROR:
-			return 0;
-		case CALL_S_COMERR:
-		case CALL_S_TIMERR:
-			return -1;
-	}
-	return 0;
-}
-
-static int rpccall_track_get(enum rpccall_stage stage, cp_pack_t pack,
-	int request_id, cp_unpack_t unpack, struct cpitem *item, void *ctx) {
-	struct track *track = ctx;
-	switch (stage) {
-		case CALL_S_PACK:
+		case CALL_S_REQUEST:
 			rpcmsg_pack_request_void(
-				pack, "test/device/track/" TRACK_ID, "get", NULL, request_id);
-			return 0;
+				ctx->pack, ".app", "name", NULL, ctx->request_id);
+			break;
+		case CALL_S_RESULT:
+			free(*name);
+			*name = cp_unpack_strdup(ctx->unpack, ctx->item);
+			break;
+		case CALL_S_DONE:
+			if (ctx->errno != RPCERR_NO_ERROR) {
+				printf("Got error?\n");
+				fprintf(stderr, "Error: %s\n", ctx->errmsg);
+			}
+			return ctx->errno;
+		case CALL_S_COMERR:
+		case CALL_S_TIMERR:
+			return -1;
+	}
+	return 0;
+}
+
+static int rpccall_has_device(enum rpccall_stage stage, struct rpccall_ctx *ctx) {
+	bool *has_device = ctx->cookie;
+	switch (stage) {
+		case CALL_S_REQUEST:
+			rpcmsg_pack_request(ctx->pack, "test", "ls", NULL, ctx->request_id);
+			cp_pack_str(ctx->pack, "device");
+			cp_pack_container_end(ctx->pack);
+			break;
+		case CALL_S_RESULT:
+			*has_device = cp_unpack_type(ctx->unpack, ctx->item) == CPITEM_BOOL &&
+				ctx->item->as.Bool;
+			break;
+		case CALL_S_DONE:
+			if (ctx->errno != RPCERR_NO_ERROR)
+				fprintf(stderr, "Error: %s\n", ctx->errmsg);
+			return ctx->errno;
+		case CALL_S_COMERR:
+		case CALL_S_TIMERR:
+			return -1;
+	}
+	return 0;
+}
+
+static int rpccall_track_get(enum rpccall_stage stage, struct rpccall_ctx *ctx) {
+	struct track *track = ctx->cookie;
+	switch (stage) {
+		case CALL_S_REQUEST:
+			rpcmsg_pack_request_void(ctx->pack, "test/device/track/" TRACK_ID,
+				"get", NULL, ctx->request_id);
+			break;
 		case CALL_S_RESULT:
 			track->len = 0;
-			for_cp_unpack_list(unpack, item) {
+			for_cp_unpack_list(ctx->unpack, ctx->item) {
 				if (track->siz <= track->len) {
 					assert(track->siz > 0);
 					long long *new_track = realloc(
@@ -90,16 +89,14 @@ static int rpccall_track_get(enum rpccall_stage stage, cp_pack_t pack,
 					assert(new_track);
 					track->buf = new_track;
 				}
-				if (item->type == CPITEM_INT)
-					track->buf[track->len++] = item->as.Int;
+				if (ctx->item->type == CPITEM_INT)
+					track->buf[track->len++] = ctx->item->as.Int;
 			}
-			return 0;
-		case CALL_S_VOID_RESULT:
-			track->len = 0;
-			return 0;
-		case CALL_S_ERROR:
-			// TODO possibly store error string somewhere?
-			return 1;
+			break;
+		case CALL_S_DONE:
+			if (ctx->errno != RPCERR_NO_ERROR)
+				fprintf(stderr, "Error: %s\n", ctx->errmsg);
+			return ctx->errno;
 		case CALL_S_COMERR:
 		case CALL_S_TIMERR:
 			return -1;
@@ -107,25 +104,24 @@ static int rpccall_track_get(enum rpccall_stage stage, cp_pack_t pack,
 	return 0;
 }
 
-static int rpccall_track_set(enum rpccall_stage stage, cp_pack_t pack,
-	int request_id, cp_unpack_t unpack, struct cpitem *item, void *ctx) {
-	struct track *track = ctx;
+static int rpccall_track_set(enum rpccall_stage stage, struct rpccall_ctx *ctx) {
+	struct track *track = ctx->cookie;
 	switch (stage) {
-		case CALL_S_PACK:
-			rpcmsg_pack_request(
-				pack, "test/device/track/" TRACK_ID, "set", NULL, request_id);
-			cp_pack_list_begin(pack);
+		case CALL_S_REQUEST:
+			rpcmsg_pack_request(ctx->pack, "test/device/track/" TRACK_ID, "set",
+				NULL, ctx->request_id);
+			cp_pack_list_begin(ctx->pack);
 			for (size_t i = 0; i < track->len; i++)
-				cp_pack_int(pack, track->buf[i]);
-			cp_pack_container_end(pack);
-			cp_pack_container_end(pack);
+				cp_pack_int(ctx->pack, track->buf[i]);
+			cp_pack_container_end(ctx->pack);
+			cp_pack_container_end(ctx->pack);
 			break;
 		case CALL_S_RESULT:
-		case CALL_S_VOID_RESULT:
-			return 0;
-		case CALL_S_ERROR:
-			// TODO possibly store error string somewhere?
-			return 1;
+			break;
+		case CALL_S_DONE:
+			if (ctx->errno != RPCERR_NO_ERROR)
+				fprintf(stderr, "Error: %s\n", ctx->errmsg);
+			return ctx->errno;
 		case CALL_S_COMERR:
 		case CALL_S_TIMERR:
 			return -1;

@@ -189,7 +189,7 @@ ARRAY_TEST(all, unpack) {
 	}
 	ck_assert_ptr_null(e);
 
-	if (rpcmsg_has_param(&item)) {
+	if (rpcmsg_has_value(&item)) {
 		cp_unpack(unpack, &item);
 		ck_assert_item_type(item, CPITEM_NULL);
 	} /* Otherwise this was all that is in the message */

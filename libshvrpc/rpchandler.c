@@ -125,7 +125,7 @@ static void send_unlock(rpchandler_t handler) {
 static bool common_ls_dir(struct msg_ctx *ctx, char **name) {
 	*name = NULL;
 	bool invalid_param = false;
-	if (rpcmsg_has_param(ctx->ctx.item)) {
+	if (rpcmsg_has_value(ctx->ctx.item)) {
 		switch (cp_unpack_type(ctx->ctx.unpack, ctx->ctx.item)) {
 			case CPITEM_NULL:
 			case CPITEM_LIST: /* TODO backward compatible */

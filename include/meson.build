@@ -26,7 +26,5 @@ libshvcaller_headers = files(
   'shv/rpccall.h',
   'shv/rpchandler_responses.h',
 )
-libshvcallee_headers = files(
-  'shv/rpchandler_device.h'
-)
+libshvcallee_headers = files('shv/rpchandler_device.h')
 libshvbroker_headers = files('shv/rpcbroker.h')

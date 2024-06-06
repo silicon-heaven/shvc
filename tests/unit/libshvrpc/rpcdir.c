@@ -37,6 +37,12 @@ ARRAY_TEST(pack, packer, pairs_d) {
 	ck_assert_packstr(_d.cpon);
 }
 
+TEST(pack, pack_ls) {
+	rpcdir_pack(packstream_pack, &rpcdir_ls);
+	ck_assert_packstr(
+		"i{1:\"ls\",3:\"ils\",4:\"ols\",5:1,6:{\"lsmod\":\"olsmod\"}}");
+}
+
 TEST(pack, pack_dir) {
 	rpcdir_pack(packstream_pack, &rpcdir_dir);
 	ck_assert_packstr("i{1:\"dir\",3:\"idir\",4:\"odir\",5:1}");
@@ -71,7 +77,7 @@ static void unpacker_test(struct cpondir _d) {
 ARRAY_TEST(unpack, unpacker, pairs_d) {
 	unpacker_test(_d);
 }
-struct cpondir unpacker_map_d[] = {
+static struct cpondir unpacker_map_d[] = {
 	{(struct rpcdir){
 		 .name = "get",
 		 .param = "Int",
@@ -97,7 +103,7 @@ ARRAY_TEST(unpack, unpacker_map) {
 	unpacker_test(_d);
 }
 
-const char *const unpack_invalid_d[] = {
+static const char *const unpack_invalid_d[] = {
 	"i{}",
 	"{}",
 	"[]",

@@ -54,18 +54,29 @@ enum rpcmsg_keys {
 	RPCMSG_KEY_ERROR,
 };
 
-
 /*! Identification of the message. */
 enum rpcmsg_type {
-	/*! Message is not know or has invalid meta */
+	/*! Message is not know or has invalid format */
 	RPCMSG_T_INVALID,
-	/*! Message is request (`request_id` is valid alongside with `method`). */
+	/*! Message is request (`request_id` is valid alongside with `method`).
+	 *
+	 * The parameter can be unpacked if @ref rpcmsg_has_value signals `true`.
+	 */
 	RPCMSG_T_REQUEST,
-	/*! Message is response (`request_id` is valid). */
+	/*! Message is response (`request_id` is valid).
+	 *
+	 * The result can be unpacked if @ref rpcmsg_has_value signals `true`.
+	 */
 	RPCMSG_T_RESPONSE,
-	/*! Message is response with error attached (`request_id` is valid). */
+	/*! Message is response with error attached (`request_id` is valid).
+	 *
+	 * The error can be unpacked (@ref rpcerror_unpack).
+	 */
 	RPCMSG_T_ERROR,
-	/*! Message is signal (`method` is valid). */
+	/*! Message is signal (`method` is valid).
+	 *
+	 * The value can be unpacked if @ref rpcmsg_has_value signals `true`.
+	 */
 	RPCMSG_T_SIGNAL,
 };
 
@@ -244,20 +255,20 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 	struct rpcmsg_meta *meta, const struct rpcmsg_meta_limits *limits,
 	struct obstack *obstack) __attribute__((nonnull(1, 2, 3, 5)));
 
-/*! Query if message has parameter to unpack.
+/*! Query if message has parameter or response value to unpack.
  *
- * Use this right after @ref rpcmsg_head_unpack to check if parameter can be
+ * Use this right after @ref rpcmsg_head_unpack to check if value can be
  * unpacked.
  *
  * Technically this only checks if currently unpacked item is @ref
- * CPITEM_CONTAINER_END. The message that doesn't have argument will end
+ * CPITEM_CONTAINER_END. The message that doesn't have value will end
  * immediately and thus subsequent unpacks will most likely result into an
  * error.
  *
  * @param item: Item used for the @ref rpcmsg_head_unpack call.
- * @returns `true` if there is parameter to unpack and `false` if there are not.
+ * @returns `true` if there is a value to unpack and `false` if there is not.
  */
-__attribute__((nonnull)) static inline bool rpcmsg_has_param(struct cpitem *item) {
+__attribute__((nonnull)) static inline bool rpcmsg_has_value(struct cpitem *item) {
 	return item->type != CPITEM_CONTAINER_END;
 }
 

@@ -1,46 +1,73 @@
 #include <shv/rpccall.h>
+#include <stdlib.h>
 #include <semaphore.h>
 
-struct callctx {
+struct _ctx {
+	struct rpccall_ctx pub;
 	rpccall_func_t func;
-	void *cookie;
-	int res;
 };
 
 static bool response_callback(struct rpchandler_msg *ctx, void *cookie) {
-	struct callctx *c = cookie;
-	c->res = c->func(ctx->meta.type == RPCMSG_T_RESPONSE
-			? (rpcmsg_has_param(ctx->item) ? CALL_S_RESULT : CALL_S_VOID_RESULT)
-			: CALL_S_ERROR,
-		NULL, ctx->meta.request_id, ctx->unpack, ctx->item, c->cookie);
-	return rpchandler_msg_valid(ctx);
+	struct _ctx *c = cookie;
+	if (ctx->meta.type == RPCMSG_T_ERROR) {
+		rpcerror_unpack(ctx->unpack, ctx->item, &c->pub.errno, &c->pub.errmsg);
+		if (rpchandler_msg_valid(ctx))
+			return true;
+		free(c->pub.errmsg);
+		c->pub.errno = RPCERR_NO_ERROR;
+		c->pub.errmsg = NULL;
+		return false;
+	}
+
+	if (rpcmsg_has_value(ctx->item)) {
+		c->pub.unpack = ctx->unpack;
+		c->pub.item = ctx->item;
+		c->func(CALL_S_RESULT, &c->pub);
+	}
+	if (!rpchandler_msg_valid(ctx))
+		return false;
+	c->pub.errno = RPCERR_NO_ERROR;
+	c->pub.errmsg = NULL;
+	return true;
 }
 
 int _rpccall(rpchandler_t handler, rpchandler_responses_t responses,
 	rpccall_func_t func, void *cookie, int attempts, int timeout) {
-	struct callctx cctx;
-	cctx.func = func;
-	cctx.cookie = cookie;
+	struct _ctx ctx = {
+		.pub.cookie = cookie,
+		.pub.request_id = rpcmsg_request_id(),
+		.pub.errno = RPCERR_NO_ERROR,
+		.pub.errmsg = NULL,
+		.func = func,
+	};
+	rpcresponse_t response = rpcresponse_expect(
+		responses, ctx.pub.request_id, response_callback, &ctx);
+	int result = 0;
 
-	int request_id = rpcmsg_request_id();
-	rpcresponse_t response =
-		rpcresponse_expect(responses, request_id, response_callback, &cctx);
 	for (int attempt = 0; attempt < attempts; attempt++) {
 		cp_pack_t pack = rpchandler_msg_new(handler);
-		int res = func(CALL_S_PACK, pack, request_id, NULL, NULL, cookie);
-		if (res) {
+		ctx.pub.pack = pack;
+		result = func(CALL_S_REQUEST, &ctx.pub);
+		if (result) {
 			rpchandler_msg_drop(handler);
 			rpcresponse_discard(response);
-			return res;
+			goto term;
 		}
 		if (!rpchandler_msg_send(handler)) {
 			rpcresponse_discard(response);
-			return func(CALL_S_COMERR, NULL, request_id, NULL, NULL, cookie);
+			result = func(CALL_S_COMERR, &ctx.pub);
+			goto term;
 		}
 		if (rpcresponse_waitfor(response, timeout)) {
-			return cctx.res;
+			response = NULL;
+			result = func(CALL_S_DONE, &ctx.pub);
+			goto term;
 		}
 	}
+	result = func(CALL_S_TIMERR, &ctx.pub);
+
+term:
+	free(ctx.pub.errmsg);
 	rpcresponse_discard(response);
-	return func(CALL_S_TIMERR, NULL, request_id, NULL, NULL, cookie);
+	return result;
 }

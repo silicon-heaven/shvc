@@ -77,7 +77,7 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 	if (match == NULL)
 		return false;
 
-	bool has_param = rpcmsg_has_param(ctx->item);
+	bool has_param = rpcmsg_has_value(ctx->item);
 	if (!rpchandler_msg_valid(ctx))
 		return true;
 

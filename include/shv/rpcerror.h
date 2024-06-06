@@ -5,8 +5,9 @@
  * Common errors used in the SHV RPC.
  */
 
-#include <shv/cp_pack.h>
+#include <stdarg.h>
 #include <shv/cp_unpack.h>
+#include <shv/cp_pack.h>
 
 /*! Type alias for RPC error codes. Predefined errors are provided as macros
  * prefixed with `RPCERR_`. */
@@ -45,8 +46,8 @@ typedef unsigned rpcerrno_t;
  */
 #define RPCERR_USER_CODE (32)
 
-/*! Keys used in RPC error *IMap*, that follows @ref RPCMSG_KEY_ERROR. */
-enum rpcmsg_error_key {
+/*! Keys used in RPC error *IMap*. */
+enum rpcerror_keys {
 	/*! Must be followed by *Int* value specifying the error code. */
 	RPCMSG_ERR_KEY_CODE = 1,
 	/*! Message describing cause of the error. */
@@ -55,14 +56,10 @@ enum rpcmsg_error_key {
 
 /*! Unpack RPC error.
  *
- * This must be called right after @ref rpcmsg_head_unpack to correctly unpack
- * error.
- *
  * @param unpack: Unpack handle.
  * @param item: Item used for the @ref cp_unpack calls and was used in the last
  *   one.
- * @param errno: Pointer to the variable where error number is placed. Can be
- *   `NULL` if you are not interested in the error code.
+ * @param errno: Pointer to the variable where error number is placed.
  * @param errmsg: Pointer to the variable where error message is placed. Error
  *   message is copied to the memory allocated using malloc and thus do not
  *   forget to free it. You can pass `NULL` if you are not interested in the
@@ -70,6 +67,16 @@ enum rpcmsg_error_key {
  * @returns `true` if error was unpacked correctly, `false` otherwise.
  */
 bool rpcerror_unpack(cp_unpack_t unpack, struct cpitem *item, rpcerrno_t *errno,
-	char **errmsg) __attribute__((nonnull(1, 2)));
+	char **errmsg) __attribute__((nonnull(1, 2, 3)));
+
+/*! Pack RPC error.
+ *
+ * @param pack: Pack handle.
+ * @param errno: Error number to be packed.
+ * @param errmsg: Message to be packed as description of the error.
+ * @result `true` if packing was successful and `false` otherwise.
+ */
+bool rpcerror_pack(cp_pack_t pack, rpcerrno_t errno, const char *errmsg)
+	__attribute__((nonnull(1)));
 
 #endif

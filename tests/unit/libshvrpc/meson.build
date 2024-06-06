@@ -2,9 +2,10 @@ unittest_libshvrpc = executable(
   'unittest-libshvrpc',
   [
     #'rpcclient_links.c',
-    'rpcaccess.c',
     #'rpcclient_ping.c',
+    'rpcaccess.c',
     'rpcdir.c',
+    'rpcerror.c',
     'rpcmsg_head.c',
     'rpcmsg_pack.c',
     'rpcurl.c',

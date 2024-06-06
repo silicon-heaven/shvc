@@ -195,7 +195,6 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 			if (!key || key == RPCMSG_KEY_RESULT) {
 				meta->type = RPCMSG_T_RESPONSE;
 			} else if (key == RPCMSG_KEY_ERROR) {
-				// TODO possibly unpack error directly here
 				meta->type = RPCMSG_T_ERROR;
 			} else
 				FAILURE; // GCOVR_EXCL_BR_LINE

@@ -97,7 +97,7 @@ struct rpchandler_funcs {
 	 * The message parameters are parsed with @ref rpchandler_msg.unpack and
 	 * @ref rpchandler_msg.item. Before you invoke first @ref cp_unpack you must
 	 * make sure that there is actually parameter to unpack with @ref
-	 * rpcmsg_has_param (otherwise you can get unpack error even for valid
+	 * rpcmsg_has_value (otherwise you can get unpack error even for valid
 	 * message). Next you can use unpack functions to unpack parameters any way
 	 * you wish.
 	 *
