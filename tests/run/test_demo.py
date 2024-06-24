@@ -45,7 +45,7 @@ async def fixture_demo_device(demo_device_exec, broker, url):
                 {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
             ],
         ),
-        ("test/device", "ls", [".app", "track"]),
+        ("test/device", "ls", [".app", "file", "track"]),
         (
             "test/device/.app",
             "dir",

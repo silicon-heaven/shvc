@@ -36,6 +36,18 @@ V0.0 {
 		# shv/rpcclient_stream.h
 		rpcclient_stream_new;
 
+		# shv/rpcfile.h
+		rpcfile_stat_pack;
+		rpcfile_stat_unpack;
+		rpcfile_stat;
+		rpcfile_size;
+		rpcfile_crc;
+		rpcfile_sha1;
+		rpcfile_read;
+		rpcfile_write;
+		rpcfile_truncate;
+		rpcfile_append;
+
 		# shv/rpctransport.h
 		rpcclient_tcp_new;
 		rpcserver_tcp_new;
@@ -108,6 +120,11 @@ V0.0 {
 		rpchandler_app_new;
 		rpchandler_app_destroy;
 		rpchandler_app_stage;
+
+		# shv/rpchandler_file.h
+		rpchandler_file_new;
+		rpchandler_file_destroy;
+		rpchandler_file_stage;
 
 		# shv/rpchandler_login.h
 		rpchandler_login_new;

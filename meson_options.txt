@@ -19,6 +19,15 @@ option(
   description: 'Use cryptographic-random instead of pseudo-random for generated authnetication tokens.',
 )
 
+# Functional options
+option(
+  'file_maxwrite',
+  type: 'integer',
+  min: 0,
+  value: 128,
+  description: 'Set maximal size in bytes of single write operation for file nodes. Larger transfers are rejected.',
+)
+
 # Applications
 option(
   'shvc',

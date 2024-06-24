@@ -2,6 +2,7 @@ libshvrpc_sources = [
   files(
     'rpchandler/app.c',
     'rpchandler/device.c',
+    'rpchandler/file.c',
     'rpchandler/login.c',
     'rpchandler/responses.c',
     'rpchandler/signals.c',
@@ -15,6 +16,7 @@ libshvrpc_sources = [
     'rpcclient_stream.c',
     'rpcdir.c',
     'rpcerror.c',
+    'rpcfile.c',
     'rpchandler.c',
     'rpclogger.c',
     'rpclogin.c',

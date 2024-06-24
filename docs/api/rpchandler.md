@@ -16,6 +16,7 @@ For the RPC Handler there are some prepared handlers you want to use:
 
 rpchandler_app
 rpchandler_device
+rpchandler_file
 rpchandler_login
 rpchandler_responses
 rpchandler_signals

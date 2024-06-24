@@ -14,6 +14,7 @@ rpcurl
 rpclogin
 rpcmsg
 rpcerror
+rpcfile
 rpcaccess
 rpchandler
 rpccall

@@ -316,8 +316,7 @@ static void rpc_handle_crc(struct rpchandler_msg *ctx, const char *path) {
 	close(fd);
 	cp_pack_t pack = rpchandler_msg_new_response(ctx);
 	cp_pack_uint(pack, crc32_finalize(crc));
-	cp_pack_container_end(pack);
-	rpchandler_msg_send(ctx);
+	rpchandler_msg_send_response(ctx, pack);
 }
 
 static void rpc_handle_sha1(struct rpchandler_msg *ctx, const char *path) {
@@ -361,8 +360,7 @@ static void rpc_handle_sha1(struct rpchandler_msg *ctx, const char *path) {
 	close(fd);
 	cp_pack_t pack = rpchandler_msg_new_response(ctx);
 	cp_pack_blob(pack, sha, SHA1_SIZ);
-	cp_pack_container_end(pack);
-	rpchandler_msg_send(ctx);
+	rpchandler_msg_send_response(ctx, pack);
 }
 
 static void rpc_handle_read(struct rpchandler_msg *ctx, const char *path) {
@@ -414,8 +412,7 @@ static void rpc_handle_read(struct rpchandler_msg *ctx, const char *path) {
 	} while (len > 0);
 
 	close(fd);
-	cp_pack_container_end(pack);
-	rpchandler_msg_send(ctx);
+	rpchandler_msg_send_response(ctx, pack);
 }
 
 static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
@@ -426,8 +423,15 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 	for (int i = 0; i < handler->num; i++) {
 		struct rpchandler_file_repr *file = handler->file + i;
 
-		if (handler->cb->update_paths)
-			handler->cb->update_paths(file->list->file_path, file->list->shv_path);
+		if (handler->cb->update_paths) {
+			if (handler->cb->update_paths(
+					&file->list->file_path, file->list->shv_path) < 0) {
+				rpchandler_msg_valid(ctx);
+				rpchandler_msg_send_error(
+					ctx, RPCERR_INTERNAL_ERR, "Could not obtain file paths.");
+				return RPCHANDLER_MSG_DONE;
+			}
+		}
 
 		if (!ctx->meta.path || strcmp(ctx->meta.path, file->list->shv_path))
 			continue;
@@ -445,7 +449,7 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 				update_cached_stats(file->list->file_path, &file->stat);
 				cp_pack_t pack = rpchandler_msg_new_response(ctx);
 				rpcfile_stat_pack(pack, &file->stat);
-				rpchandler_msg_send(ctx);
+				rpchandler_msg_send_response(ctx, pack);
 				return RPCHANDLER_MSG_DONE;
 			}
 			case M_SIZE: {
@@ -455,7 +459,7 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 				update_cached_stats(file->list->file_path, &file->stat);
 				cp_pack_t pack = rpchandler_msg_new_response(ctx);
 				cp_pack_int(pack, file->stat.size);
-				rpchandler_msg_send(ctx);
+				rpchandler_msg_send_response(ctx, pack);
 				return RPCHANDLER_MSG_DONE;
 			}
 			case M_WRITE:

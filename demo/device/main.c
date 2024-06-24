@@ -1,11 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <limits.h>
 #include <poll.h>
 #include <signal.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <shv/rpcclient.h>
+#include <shv/rpcfile.h>
 #include <shv/rpchandler_app.h>
+#include <shv/rpchandler_file.h>
 #include <shv/rpchandler_login.h>
 #include <shv/rpcurl.h>
 #include "handler.h"
@@ -13,13 +19,31 @@
 
 #define obstack_chunk_alloc malloc
 #define obstack_chunk_free free
+#define DEMO_FILE_PATH "demo/device/shv_file"
 
 static size_t logsiz = BUFSIZ > 128 ? BUFSIZ : 128;
 
 static volatile sig_atomic_t halt = false;
 
+static struct rpchandler_file_list file_corr[] = {
+	{
+		"file",
+		DEMO_FILE_PATH,
+		RPCFILE_ACCESS_VALIDATION | RPCFILE_ACCESS_READ | RPCFILE_ACCESS_WRITE |
+			RPCFILE_ACCESS_TRUNCATE | RPCFILE_ACCESS_APPEND,
+	},
+};
+
 static void sigint_handler(int status) {
 	halt = true;
+}
+
+static struct rpchandler_file_list *list_files(int *num) {
+	*num = sizeof(file_corr) / sizeof(struct rpchandler_file_list);
+	struct rpchandler_file_list *corr =
+		calloc(*num, sizeof(struct rpchandler_file_list));
+	memcpy(corr, file_corr, *num * sizeof(struct rpchandler_file_list));
+	return corr;
 }
 
 int main(int argc, char **argv) {
@@ -49,12 +73,22 @@ int main(int argc, char **argv) {
 
 	struct device_state *state = device_state_new();
 
+	int fd = open(DEMO_FILE_PATH, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
+	close(fd);
+
+	struct rpchandler_file_cb file_cb = {
+		.ls = list_files,
+		.update_paths = NULL,
+	};
+
 	rpchandler_login_t login = rpchandler_login_new(&rpcurl->login);
 	rpchandler_app_t app = rpchandler_app_new("shvc-demo-device", PROJECT_VERSION);
+	rpchandler_file_t file = rpchandler_file_new(&file_cb);
 
 	const struct rpchandler_stage stages[] = {
 		rpchandler_login_stage(login),
 		rpchandler_app_stage(app),
+		rpchandler_file_stage(file),
 		(struct rpchandler_stage){.funcs = &device_handler_funcs, .cookie = state},
 		{},
 	};
@@ -82,6 +116,7 @@ int main(int argc, char **argv) {
 	}
 
 	rpchandler_destroy(handler);
+	rpchandler_file_destroy(file);
 	rpchandler_app_destroy(app);
 	rpchandler_login_destroy(login);
 	device_state_free(state);

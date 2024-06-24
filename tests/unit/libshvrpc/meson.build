@@ -8,6 +8,7 @@ unittest_libshvrpc = executable(
     'rpcdir.c',
     'rpcerror.c',
     'rpclogin.c',
+    'rpcfile.c',
     'rpcmsg_head.c',
     'rpcmsg_pack.c',
     'rpcri.c',
