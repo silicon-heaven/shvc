@@ -112,7 +112,6 @@
             # Testing and code coverage
             valgrind
             gcovr
-            gcc11 # Hotfix for https://github.com/NixOS/nixpkgs/pull/279455
             # Documentation
             sphinx-autobuild
           ];

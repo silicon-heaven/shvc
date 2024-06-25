@@ -11,22 +11,8 @@ resources mentioned in this readme file.
 * [Meson build system](https://mesonbuild.com/)
 * [gperf](https://www.gnu.org/software/gperf)
 * On non-glibc [argp-standalone](http://www.lysator.liu.se/~nisse/misc)
-
-For tests:
-
-* [check-suite](https://gitlab.com/Cynerd/check-suite)
-* [bats](https://bats-core.readthedocs.io/en/stable/index.html)
-* Optionally [valgrind](http://www.valgrind.org)
-
-For code coverage report:
-
-* [lcov](http://ltp.sourceforge.net/coverage/lcov.php)
-
-For linting:
-
-* [cppcheck](https://github.com/danmar/cppcheck)
-* [flawfinder](https://dwheeler.com/flawfinder/)
-
+* [check-suite](https://gitlab.com/Cynerd/check-suite) for unit tests
+* [bats](https://bats-core.readthedocs.io/en/stable/index.html) for run tests
 
 ## Compilation
 
@@ -59,7 +45,8 @@ default for meson) or explicitly enable them using `meson configure
 $ meson test -C builddir
 ```
 
-You can also run tests with Valgrind tool such as `memcheck`:
+You can also run tests with [Valgrind](http://www.valgrind.org) tool such as
+`memcheck`:
 
 ```console
 $ VALGRIND=memcheck meson test -C builddir
@@ -68,7 +55,7 @@ $ VALGRIND=memcheck meson test -C builddir
 ### Code coverage report
 
 There is also possibility to generate code coverage report from test cases. To
-do so you can run:
+do so you need [gcovr](https://gcovr.com/) and then you can run:
 
 ```console
 $ meson setup -Db_coverage=true builddir
@@ -81,15 +68,32 @@ The coverage report is generated in directory:
 
 ## Linting the code
 
-The code can also be linted if linters are installed. There are two linter
-supported at the moment. There is `cppcheck` and `flawfinder`. To run them you
-can do:
+The code can also be linted if
+[clang-tidy](https://clang.llvm.org/extra/clang-tidy/) is installed. To run
+it you can do:
 
 ```console
 $ meson setup builddir
-$ meson compile -C builddir cppcheck
-$ meson compile -C builddir flawfinder
+$ ninja -C builddir clang-tidy
 ```
+
+The other linters are also used for other files in this project; please inspect
+the `.gitlab-ci.yml` file for `.linter` jobs.
+
+## Formating the code
+
+The code should be automatically formatted with
+[clang-format](https://clang.llvm.org/docs/ClangFormat.html). The Meson build
+files with [muon](https://muon.build/).
+
+```console
+$ meson setup builddir
+$ ninja -C builddir clang-format
+$ git ls-files '**/meson.build' meson_options.txt | xargs muon fmt -c .muon_fmt.ini -i
+```
+
+The other formatters are also used for other files in this project; please
+inspect the `.gitlab-ci.yml` file for `.style` jobs.
 
 ## Using Nix development environment
 
