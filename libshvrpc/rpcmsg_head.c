@@ -44,6 +44,33 @@ static struct rpcmsg_meta_extra *unpack_extra(
 	return res;
 }
 
+static inline char *unpack_user_id_compat(cp_unpack_t unpack,
+	struct cpitem *item, struct obstack *obstack, ssize_t limit) {
+	char *brokerId = NULL;
+	char *shvUser = NULL;
+	for_cp_unpack_map(unpack, item, key, 8) {
+		if (!strcmp("brokerId", key)) {
+			brokerId = cp_unpack_strndup(unpack, item, limit);
+			limit -= strlen(brokerId) + (shvUser ? 1 : 0);
+		} else if (!strcmp("shvUser", key)) {
+			shvUser = cp_unpack_strndup(unpack, item, limit);
+			limit -= strlen(shvUser) + (brokerId ? 1 : 0);
+		} /* Ignore any other keys */
+	}
+	if (brokerId) {
+		obstack_grow(obstack, brokerId, strlen(brokerId));
+		free(brokerId);
+	}
+	if (shvUser) {
+		if (brokerId)
+			obstack_1grow(obstack, ':');
+		obstack_grow(obstack, shvUser, strlen(shvUser));
+		free(shvUser);
+	}
+	obstack_1grow(obstack, '\0');
+	return obstack_finish(obstack);
+}
+
 bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 	struct rpcmsg_meta *meta, const struct rpcmsg_meta_limits *limits,
 	struct obstack *obstack) {
@@ -147,7 +174,17 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 				}
 				break;
 			case RPCMSG_TAG_USER_ID:
-				meta->user_id = STRDUPO(limits->user_id);
+				switch (cp_unpack_type(unpack, item)) {
+					case CPITEM_MAP:
+						meta->user_id = unpack_user_id_compat(
+							unpack, item, obstack, limits->user_id - 1);
+						break;
+					case CPITEM_STRING:
+						meta->user_id = STRDUPO(limits->user_id);
+						break;
+					default:
+						FAILURE; // GCOVR_EXCL_BR_LINE
+				}
 				break;
 			case RPCMSG_TAG_ACCESS_LEVEL:
 				if (cp_unpack_type(unpack, item) != CPITEM_INT)

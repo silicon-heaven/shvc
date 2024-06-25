@@ -68,6 +68,46 @@ static const struct {
 		},
 	},
 	{
+		"<8:24,11:[0,3],16:{\"brokerId\":\"broker\",\"shvUser\":\"user\"}>i{2:null",
+		(struct rpcmsg_meta){
+			.type = RPCMSG_T_RESPONSE,
+			.request_id = 24,
+			.user_id = "broker:user",
+			.cids = (long long[]){0, 3},
+			.cids_cnt = 2,
+		},
+	},
+	{
+		"<8:24,11:[0,3],16:{\"shvUser\":\"user\",\"brokerId\":\"broker\"}>i{2:null",
+		(struct rpcmsg_meta){
+			.type = RPCMSG_T_RESPONSE,
+			.request_id = 24,
+			.user_id = "broker:user",
+			.cids = (long long[]){0, 3},
+			.cids_cnt = 2,
+		},
+	},
+	{
+		"<8:24,11:[0,3],16:{\"shvUser\":\"user\"}>i{2:null",
+		(struct rpcmsg_meta){
+			.type = RPCMSG_T_RESPONSE,
+			.request_id = 24,
+			.user_id = "user",
+			.cids = (long long[]){0, 3},
+			.cids_cnt = 2,
+		},
+	},
+	{
+		"<8:24,11:[0,3],16:{\"brokerId\":\"broker\"}>i{2:null",
+		(struct rpcmsg_meta){
+			.type = RPCMSG_T_RESPONSE,
+			.request_id = 24,
+			.user_id = "broker",
+			.cids = (long long[]){0, 3},
+			.cids_cnt = 2,
+		},
+	},
+	{
 		"<8:4>i{}",
 		(struct rpcmsg_meta){
 			.type = RPCMSG_T_RESPONSE,
@@ -207,6 +247,7 @@ static const char *const unpack_invalid_d[] = {
 	"<1:2>i{}",
 	"<1:null>i{}",
 	"<2:null>i{}",
+	"<16:42>i{}",
 	"<17:\"bws\">i{}",
 	"<63:{},20:5>i{}",
 	"<11:\"foo\">i{}",
