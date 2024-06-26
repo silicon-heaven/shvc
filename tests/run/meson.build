@@ -38,6 +38,10 @@ if demo_client_opt
   pytest_depends += demo_client
   pytest_env += 'DEMO_CLIENT=' + demo_client.full_path()
 endif
+if demo_history_opt
+  pytest_depends += demo_history
+  pytest_env += 'DEMO_HISTORY=' + demo_history.full_path()
+endif
 
 test(
   'run-pytest',

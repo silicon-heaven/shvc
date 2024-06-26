@@ -64,6 +64,12 @@ option(
   value: true,
   description: 'Build SHV RPC demo client application.',
 )
+option(
+  'demo-history',
+  type: 'boolean',
+  value: true,
+  description: 'Build SHV RPC demo history application.',
+)
 # Applications defaults
 option(
   'default-url',

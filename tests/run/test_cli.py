@@ -77,6 +77,23 @@ async def test_demo_device_help(demo_device_exec):
     ]
 
 
+async def test_demo_history_help(demo_history_exec):
+    stdout, stderr = await subproc(*demo_history_exec, "-h")
+    assert stdout == [b""]
+    assert stderr == [
+        f"{demo_history_exec[-1]} [-v] [URL]".encode(),
+        b"Example SHV RPC history implemented using SHVC.",
+        b"",
+        b"Arguments:",
+        b"  -v       Increase logging level of the communication",
+        b"  -q       Decrease logging level of the communication",
+        b"  -d       Set maximum logging level of the communication",
+        b"  -V       Print SHVC version and exit",
+        b"  -h       Print this help text",
+        b"",
+    ]
+
+
 async def test_demo_client_help(demo_client_exec):
     stdout, stderr = await subproc(*demo_client_exec, "-h")
     assert stdout == [b""]
@@ -109,6 +126,12 @@ async def test_shvcbroker_version(shvcbroker_exec):
 async def test_demo_device_version(demo_device_exec):
     stdout, stderr = await subproc(*demo_device_exec, "-V")
     assert stdout == [f"{demo_device_exec[-1]} {version}".encode(), b""]
+    assert stderr == [b""]
+
+
+async def test_demo_history_version(demo_history_exec):
+    stdout, stderr = await subproc(*demo_history_exec, "-V")
+    assert stdout == [f"{demo_history_exec[-1]} {version}".encode(), b""]
     assert stderr == [b""]
 
 

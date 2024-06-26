@@ -2,6 +2,7 @@
 
 import asyncio
 import dataclasses
+import datetime
 import logging
 
 import pytest
@@ -166,3 +167,112 @@ async def test_demo_client_without_device(broker, demo_client_exec, url):
         b"Hint: Make sure the device is connected to the broker.",
         b"",
     ]
+
+
+@pytest.fixture(name="demo_history")
+async def fixture_demo_history(demo_history_exec, broker, url):
+    """Demo history connected to the Python broker."""
+    cmd = [
+        demo_history_exec[0],
+        *demo_history_exec[1:],
+        f"{url}&devmount=test/.history",
+        "-d",
+    ]
+    logger.debug("%s", " ".join(cmd))
+    proc = await asyncio.create_subprocess_exec(*cmd)
+    while broker.client_on_path("test/.history") is None:
+        await asyncio.sleep(0)  # Unblock the asyncio loop
+    yield proc
+    proc.terminate()
+    await proc.wait()
+
+
+@pytest.mark.parametrize(
+    "path,method,param,result",
+    (
+        ("", "ls", None, [".app", ".broker", "test"]),
+        ("test", "ls", None, [".history"]),
+        ("test/.history", "ls", None, [".app", ".records"]),
+        (
+            "test/.history/.records",
+            "dir",
+            None,
+            [
+                {1: "dir", 3: "idir", 4: "odir", 5: 1},
+                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
+            ],
+        ),
+        ("test/.history/.records", "ls", None, ["records_log"]),
+        (
+            "test/.history/.records/records_log",
+            "dir",
+            None,
+            [
+                {1: "dir", 3: "idir", 4: "odir", 5: 1},
+                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
+                {1: "fetch", 2: 8, 3: "[Int, Int]", 4: "[{...}, ...]", 5: 40},
+                {1: "span", 2: 2, 3: "Null", 4: "[Int, Int, Int]", 5: 40},
+            ],
+        ),
+        ("test/.history/.records/records_log", "span", None, [1, 6, 6]),
+        (
+            "test/.history/.records/records_log",
+            "fetch",
+            [1, 6],
+            [
+                {
+                    0: 1,
+                    1: datetime.datetime(6421, 6, 11, 15, 2, 1, tzinfo=datetime.UTC),
+                    2: "",
+                    3: "chng",
+                    4: "get",
+                    5: 2,
+                    6: 8,
+                    7: None,
+                    8: False,
+                },
+                {
+                    0: 1,
+                    1: datetime.datetime(6421, 6, 11, 14, 56, 11, tzinfo=datetime.UTC),
+                    2: "get2",
+                    3: "fchng",
+                    4: "src",
+                    5: 3,
+                    6: 1,
+                    7: "elluser",
+                    8: False,
+                },
+                {
+                    0: 3,
+                    1: datetime.datetime(6421, 6, 11, 14, 56, 11, tzinfo=datetime.UTC),
+                    60: 18000000,
+                },
+                {
+                    0: 1,
+                    1: datetime.datetime(6421, 6, 11, 14, 54, 31, tzinfo=datetime.UTC),
+                    2: "set3",
+                    3: "chng",
+                    4: "get",
+                    5: 5,
+                    6: 16,
+                    7: "elluser_wifi",
+                    8: False,
+                },
+                {
+                    0: 1,
+                    1: datetime.datetime(6421, 6, 11, 14, 51, 11, tzinfo=datetime.UTC),
+                    2: "get6",
+                    3: "chng",
+                    4: "get",
+                    5: 6,
+                    6: 40,
+                    7: "elluser_local",
+                    8: False,
+                },
+            ],
+        ),
+    ),
+)
+async def test_call_history(demo_history, client, path, method, param, result):
+    """Call various methods from Python."""
+    assert await client.call(path, method, param) == result

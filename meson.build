@@ -75,6 +75,7 @@ if shvcbroker_opt
 endif
 demo_device_opt = get_option('demo-device')
 demo_client_opt = get_option('demo-client')
+demo_history_opt = get_option('demo-history')
 subdir('demo')
 
 

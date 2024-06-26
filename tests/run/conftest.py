@@ -53,6 +53,15 @@ def fixture_demo_device_exec(valgrind_exec):
     return [*valgrind_exec, env]
 
 
+@pytest.fixture(name="demo_history_exec", scope="session")
+def fixture_demo_history_exec(valgrind_exec):
+    """Provide the demo-history application."""
+    env = os.getenv("DEMO_HISTORY")
+    if not env:
+        pytest.skip("DEMO_HISTORY not provided")
+    return [*valgrind_exec, env]
+
+
 @pytest.fixture(name="demo_client_exec", scope="session")
 def fixture_demo_client_exec(valgrind_exec):
     """Provide the shvc-demo-client application."""
@@ -103,6 +112,7 @@ def fixture_broker_config(url):
             {
                 shv.RpcMethodAccess.BROWSE: {"**:ls", "**:dir"},
                 shv.RpcMethodAccess.COMMAND: {"test/**:*"},
+                shv.RpcMethodAccess.SERVICE: {"test/.history/**:*"},
             },
         )
     )
