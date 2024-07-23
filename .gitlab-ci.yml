@@ -103,7 +103,7 @@ tests:
   extends: .meson-test
   script:
     - nix develop --quiet -c meson setup build -Doptimization=plain -Db_coverage=true
-    - nix develop --quiet -c meson test -C build
+    - nix develop --quiet -c meson test -C build --print-errorlogs
 
 .valgrind:
   extends: .meson-test

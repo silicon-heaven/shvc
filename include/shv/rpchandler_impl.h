@@ -20,7 +20,7 @@
  * rpcclient_validmsg this can be called multiple times in the same message
  * handler.
  *
- * @param ctx: Handle context passed to @ref rpchandler_funcs.msg.
+ * @param ctx Handle context passed to @ref rpchandler_funcs.msg.
  * @returns `true` if message is valid and `false` otherwise.
  */
 bool rpchandler_msg_valid(struct rpchandler_msg *ctx) __attribute__((nonnull));
@@ -36,8 +36,8 @@ bool rpchandler_msg_valid(struct rpchandler_msg *ctx) __attribute__((nonnull));
  * can't know about each other we just need to prevent from duplicates to be
  * added.
  *
- * @param ctx: Context passed to the @ref rpchandler_funcs.ls.
- * @param name: Name of the node.
+ * @param ctx Context passed to the @ref rpchandler_funcs.ls.
+ * @param name Name of the node.
  */
 void rpchandler_ls_result(struct rpchandler_ls *ctx, const char *name)
 	__attribute__((nonnull));
@@ -49,8 +49,8 @@ void rpchandler_ls_result(struct rpchandler_ls *ctx, const char *name)
  * such for the time of ls method handling. This function simply takes pointer
  * to the **name** and uses it internally in RPC Handler without copying it.
  *
- * @param ctx: Context passed to the @ref rpchandler_funcs.ls.
- * @param name: Name of the node (must be pointer to memory that is kept valid
+ * @param ctx Context passed to the @ref rpchandler_funcs.ls.
+ * @param name Name of the node (must be pointer to memory that is kept valid
  *   for the duration of ls method handler).
  */
 void rpchandler_ls_result_const(struct rpchandler_ls *ctx, const char *name)
@@ -59,8 +59,8 @@ void rpchandler_ls_result_const(struct rpchandler_ls *ctx, const char *name)
 /*! The variant of the @ref rpchandler_ls_result with name generated from
  * format string.
  *
- * @param ctx: Context passed to the @ref rpchandler_funcs.ls.
- * @param fmt: Format string used to generate node name.
+ * @param ctx Context passed to the @ref rpchandler_funcs.ls.
+ * @param fmt Format string used to generate node name.
  */
 void rpchandler_ls_result_fmt(struct rpchandler_ls *ctx, const char *fmt, ...)
 	__attribute__((nonnull));
@@ -68,9 +68,9 @@ void rpchandler_ls_result_fmt(struct rpchandler_ls *ctx, const char *fmt, ...)
 /*! The variant of the @ref rpchandler_ls_result with name generated from
  * format string.
  *
- * @param ctx: Context passed to the @ref rpchandler_funcs.ls.
- * @param fmt: Format string used to generate node name.
- * @param args: List of variable arguments used in format string.
+ * @param ctx Context passed to the @ref rpchandler_funcs.ls.
+ * @param fmt Format string used to generate node name.
+ * @param args List of variable arguments used in format string.
  */
 void rpchandler_ls_result_vfmt(struct rpchandler_ls *ctx, const char *fmt,
 	va_list args) __attribute__((nonnull));
@@ -81,7 +81,7 @@ void rpchandler_ls_result_vfmt(struct rpchandler_ls *ctx, const char *fmt,
  * calling this you should return from @ref rpchandler_funcs.ls to allow
  * handler immediately act upon it.
  *
- * @param ctx: Context passed to the @ref rpchandler_funcs.ls.
+ * @param ctx Context passed to the @ref rpchandler_funcs.ls.
  */
 void rpchandler_ls_exists(struct rpchandler_ls *ctx) __attribute__((nonnull));
 
@@ -95,8 +95,8 @@ void rpchandler_ls_exists(struct rpchandler_ls *ctx) __attribute__((nonnull));
  * is also no need for function like @ref rpchandler_ls_result_const
  * because **method** is used immediately without need to preserve it.
  *
- * @param ctx: Context passed to the @ref rpchandler_funcs.dir.
- * @param method: The method description.
+ * @param ctx Context passed to the @ref rpchandler_funcs.dir.
+ * @param method The method description.
  */
 void rpchandler_dir_result(struct rpchandler_dir *ctx,
 	const struct rpcdir *method) __attribute__((nonnull));
@@ -107,7 +107,7 @@ void rpchandler_dir_result(struct rpchandler_dir *ctx,
  * calling this you should return from @ref rpchandler_funcs.dir to allow
  * handler immediately act upon it.
  *
- * @param ctx: Context passed to the @ref rpchandler_funcs.dir.
+ * @param ctx Context passed to the @ref rpchandler_funcs.dir.
  */
 void rpchandler_dir_exists(struct rpchandler_dir *ctx) __attribute__((nonnull));
 
@@ -121,7 +121,7 @@ struct obstack *_rpchandler_obstack(rpchandler_t rpchandler)
  * You can use this to temporally store data in it. All data will be freed
  * right after return from any of the @ref rpchandler_funcs functions.
  *
- * @param CTX: Context passed to @ref rpchandler_funcs functions.
+ * @param CTX Context passed to @ref rpchandler_funcs functions.
  * @returns Pointer to the obstack instance.
  */
 #define rpchandler_obstack(CTX) \
@@ -138,7 +138,7 @@ struct obstack *_rpchandler_obstack(rpchandler_t rpchandler)
  * to @ref rpchandler_msg_send_response. You can abandon this message with @ref
  * rpchandler_msg_drop.
  *
- * @param ctx: Context passed to @ref rpchandler_funcs.msg
+ * @param ctx Context passed to @ref rpchandler_funcs.msg
  * @returns Packer object or `NULL` in case resposne can't be sent.
  */
 __attribute__((nonnull)) static inline cp_pack_t rpchandler_msg_new_response(
@@ -152,8 +152,8 @@ __attribute__((nonnull)) static inline cp_pack_t rpchandler_msg_new_response(
 /*! Combined call to the @ref cp_pack_container_end and @ref
  * rpchandler_msg_send.
  *
- * @param ctx: Context passed to @ref rpchandler_funcs.msg
- * @param pack: Packer returned from @ref rpchandler_msg_new_response.
+ * @param ctx Context passed to @ref rpchandler_funcs.msg
+ * @param pack Packer returned from @ref rpchandler_msg_new_response.
  * @returns Packer object or `NULL` in case resposne can't be sent.
  */
 __attribute__((nonnull(1))) static inline bool rpchandler_msg_send_response(
@@ -167,7 +167,7 @@ __attribute__((nonnull(1))) static inline bool rpchandler_msg_send_response(
 /*! Combined call to the @ref rpchandler_msg_new, @ref
  * rpcmsg_pack_response_void, and @ref rpchandler_msg_send.
  *
- * @param ctx: Context passed to @ref rpchandler_funcs.msg
+ * @param ctx Context passed to @ref rpchandler_funcs.msg
  * @returns Value returned from @ref rpchandler_msg_send.
  */
 __attribute__((nonnull)) static inline bool rpchandler_msg_send_response_void(
@@ -182,9 +182,9 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_send_response_void(
 /*! Combined call to the @ref rpchandler_msg_new, @ref rpcmsg_pack_error, and
  * @ref rpchandler_msg_send.
  *
- * @param ctx: Context passed to @ref rpchandler_funcs.msg
- * @param error: Error code to be reported as response to the request.
- * @param msg: Optional message describing the error details.
+ * @param ctx Context passed to @ref rpchandler_funcs.msg
+ * @param error Error code to be reported as response to the request.
+ * @param msg Optional message describing the error details.
  * @returns Value returned from @ref rpchandler_msg_send.
  */
 __attribute__((nonnull)) static inline bool rpchandler_msg_send_error(
@@ -199,10 +199,10 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_send_error(
 /*! Combined call to the @ref rpchandler_msg_new, @ref rpcmsg_pack_vferror, and
  * @ref rpchandler_msg_send.
  *
- * @param ctx: Context passed to @ref rpchandler_funcs.msg
- * @param error: Error code to be reported as response to the request.
- * @param fmt: Format string used to generate the error message.
- * @param args: Variable list of arguments to be used with **fmt**.
+ * @param ctx Context passed to @ref rpchandler_funcs.msg
+ * @param error Error code to be reported as response to the request.
+ * @param fmt Format string used to generate the error message.
+ * @param args Variable list of arguments to be used with **fmt**.
  * @returns Value returned from @ref rpchandler_msg_send.
  */
 __attribute__((nonnull)) static inline bool rpchandler_msg_send_vferror(
@@ -217,9 +217,9 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_send_vferror(
 /*! Combined call to the @ref rpchandler_msg_new, @ref rpcmsg_pack_ferror, and
  * @ref rpchandler_msg_send.
  *
- * @param ctx: Context passed to @ref rpchandler_funcs.msg
- * @param error: Error code to be reported as response to the request.
- * @param fmt: Format string used to generate the error message.
+ * @param ctx Context passed to @ref rpchandler_funcs.msg
+ * @param error Error code to be reported as response to the request.
+ * @param fmt Format string used to generate the error message.
  * @returns Value returned from @ref rpchandler_msg_send.
  */
 __attribute__((nonnull)) static inline bool rpchandler_msg_send_ferror(
@@ -235,7 +235,7 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_send_ferror(
  *
  * This should be used if method is valid but access level is too low.
  *
- * @param ctx: Context passed to @ref rpchandler_funcs.msg
+ * @param ctx Context passed to @ref rpchandler_funcs.msg
  * @returns Value returned from @ref rpchandler_msg_send.
  */
 bool rpchandler_msg_send_method_not_found(struct rpchandler_msg *ctx)
@@ -245,8 +245,8 @@ bool rpchandler_msg_send_method_not_found(struct rpchandler_msg *ctx)
  *
  * @ref rpchandler_msg_send_method_not_found if access level is not suffient.
  *
- * @param ctx: Context passed to @ref rpchandler_funcs.msg
- * @param access: The minimal required access level.
+ * @param ctx Context passed to @ref rpchandler_funcs.msg
+ * @param access The minimal required access level.
  * @returns `true` if access is sufficient and `false` otherwise.
  */
 __attribute__((nonnull)) static inline bool rpchandler_msg_access_level(

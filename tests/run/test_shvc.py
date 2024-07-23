@@ -31,7 +31,7 @@ async def test_param(shvc_exec, url, broker):
     assert stderr[2:] == [
         b'=> <1:1,8:2,9:"",10:"login">i{1:{"login":{"password":"test","user":"test","ty'
         b'pe":"PLAIN"}}}',
-        b"<= <8:2>i{2...",
+        b"<= <8:2>i{}",
         b'=> <1:1,8:4,9:".broker/currentClient",10:"subscribe">i{1:{}}',
         b"<= <8:4>i{2:true...",
         b"",

@@ -23,10 +23,10 @@ typedef struct rpchandler_app *rpchandler_app_t;
 
 /*! Create new RPC Application Handle.
  *
- * @param name: Name of the application or `NULL` to report `shvc`. The string
+ * @param name Name of the application or `NULL` to report `shvc`. The string
  *   must stay valid for the duration of the object existence as it is not
  *   copied.
- * @param version: Version of the application or `NULL` to report SHVC version.
+ * @param version Version of the application or `NULL` to report SHVC version.
  *   The must stay valid for the duration of the object existence as it is not
  *   copied. You should use both **name** and **version** or none to prevent
  *   confusion.
@@ -39,7 +39,7 @@ rpchandler_app_t rpchandler_app_new(const char *name, const char *version)
  *
  * This is destructor for the object created by @ref rpchandler_app_new.
  *
- * @param rpchandler_app: RPC Application Handler object.
+ * @param rpchandler_app RPC Application Handler object.
  */
 void rpchandler_app_destroy(rpchandler_app_t rpchandler_app);
 
@@ -50,7 +50,7 @@ void rpchandler_app_destroy(rpchandler_app_t rpchandler_app);
  *
  * This stage can be reused in multiple handlers.
  *
- * @param rpchandler_app: RPC Application Handler object.
+ * @param rpchandler_app RPC Application Handler object.
  * @returns Stage to be used in array of stages for RPC Handler.
  */
 struct rpchandler_stage rpchandler_app_stage(rpchandler_app_t rpchandler_app)

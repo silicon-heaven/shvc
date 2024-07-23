@@ -23,4 +23,5 @@ test(
   protocol: 'tap',
   depends: unittest_libshvcp,
   timeout: 120,
+  suite: ['libshvcp'],
 )

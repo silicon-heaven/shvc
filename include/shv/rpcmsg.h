@@ -235,15 +235,15 @@ extern const struct rpcmsg_meta_limits rpcmsg_meta_limits_default;
  * WARNING: The limits when **obstack** is provided are not enforced right now.
  * This is missing implementation not intended state!
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the @ref cp_unpack calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the @ref cp_unpack calls and was used in the last
  *   one.
- * @param meta: Pointer to the structure where unpacked data will be placed. In
+ * @param meta Pointer to the structure where unpacked data will be placed. In
  *   case of integers the value is directly stored. For strings and byte arrays
  *   the data are stored on obstack.
- * @param limits: Optional pointer to the limits imposed on the meta attributes.
+ * @param limits Optional pointer to the limits imposed on the meta attributes.
  *   @ref rpcmsg_meta_limits_default is used if `NULL` is passed.
- * @param obstack: Pointer to the obstack used to allocate space for received
+ * @param obstack Pointer to the obstack used to allocate space for received
  *   data.
  * @returns `false` in case unpack reports error, if meta contains invalid value
  *   for supported key. In other cases `true` is returned. In short this return
@@ -265,7 +265,7 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
  * immediately and thus subsequent unpacks will most likely result into an
  * error.
  *
- * @param item: Item used for the @ref rpcmsg_head_unpack call.
+ * @param item Item used for the @ref rpcmsg_head_unpack call.
  * @returns `true` if there is a value to unpack and `false` if there is not.
  */
 __attribute__((nonnull)) static inline bool rpcmsg_has_value(struct cpitem *item) {
@@ -287,13 +287,13 @@ int rpcmsg_request_id(void);
  * parameters provided to the method call request. The message needs to be
  * terminated with container end (@ref cp_pack_container_end).
  *
- * @param pack: pack context the meta should be written to.
- * @param path: SHV path to the node the method we want to request is associated
+ * @param pack pack context the meta should be written to.
+ * @param path SHV path to the node the method we want to request is associated
  *   with.
- * @param method: name of the method we request to call.
- * @param uid: User's  ID to be added to the request. It can be `NULL` and in
+ * @param method name of the method we request to call.
+ * @param uid User's  ID to be added to the request. It can be `NULL` and in
  *   such case User ID won't be part of the message.
- * @param rid: request identifier. Thanks to this number you can associate
+ * @param rid request identifier. Thanks to this number you can associate
  *   response with requests.
  * @returns Boolean signaling the pack success or failure.
  */
@@ -309,13 +309,13 @@ bool rpcmsg_pack_request(cp_pack_t pack, const char *path, const char *method,
  * By using this over @ref rpcmsg_pack_request you will also save two bytes in
  * the ChainPack message.
  *
- * @param pack: pack context the meta should be written to.
- * @param path: SHV path to the node the method we want to request is associated
+ * @param pack pack context the meta should be written to.
+ * @param path SHV path to the node the method we want to request is associated
  * with.
- * @param method: name of the method we request to call.
- * @param uid: User's  ID to be added to the request. It can be `NULL` and in
+ * @param method name of the method we request to call.
+ * @param uid User's  ID to be added to the request. It can be `NULL` and in
  *   such case User ID won't be part of the message.
- * @param rid: request identifier. Thanks to this number you can associate
+ * @param rid request identifier. Thanks to this number you can associate
  * response with requests.
  * @returns Boolean signaling the pack success or failure.
  */
@@ -326,13 +326,13 @@ bool rpcmsg_pack_request_void(cp_pack_t pack, const char *path, const char *meth
  * signaled values. The message needs to be terminated with container end
  * (@ref cp_pack_container_end).
  *
- * @param pack: pack context the meta should be written to.
- * @param path: SHV path to the node method is associated with.
- * @param source: name of the method the signal is associated with.
- * @param signal: name of the signal.
- * @param uid: User's ID to be added to the signal. It can be `NULL` and in
+ * @param pack pack context the meta should be written to.
+ * @param path SHV path to the node method is associated with.
+ * @param source name of the method the signal is associated with.
+ * @param signal name of the signal.
+ * @param uid User's ID to be added to the signal. It can be `NULL` and in
  *   such case User ID won't be part of the message.
- * @param access: The access level for this signal. This is used to filter
+ * @param access The access level for this signal. This is used to filter
  *   access  to the signals and in general should be consistent with access
  *   level of the method this signal is associated with.
  * @returns Boolean signaling the pack success or failure.
@@ -350,13 +350,13 @@ bool rpcmsg_pack_signal(cp_pack_t pack, const char *path, const char *source,
  * By using this over @ref rpcmsg_pack_signal you will also save two bytes in
  * the ChainPack message.
  *
- * @param pack: pack context the meta should be written to.
- * @param path: SHV path to the node method is associated with.
- * @param source: name of the method the signal is associated with.
- * @param signal: name of the signal.
- * @param uid: User's ID to be added to the signal. It can be `NULL` and in
+ * @param pack pack context the meta should be written to.
+ * @param path SHV path to the node method is associated with.
+ * @param source name of the method the signal is associated with.
+ * @param signal name of the signal.
+ * @param uid User's ID to be added to the signal. It can be `NULL` and in
  *   such case User ID won't be part of the message.
- * @param access: The access level for this signal. This is used to filter
+ * @param access The access level for this signal. This is used to filter
  *   access  to the signals and in general should be consistent with access
  *   level of the method this signal is associated with.
  * @returns Boolean signaling the pack success or failure.
@@ -367,8 +367,8 @@ bool rpcmsg_pack_signal_void(cp_pack_t pack, const char *path,
 
 /*! Pack response message meta based on the provided meta.
  *
- * @param pack: Packer the meta should be written to.
- * @param meta: Meta with info for the received request.
+ * @param pack Packer the meta should be written to.
+ * @param meta Meta with info for the received request.
  * @returns Boolean signaling the pack success or failure.
  */
 bool rpcmsg_pack_response(cp_pack_t pack, const struct rpcmsg_meta *meta)
@@ -380,8 +380,8 @@ bool rpcmsg_pack_response(cp_pack_t pack, const struct rpcmsg_meta *meta)
  * (only confirm without any real value returned). After this you can directly
  * send the message.
  *
- * @param pack: Packer the meta should be written to.
- * @param meta: Meta with info for the received request.
+ * @param pack Packer the meta should be written to.
+ * @param meta Meta with info for the received request.
  * @returns Boolean signaling the pack success or failure.
  */
 bool rpcmsg_pack_response_void(cp_pack_t pack, const struct rpcmsg_meta *meta)
@@ -392,10 +392,10 @@ bool rpcmsg_pack_response_void(cp_pack_t pack, const struct rpcmsg_meta *meta)
  * This is helper to pack the whole error message at once. After this you can
  * directly send the message.
  *
- * @param pack: Pack context the meta should be written to.
- * @param meta: Meta with info for previously received request.
- * @param errno: Error code to be reported as response to the request.
- * @param msg: Optional message describing the error details.
+ * @param pack Pack context the meta should be written to.
+ * @param meta Meta with info for previously received request.
+ * @param errno Error code to be reported as response to the request.
+ * @param msg Optional message describing the error details.
  * @returns Boolean signaling the pack success or failure.
  */
 bool rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
@@ -407,10 +407,10 @@ bool rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
  * format string to generate the error message. This function packs complete
  * message and thus you can immediately send it.
  *
- * @param pack: Pack context the meta should be written to.
- * @param meta: Meta with info for previously received request.
- * @param errno: Error code to be reported as response to the request.
- * @param fmt: Format string used to generate the error message.
+ * @param pack Pack context the meta should be written to.
+ * @param meta Meta with info for previously received request.
+ * @param errno Error code to be reported as response to the request.
+ * @param fmt Format string used to generate the error message.
  * @returns Boolean signaling the pack success or failure.
  */
 bool rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
@@ -422,11 +422,11 @@ bool rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
  * format string to generate the error message. This function packs complete
  * message and thus you can immediately send it.
  *
- * @param pack: Pack context the meta should be written to.
- * @param meta: Meta with info for previously received request.
- * @param errno: Error code to be reported as response to the request.
- * @param fmt: Format string used to generate the error message.
- * @param args: Variable list of arguments to be used with **fmt**.
+ * @param pack Pack context the meta should be written to.
+ * @param meta Meta with info for previously received request.
+ * @param errno Error code to be reported as response to the request.
+ * @param fmt Format string used to generate the error message.
+ * @param args Variable list of arguments to be used with **fmt**.
  * @returns Boolean signaling the pack success or failure.
  */
 bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,

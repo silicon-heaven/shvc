@@ -56,11 +56,11 @@ enum rpcerror_keys {
 
 /*! Unpack RPC error.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the @ref cp_unpack calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the @ref cp_unpack calls and was used in the last
  *   one.
- * @param errno: Pointer to the variable where error number is placed.
- * @param errmsg: Pointer to the variable where error message is placed. Error
+ * @param errno Pointer to the variable where error number is placed.
+ * @param errmsg Pointer to the variable where error message is placed. Error
  *   message is copied to the memory allocated using malloc and thus do not
  *   forget to free it. You can pass `NULL` if you are not interested in the
  *   error message.
@@ -71,9 +71,9 @@ bool rpcerror_unpack(cp_unpack_t unpack, struct cpitem *item, rpcerrno_t *errno,
 
 /*! Pack RPC error.
  *
- * @param pack: Pack handle.
- * @param errno: Error number to be packed.
- * @param errmsg: Message to be packed as description of the error.
+ * @param pack Pack handle.
+ * @param errno Error number to be packed.
+ * @param errmsg Message to be packed as description of the error.
  * @result `true` if packing was successful and `false` otherwise.
  */
 bool rpcerror_pack(cp_pack_t pack, rpcerrno_t errno, const char *errmsg)

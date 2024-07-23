@@ -75,52 +75,23 @@ def fixture_url(port):
 @pytest.fixture(name="broker_config", scope="module")
 def fixture_broker_config(url):
     """Configuration for SHV RPC Broker."""
-    role_browse = shv.broker.RpcBrokerConfig.Role(
-        "browse",
-        shv.RpcMethodAccess.BROWSE,
-        frozenset(
-            {
-                shv.broker.RpcBrokerConfig.Method(method="ls"),
-                shv.broker.RpcBrokerConfig.Method(method="dir"),
-            }
-        ),
-    )
-    role_tester = shv.broker.RpcBrokerConfig.Role(
-        "tester",
-        shv.RpcMethodAccess.COMMAND,
-        frozenset({shv.broker.RpcBrokerConfig.Method("test")}),
-        frozenset({role_browse}),
-    )
-    user_test = shv.broker.RpcBrokerConfig.User(
-        "test",
-        "test",
-        shv.RpcLoginType.PLAIN,
-        frozenset({role_tester}),
-    )
     config = shv.broker.RpcBrokerConfig()
-    config.listen = {"tcp": url}
-    config.add_role(role_browse)
-    config.add_role(role_tester)
-    config.add_user(user_test)
+    config.listen = [url]
+    config.roles.add(
+        config.Role(
+            "tester",
+            {"test/*"},
+            {
+                shv.RpcMethodAccess.BROWSE: {
+                    shv.RpcRI("**", "ls"),
+                    shv.RpcRI("**", "dir"),
+                },
+                shv.RpcMethodAccess.COMMAND: {shv.RpcRI("test/**")},
+            },
+        )
+    )
+    config.users.add(config.User("test", "test", {"tester"}))
     return config
-    # TODO: when new version of pyshv is released
-    # return shv.broker.RpcBrokerConfig(
-    #    listen={"tcp": url},
-    #    users=[shv.broker.RpcBrokerConfig.User("test", "test", role="tester")],
-    #    mount_points={"tester": {"test/*"}},
-    #    rules=[
-    #        shv.broker.RpcBrokerConfig.Rule(
-    #            {"tester"},
-    #            match={shv.RpcRI("test/**")},
-    #            level=shv.RpcMethodAccess.COMMAND,
-    #        ),
-    #        shv.broker.RpcBrokerConfig.Rule(
-    #            {"tester"},
-    #            match={shv.RpcRI(method="ls"), shv.RpcRI(method="dir")},
-    #            level=shv.RpcMethodAccess.BROWSE,
-    #        ),
-    #    ],
-    # )
 
 
 @pytest.fixture(name="broker")

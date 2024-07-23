@@ -3,7 +3,7 @@
 #include <string.h>
 #include <shv/cp_tools.h>
 #include <shv/rpcurl.h>
-#include <shv/rpcclient.h>
+#include <shv/rpcclient_url.h>
 #include <shv/rpcmsg.h>
 #include <shv/rpchandler_app.h>
 #include <shv/rpchandler_login.h>

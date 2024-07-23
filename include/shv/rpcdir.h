@@ -96,8 +96,8 @@ extern struct rpcdir rpcdir_ls, rpcdir_dir;
 
 /*! Pack dir's method description.
  *
- * @param pack: The generic packer where it is about to be packed.
- * @param method: The method description to be packed.
+ * @param pack The generic packer where it is about to be packed.
+ * @param method The method description to be packed.
  * @returns `false` if packing encounters failure and `true` otherwise.
  */
 bool rpcdir_pack(cp_pack_t pack, const struct rpcdir *method)
@@ -109,9 +109,9 @@ bool rpcdir_pack(cp_pack_t pack, const struct rpcdir *method)
  * what was allocated in the obstack after call to this function) you can the
  * the result of this function from obstack.
  *
- * @param unpack: The generic unpacker to be used to unpack items.
- * @param item: The item instance that was used to unpack the previous item.
- * @param obstack: Pointer to the obstack instance to be used to allocate
+ * @param unpack The generic unpacker to be used to unpack items.
+ * @param item The item instance that was used to unpack the previous item.
+ * @param obstack Pointer to the obstack instance to be used to allocate
  *   method descrition.
  * @returns Pointer to the method description or `NULL` in case of an unpack
  *   error. You can investigate `item` to identify the failure cause.

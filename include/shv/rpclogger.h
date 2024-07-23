@@ -17,16 +17,16 @@ typedef struct rpclogger *rpclogger_t;
 
 /*! Callback definition for RPC client logger.
  *
- * @param line: The line to be outputted to the logs.
+ * @param line The line to be outputted to the logs.
  */
 typedef void (*rpclogger_func_t)(const char *line);
 
 /*! Create a new RPC Client logger handle.
  *
- * @param callback: Function called when line should be outputed.
- * @param prefix: The prefix to be added before every line.
- * @param bufsiz: Size of the buffer for this logger.
- * @param maxdepth: The output is in CPON format and this allows you to limit
+ * @param callback Function called when line should be outputed.
+ * @param prefix The prefix to be added before every line.
+ * @param bufsiz Size of the buffer for this logger.
+ * @param maxdepth The output is in CPON format and this allows you to limit
  *   the maximum depth of containers you want to see in the logs. By specifying
  *   low enough number the logger can skip unnecessary data and still show you
  *   enough info about the message so you can recognize it.
@@ -37,7 +37,7 @@ rpclogger_t rpclogger_new(rpclogger_func_t callback, const char *prefix,
 
 /*! Destroy the existing logger handle.
  *
- * @param logger: Logger handle.
+ * @param logger Logger handle.
  */
 void rpclogger_destroy(rpclogger_t logger);
 
@@ -50,11 +50,14 @@ void rpclogger_destroy(rpclogger_t logger);
  * For consistency you need to log every single item you unpack otherwise log
  * might be invalid.
  *
- * @param logger: Logger handle.
- * @param item: RPC item to be logged*str != '\0'
+ * You most likely want to call this from @ref rpcclient.pack and @ref
+ * rpcclient.unpack implementation.
+ *
+ * @param logger Logger handle.
+ * @param item RPC item to be logged*str != '\0'
  */
 void rpclogger_log_item(rpclogger_t logger, const struct cpitem *item)
-	__attribute__((nonnull));
+	__attribute__((nonnull(2)));
 
 /*! Identification of the message end type.
  *
@@ -89,11 +92,21 @@ enum rpclogger_end_type {
  * This calls @ref rpclogger_log_flush. This flushes items buffered so far to
  * the configured output.
  *
- * @param logger: Logger handle.
- * @param tp: If the items logged so far were valid message or not.
+ * In case of message sending you most likely want to call this from
+ * implementations of @ref rpcclient_sendmsg with @ref RPCLOGGER_ET_VALID and
+ * from @ref rpcclient_dropmsg with @ref RPCLOGGER_ET_INVALID.
+ *
+ * In case of message retrieval you most likely want to call this from
+ * implementations of @ref rpcclient_validmsg where based on the result you
+ * use either @ref RPCLOGGER_ET_VALID or @ref RPCLOGGER_ET_INVALID. You should
+ * also call this from @ref rpcclient_nextmsg implementation with @ref
+ * RPCLOGGER_ET_UNKNOWN to ensure that any previous invalidate message is
+ * correctly terminated in the logging.
+ *
+ * @param logger Logger handle.
+ * @param tp If the items logged so far were valid message or not.
  */
-void rpclogger_log_end(rpclogger_t logger, enum rpclogger_end_type tp)
-	__attribute__((nonnull));
+void rpclogger_log_end(rpclogger_t logger, enum rpclogger_end_type tp);
 
 /*! Flush the buffered output.
  *
@@ -102,15 +115,15 @@ void rpclogger_log_end(rpclogger_t logger, enum rpclogger_end_type tp)
  *
  * This flushes items buffered so far to the configured output.
  *
- * @param logger: Logger handle.
+ * @param logger Logger handle.
  */
-void rpclogger_log_flush(rpclogger_t logger) __attribute__((nonnull));
+void rpclogger_log_flush(rpclogger_t logger);
 
 /*! Predefined callback that outputs line to the stderr.
  *
  * This is provided because it is a common way to do logging.
  *
- * @param line: See @ref rpclogger_func_t.
+ * @param line See @ref rpclogger_func_t.
  */
 void rpclogger_func_stderr(const char *line);
 

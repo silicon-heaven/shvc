@@ -15,4 +15,5 @@ test(
   protocol: 'tap',
   depends: unittest_libshvcaller,
   timeout: 120,
+  suite: ['libshvcaller'],
 )

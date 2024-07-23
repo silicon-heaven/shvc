@@ -150,7 +150,7 @@ static bool common_ls_dir(struct msg_ctx *ctx, char **name) {
 }
 
 static bool valid_path(rpchandler_t handler, char *path) {
-	if (*path == '\0')
+	if (path == NULL || *path == '\0')
 		return true; /* root node is always valid */
 	char *slash = strrchr(path, '/');
 	if (slash)

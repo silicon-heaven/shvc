@@ -1,9 +1,11 @@
 unittest_libshvrpc = executable(
   'unittest-libshvrpc',
   [
+    'crc32.c',
     #'rpcclient_links.c',
     #'rpcclient_ping.c',
     'rpcaccess.c',
+    'rpcclient_stream.c',
     'rpcdir.c',
     'rpcerror.c',
     'rpcmsg_head.c',
@@ -23,6 +25,7 @@ test(
   protocol: 'tap',
   depends: unittest_libshvrpc,
   timeout: 120,
+  suite: ['libshvrpc'],
 )
 
 unittest_libshvrpc_internal = executable(
@@ -47,4 +50,5 @@ test(
   env: unittests_env,
   protocol: 'tap',
   depends: unittest_libshvrpc_internal,
+  suite: ['libshvrpc-internal'],
 )

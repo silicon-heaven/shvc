@@ -17,9 +17,9 @@
  * also provides a way to overlay additional handling on top of the low level
  * unpacker (such as logging).
  *
- * @param ptr: Pointer to the context information that is pointer to the @ref
+ * @param ptr Pointer to the context information that is pointer to the @ref
  *   cp_unpack_t.
- * @param item: Item where info about the unpacked item and its value is placed
+ * @param item Item where info about the unpacked item and its value is placed
  *   to.
  */
 typedef void (*cp_unpack_func_t)(void *ptr, struct cpitem *item);
@@ -52,8 +52,8 @@ struct cp_unpack_chainpack {
  * cp_unpack_chainpack.f to the **f** passed to it. There is no need for a
  * special resource deallocation afterward.
  *
- * @param unpack: Pointer to the handle to be initialized.
- * @param f: File used to read ChainPack bytes.
+ * @param unpack Pointer to the handle to be initialized.
+ * @param f File used to read ChainPack bytes.
  * @returns Generic unpacker.
  */
 cp_unpack_t cp_unpack_chainpack_init(struct cp_unpack_chainpack *unpack, FILE *f)
@@ -84,8 +84,8 @@ struct cp_unpack_cpon {
  *
  * Remember to release resources allocated by @ref cpon_state.ctx!
  *
- * @param unpack: Pointer to the handle to be initialized.
- * @param f: File used to read CPON bytes.
+ * @param unpack Pointer to the handle to be initialized.
+ * @param f File used to read CPON bytes.
  * @returns Generic unpacker.
  */
 cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *unpack, FILE *f)
@@ -97,8 +97,8 @@ cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *unpack, FILE *f)
  * The calling is described in @ref cp_unpack_func_t. You want to repeatedly
  * pass the same @ref cpitem instance to unpack multiple items.
  *
- * @param unpack: Generic unpacker to be used for unpacking.
- * @param item: Item where info about the unpacked item and its value is placed
+ * @param unpack Generic unpacker to be used for unpacking.
+ * @param item Item where info about the unpacked item and its value is placed
  *   to.
  * @returns Boolean signaling if unpack was successful (non-invalid item was
  *   unpacked).
@@ -114,8 +114,8 @@ __attribute__((nonnull)) static inline bool cp_unpack(
  * This is variant of @ref cp_unpack() that instead of number of read bytes
  * returns type of the item read.
  *
- * @param unpack: Generic unpacker to be used for unpacking.
- * @param item: Item where info about the unpacked item and its value is placed
+ * @param unpack Generic unpacker to be used for unpacking.
+ * @param item Item where info about the unpacked item and its value is placed
  *   to.
  * @returns Type of the unpacked item.
  */
@@ -132,8 +132,8 @@ __attribute__((nonnull)) static inline enum cpitem_type cp_unpack_type(
  * it won't continue to the next item. This allows you to just skip any bytes of
  * data you do not care about and go to the next item.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
  */
 void cp_unpack_drop1(cp_unpack_t unpack, struct cpitem *item)
@@ -146,8 +146,8 @@ void cp_unpack_drop1(cp_unpack_t unpack, struct cpitem *item)
  * The usage is when you are not interested in already unpacked item. It is an
  * alternative for already unpacked item to @ref cp_unpack_skip.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
  */
 void cp_unpack_drop(cp_unpack_t unpack, struct cpitem *item)
@@ -162,8 +162,8 @@ void cp_unpack_drop(cp_unpack_t unpack, struct cpitem *item)
  * This also fist drops any unfinished string or blob with `cp_unpack_drop1` to
  * for sure finish the previous item.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the last `cp_unpack` call. This is required
+ * @param unpack Unpack handle.
+ * @param item Item used for the last `cp_unpack` call. This is required
  * because there might be unfinished string or blob we need to know about.
  */
 void cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item)
@@ -175,10 +175,10 @@ void cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item)
  * after end of the next item, but on container end for which there was no
  * container open. The effect is that opened container is skipped.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the last `cp_unpack` call. This is required
+ * @param unpack Unpack handle.
+ * @param item Item used for the last `cp_unpack` call. This is required
  * because there might be unfinished string or blob we need to know about.
- * @param depth: How many containers we should finish. To finish one pass `1`.
+ * @param depth How many containers we should finish. To finish one pass `1`.
  * To close two containers pass `2` and so on. The `0` provides the same
  * functionality as `cp_unpack_skip`.
  */
@@ -190,10 +190,10 @@ void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth)
  *
  * This combines @ref cp_unpack with @ref cpitem_extract_int.
  *
- * @param UNPACK: Generic unpacker to be used for unpacking.
- * @param ITEM: Item where info about the unpacked item and its value is placed
+ * @param UNPACK Generic unpacker to be used for unpacking.
+ * @param ITEM Item where info about the unpacked item and its value is placed
  *   to. You can use it to identify the real type or error in case of failure.
- * @param DEST: destination integer variable (not pointer, the variable
+ * @param DEST destination integer variable (not pointer, the variable
  *   directly).
  * @returns Boolean signaling if both unpack was successful and value fit the
  *   destination. The real issue can be deduced from **ITEM**.
@@ -209,10 +209,10 @@ void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth)
  *
  * This combines @ref cp_unpack with @ref cpitem_extract_uint.
  *
- * @param UNPACK: Generic unpacker to be used for unpacking.
- * @param ITEM: Item where info about the unpacked item and its value is placed
+ * @param UNPACK Generic unpacker to be used for unpacking.
+ * @param ITEM Item where info about the unpacked item and its value is placed
  *   to. You can use it to identify the real type or error in case of failure.
- * @param DEST: destination integer variable (not pointer, the variable
+ * @param DEST destination integer variable (not pointer, the variable
  *   directly).
  * @returns Boolean signaling if both unpack was successful and value fit the
  *   destination. The real issue can be deduced from **ITEM**.
@@ -264,8 +264,8 @@ void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth)
 
 /*! Unpack a single byte from string.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
  * @returns Unpacked byte or `-1` in case of an unpack error.
  */
@@ -287,11 +287,11 @@ __attribute__((nonnull)) static inline int cp_unpack_getc(
  * Warning: Null byte is appended only if it fits. You can check for that by
  * comparing returned value and size of the destination.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param dest: Destination buffer where unpacked characters are placed to.
- * @param n: Maximum number of bytes to be used in `dest`.
+ * @param dest Destination buffer where unpacked characters are placed to.
+ * @param n Maximum number of bytes to be used in `dest`.
  * @returns number of bytes written to `dest` or `-1` in case of unpack error.
  */
 ssize_t cp_unpack_strncpy(cp_unpack_t unpack, struct cpitem *item, char *dest,
@@ -303,8 +303,8 @@ ssize_t cp_unpack_strncpy(cp_unpack_t unpack, struct cpitem *item, char *dest,
  *
  * The error can be detected by checking: `item->type == CPITEM_STRING`.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
  * @returns malloc allocated null terminated string.
  */
@@ -319,10 +319,10 @@ char *cp_unpack_strdup(cp_unpack_t unpack, struct cpitem *item)
  *
  * The error can be detected by checking: `item->type == CPITEM_STRING`.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param len: Maximum number of bytes to be copied.
+ * @param len Maximum number of bytes to be copied.
  * @returns malloc allocated null terminated string.
  */
 char *cp_unpack_strndup(cp_unpack_t unpack, struct cpitem *item, size_t len)
@@ -333,10 +333,10 @@ char *cp_unpack_strndup(cp_unpack_t unpack, struct cpitem *item, size_t len)
  * This is same as @ref cp_unpack_strdup except it uses obstack to allocated the
  * required space.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param obstack: Obstack used to allocate the space needed for the string
+ * @param obstack Obstack used to allocate the space needed for the string
  * object.
  * @returns pointer to the allocated string object.
  */
@@ -351,10 +351,10 @@ char *cp_unpack_strdupo(cp_unpack_t unpack, struct cpitem *item,
  * The string is always terminated with `'\0'` but you can always remove it with
  * `obstack_blank(obstack, -1)`.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param obstack: Obstack used to push string to.
+ * @param obstack Obstack used to push string to.
  * @returns `true` if unpack was successful or `false` in case it wasn't. It is
  *   possible that there is something pushed to the obstack even when `false` is
  *   returned.
@@ -367,11 +367,11 @@ bool cp_unpack_strdupog(cp_unpack_t unpack, struct cpitem *item,
  * This is same as @ref cp_unpack_strndup except it uses obstack to allocated
  * the required space.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param len: Maximum number of bytes to be copied.
- * @param obstack: Obstack used to allocate the space needed for the string
+ * @param len Maximum number of bytes to be copied.
+ * @param obstack Obstack used to allocate the space needed for the string
  * object.
  * @returns pointer to the allocated string object.
  */
@@ -384,11 +384,11 @@ char *cp_unpack_strndupo(cp_unpack_t unpack, struct cpitem *item, size_t len,
  * This is same as @ref cp_unpack_strndupo except that allocation is not
  * finished.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param len: Maximum number of bytes to be copied.
- * @param obstack: Obstack used to allocate the space needed for the string
+ * @param len Maximum number of bytes to be copied.
+ * @param obstack Obstack used to allocate the space needed for the string
  * object.
  * @returns `true` if unpack was successful or `false` in case it wasn't. It
  * is possible that there is something pushed to the obstack even when
@@ -401,11 +401,11 @@ bool cp_unpack_strndupog(cp_unpack_t unpack, struct cpitem *item, size_t len,
  *
  * Be aware that compared to the `memcpy` this has a different return!
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param dest: Destination buffer where unpacked bytes are placed to.
- * @param siz: Maximum number of bytes to be used in `dest`.
+ * @param dest Destination buffer where unpacked bytes are placed to.
+ * @param siz Maximum number of bytes to be used in `dest`.
  * @returns number of bytes written to `dest` or `-1` in case of unpack
  * error.
  */
@@ -418,11 +418,11 @@ ssize_t cp_unpack_memcpy(cp_unpack_t unpack, struct cpitem *item, uint8_t *dest,
  *
  * The error can be detected by checking: `item->type == CPITEM_BLOB`.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param data: Pointer where pointer to the data would be placed.
- * @param siz: Pointer where number of valid data bytes were unpacked.
+ * @param data Pointer where pointer to the data would be placed.
+ * @param siz Pointer where number of valid data bytes were unpacked.
  */
 void cp_unpack_memdup(cp_unpack_t unpack, struct cpitem *item, uint8_t **data,
 	size_t *siz) __attribute__((nonnull));
@@ -434,11 +434,11 @@ void cp_unpack_memdup(cp_unpack_t unpack, struct cpitem *item, uint8_t **data,
  *
  * The error can be detected by checking: `item->type == CPITEM_BLOB`.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param data: Pointer where pointer to the data would be placed.
- * @param siz: Pointer to maximum number of bytes to be copied that is
+ * @param data Pointer where pointer to the data would be placed.
+ * @param siz Pointer to maximum number of bytes to be copied that is
  * updated with number of valid bytes actually copied over.
  */
 void cp_unpack_memndup(cp_unpack_t unpack, struct cpitem *item, uint8_t **data,
@@ -449,12 +449,12 @@ void cp_unpack_memndup(cp_unpack_t unpack, struct cpitem *item, uint8_t **data,
  * This is same as @ref cp_unpack_memdup except it uses obstack to allocated
  * the required space.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param buf: Pointer where pointer to the data would be placed.
- * @param siz: Pointer where number of valid data bytes were unpacked.
- * @param obstack: Obstack used to allocate the space needed for the blob
+ * @param buf Pointer where pointer to the data would be placed.
+ * @param siz Pointer where number of valid data bytes were unpacked.
+ * @param obstack Obstack used to allocate the space needed for the blob
  * object.
  */
 void cp_unpack_memdupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
@@ -465,10 +465,10 @@ void cp_unpack_memdupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
  * This is same as @ref cp_unpack_memdupo except that allocation is not
  * finished and thus you can continue with object growing.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param obstack: Obstack used to allocate the space needed for the blob
+ * @param obstack Obstack used to allocate the space needed for the blob
  * object.
  * @returns `true` if unpack was successful or `false` in case it wasn't. It is
  *   possible that there is something pushed to the obstack even when `false` is
@@ -483,13 +483,13 @@ bool cp_unpack_memdupog(cp_unpack_t unpack, struct cpitem *item,
  * This is same as @ref cp_unpack_memndup except it uses obstack to
  * allocated the required space.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param buf: Pointer where pointer to the data would be placed.
- * @param siz: Pointer to maximum number of bytes to be copied that is
+ * @param buf Pointer where pointer to the data would be placed.
+ * @param siz Pointer to maximum number of bytes to be copied that is
  * updated with number of valid bytes actually copied over.
- * @param obstack: Obstack used to allocate the space needed for the blob
+ * @param obstack Obstack used to allocate the space needed for the blob
  * object.
  */
 void cp_unpack_memndupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
@@ -500,11 +500,11 @@ void cp_unpack_memndupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
  * This is same as @ref cp_unpack_memndupo except that allocations is not
  * finished and thus you can continue with object growing.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
- * @param siz: Maximum number of bytes to be copied.
- * @param obstack: Obstack used to allocate the space needed for the blob
+ * @param siz Maximum number of bytes to be copied.
+ * @param obstack Obstack used to allocate the space needed for the blob
  * object.
  * @returns `true` if unpack was successful or `false` in case it wasn't. It is
  *   possible that there is something pushed to the obstack even when `false` is
@@ -522,9 +522,9 @@ bool cp_unpack_memndupog(cp_unpack_t unpack, struct cpitem *item, size_t siz,
  * blobs, or you must extract them on your own. The unpacking will get stuck on
  * strings and blobs if you do not do this!
  *
- * @param UNPACK: Generic unpacker.
- * @param ITEM: Pointer to the @ref cpitem that was used to unpack last item.
- * @param DEPTH: How many containers we should got from the currently unpacked
+ * @param UNPACK Generic unpacker.
+ * @param ITEM Pointer to the @ref cpitem that was used to unpack last item.
+ * @param DEPTH How many containers we should got from the currently unpacked
  * one.
  */
 #define for_cp_unpack_item(UNPACK, ITEM, DEPTH) \
@@ -571,8 +571,8 @@ bool cp_unpack_memndupog(cp_unpack_t unpack, struct cpitem *item, size_t siz,
  * not check if you are calling it in list or not. It immediately starts
  * unpacking next item and thus first item in the list.
  *
- * @param UNPACK: Generic unpacker.
- * @param ITEM: Pointer to the @ref cpitem that was used to unpack last item.
+ * @param UNPACK Generic unpacker.
+ * @param ITEM Pointer to the @ref cpitem that was used to unpack last item.
  */
 #define for_cp_unpack_list(UNPACK, ITEM) \
 	while (({ \
@@ -586,9 +586,9 @@ bool cp_unpack_memndupog(cp_unpack_t unpack, struct cpitem *item, size_t siz,
  *
  * It is expected the currently unpacked item is the List beginning.
  *
- * @param UNPACK: Generic unpacker.
- * @param ITEM: Pointer to the @ref cpitem that was used to unpack last item.
- * @param CNT: Counter variable name. The variable is defined in the for loop.
+ * @param UNPACK Generic unpacker.
+ * @param ITEM Pointer to the @ref cpitem that was used to unpack last item.
+ * @param CNT Counter variable name. The variable is defined in the for loop.
  */
 #define for_cp_unpack_ilist(UNPACK, ITEM, CNT) \
 	for (unsigned(CNT) = 0; ({ \
@@ -611,11 +611,11 @@ bool cp_unpack_memndupog(cp_unpack_t unpack, struct cpitem *item, size_t siz,
  *
  * It is expected the currently unpacked item is the Map beginning.
  *
- * @param UNPACK: Generic unpacker.
- * @param ITEM: Pointer to the @ref cpitem that was used to unpack last item.
- * @param KEY: Name of the variable for the temporally string buffer. It is
+ * @param UNPACK Generic unpacker.
+ * @param ITEM Pointer to the @ref cpitem that was used to unpack last item.
+ * @param KEY Name of the variable for the temporally string buffer. It is
  *   defined in the loop.
- * @param SIZ: Maximal length of the key that is expected.
+ * @param SIZ Maximal length of the key that is expected.
  */
 #define for_cp_unpack_map(UNPACK, ITEM, KEY, SIZ) \
 	for (char(KEY)[SIZ + 2]; ({ \
@@ -636,9 +636,9 @@ bool cp_unpack_memndupog(cp_unpack_t unpack, struct cpitem *item, size_t siz,
  *
  * It is expected the currently unpacked item is the IMap beginning.
  *
- * @param UNPACK: Generic unpacker.
- * @param ITEM: Pointer to the @ref cpitem that was used to unpack last item.
- * @param IKEY: Variable name for integer key. It is defined in the for loop.
+ * @param UNPACK Generic unpacker.
+ * @param ITEM Pointer to the @ref cpitem that was used to unpack last item.
+ * @param IKEY Variable name for integer key. It is defined in the for loop.
  */
 #define for_cp_unpack_imap(UNPACK, ITEM, IKEY) \
 	for (long long IKEY; cp_unpack_int((UNPACK), (ITEM), IKEY);)
@@ -651,8 +651,8 @@ bool cp_unpack_memndupog(cp_unpack_t unpack, struct cpitem *item, size_t siz,
  * To detect if you are dealing with string or blob you need to use `item->type`
  * after you call this function.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
  * @returns File object or `NULL` in case of unpack error.
  */

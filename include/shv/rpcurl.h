@@ -63,13 +63,27 @@ struct rpcurl {
 	int port;
 	/*! Login options */
 	struct rpclogin_options login;
+
+	// @cond
+	union {
+		// @endcond
+		/*! Additional options available only for the @ref RPC_PROTOCOL_TTY. */
+		struct rpcurl_tty {
+			/*! Baudrate to be used when communication over TTY. */
+			unsigned baudrate;
+		}
+		/*! Use this to access additional options for @ref RPC_PROTOCOL_TTY. */
+		tty;
+		// @cond
+	};
+	// @endcond
 };
 
 
 /*! Parse string URL.
  *
- * @param url: String representation of URL
- * @param error_pos: Pointer to the position of error in the URL string.
+ * @param url String representation of URL
+ * @param error_pos Pointer to the position of error in the URL string.
  *   `NULL` can be passed if you are not interested in the error location.
  * @returns `struct rpcurl` allocated using `malloc`. or `NULL` in case of URL
  *   parse error. Do not free returned memory using `free`, you need to use
@@ -80,13 +94,13 @@ struct rpcurl *rpcurl_parse(const char *url, const char **error_pos)
 
 /*! Free RPC URL representation previously parsed using by `rpcurl_parse`.
  *
- * @param rpc_url: pointer returned by `rpcurl_parse` or `NULL`.
+ * @param rpc_url pointer returned by `rpcurl_parse` or `NULL`.
  */
 void rpcurl_free(struct rpcurl *rpc_url);
 
 /*! Convert RPC URL to the string representation.
  *
- * @param rpc_url: Pointer to the RPC URL to be converted to the string.
+ * @param rpc_url Pointer to the RPC URL to be converted to the string.
  * @returns `malloc` allocated string with URL.
  */
 char *rpcurl_str(struct rpcurl *rpc_url) __attribute__((nonnull));

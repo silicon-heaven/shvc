@@ -192,16 +192,16 @@ int _rpccall(rpchandler_t handler, rpchandler_responses_t responses,
  * @param FUNC Callback function @ref rpccall_func_t that is used to integrate
  *   SHV RPC Method call with caller's code. Please see the @ref rpccall_func_t
  *   and @ref rpccall_stage for more details.
- * @param CTX Is an optional argument that can be used to pass pointer to custom
- *   data to the @ref rpccall_func_t. `NULL` is used if this argument is not
- *   provided.
- * @param ATTEMPTS Is an optional argument that specifies number of attempts
- *   before call timeout is concluded. @ref RPCCALL_ATTEMPTS is used if this
- *   argument is not provided.
- * @param TIMEOUT Is an optional argument that specifies time in milliseconds
- *  before single call attempt is abandoned and new request is sent. The total
- *  timeout is at most `ATTEMPTS` times `TIMEOUT`. @ref RPCCALL_TIMEOUT is used
- *  if this argument is not provided.
+ * @param ... Additional optional parameters can be provided:
+ *   * **CTX** can be used to pass pointer to custom data to the @ref
+ *     rpccall_func_t. `NULL` is used if this argument is not provided.
+ *   * **ATTEMPTS** specifies number of attempts before call timeout is
+ *     concluded. @ref RPCCALL_ATTEMPTS is used if this argument is not
+ *     provided.
+ *   * **TIMEOUT** specifies time in milliseconds before single call attempt is
+ *     abandoned and new request is sent. The total timeout is at most
+ *     `ATTEMPTS` times `TIMEOUT`. @ref RPCCALL_TIMEOUT is used if this argument
+ *     is not provided.
  * @return Integer that is returned from `FUNC` (@ref rpccall_func_t).
  */
 #define rpccall(HANDLER, RESPONSES, FUNC, ...) \

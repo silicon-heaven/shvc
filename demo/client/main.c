@@ -3,7 +3,7 @@
 #include <string.h>
 #include <pthread.h>
 #include <shv/rpcurl.h>
-#include <shv/rpcclient.h>
+#include <shv/rpcclient_url.h>
 #include <shv/rpchandler_app.h>
 #include <shv/rpchandler_login.h>
 #include <shv/rpchandler_responses.h>

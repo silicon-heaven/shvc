@@ -87,12 +87,11 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 				}
 			} else
 				invalid_param = true;
-			if (!rpchandler_msg_valid(ctx)) {
+			if (!rpchandler_msg_valid(ctx) ||
+				!rpchandler_msg_access_level(ctx, RPCACCESS_WRITE)) {
 				free(res);
 				return true;
 			}
-			if (!rpchandler_msg_access_level(ctx, RPCACCESS_WRITE))
-				return true;
 
 			bool value_changed = false;
 			if (invalid_param) {

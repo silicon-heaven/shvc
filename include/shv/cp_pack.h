@@ -19,9 +19,9 @@
  * also provides a way to overlay additional handling on top of the low level
  * packer (such as logging).
  *
- * @param ptr: Pointer to the context information that is pointer to the @ref
+ * @param ptr Pointer to the context information that is pointer to the @ref
  *   cp_pack_t.
- * @param item: Item to be packed.
+ * @param item Item to be packed.
  * @returns `true` in case packing was sucesfull and `false` otherwise. The
  *   common way to diagnose such error is not provided. If we are talking about
  *   bare ChainPack and CPON packers it is going to mean either stream error or
@@ -57,8 +57,8 @@ struct cp_pack_chainpack {
  * cp_pack_chainpack.f to the **f** passed to it. There is no need for a
  * special resource deallocation afterward.
  *
- * @param pack: Pointer to the handle to be initialized.
- * @param f: File used to write ChainPack bytes.
+ * @param pack Pointer to the handle to be initialized.
+ * @param f File used to write ChainPack bytes.
  * @returns Generic packer.
  */
 cp_pack_t cp_pack_chainpack_init(struct cp_pack_chainpack *pack, FILE *f)
@@ -90,9 +90,9 @@ struct cp_pack_cpon {
  *
  * Remember to release resources allocated by @ref cpon_state.ctx!
  *
- * @param pack: Pointer to the handle to be initialized.
- * @param f: File used to write CPON bytes.
- * @param indent: Indent to be used for CPON output. You can pass `NULL` to get
+ * @param pack Pointer to the handle to be initialized.
+ * @param f File used to write CPON bytes.
+ * @param indent Indent to be used for CPON output. You can pass `NULL` to get
  *   CPON on a single line.
  * @returns Generic packer.
  */
@@ -104,8 +104,8 @@ cp_pack_t cp_pack_cpon_init(struct cp_pack_cpon *pack, FILE *f,
  *
  * The calling is described in @ref cp_pack_func_t.
  *
- * @param PACK: Generic packer to be used for packing.
- * @param ITEM: Item to be packed.
+ * @param PACK Generic packer to be used for packing.
+ * @param ITEM Item to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
 #define cp_pack(PACK, ITEM) \
@@ -117,7 +117,7 @@ cp_pack_t cp_pack_cpon_init(struct cp_pack_cpon *pack, FILE *f,
 
 /*! Pack *Null* to the generic packer.
  *
- * @param pack: Generic packer.
+ * @param pack Generic packer.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_null(cp_pack_t pack) {
@@ -128,8 +128,8 @@ static inline bool cp_pack_null(cp_pack_t pack) {
 
 /*! Pack *Boolean* to the generic packer.
  *
- * @param pack: Generic packer.
- * @param v: Boolean value to be packed.
+ * @param pack Generic packer.
+ * @param v Boolean value to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_bool(cp_pack_t pack, bool v) {
@@ -141,8 +141,8 @@ static inline bool cp_pack_bool(cp_pack_t pack, bool v) {
 
 /*! Pack *Int* to the generic packer.
  *
- * @param pack: Generic packer.
- * @param v: Integer value to be packed.
+ * @param pack Generic packer.
+ * @param v Integer value to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_int(cp_pack_t pack, long long v) {
@@ -154,8 +154,8 @@ static inline bool cp_pack_int(cp_pack_t pack, long long v) {
 
 /*! Pack *UInt* to the generic packer.
  *
- * @param pack: Generic packer.
- * @param v: Uinsigned integer value to be packed.
+ * @param pack Generic packer.
+ * @param v Uinsigned integer value to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_uint(cp_pack_t pack, unsigned long long v) {
@@ -167,8 +167,8 @@ static inline bool cp_pack_uint(cp_pack_t pack, unsigned long long v) {
 
 /*! Pack *Double* to the generic packer.
  *
- * @param pack: Generic packer.
- * @param v: Float point number value to be packed.
+ * @param pack Generic packer.
+ * @param v Float point number value to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_double(cp_pack_t pack, double v) {
@@ -180,8 +180,8 @@ static inline bool cp_pack_double(cp_pack_t pack, double v) {
 
 /*! Pack *Decimal* to the generic packer.
  *
- * @param pack: Generic packer.
- * @param v: Decimal number value to be packed.
+ * @param pack Generic packer.
+ * @param v Decimal number value to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_decimal(cp_pack_t pack, struct cpdecimal v) {
@@ -193,8 +193,8 @@ static inline bool cp_pack_decimal(cp_pack_t pack, struct cpdecimal v) {
 
 /*! Pack *Datetime* to the generic packer.
  *
- * @param pack: Generic packer.
- * @param v: Date and time value to be packed.
+ * @param pack Generic packer.
+ * @param v Date and time value to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_datetime(cp_pack_t pack, struct cpdatetime v) {
@@ -206,9 +206,9 @@ static inline bool cp_pack_datetime(cp_pack_t pack, struct cpdatetime v) {
 
 /*! Pack *Blob* to the generic packer.
  *
- * @param pack: Generic packer.
- * @param buf: Buffer to be packed as a signle blob.
- * @param len: Size of the **buf** (valid number of bytes to be packed).
+ * @param pack Generic packer.
+ * @param buf Buffer to be packed as a signle blob.
+ * @param len Size of the **buf** (valid number of bytes to be packed).
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_blob(cp_pack_t pack, const uint8_t *buf, size_t len) {
@@ -229,10 +229,10 @@ static inline bool cp_pack_blob(cp_pack_t pack, const uint8_t *buf, size_t len) 
  * one or more calls to @ref cp_pack_blob_data that needs to pack in total
  * number of bytes specified to this call.
  *
- * @param pack: Generic packer.
- * @param item: Item that needs to be used with subsequent @ref
+ * @param pack Generic packer.
+ * @param item Item that needs to be used with subsequent @ref
  *   cp_pack_blob_data calls. The item doesn't have to be initialized.
- * @param siz: Number of bytes to be packed in total.
+ * @param siz Number of bytes to be packed in total.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_blob_size(
@@ -253,10 +253,10 @@ static inline bool cp_pack_blob_size(
  * this function should be the size initially passed to the @ref
  * cp_pack_blob_size.
  *
- * @param pack: Generic packer.
- * @param item: Item previously used with @ref cp_pack_blob_size.
- * @param buf: Buffer to the bytes to be packed to the blob.
- * @param siz: Size of the **buf** (valid number of bytes to be packed).
+ * @param pack Generic packer.
+ * @param item Item previously used with @ref cp_pack_blob_size.
+ * @param buf Buffer to the bytes to be packed to the blob.
+ * @param siz Size of the **buf** (valid number of bytes to be packed).
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_blob_data(
@@ -276,9 +276,9 @@ static inline bool cp_pack_blob_data(
 
 /*! Pack *String* to the generic packer.
  *
- * @param pack: Generic packer.
- * @param buf: Buffer containing characters to be packed as a signle string.
- * @param len: Size of the **buf** (valid number of characters to be packed).
+ * @param pack Generic packer.
+ * @param buf Buffer containing characters to be packed as a signle string.
+ * @param len Size of the **buf** (valid number of characters to be packed).
  * @returns Boolean signaling the pack success or failure.
  */
 __attribute__((nonnull)) static inline bool cp_pack_string(
@@ -296,8 +296,8 @@ __attribute__((nonnull)) static inline bool cp_pack_string(
 
 /*! Pack C-*String* to the generic packer.
  *
- * @param pack: Generic packer.
- * @param str: C-String (null terminated string) to be packed. It can be `NULL`
+ * @param pack Generic packer.
+ * @param str C-String (null terminated string) to be packed. It can be `NULL`
  *   and in such case Null is packed instead.
  * @returns Boolean signaling the pack success or failure.
  */
@@ -307,9 +307,9 @@ static inline bool cp_pack_str(cp_pack_t pack, const char *str) {
 
 /*! Pack *String* generated from format string to the generic packer.
  *
- * @param pack: Generic packer.
- * @param fmt: printf format string.
- * @param args: list of variadic arguments to be passed to the printf.
+ * @param pack Generic packer.
+ * @param fmt printf format string.
+ * @param args list of variadic arguments to be passed to the printf.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_vfstr(cp_pack_t pack, const char *fmt, va_list args) {
@@ -324,8 +324,8 @@ static inline bool cp_pack_vfstr(cp_pack_t pack, const char *fmt, va_list args) 
 
 /*! Pack *String* generated from format string to the generic packer.
  *
- * @param pack: Generic packer.
- * @param fmt: printf format string.
+ * @param pack Generic packer.
+ * @param fmt printf format string.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_fstr(cp_pack_t pack, const char *fmt, ...) {
@@ -342,10 +342,10 @@ static inline bool cp_pack_fstr(cp_pack_t pack, const char *fmt, ...) {
  * with one or more calls to @ref cp_pack_string_data that needs to pack in
  * total number of bytes specified to this call.
  *
- * @param pack: Generic packer.
- * @param item: Item that needs to be used with subsequent @ref
+ * @param pack Generic packer.
+ * @param item Item that needs to be used with subsequent @ref
  *   cp_pack_string_data calls. The item doesn't have to be initialized.
- * @param siz: Number of bytes to be packed in total.
+ * @param siz Number of bytes to be packed in total.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_string_size(
@@ -366,10 +366,10 @@ static inline bool cp_pack_string_size(
  * this function should be the size initially passed to the @ref
  * cp_pack_string_size.
  *
- * @param pack: Generic packer.
- * @param item: Item previously used with @ref cp_pack_string_size.
- * @param buf: Buffer to the bytes to be packed to the string.
- * @param siz: Size of the **buf** (valid number of bytes to be packed).
+ * @param pack Generic packer.
+ * @param item Item previously used with @ref cp_pack_string_size.
+ * @param buf Buffer to the bytes to be packed to the string.
+ * @param siz Size of the **buf** (valid number of bytes to be packed).
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_string_data(
@@ -392,7 +392,7 @@ static inline bool cp_pack_string_data(
  * You can follow this with items that are part of the list and then you need
  * to terminate the it with @ref cp_pack_container_end.
  *
- * @param pack: Generic packer.
+ * @param pack Generic packer.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_list_begin(cp_pack_t pack) {
@@ -407,7 +407,7 @@ static inline bool cp_pack_list_begin(cp_pack_t pack) {
  * and second item is value. After that you need to terminate *Map* with @ref
  * cp_pack_container_end.
  *
- * @param pack: Generic packer.
+ * @param pack Generic packer.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_map_begin(cp_pack_t pack) {
@@ -422,7 +422,7 @@ static inline bool cp_pack_map_begin(cp_pack_t pack) {
  * and second item is value. After that you need to terminate *IMap* with @ref
  * cp_pack_container_end.
  *
- * @param pack: Generic packer.
+ * @param pack Generic packer.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_imap_begin(cp_pack_t pack) {
@@ -437,7 +437,7 @@ static inline bool cp_pack_imap_begin(cp_pack_t pack) {
  * string key and second item is value. After that you need to terminate *Meta*
  * with @ref cp_pack_container_end and follow it with item that meta is tied to.
  *
- * @param pack: Generic packer.
+ * @param pack Generic packer.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_meta_begin(cp_pack_t pack) {
@@ -451,7 +451,7 @@ static inline bool cp_pack_meta_begin(cp_pack_t pack) {
  * This terminates containers openned with @ref cp_pack_list_begin, @ref
  * cp_pack_map_begin, @ref cp_pack_imap_begin and @ref cp_pack_meta_begin.
  *
- * @param pack: Generic packer.
+ * @param pack Generic packer.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_container_end(cp_pack_t pack) {
@@ -466,10 +466,10 @@ static inline bool cp_pack_container_end(cp_pack_t pack) {
  * provided data directly. This is used for example when you are copying from
  * know unpacker to know packer. Make sure that packing scheme matches.
  *
- * @param pack: Generic packer.
- * @param buf: Pointer to the data to be written to the stream wrapped in the
+ * @param pack Generic packer.
+ * @param buf Pointer to the data to be written to the stream wrapped in the
  *   generic packer.
- * @param len: Number of bytes to be taken from buffer.
+ * @param len Number of bytes to be taken from buffer.
  * @returns Boolean signaling the pack success or failure.
  */
 static inline bool cp_pack_raw(cp_pack_t pack, const uint8_t *buf, size_t len) {
@@ -487,8 +487,8 @@ static inline bool cp_pack_raw(cp_pack_t pack, const uint8_t *buf, size_t len) {
  *
  * Do not use **pack** for anything until you close the returned `FILE`.
  *
- * @param pack: Generic packer.
- * @param str: Boolean deciding if you are writing characters or bytes (*String*
+ * @param pack Generic packer.
+ * @param str Boolean deciding if you are writing characters or bytes (*String*
  *   or *Blob*)
  * @returns Instance of `FILE`. It can return `NULL` when creation of `FILE`
  *   stream fails.

@@ -165,14 +165,14 @@ struct rpchandler_stage {
 
 /*! Create new RPC message handle.
  *
- * @param client: RPC client to wrap in the handler. Make sure that you destroy
+ * @param client RPC client to wrap in the handler. Make sure that you destroy
  *   the RPC handler before you destroy this client instance.
- * @param stages: Handling stages that are used to manage messages received from
+ * @param stages Handling stages that are used to manage messages received from
  *   this client. It is an array that is `NULL` terminated (the @ref
  *   rpchandler_stage.funcs is zero). Stages are referenced as they are and thus
  *   you need to keep this pointer valid for the duration of object existence
  *   (or you can replace it with @ref rpchandler_change_stages).
- * @param limits: Limits used for parsing message heads. This is referenced as
+ * @param limits Limits used for parsing message heads. This is referenced as
  *   it is and this you need to keep this pointer valid for the duration of
  *   object existence.
  * @returns New RPC handler instance.
@@ -187,7 +187,7 @@ rpchandler_t rpchandler_new(rpcclient_t client,
  *
  * The RPC Client that Handle manages is not destroyed nor disconnected.
  *
- * @param rpchandler: RPC Handler object.
+ * @param rpchandler RPC Handler object.
  */
 void rpchandler_destroy(rpchandler_t rpchandler);
 
@@ -198,8 +198,8 @@ void rpchandler_destroy(rpchandler_t rpchandler);
  * it is not possible to change stages from withing the @ref rpchandler_funcs
  * functions.
  *
- * @param handler: RPC Handler instance.
- * @param stages: Stages array to be used for now on with this handler.
+ * @param handler RPC Handler instance.
+ * @param stages Stages array to be used for now on with this handler.
  */
 void rpchandler_change_stages(rpchandler_t handler,
 	const struct rpchandler_stage *stages) __attribute__((nonnull));
@@ -211,7 +211,7 @@ void rpchandler_change_stages(rpchandler_t handler,
  * rpchandler_idling. These two steps are provided separatelly to allow handler
  * to be included in poll based even loops.
  *
- * @param rpchandler: RPC Handler instance.
+ * @param rpchandler RPC Handler instance.
  * @returns `true` if message handled (even by dropping) and `false` if
  *   connection error encountered in RPC Client. `false` pretty much means that
  *   loop calling repeatedly this should should terminate because we are no
@@ -226,7 +226,7 @@ bool rpchandler_next(rpchandler_t rpchandler) __attribute__((nonnull));
  * be called every time there is nothing to be received and determines timeout
  * for which it doesn't have to be called again.
  *
- * @param rpchandler: RPC Handler instance.
+ * @param rpchandler RPC Handler instance.
  * @returns The maximal time during which idle doesn't have to be called (unless
  *   new message is received). It is in milliseconds. Negative number can be
  *   returned that signals error and should be handled same as `false` in @ref
@@ -240,8 +240,8 @@ int rpchandler_idling(rpchandler_t rpchandler) __attribute__((nonnull));
  * suggested way unless you plan to use some poll based loop and multiple
  * handlers.
  *
- * @param rpchandler: RPC Handler instance.
- * @param halt: Pointer to the variable that can be set non-zero to halt
+ * @param rpchandler RPC Handler instance.
+ * @param halt Pointer to the variable that can be set non-zero to halt
  *   handler's loop on next iteration. You can pass `NULL` if you do not plan on
  *   terminating loop this way.
  */
@@ -256,10 +256,10 @@ void rpchandler_run(rpchandler_t rpchandler, volatile sig_atomic_t *halt)
  * To terminate the thread you can use `pthread_cancel`. Note that it allows
  * cancel only when message is not being handled.
  *
- * @param rpchandler: RPC Handler instance.
- * @param thread: Pointer to the variable where handle for the pthread is
+ * @param rpchandler RPC Handler instance.
+ * @param thread Pointer to the variable where handle for the pthread is
  *   stored. You can use this to control thread.
- * @param attr: Pointer to the pthread attributes or `NULL` for the inherited
+ * @param attr Pointer to the pthread attributes or `NULL` for the inherited
  *   defaults.
  * @returns Integer value returned from `pthread_create`.
  */
@@ -296,7 +296,7 @@ cp_pack_t _rpchandler_idle_msg_new(struct rpchandler_idle *ctx)
  * - Any function that is not called from @ref rpchandler_funcs functions can
  *   use this to send messages.
  *
- * @param HANDLER: RPC Handler instance or context.
+ * @param HANDLER RPC Handler instance or context.
  * @returns Packer you need to use to pack message.
  */
 #define rpchandler_msg_new(HANDLER) \
@@ -317,7 +317,7 @@ bool _rpchandler_idle_msg_send(struct rpchandler_idle *ctx)
  * This calls @ref rpcclient_sendmsg under the hood and releases the lock taken
  * by @ref rpchandler_msg_new.
  *
- * @param HANDLER: RPC Handler instance or context.
+ * @param HANDLER RPC Handler instance or context.
  * @returns `true` if send was successful and `false` otherwise.
  */
 #define rpchandler_msg_send(HANDLER) \
@@ -338,7 +338,7 @@ bool _rpchandler_idle_msg_drop(struct rpchandler_idle *ctx)
  * This calls @ref rpcclient_dropmsg under the hood and releases the lock taken
  * by @ref rpchandler_msg_new.
  *
- * @param HANDLER: RPC Handler instance or context.
+ * @param HANDLER RPC Handler instance or context.
  * @returns `true` if send was successful and `false` otherwise.
  */
 #define rpchandler_msg_drop(HANDLER) \
@@ -350,11 +350,11 @@ bool _rpchandler_idle_msg_drop(struct rpchandler_idle *ctx)
 
 /*! Utility combination of @ref rpchandler_msg_new and @ref rpcmsg_pack_request.
  *
- * @param HANDLER: RPC Handler instance or context.
- * @param PATH: SHV path to the node the method we want to request is associated
+ * @param HANDLER RPC Handler instance or context.
+ * @param PATH SHV path to the node the method we want to request is associated
  *   with.
- * @param METHOD: name of the method we request to call.
- * @param REQUEST_ID: request identifier. Thanks to this number you can
+ * @param METHOD name of the method we request to call.
+ * @param REQUEST_ID request identifier. Thanks to this number you can
  *   associate response with requests.
  * @returns @ref cp_pack_t or `NULL` on error.
  */
@@ -369,11 +369,11 @@ bool _rpchandler_idle_msg_drop(struct rpchandler_idle *ctx)
 /*! Utility combination of @ref rpchandler_msg_new and @ref
  * rpcmsg_pack_request_void.
  *
- * @param HANDLER: RPC Handler instance or context.
- * @param PATH: SHV path to the node the method we want to request is associated
+ * @param HANDLER RPC Handler instance or context.
+ * @param PATH SHV path to the node the method we want to request is associated
  *   with.
- * @param METHOD: name of the method we request to call.
- * @param REQUEST_ID: request identifier. Thanks to this number you can
+ * @param METHOD name of the method we request to call.
+ * @param REQUEST_ID request identifier. Thanks to this number you can
  *   associate response with requests.
  * @returns @ref cp_pack_t or `NULL` on error.
  */

@@ -93,6 +93,8 @@ static void ellipsis(rpclogger_t logger) {
 }
 
 void rpclogger_log_item(rpclogger_t logger, const struct cpitem *item) {
+	if (logger == NULL)
+		return;
 	if (logger->buflen == logger->prefixlen && logger->cpon_state.depth > 0)
 		ellipsis(logger);
 	if (item->type == CPITEM_RAW) {
@@ -115,6 +117,8 @@ void rpclogger_log_item(rpclogger_t logger, const struct cpitem *item) {
 }
 
 void rpclogger_log_end(rpclogger_t logger, enum rpclogger_end_type tp) {
+	if (logger == NULL)
+		return;
 	if (logger->cpon_state.depth == 0 && tp == RPCLOGGER_ET_UNKNOWN)
 		return;
 	if (tp != RPCLOGGER_ET_VALID) {
@@ -130,6 +134,8 @@ void rpclogger_log_end(rpclogger_t logger, enum rpclogger_end_type tp) {
 }
 
 void rpclogger_log_flush(rpclogger_t logger) {
+	if (logger == NULL)
+		return;
 	if (logger->buflen == logger->prefixlen)
 		return;
 	if (!logger->ellipsis && logger->cpon_state.depth > 0)

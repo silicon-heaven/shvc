@@ -28,17 +28,16 @@ V0.0 {
 		rpcdir_ls;
 		rpcdir_dir;
 
-		# shv/rpcclient.h
-		rpcclient_connect;
-		rpcclient_login;
+		# shv/rpcclient_stream.h
 		rpcclient_stream_new;
-		rpcclient_stream_tcp_connect;
-		rpcclient_stream_unix_connect;
-		rpcclient_datagram_new;
-		rpcclient_datagram_udp_connect;
-		rpcclient_serial_new;
-		rpcclient_serial_tty_connect;
-		rpcclient_serial_unix_connect;
+		rpcclient_tcp_new;
+		rpcclient_unix_new;
+		rpcclient_tty_new;
+		rpcclient_pipe_new;
+
+		# shv/rpcclient_url.h
+		rpcclient_new;
+		rpcclient_connect;
 
 		# shv/rpclogger.h
 		rpclogger_new;
@@ -95,6 +94,9 @@ V0.0 {
 		rpchandler_login_stage;
 		rpchandler_login_status;
 		rpchandler_login_wait;
+
+		# shv/crc32.h
+		crc32_update;
 
 	local: *;
 };

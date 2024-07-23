@@ -130,7 +130,7 @@ enum cpitem_type {
 
 /*! Receive string name for the item type.
  *
- * @param tp: Item type the string should be provided for.
+ * @param tp Item type the string should be provided for.
  * @returns pointer to the string with name of the type. This is constant
  * string: can't be freed or modified.
  */
@@ -157,7 +157,7 @@ struct cpdecimal {
  * without loosing precission. In other words unless mantisa is a zero the
  * residue after division 10 must be non-zero.
  *
- * @param v: Decimal number to be normalized.
+ * @param v Decimal number to be normalized.
  */
 void cpdecnorm(struct cpdecimal *v) __attribute__((nonnull));
 
@@ -180,14 +180,14 @@ void cpdecnorm(struct cpdecimal *v) __attribute__((nonnull));
 
 /*! Convert decimal number to double precision floating point number.
  *
- * @param v: Decimal value to be converted
+ * @param v Decimal value to be converted
  * @returns Approximate floating point representation of the decimal number.
  */
 double cpdectod(const struct cpdecimal v);
 
 /*! Convert double precision floating point number to decimal number.
  *
- * @param v: Floating point number to be converted.
+ * @param v Floating point number to be converted.
  * @returns Approximate decimal representation.
  */
 struct cpdecimal cpdtodec(double v);
@@ -203,14 +203,14 @@ struct cpdatetime {
 
 /*! Convert CP date and time representation to the POSIX time.
  *
- * @param v: Date and time to be converted.
+ * @param v Date and time to be converted.
  * @returns structure tm with date and time set.
  */
 struct tm cpdttotm(struct cpdatetime v);
 
 /*! Convert POSIX time to CP date and time representation.
  *
- * @param v: Date and time to be converted.
+ * @param v Date and time to be converted.
  * @returns structure cpdatetime with date and time set.
  */
 struct cpdatetime cptmtodt(struct tm v);
@@ -394,7 +394,7 @@ struct cpitem {
  * to be set to signal no previous error. The buffer size needs to be zero to
  * prevent writing to the buffer.
  *
- * @param item: Pointer to the item to be initialized.
+ * @param item Pointer to the item to be initialized.
  */
 static inline void cpitem_unpack_init(struct cpitem *item) {
 	item->type = CPITEM_INVALID;
@@ -411,8 +411,8 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  * invalid value if it is too big and thus this macro is provided to extract
  * integer from item while it checks for the destination limits.
  *
- * @param ITEM: item from which integer is extract.
- * @param DEST: destination integer variable (not pointer, the variable
+ * @param ITEM item from which integer is extract.
+ * @param DEST destination integer variable (not pointer, the variable
  *   directly).
  * @returns `true` in case value was @ref CPITEM_INT and value fits to the
  *   destination, otherwise `false` is returned. The destination is not modified
@@ -439,8 +439,8 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  * This is variant of @ref cpitem_extract_int for unsigned integers. Please see
  * documentation for @ref cpitem_extract_int for an explanation.
  *
- * @param ITEM: item from which unsigned integer is extract.
- * @param DEST: destination unsigned integer variable (not pointer, the variable
+ * @param ITEM item from which unsigned integer is extract.
+ * @param DEST destination unsigned integer variable (not pointer, the variable
  *   directly).
  * @returns `true` in case value was @ref CPITEM_UINT and value fits to the
  *   destination, otherwise `false` is returned. The destination is not modified
@@ -503,8 +503,8 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 
 /*! Unpack item from ChainPack data format.
  *
- * @param f: File from which ChainPack bytes are read from.
- * @param item: Item where info about the unpacked item and its value is placed
+ * @param f File from which ChainPack bytes are read from.
+ * @param item Item where info about the unpacked item and its value is placed
  *   to.
  * @returns Number of bytes read from **f**.
  */
@@ -512,10 +512,10 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) __attribute__((nonnull));
 
 /*! Pack next item to ChainPack data format.
  *
- * @param f: File to which ChainPack bytes are written to. It can be `NULL` and
+ * @param f File to which ChainPack bytes are written to. It can be `NULL` and
  *   in such a case packer only calculates number of bytes item would take when
  *   packed.
- * @param item: Item to be packed.
+ * @param item Item to be packed.
  * @returns Number of bytes written to **f**. On error it returns value of zero.
  * Note that some bytes might have been successfully written before error was
  * detected. Number of written bytes in case of an error is irrelevant because
@@ -595,10 +595,10 @@ struct cpon_state {
  * context it will disregard difference between `:` and `,` as well as `}` and
  * `]`.
  *
- * @param f: File from which CPON bytes are read from.
- * @param state: CPON state (can't be shared with packer!) that preserves
+ * @param f File from which CPON bytes are read from.
+ * @param state CPON state (can't be shared with packer!) that preserves
  *   context information between function calls.
- * @param item: Item where info about the unpacked item and its value is placed
+ * @param item Item where info about the unpacked item and its value is placed
  *   to.
  * @returns Number of bytes read from **f**.
  */
@@ -611,14 +611,14 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item)
  * cpon_state.depth. Any container that is beyond that limit is ignored and
  * replaced by sequence `...` (invalid in CPON).
  *
- * @param f: File to which CPON bytes are written to. It can be `NULL` and in
+ * @param f File to which CPON bytes are written to. It can be `NULL` and in
  *   such a case packer only calculates number of bytes item would take when
  *   packed. Be aware that this operation updates CPON state and thus you can't
  *   just simply call it with `NULL` and then call it with same item with
  *   `FILE`.
- * @param state: CPON state (can't be shared with unpacker!) that preserves
+ * @param state CPON state (can't be shared with unpacker!) that preserves
  *   context information between function calls.
- * @param item: Item to be packed.
+ * @param item Item to be packed.
  * @returns Number of bytes written to **f**. On error it returns value of
  *   zero. Note that some bytes might have been successfully written before
  *   error was detected. Number of written bytes in case of an error is

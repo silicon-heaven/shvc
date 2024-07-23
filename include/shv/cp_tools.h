@@ -13,10 +13,10 @@
  * This copies the whole item. That means the whole list or map as well as whole
  * string or blob. This includes multiple calls to the @ref cp_unpack.
  *
- * @param unpack: Unpack handle.
- * @param item: Item used for the `cp_unpack` calls and was used in the last
+ * @param unpack Unpack handle.
+ * @param item Item used for the `cp_unpack` calls and was used in the last
  *   one.
- * @param pack: Pack handle.
+ * @param pack Pack handle.
  * @returns Signals if copy of item was successful. The reason for the failure
  *   is store in `item` or is pack failure.
  */

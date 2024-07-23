@@ -22,7 +22,7 @@ rpchandler_responses_t rpchandler_responses_new(void) __attribute__((malloc));
  *
  * This is destructor for the object created by @ref rpchandler_responses_new.
  *
- * @param responses: RPC Responses Handler object.
+ * @param responses RPC Responses Handler object.
  */
 void rpchandler_responses_destroy(rpchandler_responses_t responses);
 
@@ -31,7 +31,7 @@ void rpchandler_responses_destroy(rpchandler_responses_t responses);
  * This provides you with stage to be used in list of stages for the RPC
  * handler.
  *
- * @param responses: RPC Responses Handler object.
+ * @param responses RPC Responses Handler object.
  * @returns Stage to be used in array of stages for RPC Handler.
  */
 struct rpchandler_stage rpchandler_responses_stage(
@@ -70,10 +70,10 @@ typedef bool (*rpcresponse_callback_t)(struct rpchandler_msg *ctx, void *cookie)
  * message to prevent race condition where response might have been already
  * received.
  *
- * @param responses: RPC Responses Handler object.
- * @param request_id: Request ID of response to be waited for.
- * @param func: The callback function that is called when response is received.
- * @param cookie: Pointer passed as an extra argument to the callback function.
+ * @param responses RPC Responses Handler object.
+ * @param request_id Request ID of response to be waited for.
+ * @param func The callback function that is called when response is received.
+ * @param cookie Pointer passed as an extra argument to the callback function.
  * @returns Object you need to use to reference to this response.
  */
 rpcresponse_t rpcresponse_expect(rpchandler_responses_t responses, int request_id,
@@ -81,7 +81,7 @@ rpcresponse_t rpcresponse_expect(rpchandler_responses_t responses, int request_i
 
 /*! Provide request ID of the given response.
  *
- * @param response: Response object the request ID should be provided for.
+ * @param response Response object the request ID should be provided for.
  * @returns The request ID.
  */
 int rpcresponse_request_id(rpcresponse_t response) __attribute__((nonnull));
@@ -91,7 +91,7 @@ int rpcresponse_request_id(rpcresponse_t response) __attribute__((nonnull));
  * The usage is when you send request but later decide that you no longer need
  * the response for whatever reason.
  *
- * @param response: The response to discard.
+ * @param response The response to discard.
  */
 void rpcresponse_discard(rpcresponse_t response);
 
@@ -103,8 +103,8 @@ void rpcresponse_discard(rpcresponse_t response);
  * returns `true` the response pointer will no longer be valid. At the same time
  * you can be sure that callback was executed.
  *
- * @param response: Response object to wait for.
- * @param timeout: Number of seconds we wait before we stop waiting.
+ * @param response Response object to wait for.
+ * @param timeout Number of seconds we wait before we stop waiting.
  * @returns `true` if response received or `false` otherwise (timeout
  *   encountered).
  */
@@ -115,7 +115,7 @@ bool rpcresponse_waitfor(rpcresponse_t response, int timeout)
  *
  * This also frees the RPC Response from RPC Responses Handler.
  *
- * @param response: Respond object to wait for.
+ * @param response Respond object to wait for.
  * @returns `true` if message is valid and `false` otherwise.
  */
 bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
@@ -147,15 +147,15 @@ bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
  * }
  * ```
  *
- * @param handler: The @ref rpchandler_t object associated with `responses`.
- * @param responses: The @ref rpchandler_responses_t object.
- * @param path: Null terminated string with SHV path.
- * @param method: Null terminated script with method name.
- * @param uid: User's  ID to be added to the request. It can be `NULL` and in
+ * @param handler The @ref rpchandler_t object associated with `responses`.
+ * @param responses The @ref rpchandler_responses_t object.
+ * @param path Null terminated string with SHV path.
+ * @param method Null terminated script with method name.
+ * @param uid User's  ID to be added to the request. It can be `NULL` and in
  *   such case User ID won't be part of the message.
- * @param func: The callback passed to @ref rpcresponse_expect.
- * @param ctx: The pointer passed to the callback.
- * @param response: The variable name where @ref rpcresponse_t object will be
+ * @param func The callback passed to @ref rpcresponse_expect.
+ * @param ctx The pointer passed to the callback.
+ * @param response The variable name where @ref rpcresponse_t object will be
  *   stored. This is set to `NULL` if packing or sending fails.
  */
 // clang-format on
@@ -191,14 +191,14 @@ bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
  * rpcmsg_request_id, @ref rpcmsg_pack_request_void, @ref rpcresponse_expect,
  * and @ref rpchandler_msg_send.
  *
- * @param handler: The RPC Handler responses object is registered in.
- * @param responses: The RPC Responses Handler object to be used.
- * @param path: The SHV path to the node with method to be called.
- * @param method: The method name to be called.
- * @param uid: User's  ID to be added to the request. It can be `NULL` and in
+ * @param handler The RPC Handler responses object is registered in.
+ * @param responses The RPC Responses Handler object to be used.
+ * @param path The SHV path to the node with method to be called.
+ * @param method The method name to be called.
+ * @param uid User's  ID to be added to the request. It can be `NULL` and in
  *   such case User ID won't be part of the message.
- * @param func: The callback passed to @ref rpcresponse_expect.
- * @param ctx: The pointer passed to the callback.
+ * @param func The callback passed to @ref rpcresponse_expect.
+ * @param ctx The pointer passed to the callback.
  * @returns Object referencing response to this request or `NULL` in case
  *   request sending failed.
  */

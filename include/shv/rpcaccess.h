@@ -68,7 +68,7 @@ typedef uint8_t rpcaccess_t;
  * Granted access is pre-SHV 3.0 access control mechanism that was based on the
  * strings. The implementation is provided for the compatibility purposes.
  *
- * @param access: Access level to be converted.
+ * @param access Access level to be converted.
  * @returns Pointer to string constant representing the access level. Empty
  * string is returned for unsupported access levels.
  */
@@ -82,7 +82,7 @@ const char *rpcaccess_granted_str(rpcaccess_t access);
  * Granted access is pre-SHV 3.0 access control mechanism that was based on the
  * strings. The implementation is provided for the compatibility purposes.
  *
- * @param str: String with access specifier.
+ * @param str String with access specifier.
  * @returns Access level.
  */
 rpcaccess_t rpcaccess_granted_extract(char *str);

@@ -85,10 +85,10 @@ default for meson) or explicitly enable them using `meson configure
 $ meson test -C builddir
 ```
 
-You can also run tests with Valgrind tool such as `memcheck`:
+You can also run tests with Valgrind tools `memcheck`, `helgrind`, and `drd`:
 
 ```console
-$ VALGRIND=memcheck meson test -C builddir
+$ meson test -C builddir --setup memcheck
 ```
 
 ### Code coverage report

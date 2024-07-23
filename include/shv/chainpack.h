@@ -53,7 +53,7 @@ enum chainpack_scheme {
  *
  * Call this only if `c < CPS_Null`.
  *
- * @param c: Chainpack scheme byte.
+ * @param c Chainpack scheme byte.
  * @returns `true` if integer is signed and `false` for unsigned.
  */
 static inline bool chainpack_scheme_signed(uint8_t c) {
@@ -72,7 +72,7 @@ static inline bool chainpack_scheme_signed(uint8_t c) {
  * positive integers are packed this way. You can use `chainpack_scheme_signed`
  * to check if it is suppose to one or the other.
  *
- * @param c: Chainpack scheme byte.
+ * @param c Chainpack scheme byte.
  * @returns Integer value packed in the scheme byte.
  */
 static inline unsigned chainpack_scheme_uint(uint8_t c) {
@@ -85,7 +85,7 @@ static inline unsigned chainpack_scheme_uint(uint8_t c) {
  * followup data. Thus to identify if it is an Int it is not enough to just use
  * `c == CPS_Int`. This provides all in one check.
  *
- * @param c: Chainpack scheme byte.
+ * @param c Chainpack scheme byte.
  * @returns `true` if it is signed integer, `false` otherwise.
  */
 static inline bool chainpack_is_int(uint8_t c) {
@@ -98,7 +98,7 @@ static inline bool chainpack_is_int(uint8_t c) {
  * followup data. Thus to identify if it is an UInt it is not enough to just
  * use `c == CPS_UInt`. This provides all in one check.
  *
- * @param c: Chainpack scheme byte.
+ * @param c Chainpack scheme byte.
  * @returns `true` if it is unsigned integer, `false` otherwise.
  */
 static inline bool chainpack_is_uint(uint8_t c) {
@@ -111,7 +111,7 @@ static inline bool chainpack_is_uint(uint8_t c) {
  * first unpacked byte right after the scheme byte. This extracts this info from
  * that byte and provides it to you.
  *
- * @param c: A first integer data byte.
+ * @param c A first integer data byte.
  * @returns number of bytes the integer spans.
  */
 static inline unsigned chainpack_int_bytes(uint8_t c) {
@@ -133,8 +133,8 @@ static inline unsigned chainpack_int_bytes(uint8_t c) {
  * you can just use shift left and binary or to add less significant bits from
  * the followup bytes.
  *
- * @param c: A first integer data byte.
- * @param bytes: Number of bytes this integer spans (use
+ * @param c A first integer data byte.
+ * @param bytes Number of bytes this integer spans (use
  * `chainpack_int_bytes`).
  * @returns value from the first integer data byte.
  */
@@ -154,8 +154,8 @@ static inline unsigned chainpack_uint_value1(uint8_t c, unsigned bytes) {
  * `0` and the most significant bit in the following byte is sign (tip: read it
  * to `int8_t` and convert to the type you wish it to be).
  *
- * @param c: A first integer data byte.
- * @param bytes: Number of bytes this integer spans (use
+ * @param c A first integer data byte.
+ * @param bytes Number of bytes this integer spans (use
  * `chainpack_int_bytes`).
  * @returns value from the first integer data byte.
  */
@@ -170,7 +170,7 @@ static inline int chainpack_int_value1(uint8_t c, unsigned bytes) {
  *
  * You can use this only with numbers from 0 to 63.
  *
- * @param num: Number to be packed.
+ * @param num Number to be packed.
  * @returns Byte with packed number in the scheme byte.
  */
 static inline uint8_t chainpack_w_scheme_uint(unsigned num) {
@@ -181,7 +181,7 @@ static inline uint8_t chainpack_w_scheme_uint(unsigned num) {
  *
  * You can use this only with numbers from 0 to 63.
  *
- * @param num: Number to be packed.
+ * @param num Number to be packed.
  * @returns byte with packed number in the scheme byte.
  */
 static inline uint8_t chainpack_w_scheme_int(int num) {
@@ -190,7 +190,7 @@ static inline uint8_t chainpack_w_scheme_int(int num) {
 
 /*! Deduce number of bytes needed to pack unsigned integer number.
  *
- * @param num: Number to be packed.
+ * @param num Number to be packed.
  * @returns number of bytes needed to fit packed number.
  */
 static inline unsigned chainpack_w_uint_bytes(unsigned long long num) {
@@ -215,7 +215,7 @@ static inline unsigned chainpack_w_uint_bytes(unsigned long long num) {
 
 /*! Deduce number of bytes needed to pack signed integer number.
  *
- * @param num: Number to be packed.
+ * @param num Number to be packed.
  * @returns number of bytes needed to fit packed number.
  */
 static inline unsigned chainpack_w_int_bytes(long long num) {
@@ -242,8 +242,8 @@ static inline unsigned chainpack_w_int_bytes(long long num) {
  * significant ones to the bytes after this one up to number of bytes deduced by
  * `chainpack_w_uint_bytes`.
  *
- * @param num: Number to be packed.
- * @param bytes: Number of bytes this integers spans (use
+ * @param num Number to be packed.
+ * @param bytes Number of bytes this integers spans (use
  * `chainpack_w_uint_bytes).
  * @returns first byte of the number as it should be packed in Chainpack.
  */
@@ -262,8 +262,8 @@ static inline uint8_t chainpack_w_uint_value1(
  * is all. Numbers longer than four byte also need to pack sign (as it is not
  * part of the first byte) to the most significant bit.
  *
- * @param num: Number to be packed.
- * @param bytes: Number of bytes this integers spans (use
+ * @param num Number to be packed.
+ * @param bytes Number of bytes this integers spans (use
  * `chainpack_w_int_bytes).
  * @returns first byte of the number as it should be packed in Chainpack.
  */
