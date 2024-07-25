@@ -10,6 +10,7 @@ rpcclient
 rpcserver
 rpclogger
 rpcurl
+rpclogin
 rpcmsg
 rpcerror
 rpcaccess

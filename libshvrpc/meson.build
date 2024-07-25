@@ -14,6 +14,7 @@ libshvrpc_sources = [
     'rpchandler_app.c',
     'rpchandler_login.c',
     'rpclogger.c',
+    'rpclogin.c',
     'rpcmsg_head.c',
     'rpcmsg_pack.c',
     'rpcmsg_request_id.c',

@@ -12,7 +12,7 @@
  */
 
 #include <shv/rpchandler.h>
-#include <shv/rpcurl.h>
+#include <shv/rpclogin.h>
 
 /*! Object representing SHV RPC Application Handle.
  *
@@ -28,7 +28,7 @@ typedef struct rpchandler_login *rpchandler_login_t;
  *   object existence.
  * @returns A new RPC Login Handler object.
  */
-rpchandler_login_t rpchandler_login_new(const struct rpclogin_options *login)
+rpchandler_login_t rpchandler_login_new(const struct rpclogin *login)
 	__attribute__((nonnull, malloc));
 
 /*! Free all resources occupied by @ref rpchandler_login_t object.

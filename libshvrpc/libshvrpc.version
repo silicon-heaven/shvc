@@ -47,6 +47,9 @@ V0.0 {
 		rpclogger_log_flush;
 		rpclogger_func_stderr;
 
+		# shv/rpclogin.h
+		rpclogin_pack;
+
 		# shv/rpcurl.h
 		rpcurl_parse;
 		rpcurl_free;

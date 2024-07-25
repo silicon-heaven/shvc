@@ -49,7 +49,7 @@ bool sha1_update(sha1ctx_t ctx, const uint8_t *buf, size_t siz)
  * @param digest The array where digest bytes will be stored.
  * @returns Boolean signaling if digest was generated successfully.
  */
-bool sha1_digest(sha1ctx_t ctx, uint8_t digest[SHA1_SIZ]);
+bool sha1_digest(sha1ctx_t ctx, uint8_t digest[SHA1_SIZ]) __attribute__((nonnull));
 
 /*! Receive SHA1 HEX digest.
  *
@@ -62,11 +62,31 @@ static inline bool sha1_hex_digest(sha1ctx_t ctx, char digest[SHA1_HEX_SIZ]) {
 	if (!sha1_digest(ctx, buf))
 		return false;
 	static const char *const hex = "0123456789abcdef";
-	for (unsigned i = 0; i < 20; i++) {
+	for (unsigned i = 0; i < SHA1_SIZ; i++) {
 		*digest++ = hex[(buf[i] >> 4) & 0xf];
 		*digest++ = hex[buf[i] & 0xf];
 	}
 	return true;
+}
+
+/*! Utility function for SHA1 calculation of the provided data.
+ *
+ * This combines @ref sha1_new, @ref sha1_update, @ref sha1_hex_digest, and @ref
+ * sha1_destroy in a single package.
+ *
+ * @param buf Pointer to the bytes hash should calculated for.
+ * @param siz Number of bytes to be used.
+ * @param digest The array where digest hex characters will be stored.
+ * @returns Boolean signaling if digest was generated successfully.
+ */
+static inline bool sha1_hex(
+	const uint8_t *buf, size_t siz, char digest[SHA1_HEX_SIZ]) {
+	sha1ctx_t ctx = sha1_new();
+	if (ctx == NULL)
+		return false;
+	bool res = sha1_update(ctx, buf, siz) && sha1_hex_digest(ctx, digest);
+	sha1_destroy(ctx);
+	return res;
 }
 
 #endif

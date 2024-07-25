@@ -8,23 +8,14 @@
 #define LOGIN_TIMEOUT (10000)
 
 
-static void sha1_password(const char *nonce, const char *password, char *res) {
-	sha1ctx_t ctx = sha1_new();
-	assert(ctx);
-	assert(sha1_update(ctx, (const uint8_t *)nonce, strlen(nonce)));
-	assert(sha1_update(ctx, (const uint8_t *)password, strlen(password)));
-	assert(sha1_hex_digest(ctx, res));
-	sha1_destroy(ctx);
-}
-
 struct rpchandler_login {
-	const struct rpclogin_options *opts;
+	const struct rpclogin *opts;
 	volatile _Atomic bool logged;
 	volatile _Atomic rpcerrno_t errnum;
 	char *errmsg;
 	pthread_cond_t cond;
 	pthread_mutex_t condm;
-	char nonce[33];
+	char nonce[SHV_NONCE_MAXLEN + 1];
 };
 
 static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
@@ -111,51 +102,9 @@ int rpc_idle(void *cookie, struct rpchandler_idle *ctx) {
 		return HELLO_TIMEOUT;
 	}
 
-
 	/* Login */
 	rpcmsg_pack_request(pack, "", "login", NULL, 2);
-	cp_pack_map_begin(pack);
-
-	cp_pack_str(pack, "login");
-	cp_pack_map_begin(pack);
-	cp_pack_str(pack, "password");
-	if (handler_login->opts->login_type == RPC_LOGIN_SHA1) {
-		char sha1[SHA1_HEX_SIZ];
-		sha1_password(handler_login->nonce, handler_login->opts->password, sha1);
-		cp_pack_string(pack, sha1, SHA1_HEX_SIZ);
-	} else
-		cp_pack_str(pack, handler_login->opts->password);
-	cp_pack_str(pack, "user");
-	cp_pack_str(pack, handler_login->opts->username);
-	cp_pack_str(pack, "type");
-	switch (handler_login->opts->login_type) {
-		case RPC_LOGIN_PLAIN:
-			cp_pack_str(pack, "PLAIN");
-			break;
-		case RPC_LOGIN_SHA1:
-			cp_pack_str(pack, "SHA1");
-			break;
-	}
-	cp_pack_container_end(pack);
-
-	if (handler_login->opts->device_id || handler_login->opts->device_mountpoint) {
-		cp_pack_str(pack, "options");
-		cp_pack_map_begin(pack);
-		cp_pack_str(pack, "device");
-		cp_pack_map_begin(pack);
-		if (handler_login->opts->device_id) {
-			cp_pack_str(pack, "deviceId");
-			cp_pack_str(pack, handler_login->opts->device_id);
-		}
-		if (handler_login->opts->device_mountpoint) {
-			cp_pack_str(pack, "mountPoint");
-			cp_pack_str(pack, handler_login->opts->device_mountpoint);
-		}
-		cp_pack_container_end(pack);
-		cp_pack_container_end(pack);
-	}
-
-	cp_pack_container_end(pack);
+	rpclogin_pack(pack, handler_login->opts, handler_login->nonce, false);
 	cp_pack_container_end(pack);
 	rpchandler_msg_send(ctx);
 	return LOGIN_TIMEOUT;
@@ -166,7 +115,7 @@ static const struct rpchandler_funcs rpc_funcs = {
 	.idle = rpc_idle,
 };
 
-rpchandler_login_t rpchandler_login_new(const struct rpclogin_options *login) {
+rpchandler_login_t rpchandler_login_new(const struct rpclogin *login) {
 	struct rpchandler_login *res = malloc(sizeof *res);
 	res->opts = login;
 	res->logged = false;

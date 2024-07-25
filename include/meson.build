@@ -20,6 +20,7 @@ libshvrpc_headers = files(
   'shv/rpchandler_impl.h',
   'shv/rpchandler_login.h',
   'shv/rpclogger.h',
+  'shv/rpclogin.h',
   'shv/rpcmsg.h',
   'shv/rpcserver.h',
   'shv/rpcurl.h',

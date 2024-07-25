@@ -8,6 +8,8 @@
  * device) to the SHV network.
  */
 
+#include <shv/rpclogin.h>
+
 /*! Protocol used to connect client to the server or to listen for connection on
  */
 enum rpc_protocol {
@@ -31,28 +33,6 @@ enum rpc_protocol {
 	RPC_PROTOCOL_TTY,
 };
 
-/*! The format of the password passed to the login process. */
-enum rpclogin_type {
-	/*! The password is in plain text */
-	RPC_LOGIN_PLAIN,
-	/*! Password is hashed with SHA1 password */
-	RPC_LOGIN_SHA1,
-};
-
-/*! Options used for login to the RPC Broker.  */
-struct rpclogin_options {
-	/*! User name used to login client connection to the server */
-	const char *username;
-	/*! Password used to login client connection to the server */
-	const char *password;
-	/*! The format of the password */
-	enum rpclogin_type login_type;
-	/*! Device ID sent as part of login information to the server */
-	const char *device_id;
-	/*! Device's requested mount point on server */
-	const char *device_mountpoint;
-};
-
 /*! SHV RPC URL representation */
 struct rpcurl {
 	/*! Protocol used to connect to the server */
@@ -62,7 +42,7 @@ struct rpcurl {
 	/*! Port number used for TCP and UDP connections */
 	int port;
 	/*! Login options */
-	struct rpclogin_options login;
+	struct rpclogin login;
 
 	// @cond
 	union {

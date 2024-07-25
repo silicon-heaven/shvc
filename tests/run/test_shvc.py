@@ -2,6 +2,7 @@
 
 import dataclasses
 import pytest
+import re
 from .utils import subproc
 
 
@@ -27,10 +28,12 @@ async def test_param(shvc_exec, url, broker):
     )
     assert stdout == [b"true", b""]
     assert stderr[0] == b'=> <1:1,8:1,9:"",10:"hello">i{}'
-    # Note we skip the nonce message line because that is not predictable
-    assert stderr[2:] == [
-        b'=> <1:1,8:2,9:"",10:"login">i{1:{"login":{"password":"test","user":"test","ty'
-        b'pe":"PLAIN"}}}',
+    assert re.fullmatch(rb'<= <8:1>i\{2:\{"nonce":"[^"]*"...', stderr[1])
+    assert re.fullmatch(
+        rb'=> <1:1,8:2,9:"",10:"login">i\{1:\{"login":\{"password":"[^"]*","user":"test","type":"SHA1"\}\}\}',
+        stderr[2],
+    )
+    assert stderr[3:] == [
         b"<= <8:2>i{}",
         b'=> <1:1,8:4,9:".broker/currentClient",10:"subscribe">i{1:{}}',
         b"<= <8:4>i{2:true...",
