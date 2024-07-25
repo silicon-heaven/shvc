@@ -114,6 +114,27 @@ cp_pack_t cp_pack_cpon_init(struct cp_pack_cpon *pack, FILE *f,
 		(*__pack)(__pack, (ITEM)); \
 	})
 
+/*! Check the packing success.
+ *
+ * This doesn't pack anything; the packing is attempted with type @ref
+ * CPITEM_INVALID and @ref cpitem.cpitem_as.Error set to @ref CPERR_NONE which
+ * packs no data but still checks if packer is in error state or not.
+ *
+ * The common usage for packer is to just blindly pack simple types. If some of
+ * that packing results into an error then any subsequent packing attempts
+ * must result into an error as well (unless there is some out of bound error
+ * reset performed). Thus it is easier most of the time to just blindly call
+ * packing functions and detect error only at the end.
+ *
+ * @param pack Generic packer.
+ * @returns Boolean signaling the pack success or failure.
+ */
+static inline bool cp_pack_success(cp_pack_t pack) {
+	struct cpitem i;
+	i.type = CPITEM_INVALID;
+	i.as.Error = CPERR_NONE;
+	return cp_pack(pack, &i);
+}
 
 /*! Pack *Null* to the generic packer.
  *

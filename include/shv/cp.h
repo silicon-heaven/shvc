@@ -516,14 +516,12 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) __attribute__((nonnull));
  *   in such a case packer only calculates number of bytes item would take when
  *   packed.
  * @param item Item to be packed.
- * @returns Number of bytes written to **f**. On error it returns value of zero.
- * Note that some bytes might have been successfully written before error was
- * detected. Number of written bytes in case of an error is irrelevant because
- * packed data is invalid anyway. Be aware that some inputs might inevitably
- * produce no output (strings and blobs that are not first or last and have zero
- * length produce no output).
+ * @returns Number of bytes written to **f**. On error `-1` is returned. Note
+ *   that some bytes might have been successfully written before error was
+ *   detected. Number of written bytes in case of an error is irrelevant because
+ *   packed data is invalid anyway.
  */
-size_t chainpack_pack(FILE *f, const struct cpitem *item)
+ssize_t chainpack_pack(FILE *f, const struct cpitem *item)
 	__attribute__((nonnull(2)));
 
 
@@ -619,14 +617,12 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item)
  * @param state CPON state (can't be shared with unpacker!) that preserves
  *   context information between function calls.
  * @param item Item to be packed.
- * @returns Number of bytes written to **f**. On error it returns value of
- *   zero. Note that some bytes might have been successfully written before
- *   error was detected. Number of written bytes in case of an error is
- *   irrelevant because packed data is invalid anyway. Be aware that some inputs
- *   might inevitably produce no output (strings and blobs that are not first or
- *   last and have zero length produce no output).
+ * @returns Number of bytes written to **f**. On error `-1` is returned. Note
+ *   that some bytes might have been successfully written before error was
+ *   detected. Number of written bytes in case of an error is irrelevant because
+ *   packed data is invalid anyway.
  */
-size_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item)
+ssize_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item)
 	__attribute__((nonnull(2, 3)));
 
 

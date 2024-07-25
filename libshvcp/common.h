@@ -14,7 +14,7 @@ bool common_unpack(size_t *res, FILE *f, struct cpitem *item)
  *
  * This covers RAW access and invalid item.
  */
-bool common_pack(size_t *res, FILE *f, const struct cpitem *item)
-	__attribute__((nonnull));
+bool common_pack(ssize_t *res, FILE *f, const struct cpitem *item)
+	__attribute__((nonnull(1, 3)));
 
 #endif

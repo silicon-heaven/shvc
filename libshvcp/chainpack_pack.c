@@ -12,7 +12,7 @@
 	do { \
 		uint8_t __v = (V); \
 		if (f && fputc(__v, f) != __v) \
-			return 0; \
+			return -1; \
 		res++; \
 	} while (false)
 #define WRITE(V, SIZ) \
@@ -20,25 +20,25 @@
 		size_t __siz = SIZ; \
 		if (f) { \
 			if (fwrite((V), 1, __siz, f) != __siz) \
-				return 0; \
+				return -1; \
 		} \
 		res += __siz; \
 	} while (false)
 #define CALL(FUNC, ...) \
 	do { \
 		ssize_t __cnt = FUNC(f, __VA_ARGS__); \
-		if (__cnt == 0) \
-			return 0; \
+		if (__cnt == -1) \
+			return -1; \
 		res += __cnt; \
 	} while (false)
 
 
-static size_t chainpack_pack_int(FILE *f, long long v);
-static size_t chainpack_pack_uint(FILE *f, unsigned long long v);
+static ssize_t chainpack_pack_int(FILE *f, long long v);
+static ssize_t chainpack_pack_uint(FILE *f, unsigned long long v);
 
 
-size_t chainpack_pack(FILE *f, const struct cpitem *item) {
-	size_t res = 0;
+ssize_t chainpack_pack(FILE *f, const struct cpitem *item) {
+	ssize_t res = 0;
 	if (common_pack(&res, f, item))
 		return res;
 
@@ -158,7 +158,7 @@ size_t chainpack_pack(FILE *f, const struct cpitem *item) {
 	return res;
 }
 
-static size_t chainpack_pack_uint(FILE *f, unsigned long long v) {
+static ssize_t chainpack_pack_uint(FILE *f, unsigned long long v) {
 	ssize_t res = 0;
 	unsigned bytes = chainpack_w_uint_bytes(v);
 	uint8_t buf[bytes];
@@ -169,7 +169,7 @@ static size_t chainpack_pack_uint(FILE *f, unsigned long long v) {
 	return res;
 }
 
-static size_t chainpack_pack_int(FILE *f, long long v) {
+static ssize_t chainpack_pack_int(FILE *f, long long v) {
 	ssize_t res = 0;
 	unsigned bytes = chainpack_w_int_bytes(v);
 	uint8_t buf[bytes];

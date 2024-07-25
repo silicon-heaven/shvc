@@ -30,9 +30,11 @@ bool common_unpack(size_t *res, FILE *f, struct cpitem *item) {
 	return true;
 }
 
-bool common_pack(size_t *res, FILE *f, const struct cpitem *item) {
-	if (ferror(f)) /* No reason to write to file in error */
+bool common_pack(ssize_t *res, FILE *f, const struct cpitem *item) {
+	if (f && ferror(f)) { /* No reason to write to file in error */
+		*res = -1;
 		return true;
+	}
 	switch (item->type) {
 		case CPITEM_INVALID:
 			/* Do nothing for invalid item */
@@ -44,7 +46,8 @@ bool common_pack(size_t *res, FILE *f, const struct cpitem *item) {
 	}
 
 	/* Handle raw write */
-	if (item->as.Blob.len == 0 || fwrite(item->buf, item->as.Blob.len, 1, f) == 1)
+	if (item->as.Blob.len == 0 || f == NULL ||
+		fwrite(item->buf, item->as.Blob.len, 1, f) == 1)
 		*res = item->as.Blob.len;
 	else
 		*res = -1;

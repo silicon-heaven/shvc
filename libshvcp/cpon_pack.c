@@ -9,7 +9,7 @@
 #define PUTC(V) \
 	do { \
 		if (f && fputc((V), f) != (V)) \
-			return 0; \
+			return -1; \
 		res++; \
 	} while (false)
 #define PUTS(V) \
@@ -17,7 +17,7 @@
 		const char *__v = (V); \
 		size_t __strlen = strlen(__v); \
 		if (f && fwrite(__v, 1, __strlen, f) != __strlen) \
-			return 0; \
+			return -1; \
 		res += __strlen; \
 	} while (false)
 #define PRINTF(...) \
@@ -28,27 +28,27 @@
 		else \
 			__cnt = fprintf(f, __VA_ARGS__); \
 		if (__cnt < 0) \
-			return 0; \
+			return -1; \
 		res += __cnt; \
 	} while (false)
 #define CALL(FUNC, ...) \
 	do { \
 		size_t __cnt = FUNC(f, __VA_ARGS__); \
-		if (__cnt == 0) \
-			return 0; \
+		if (__cnt == -1) \
+			return -1; \
 		res += __cnt; \
 	} while (false)
 
 
-static size_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec);
-static size_t cpon_pack_buf(FILE *f, const struct cpitem *item);
-static size_t ctxpush(
+static ssize_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec);
+static ssize_t cpon_pack_buf(FILE *f, const struct cpitem *item);
+static ssize_t ctxpush(
 	FILE *f, struct cpon_state *state, enum cpitem_type tp, const char *str);
 static enum cpitem_type ctxpop(struct cpon_state *state);
 
 
-size_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) {
-	size_t res = 0;
+ssize_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) {
+	ssize_t res = 0;
 	if (common_pack(&res, f, item))
 		return res;
 
@@ -167,8 +167,8 @@ size_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) {
 	return res;
 }
 
-static size_t cpon_pack_buf(FILE *f, const struct cpitem *item) {
-	size_t res = 0;
+static ssize_t cpon_pack_buf(FILE *f, const struct cpitem *item) {
+	ssize_t res = 0;
 
 	for (size_t i = 0; i < item->as.Blob.len; i++) {
 		uint8_t b = item->rbuf[i];
@@ -223,8 +223,8 @@ static size_t cpon_pack_buf(FILE *f, const struct cpitem *item) {
 	return res;
 }
 
-static size_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec) {
-	size_t res = 0;
+static ssize_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec) {
+	ssize_t res = 0;
 
 	if (dec->exponent <= 6 && dec->exponent >= -9) {
 		/* Pack in X.Y notation */
@@ -258,9 +258,9 @@ static size_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec) {
 	return res;
 }
 
-static size_t ctxpush(
+static ssize_t ctxpush(
 	FILE *f, struct cpon_state *state, enum cpitem_type tp, const char *str) {
-	size_t res = 0;
+	ssize_t res = 0;
 	if (state->depth == state->cnt && state->realloc)
 		state->realloc(state);
 	if (state->depth < state->cnt) {
