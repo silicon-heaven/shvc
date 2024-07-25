@@ -1,4 +1,4 @@
-#include "sha1.h"
+#include <shv/sha1.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <crypto/sha1.h>
@@ -22,13 +22,7 @@ bool sha1_update(sha1ctx_t ctx, const uint8_t *buf, size_t siz) {
 	return true;
 }
 
-bool sha1_hex_digest(sha1ctx_t ctx, char digest[SHA1_HEX_SIZ]) {
-	unsigned char buf[SHA1_DIGEST_LENGTH];
-	sha1final(buf, &ctx->ctx);
-	static const char *const hex = "0123456789abcdef";
-	for (unsigned i = 0; i < SHA1_DIGEST_LENGTH; i++) {
-		*digest++ = hex[(buf[i] >> 4) & 0xf];
-		*digest++ = hex[buf[i] & 0xf];
-	}
+bool sha1_digest(sha1ctx_t ctx, uint8_t digest[SHA1_SIZ]) {
+	sha1final(digest, &ctx->ctx);
 	return true;
 }

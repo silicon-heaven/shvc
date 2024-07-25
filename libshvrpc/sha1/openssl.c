@@ -1,4 +1,4 @@
-#include "sha1.h"
+#include <shv/sha1.h>
 #include <openssl/evp.h>
 #include <assert.h>
 
@@ -27,16 +27,10 @@ bool sha1_update(sha1ctx_t ctx, const uint8_t *buf, size_t siz) {
 	return EVP_DigestUpdate(ctx->ctx, buf, siz);
 }
 
-bool sha1_hex_digest(sha1ctx_t ctx, char digest[SHA1_HEX_SIZ]) {
+bool sha1_digest(sha1ctx_t ctx, uint8_t digest[SHA1_SIZ]) {
 	unsigned siz;
-	unsigned char buf[20];
-	if (!EVP_DigestFinal_ex(ctx->ctx, buf, &siz))
+	if (!EVP_DigestFinal_ex(ctx->ctx, digest, &siz))
 		return false;
 	assert(siz == 20); /* This should always be true */
-	static const char *const hex = "0123456789abcdef";
-	for (unsigned i = 0; i < 20; i++) {
-		*digest++ = hex[(buf[i] >> 4) & 0xf];
-		*digest++ = hex[buf[i] & 0xf];
-	}
 	return true;
 }

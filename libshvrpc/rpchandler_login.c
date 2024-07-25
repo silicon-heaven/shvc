@@ -1,8 +1,8 @@
 #include <shv/rpchandler_login.h>
 #include <shv/rpchandler_impl.h>
+#include <shv/sha1.h>
 #include <stdlib.h>
 #include <limits.h>
-#include "sha1.h"
 
 #define HELLO_TIMEOUT (5000)
 #define LOGIN_TIMEOUT (10000)

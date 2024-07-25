@@ -98,5 +98,11 @@ V0.0 {
 		# shv/crc32.h
 		crc32_update;
 
+		# shv/sha1.h
+		sha1_new;
+		sha1_destroy;
+		sha1_update;
+		sha1_digest;
+
 	local: *;
 };

@@ -23,6 +23,7 @@ libshvrpc_headers = files(
   'shv/rpcmsg.h',
   'shv/rpcserver.h',
   'shv/rpcurl.h',
+  'shv/sha1.h',
   'shv/version.h',
 )
 libshvcaller_headers = files(
