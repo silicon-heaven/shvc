@@ -1,32 +1,29 @@
 #!/usr/bin/env bash
 # The support provided by Meson for running tests in valgrind consist of
-# wrapping test calls with string provided by user. This has few issues:
-# * There is not standard way to set default arguments for Valgrind
-# * The valgrind is used on suite code that is not ours at all. The issue here
-#   is with test suites based on shell.
+# wrapping test executables with string provided by user. This has issue that
+# not every time we run directly our testing code. In "run" tests we launch
+# suite and we don't want to check that (it is too slow to do so). It also seems
+# that it is not easilly possible to ignore initial process and only track
+# children. It is also not possible to provide valgrind with path to the RC file
+# and thus we would have to run it always from the same directory (to use
+# ./.valgrindrc).
 # The solution this script presents is to simply ignore wrap functionality and
-# provide a way for user to enable valgrind wrapping in the correct level trough
-# environment variable.
+# provide a way for user to enable valgrind wrapping in the correct level
+# through environment variable.
 set -eu
 ################################################################################
 declare -a default_valgrind_args
+default_valgrind_args+=('--quiet')
 default_valgrind_args+=('--error-exitcode=118')
 default_valgrind_args+=('--show-error-list=yes')
+default_valgrind_args+=("--suppressions=$(readlink -f "${0%/*}")/valgrind.supp")
 default_valgrind_args+=('--track-fds=yes')
 default_valgrind_args+=('--trace-children=yes')
 default_valgrind_args+=('--child-silent-after-fork=no')
 
-case "${VALGRIND:-}" in
-memcheck)
-	default_valgrind_args+=('--leak-check=full')
-	default_valgrind_args+=('--show-leak-kinds=definite,indirect,possible')
-	default_valgrind_args+=('--track-origins=yes')
-	;;
-helgrind) ;;
-
-drd) ;;
-
-esac
+default_valgrind_args+=('--memcheck:leak-check=full')
+default_valgrind_args+=('--memcheck:show-leak-kinds=definite,indirect,possible')
+default_valgrind_args+=('--memcheck:track-origins=yes')
 ################################################################################
 
 usage() {
@@ -77,6 +74,7 @@ shift $((OPTIND - 1))
 
 if [[ -v VALGRIND ]]; then
 	if [[ "$no_wrap" == "y" ]]; then
+		# TODO possibly use VALGRIND_OPTS instead
 		export VALGRIND="$valgrind ${default_valgrind_args[*]} ${valgrind_args[*]} --tool=$VALGRIND"
 		exec "$@"
 	else

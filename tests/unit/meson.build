@@ -42,4 +42,5 @@ test(
   env: unittests_env,
   protocol: 'tap',
   depends: unittest_foo,
+  suite: ['unit'],
 )

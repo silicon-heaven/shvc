@@ -19,6 +19,7 @@ int main(int argc, char **argv) {
 	FILE *f = stdin;
 	bool close = false;
 	if (conf.source_file != NULL && strcmp(conf.source_file, "-")) {
+		close = true;
 		f = fopen(conf.source_file, "r");
 		if (f == NULL) {
 			fprintf(stderr, "Can't open input file '%s': %s\n",

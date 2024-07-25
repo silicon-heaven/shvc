@@ -1,5 +1,6 @@
 #!/usr/bin/env bats
 set -eu
+bats_require_minimum_version 1.11.0
 
 setup() {
 	if [ -z "${BATS_TEST_TMPDIR:-}" ]; then
@@ -16,13 +17,19 @@ teardown() {
 }
 
 foo() {
-	local valgrind_log
-	local ec=0
-	valgrind_log="$(mktemp -p "$BATS_TEST_TMPDIR" "valgrind.XXXXXX")"
-	${VALGRIND:-} ${VALGRIND:+--log-file="$valgrind_log" --} \
-		"${TEST_FOO:-foo}" "$@" || ec=$?
-	[ ! -s "$valgrind_log" ] || sed 's/^/#/' "$valgrind_log" >&3
-	return $ec
+	# FD magic: Bats uses FD 3 and 4 and with valgrind's --track-fds that causes
+	# failure. Thus we close them for valgrind process. We also have to filter
+	# out the valgrind output to allow easier matching and thus we swap stderr
+	# with stdout, perform filtering and swap them around again.
+	${VALGRIND:-} "${TEST_FOO:-foo}" "$@" 3>&1 2>&1 1>&3 3>&- 4>&- \
+		| while read -r line; do
+			if [[ "$line" =~ ^==.*==\ .* || "$line" =~ ^--.*--\ .* ]]; then
+				echo "$line" >&4
+			else
+				echo "$line"
+			fi
+		done 3>&1 2>&1 1>&3
+	return "${PIPESTATUS[0]}"
 }
 
 @test "help" {
@@ -31,19 +38,18 @@ foo() {
 }
 
 @test "null" {
-	[ "$(foo </dev/null)" == "0" ]
+	run -0 foo </dev/null
+	[ "$output" = "0" ]
 }
 
-here_foo() {
-	foo <<-EOF
+@test "here" {
+	run -0 foo <<-EOF
 		fee: ignored
 		foo: counted once
 		foo: coutned twice
 		fee: again ignored
 	EOF
-}
-@test "here" {
-	[ "$(here_foo)" == "2" ]
+	[ "$output" = "2" ]
 }
 
 @test "file" {
@@ -54,13 +60,12 @@ here_foo() {
 		foo: two
 		foo: three
 	EOF
-	[ "$(foo "$file")" == "3" ]
+	run -0 foo "$file"
+	[ "$output" = "3" ]
 }
 
 @test "missing" {
-	local ec=0
-	local error
-	error="$(foo /dev/missing 2>&1)" || ec=$?
-	[ "$ec" -eq 1 ]
-	[ "$error" == "Can't open input file '/dev/missing': No such file or directory" ]
+	run foo /dev/missing
+	[ "$status" -eq 1 ]
+	[ "$output" == "Can't open input file '/dev/missing': No such file or directory" ]
 }

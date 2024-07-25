@@ -63,6 +63,7 @@
             ];
           })
         ];
+        postUnpack = "patchShebangs --build $sourceRoot";
         checkInputs = [
           check
           check-suite

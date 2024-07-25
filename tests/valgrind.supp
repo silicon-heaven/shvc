@@ -1,0 +1,30 @@
+{
+   <check_after_fork_fd_setup>
+   CoreError:FdNotClosed
+   fun:open
+   ...
+   fun:open_tmp_file
+   fun:setup_messaging
+   fun:srunner_run_tagged
+   fun:main
+}
+{
+   <check_after_fork_fd_result>
+   CoreError:FdNotClosed
+   fun:open
+   ...
+   fun:open_tmp_file
+   fun:receive_test_result
+   fun:srunner_run_tagged
+   fun:main
+}
+{
+   <check_after_fork_logging>
+   CoreError:FdNotClosed
+   fun:open
+   ...
+   fun:srunner_open_file
+   fun:srunner_init_logging
+   fun:srunner_run_tagged
+   fun:main
+}

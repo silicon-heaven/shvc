@@ -18,5 +18,6 @@ foreach bats_test : bats_tests
     env: ['TEST_FOO=' + foo.full_path()],
     protocol: 'tap',
     depends: foo,
+    suite: ['run'],
   )
 endforeach
