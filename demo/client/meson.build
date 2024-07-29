@@ -3,7 +3,7 @@ demo_client_dependencies = [libshvcaller_dep]
 
 
 demo_client = executable(
-  'demo-client',
+  'shvc-demo-client',
   demo_client_sources + ['main.c'],
   dependencies: demo_client_dependencies,
   install: true,

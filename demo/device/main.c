@@ -46,7 +46,7 @@ int main(int argc, char **argv) {
 	struct device_state *state = device_state_new();
 
 	rpchandler_login_t login = rpchandler_login_new(&rpcurl->login);
-	rpchandler_app_t app = rpchandler_app_new("demo-device", PROJECT_VERSION);
+	rpchandler_app_t app = rpchandler_app_new("shvc-demo-device", PROJECT_VERSION);
 
 	const struct rpchandler_stage stages[] = {
 		rpchandler_login_stage(login),

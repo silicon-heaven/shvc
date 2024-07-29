@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
 
 	/* Define a stages for RPC Handler using App and Responses Handler */
 	rpchandler_login_t login = rpchandler_login_new(&url->login);
-	rpchandler_app_t app = rpchandler_app_new("demo-client", PROJECT_VERSION);
+	rpchandler_app_t app = rpchandler_app_new("shvc-demo-client", PROJECT_VERSION);
 	rpchandler_responses_t responses = rpchandler_responses_new();
 	const struct rpchandler_stage stages[] = {
 		rpchandler_login_stage(login),

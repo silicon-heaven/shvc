@@ -36,7 +36,7 @@ def fixture_shvcbroker_exec(valgrind_exec):
 
 @pytest.fixture(name="demo_device_exec", scope="session")
 def fixture_demo_device_exec(valgrind_exec):
-    """Provide the demo-device application."""
+    """Provide the shvc-demo-device application."""
     env = os.getenv("DEMO_DEVICE")
     if not env:
         pytest.skip("DEMO_DEVICE not provided")
@@ -45,7 +45,7 @@ def fixture_demo_device_exec(valgrind_exec):
 
 @pytest.fixture(name="demo_client_exec", scope="session")
 def fixture_demo_client_exec(valgrind_exec):
-    """Provide the demo-client application."""
+    """Provide the shvc-demo-client application."""
     env = os.getenv("DEMO_CLIENT")
     if not env:
         pytest.skip("DEMO_CLIENT not provided")

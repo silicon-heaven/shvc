@@ -60,7 +60,7 @@ async def fixture_demo_device(demo_device_exec, broker, url):
         ("test/device/.app", "ls", []),
         ("test/device/.app", "shvVersionMajor", 3),
         ("test/device/.app", "shvVersionMinor", 0),
-        ("test/device/.app", "name", "demo-device"),
+        ("test/device/.app", "name", "shvc-demo-device"),
         ("test/device/.app", "version", version),
         ("test/device/.app", "ping", None),
         (
