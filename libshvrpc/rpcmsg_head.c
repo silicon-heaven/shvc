@@ -1,8 +1,8 @@
-#include <shv/rpcmsg.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include <obstack.h>
+#include <shv/rpcmsg.h>
 
 
 const struct rpcmsg_meta_limits rpcmsg_meta_limits_default = {

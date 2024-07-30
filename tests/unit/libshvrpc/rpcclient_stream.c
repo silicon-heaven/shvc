@@ -1,10 +1,11 @@
-#include <shv/rpcclient_stream.h>
-#include <shv/rpcmsg.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <pthread.h>
 #include <poll.h>
+#include <pthread.h>
+#include <shv/rpcclient_stream.h>
+#include <shv/rpcmsg.h>
+#include <shv/rpctransport.h>
 
 #define SUITE "rpcclient_stream"
 #define DEFAULT_TEARDOWN teardown_client

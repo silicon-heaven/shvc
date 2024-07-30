@@ -1,5 +1,5 @@
-#include <shv/rpchandler_responses.h>
 #include <stdlib.h>
+#include <shv/rpchandler_responses.h>
 
 
 struct rpchandler_responses {

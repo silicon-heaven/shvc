@@ -28,9 +28,13 @@ enum rpcstream_proto {
 struct rpcclient_stream_funcs {
 	/*! Called when `rpcclient_reset` is called and connection is not
 	 * established. It can be `NULL` and in such case reconnection is not
-	 * possible. This function must set read and write to `fd` parameter.
+	 * possible. This function can set read and write file descriptors to `fd`
+	 * parameter or keep or set it to `-1` to signal connection failure. The
+	 * returned value signals if reset message should be sent unconditionally
+	 * (`true` should be returned if transport can't notify other side about
+	 * connection in any other way).
 	 */
-	void (*connect)(void *cookie, int fd[2]);
+	bool (*connect)(void *cookie, int fd[2]);
 	/*! Called for write file descriptor when message is written. Some protocols
 	 * such as TCP would wait for additional data that might not come so instead
 	 * this function is called to force immediate send out. The write socket is
@@ -64,55 +68,5 @@ struct rpcclient_stream_funcs {
 rpcclient_t rpcclient_stream_new(const struct rpcclient_stream_funcs *sclient,
 	void *sclient_cookie, enum rpcstream_proto proto, int rfd, int wfd)
 	__attribute__((nonnull(1)));
-
-
-/*! Create a new TCP client.
- *
- * @param location Location of the TCP server. The string must be valid all the
- *   time during the client's existence.
- * @param port Port of the TCP server (commonly 3755).
- * @param proto Stream protocol to be used (commonly @ref RPCSTREAM_P_BLOCK)
- * @returns SHV RPC client handle.
- */
-rpcclient_t rpcclient_tcp_new(const char *location, int port,
-	enum rpcstream_proto proto) __attribute__((nonnull, malloc));
-
-/*! Create a new Unix client.
- *
- * @param location Location of the Unix socket. The string must be valid all
- * the time during the client's existence.
- * @param proto Stream protocol to be used (commonly @ref RPCSTREAM_P_BLOCK)
- * @returns SHV RPC client handle.
- */
-rpcclient_t rpcclient_unix_new(const char *location, enum rpcstream_proto proto)
-	__attribute__((nonnull, malloc));
-
-/*! Create a new TTY client.
- *
- * @param location Location of the TTY device. The string must be valid all
- * the time during the client's existence.
- * @param baudrate Communication speed to be set on the TTY device.
- * @param proto Stream protocol to be used (commonly @ref
- * RPCSTREAM_P_SERIAL_CRC)
- * @returns SHV RPC client handle.
- */
-rpcclient_t rpcclient_tty_new(const char *location, unsigned baudrate,
-	enum rpcstream_proto proto) __attribute__((nonnull));
-
-/*! Create a new client on top of Unix pipes.
- *
- * This opens two pipe pairs and provides one end to you as pipes and other end
- * as RPC client.
- *
- * This is handy for the inter-process communication when forking the
- * subprocess.
- *
- * @param pipes Array where read and write pipe file descriptors will be placed
- *   to. The first one is the read and the second one is the write pipe.
- * @param proto Stream protocol to be used (commonly @ref RPCSTREAM_P_SERIAL)
- * @returns SHV RPC client handle.
- */
-rpcclient_t rpcclient_pipe_new(int pipes[2], enum rpcstream_proto proto)
-	__attribute__((nonnull));
 
 #endif

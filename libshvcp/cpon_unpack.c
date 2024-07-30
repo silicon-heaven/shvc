@@ -1,8 +1,8 @@
-#include <shv/cp.h>
 #include <errno.h>
 #include <string.h>
-#include <inttypes.h>
 #include <assert.h>
+#include <inttypes.h>
+#include <shv/cp.h>
 #include "common.h"
 
 

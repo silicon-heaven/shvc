@@ -3,9 +3,9 @@
 #define SUITE "chainpack"
 #include <check_suite.h>
 
-#include "packstream.h"
 #include "bdata.h"
 #include "item.h"
+#include "packstream.h"
 
 
 TEST_CASE(pack, setup_packstream, teardown_packstream){};

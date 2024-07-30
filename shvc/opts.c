@@ -1,6 +1,6 @@
 #include "opts.h"
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
 
@@ -32,8 +32,8 @@ static void print_help(const char *argv0) {
 void parse_opts(int argc, char **argv, struct conf *conf) {
 	*conf = (struct conf){
 		.url = default_url,
-		.path = NULL,
-		.method = "dir",
+		.path = ".app",
+		.method = "ping",
 		.param = NULL,
 		.stdin_param = false,
 		.verbose = 0,

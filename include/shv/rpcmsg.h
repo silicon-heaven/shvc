@@ -5,10 +5,10 @@
  * Functions to pack and unpack RPC messages.
  */
 
-#include <stdbool.h>
 #include <stdarg.h>
-#include <obstack.h>
+#include <stdbool.h>
 #include <sys/types.h>
+#include <obstack.h>
 #include <shv/cp_pack.h>
 #include <shv/cp_unpack.h>
 #include <shv/rpcaccess.h>
@@ -394,12 +394,12 @@ bool rpcmsg_pack_response_void(cp_pack_t pack, const struct rpcmsg_meta *meta)
  *
  * @param pack Pack context the meta should be written to.
  * @param meta Meta with info for previously received request.
- * @param errno Error code to be reported as response to the request.
+ * @param errnum Error code to be reported as response to the request.
  * @param msg Optional message describing the error details.
  * @returns Boolean signaling the pack success or failure.
  */
 bool rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	rpcerrno_t errno, const char *msg) __attribute__((nonnull(1, 2)));
+	rpcerrno_t errnum, const char *msg) __attribute__((nonnull(1, 2)));
 
 /*! Pack error response message based on the provided meta.
  *
@@ -409,12 +409,12 @@ bool rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
  *
  * @param pack Pack context the meta should be written to.
  * @param meta Meta with info for previously received request.
- * @param errno Error code to be reported as response to the request.
+ * @param errnum Error code to be reported as response to the request.
  * @param fmt Format string used to generate the error message.
  * @returns Boolean signaling the pack success or failure.
  */
 bool rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	rpcerrno_t errno, const char *fmt, ...) __attribute__((nonnull(1, 2, 4)));
+	rpcerrno_t errnum, const char *fmt, ...) __attribute__((nonnull(1, 2, 4)));
 
 /*! Pack error response message based on the provided meta.
  *
@@ -424,13 +424,13 @@ bool rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
  *
  * @param pack Pack context the meta should be written to.
  * @param meta Meta with info for previously received request.
- * @param errno Error code to be reported as response to the request.
+ * @param errnum Error code to be reported as response to the request.
  * @param fmt Format string used to generate the error message.
  * @param args Variable list of arguments to be used with **fmt**.
  * @returns Boolean signaling the pack success or failure.
  */
 bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	rpcerrno_t errno, const char *fmt, va_list args)
+	rpcerrno_t errnum, const char *fmt, va_list args)
 	__attribute__((nonnull(1, 2, 4)));
 
 #endif

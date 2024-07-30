@@ -1,9 +1,9 @@
 #include <shv/rpcerror.h>
 
 
-bool rpcerror_unpack(
-	cp_unpack_t unpack, struct cpitem *item, rpcerrno_t *errno, char **errmsg) {
-	*errno = RPCERR_NO_ERROR;
+bool rpcerror_unpack(cp_unpack_t unpack, struct cpitem *item,
+	rpcerrno_t *errnum, char **errmsg) {
+	*errnum = RPCERR_NO_ERROR;
 	if (errmsg)
 		*errmsg = NULL;
 
@@ -14,10 +14,10 @@ bool rpcerror_unpack(
 			case RPCMSG_ERR_KEY_CODE: {
 				switch (cp_unpack_type(unpack, item)) {
 					case CPITEM_UINT:
-						cpitem_extract_uint(item, *errno);
+						cpitem_extract_uint(item, *errnum);
 						break;
 					case CPITEM_INT:
-						cpitem_extract_int(item, *errno);
+						cpitem_extract_int(item, *errnum);
 						break;
 					default:
 						return false;
@@ -35,10 +35,10 @@ bool rpcerror_unpack(
 				break;
 		}
 	}
-	return *errno != RPCERR_NO_ERROR;
+	return *errnum != RPCERR_NO_ERROR;
 }
 
-bool rpcerror_pack(cp_pack_t pack, rpcerrno_t errno, const char *errmsg) {
+bool rpcerror_pack(cp_pack_t pack, rpcerrno_t errnum, const char *errmsg) {
 #define G(V) \
 	do { \
 		if (!(V)) \
@@ -47,7 +47,7 @@ bool rpcerror_pack(cp_pack_t pack, rpcerrno_t errno, const char *errmsg) {
 
 	G(cp_pack_imap_begin(pack));
 	G(cp_pack_int(pack, RPCMSG_ERR_KEY_CODE));
-	G(cp_pack_int(pack, errno));
+	G(cp_pack_int(pack, errnum));
 	if (errmsg) {
 		G(cp_pack_int(pack, RPCMSG_ERR_KEY_MESSAGE));
 		G(cp_pack_str(pack, errmsg));

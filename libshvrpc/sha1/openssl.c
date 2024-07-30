@@ -1,6 +1,6 @@
-#include <shv/sha1.h>
-#include <openssl/evp.h>
 #include <assert.h>
+#include <openssl/evp.h>
+#include <shv/sha1.h>
 
 // TODO possibly remove one pointer dereference here by using EVP_MD_CTX
 // directly.

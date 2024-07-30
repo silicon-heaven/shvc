@@ -1,5 +1,5 @@
-#include <shv/rpclogin.h>
 #include <alloca.h>
+#include <shv/rpclogin.h>
 #include <shv/sha1.h>
 
 bool rpclogin_pack(cp_pack_t pack, const struct rpclogin *login,

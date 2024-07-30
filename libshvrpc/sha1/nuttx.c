@@ -1,7 +1,7 @@
-#include <shv/sha1.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <crypto/sha1.h>
+#include <shv/sha1.h>
 
 struct sha1ctx {
 	SHA1_CTX ctx;

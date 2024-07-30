@@ -1,10 +1,10 @@
-#include <shv/cp_pack.h>
 #include <shv/chainpack.h>
+#include <shv/cp_pack.h>
 
 #define SUITE "cp_pack"
 #include <check_suite.h>
-#include "packstream.h"
 #include "bdata.h"
+#include "packstream.h"
 
 struct cp_pack_chainpack pack_chainpack;
 struct cp_pack_cpon pack_cpon;

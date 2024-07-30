@@ -1,6 +1,6 @@
 #include "packstream.h"
-#include "shv/cp_pack.h"
 #include <check.h>
+#include "shv/cp_pack.h"
 
 char *packbuf;
 size_t packbufsiz;

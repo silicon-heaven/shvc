@@ -1,6 +1,6 @@
-#include <shv/rpccall.h>
 #include <stdlib.h>
 #include <semaphore.h>
+#include <shv/rpccall.h>
 
 struct _ctx {
 	struct rpccall_ctx pub;
@@ -10,11 +10,11 @@ struct _ctx {
 static bool response_callback(struct rpchandler_msg *ctx, void *cookie) {
 	struct _ctx *c = cookie;
 	if (ctx->meta.type == RPCMSG_T_ERROR) {
-		rpcerror_unpack(ctx->unpack, ctx->item, &c->pub.errno, &c->pub.errmsg);
+		rpcerror_unpack(ctx->unpack, ctx->item, &c->pub.errnum, &c->pub.errmsg);
 		if (rpchandler_msg_valid(ctx))
 			return true;
 		free(c->pub.errmsg);
-		c->pub.errno = RPCERR_NO_ERROR;
+		c->pub.errnum = RPCERR_NO_ERROR;
 		c->pub.errmsg = NULL;
 		return false;
 	}
@@ -26,7 +26,7 @@ static bool response_callback(struct rpchandler_msg *ctx, void *cookie) {
 	}
 	if (!rpchandler_msg_valid(ctx))
 		return false;
-	c->pub.errno = RPCERR_NO_ERROR;
+	c->pub.errnum = RPCERR_NO_ERROR;
 	c->pub.errmsg = NULL;
 	return true;
 }
@@ -36,7 +36,7 @@ int _rpccall(rpchandler_t handler, rpchandler_responses_t responses,
 	struct _ctx ctx = {
 		.pub.cookie = cookie,
 		.pub.request_id = rpcmsg_request_id(),
-		.pub.errno = RPCERR_NO_ERROR,
+		.pub.errnum = RPCERR_NO_ERROR,
 		.pub.errmsg = NULL,
 		.func = func,
 	};

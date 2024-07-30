@@ -1,7 +1,7 @@
+#include <stdlib.h>
 #include <shv/rpchandler_app.h>
 #include <shv/rpchandler_impl.h>
 #include <shv/version.h>
-#include <stdlib.h>
 
 #include "rpchandler_app_method.gperf.h"
 

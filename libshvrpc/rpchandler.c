@@ -1,15 +1,16 @@
+#include <stdlib.h>
+#include <limits.h>
+#include <poll.h>
+#include <signal.h>
+#include <obstack.h>
+#include <semaphore.h>
+#include <time.h>
 #include <shv/rpchandler.h>
 #include <shv/rpchandler_impl.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <time.h>
-#include <signal.h>
-#include <poll.h>
-#include <semaphore.h>
-#include <limits.h>
-#include <obstack.h>
+
 #define obstack_chunk_alloc malloc
 #define obstack_chunk_free free
+
 #include "strset.h"
 
 struct rpchandler {

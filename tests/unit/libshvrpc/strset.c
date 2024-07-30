@@ -1,6 +1,6 @@
-#include <strset.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <strset.h>
 
 #define SUITE "strset"
 #include <check_suite.h>

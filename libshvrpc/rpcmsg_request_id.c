@@ -1,7 +1,7 @@
-#include <shv/rpcmsg.h>
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdatomic.h>
+#include <shv/rpcmsg.h>
 
 static _Atomic volatile uint8_t request_id = 4;
 

@@ -110,22 +110,22 @@ tests:
   script:
     - ulimit -n 1024 # workaround for Valgrind in docker container
     - nix develop --quiet -c meson setup build -Doptimization=plain
-    - nix develop --quiet -c meson test -C build
+    - nix develop --quiet -c meson test -C build --print-errorlogs --setup $SETUP
 
 valgrind:memcheck:
   extends: .valgrind
   variables:
-    VALGRIND: memcheck
+    SETUP: memcheck
 
 valgrind:helgrind:
   extends: .valgrind
   variables:
-    VALGRIND: helgrind
+    SETUP: helgrind
 
 valgrind:drd:
   extends: .valgrind
   variables:
-    VALGRIND: drd
+    SETUP: drd
 
 nix-check:
   extends: .test

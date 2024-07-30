@@ -1,16 +1,15 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
-#include <signal.h>
 #include <limits.h>
 #include <poll.h>
-#include <shv/rpcurl.h>
-#include <shv/rpcclient_url.h>
+#include <signal.h>
+#include <string.h>
 #include <shv/rpchandler_app.h>
 #include <shv/rpchandler_login.h>
-#include "opts.h"
+#include <shv/rpcurl.h>
 #include "handler.h"
+#include "opts.h"
 
 static size_t logsiz = BUFSIZ > 128 ? BUFSIZ : 128;
 
@@ -31,7 +30,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "%*.s^\n", 13 + (int)(errpos - conf.url), "");
 		return 1;
 	}
-	rpcclient_t client = rpcclient_connect(rpcurl);
+	rpcclient_t client = rpcurl_connect_client(rpcurl);
 	if (client == NULL) {
 		fprintf(stderr, "Failed to connect to the: %s\n", rpcurl->location);
 		fprintf(stderr, "Please check your connection to the network\n");

@@ -30,14 +30,15 @@ V0.0 {
 
 		# shv/rpcclient_stream.h
 		rpcclient_stream_new;
-		rpcclient_tcp_new;
-		rpcclient_unix_new;
-		rpcclient_tty_new;
-		rpcclient_pipe_new;
 
-		# shv/rpcclient_url.h
-		rpcclient_new;
-		rpcclient_connect;
+		# shv/rpctransport.h
+		rpcclient_tcp_new;
+		rpcserver_tcp_new;
+		rpcclient_unix_new;
+		rpcserver_unix_new;
+		rpcclient_tty_new;
+		rpcserver_tty_new;
+		rpcclient_pipe_new;
 
 		# shv/rpclogger.h
 		rpclogger_new;
@@ -54,6 +55,8 @@ V0.0 {
 		rpcurl_parse;
 		rpcurl_free;
 		rpcurl_str;
+		rpcurl_new_client;
+		rpcurl_new_server;
 
 		# shv/rpchandler.h
 		rpchandler_new;

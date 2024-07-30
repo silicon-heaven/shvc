@@ -1,13 +1,13 @@
-#include <shv/rpcmsg.h>
 #include <stdlib.h>
 #include <obstack.h>
+#include <shv/rpcmsg.h>
 #define obstack_chunk_alloc malloc
 #define obstack_chunk_free free
 
 #define SUITE "rpcmsg_head"
 #include <check_suite.h>
-#include "unpack.h"
 #include "item.h"
+#include "unpack.h"
 
 
 TEST_CASE(all) {}

@@ -5,10 +5,10 @@
  * Generic packer API with utility functions to pack data more easilly.
  */
 
-#include <shv/cp.h>
 #include <stdarg.h>
-#include <assert.h>
 #include <string.h>
+#include <assert.h>
+#include <shv/cp.h>
 
 /*! Definition of function that provides generic packer.
  *

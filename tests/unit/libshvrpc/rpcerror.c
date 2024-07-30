@@ -1,5 +1,5 @@
-#include <shv/rpcerror.h>
 #include <stdlib.h>
+#include <shv/rpcerror.h>
 
 #define SUITE "rpcerror"
 #include <check_suite.h>
@@ -8,7 +8,7 @@
 
 
 static const struct cponerr {
-	rpcerrno_t errno;
+	rpcerrno_t errnum;
 	const char *errmsg;
 	const char *cpon;
 } pairs_d[] = {
@@ -19,7 +19,7 @@ static const struct cponerr {
 TEST_CASE(pack, setup_packstream_pack_cpon, teardown_packstream_pack) {}
 
 ARRAY_TEST(pack, packer, pairs_d) {
-	rpcerror_pack(packstream_pack, _d.errno, _d.errmsg);
+	rpcerror_pack(packstream_pack, _d.errnum, _d.errmsg);
 	ck_assert_packstr(_d.cpon);
 }
 
@@ -31,10 +31,10 @@ static void unpacker_test(struct cponerr _d) {
 	cpitem_unpack_init(&item);
 	cp_unpack_t unpack = unpack_cpon(_d.cpon);
 
-	rpcerrno_t errno;
+	rpcerrno_t errnum;
 	char *errmsg;
-	ck_assert(rpcerror_unpack(unpack, &item, &errno, &errmsg));
-	ck_assert_int_eq(errno, _d.errno);
+	ck_assert(rpcerror_unpack(unpack, &item, &errnum, &errmsg));
+	ck_assert_int_eq(errnum, _d.errnum);
 	ck_assert_pstr_eq(errmsg, _d.errmsg);
 
 	free(errmsg);
@@ -63,7 +63,7 @@ ARRAY_TEST(unpack, unpack_invalid) {
 	struct cpitem item;
 	cpitem_unpack_init(&item);
 	cp_unpack_t unpack = unpack_cpon(_d);
-	rpcerrno_t errno;
-	ck_assert(!rpcerror_unpack(unpack, &item, &errno, NULL));
+	rpcerrno_t errnum;
+	ck_assert(!rpcerror_unpack(unpack, &item, &errnum, NULL));
 	unpack_free(unpack);
 }

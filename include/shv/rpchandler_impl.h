@@ -5,8 +5,8 @@
  * Functions for exclusive usage from @ref rpchandler_funcs functions.
  */
 
-#include <shv/rpchandler.h>
 #include <shv/rpcdir.h>
+#include <shv/rpchandler.h>
 
 
 /*! Validate the received message.

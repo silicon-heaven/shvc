@@ -1,6 +1,6 @@
-#include <shv/rpcmsg.h>
-#include <assert.h>
 #include <string.h>
+#include <assert.h>
+#include <shv/rpcmsg.h>
 
 #include "rpcaccess.gperf.h"
 

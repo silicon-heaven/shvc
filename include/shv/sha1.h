@@ -9,9 +9,9 @@
  * provides unified API for the SHA1 digest calculation.
  */
 
-#include <stdint.h>
-#include <stddef.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
 
 /*! Number of bytes for SHA1 hash. */
 #define SHA1_SIZ (20)

@@ -1,9 +1,9 @@
-#include <shv/cp.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 #include <assert.h>
+#include <inttypes.h>
 #include <time.h>
+#include <shv/cp.h>
 #include "common.h"
 
 #define PUTC(V) \

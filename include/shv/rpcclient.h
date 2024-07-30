@@ -15,7 +15,7 @@
  */
 #define RPC_DEFAULT_IDLE_TIME 180
 
-/*! Operations performed by control function for RPC Client.
+/*! Operations performed by control function @ref rpcclient.ctrl for RPC Client.
  *
  * To reduce the size of the @ref rpcclient structure we use only one function
  * pointer and pass operation as argument. We define macros to hide this but
@@ -72,14 +72,15 @@ typedef struct rpcclient *rpcclient_t;
  *
  * @param CLIENT Pointer to the RPC client object.
  */
-#define rpcclient_destroy(CLIENT) ((CLIENT)->ctrl(CLIENT, RPCC_CTRLOP_DESTROY))
+#define rpcclient_destroy(CLIENT) \
+	((void)(CLIENT)->ctrl(CLIENT, RPCC_CTRLOP_DESTROY))
 
 /*! Perform disconnect.
  *
  * @param CLIENT Pointer to the RPC client object.
  */
 #define rpcclient_disconnect(CLIENT) \
-	((CLIENT)->ctrl(CLIENT, RPCC_CTRLOP_DISCONNECT))
+	((void)(CLIENT)->ctrl(CLIENT, RPCC_CTRLOP_DISCONNECT))
 
 /*! Perform state reset or reconnect if not connected.
  *
@@ -87,7 +88,8 @@ typedef struct rpcclient *rpcclient_t;
  * @returns `true` in case client is now connected and `false` otherwise.
  * Investigate `errno` to identify the cause.
  */
-#define rpcclient_reset(CLIENT) ((CLIENT)->ctrl(CLIENT, RPCC_CTRLOP_RESET))
+#define rpcclient_reset(CLIENT) \
+	((bool)(CLIENT)->ctrl(CLIENT, RPCC_CTRLOP_RESET))
 
 /*! Check that client is still connected.
  *
@@ -216,6 +218,7 @@ enum rpcclient_msg_type {
  * @returns Integer with file descriptor or `-1` if client provides none or lost
  *   connection.
  */
-#define rpcclient_pollfd(CLIENT) ((CLIENT)->ctrl(CLIENT, RPCC_CTRLOP_POLLFD))
+#define rpcclient_pollfd(CLIENT) \
+	((int)(CLIENT)->ctrl(CLIENT, RPCC_CTRLOP_POLLFD))
 
 #endif

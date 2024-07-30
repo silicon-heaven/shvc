@@ -1,5 +1,5 @@
-#include <shv/cp_pack.h>
 #include <stdlib.h>
+#include <shv/cp_pack.h>
 
 static bool cp_pack_chainpack_func(void *ptr, const struct cpitem *item) {
 	struct cp_pack_chainpack *p = ptr;

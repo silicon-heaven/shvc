@@ -6,11 +6,10 @@
  * for sending and receiving messages.
  */
 
-#include "shv/cp.h"
-#include <stdbool.h>
-#include <signal.h>
-#include <pthread.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#include <pthread.h>
+#include <signal.h>
 #include <shv/rpcclient.h>
 #include <shv/rpcmsg.h>
 

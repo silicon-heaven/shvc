@@ -1,16 +1,16 @@
 #include "broker.h"
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <errno.h>
-#include <check.h>
-#include <spawn.h>
 #include <signal.h>
-#include <sys/wait.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/socket.h>
+#include <sys/wait.h>
+#include <check.h>
 #include <netdb.h>
+#include <spawn.h>
 
 #include "tmpdir.h"
 

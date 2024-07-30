@@ -1,5 +1,5 @@
-#include <shv/crc32.h>
 #include <stdbool.h>
+#include <shv/crc32.h>
 
 #define SUITE "crc32"
 #include <check_suite.h>

@@ -5,8 +5,8 @@
  * CRC algorithm used in IEEE 802.3 and know as plain CRC-32.
  */
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 /*! The type definition for the CRC32 state value. */
 typedef uint32_t crc32_t;

@@ -1,15 +1,16 @@
-#include <shv/rpcurl.h>
-#include <string.h>
 #include <stdbool.h>
-#include <uriparser/Uri.h>
+#include <string.h>
 #include <assert.h>
+#include <uriparser/Uri.h>
+#include <shv/rpcurl.h>
 
-#include "rpcurl_scheme.gperf.h"
 #include "rpcurl_query.gperf.h"
+#include "rpcurl_scheme.gperf.h"
 
-#define DEFAULT_PROTOCOL RPC_PROTOCOL_UNIX
-#define DEFAULT_PORT 3755
-#define DECIMAL_BASE 10
+#define DEFAULT_PROTOCOL (RPC_PROTOCOL_UNIX)
+#define DEFAULT_PORT (3755)
+#define DEFAULT_BAUDRATE (115200)
+#define DECIMAL_BASE (10)
 
 #define PARSE_ERR(LOC) \
 	do { \
@@ -52,6 +53,10 @@ struct dyn_rpcurl {
 	char *password;
 	char *device_id;
 	char *device_mountpoint;
+	char *ca;
+	char *cert;
+	char *key;
+	char *crl;
 };
 
 inline static bool is_uri_segment_present(const UriTextRangeA *segment) {
@@ -66,8 +71,10 @@ inline static size_t uri_segment_len(const UriTextRangeA *segment) {
  * protocol != TCP && protocol != TCPS.
  */
 inline static bool protocol_contains_authority(const struct dyn_rpcurl *res) {
-	return ((res->rpcurl.protocol == RPC_PROTOCOL_TCP) ||
-		(res->rpcurl.protocol == RPC_PROTOCOL_TCPS));
+	return (res->rpcurl.protocol == RPC_PROTOCOL_TCP ||
+		res->rpcurl.protocol == RPC_PROTOCOL_TCPS ||
+		res->rpcurl.protocol == RPC_PROTOCOL_SSL ||
+		res->rpcurl.protocol == RPC_PROTOCOL_SSLS);
 }
 
 inline static bool protocol_must_contain_path(const struct dyn_rpcurl *res) {
@@ -171,6 +178,11 @@ static bool parse_query(
 					res->password = strdup(q->value);
 					res->rpcurl.login.password = res->password;
 					break;
+				case GPERF_RPCURL_QUERY_USER:
+					free(res->username);
+					res->username = strdup(q->value);
+					res->rpcurl.login.username = res->username;
+					break;
 				case GPERF_RPCURL_QUERY_PASSWORD:
 					free(res->password);
 					res->rpcurl.login.login_type = RPC_LOGIN_PLAIN;
@@ -186,6 +198,74 @@ static bool parse_query(
 					free(res->device_mountpoint);
 					res->device_mountpoint = strdup(q->value);
 					res->rpcurl.login.device_mountpoint = res->device_mountpoint;
+					break;
+				case GPERF_RPCURL_QUERY_CA:
+					if (res->rpcurl.protocol != RPC_PROTOCOL_SSL &&
+						res->rpcurl.protocol != RPC_PROTOCOL_SSLS) {
+						uriFreeQueryListA(querylist);
+						PARSE_ERR(uri->query.first);
+					}
+					free(res->ca);
+					res->ca = strdup(q->value);
+					res->rpcurl.ssl.ca = res->ca;
+					break;
+				case GPERF_RPCURL_QUERY_CERT:
+					if (res->rpcurl.protocol != RPC_PROTOCOL_SSL &&
+						res->rpcurl.protocol != RPC_PROTOCOL_SSLS) {
+						uriFreeQueryListA(querylist);
+						PARSE_ERR(uri->query.first);
+					}
+					free(res->cert);
+					res->cert = strdup(q->value);
+					res->rpcurl.ssl.cert = res->cert;
+					break;
+				case GPERF_RPCURL_QUERY_KEY:
+					if (res->rpcurl.protocol != RPC_PROTOCOL_SSL &&
+						res->rpcurl.protocol != RPC_PROTOCOL_SSLS) {
+						uriFreeQueryListA(querylist);
+						PARSE_ERR(uri->query.first);
+					}
+					free(res->key);
+					res->key = strdup(q->value);
+					res->rpcurl.ssl.key = res->key;
+					break;
+				case GPERF_RPCURL_QUERY_CRL:
+					if (res->rpcurl.protocol != RPC_PROTOCOL_SSL &&
+						res->rpcurl.protocol != RPC_PROTOCOL_SSLS) {
+						uriFreeQueryListA(querylist);
+						PARSE_ERR(uri->query.first);
+					}
+					free(res->crl);
+					res->crl = strdup(q->value);
+					res->rpcurl.ssl.crl = res->crl;
+					break;
+				case GPERF_RPCURL_QUERY_VERIFY:
+					if (res->rpcurl.protocol != RPC_PROTOCOL_SSL &&
+						res->rpcurl.protocol != RPC_PROTOCOL_SSLS) {
+						uriFreeQueryListA(querylist);
+						PARSE_ERR(uri->query.first);
+					}
+					if (!strcasecmp(q->value, "true")) {
+						res->rpcurl.ssl.verify = true;
+					} else if (!strcasecmp(q->value, "false")) {
+						res->rpcurl.ssl.verify = false;
+					} else {
+						uriFreeQueryListA(querylist);
+						// TODO we should point to the value here
+						PARSE_ERR(uri->query.first);
+					}
+					break;
+				case GPERF_RPCURL_QUERY_BAUDRATE:
+					if (res->rpcurl.protocol != RPC_PROTOCOL_TTY) {
+						uriFreeQueryListA(querylist);
+						PARSE_ERR(uri->query.first);
+					}
+					char *end;
+					res->rpcurl.tty.baudrate = strtol(q->value, &end, 10);
+					if (*end != '\0') {
+						uriFreeQueryListA(querylist);
+						PARSE_ERR(uri->query.first);
+					}
 					break;
 			}
 			q = q->next;
@@ -208,6 +288,8 @@ struct rpcurl *rpcurl_parse(const char *url, const char **error_pos) {
 
 	if (protocol_contains_authority(res))
 		res->rpcurl.port = DEFAULT_PORT;
+	if (res->rpcurl.protocol == RPC_PROTOCOL_TTY)
+		res->rpcurl.tty.baudrate = DEFAULT_BAUDRATE;
 
 	parse_user_info(&uri, res);
 	ERR_CHECK(parse_host(&uri, res, error_pos));

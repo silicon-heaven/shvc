@@ -1,6 +1,7 @@
 unittest_utils_src = files(
   'broker.c',
   'packstream.c',
+  'tcpport.c',
   'tmpdir.c',
   'unpack.c',
 )

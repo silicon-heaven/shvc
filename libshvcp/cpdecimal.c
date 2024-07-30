@@ -1,5 +1,5 @@
-#include <shv/cp.h>
 #include <math.h>
+#include <shv/cp.h>
 
 void cpdecnorm(struct cpdecimal *v) {
 	if (v->mantisa == 0) {

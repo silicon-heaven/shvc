@@ -26,8 +26,10 @@ struct gperf_rpcurl_scheme_match;
 %%
 tcp, RPC_PROTOCOL_TCP
 tcps, RPC_PROTOCOL_TCPS
+ssl, RPC_PROTOCOL_SSL
+ssls, RPC_PROTOCOL_SSLS
 unix, RPC_PROTOCOL_UNIX
-unixs, RPC_PROTOCOL_UNIX
+unixs, RPC_PROTOCOL_UNIXS
 serial, RPC_PROTOCOL_TTY
 tty, RPC_PROTOCOL_TTY
 %%

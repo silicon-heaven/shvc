@@ -1,6 +1,6 @@
-#include <shv/rpcmsg.h>
 #include <stdarg.h>
 #include <string.h>
+#include <shv/rpcmsg.h>
 
 #define G(V) \
 	do { \
@@ -122,25 +122,25 @@ bool rpcmsg_pack_response_void(cp_pack_t pack, const struct rpcmsg_meta *meta) {
 }
 
 bool rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	rpcerrno_t errno, const char *msg) {
+	rpcerrno_t errnum, const char *msg) {
 	G(_pack_response(pack, meta));
 	G(cp_pack_int(pack, RPCMSG_KEY_ERROR));
-	G(rpcerror_pack(pack, errno, msg));
+	G(rpcerror_pack(pack, errnum, msg));
 	G(cp_pack_container_end(pack));
 	return true;
 }
 
 bool rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	rpcerrno_t errno, const char *fmt, ...) {
+	rpcerrno_t errnum, const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
-	bool res = rpcmsg_pack_vferror(pack, meta, errno, fmt, args);
+	bool res = rpcmsg_pack_vferror(pack, meta, errnum, fmt, args);
 	va_end(args);
 	return res;
 }
 
 bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	rpcerrno_t errno, const char *fmt, va_list args) {
+	rpcerrno_t errnum, const char *fmt, va_list args) {
 	G(_pack_response(pack, meta));
 	G(cp_pack_int(pack, RPCMSG_KEY_ERROR));
 
@@ -152,7 +152,7 @@ bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
 	va_end(cargs);
 	char msg[siz + 1];
 	assert(vsnprintf(msg, siz + 1, fmt, args) == siz);
-	G(rpcerror_pack(pack, errno, msg));
+	G(rpcerror_pack(pack, errnum, msg));
 
 	G(cp_pack_container_end(pack));
 	return true;

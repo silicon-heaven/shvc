@@ -5,8 +5,8 @@
  * Generic unpacker API with utility functions to unpack data more easilly.
  */
 
-#include <shv/cp.h>
 #include <obstack.h>
+#include <shv/cp.h>
 
 /*! Definition of function that provides generic unpacker.
  *

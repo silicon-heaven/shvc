@@ -1,34 +1,169 @@
-#include <shv/rpcclient_stream.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <pthread.h>
+#include <string.h>
+#include <sys/eventfd.h>
+#include <sys/param.h>
+#include <syslog.h>
+#include <termios.h>
+#include <shv/rpctransport.h>
 
-struct ctx {
+struct client {
 	const char *location;
 	unsigned baudrate;
 };
 
+struct server {
+	struct rpcserver pub;
+	const char *location;
+	unsigned baudrate;
+	enum rpcstream_proto proto;
+	int evfd;
+	pthread_t thread;
+};
 
-static void tty_connect(void *cookie, int fd[2]) {
-	/*struct ctx *c = (struct ctx *)cookie;*/
-	// TODO
+static int tty_connect(const char *location, unsigned baudrate) {
+	int fd = open(location, O_RDWR);
+	if (fd == -1)
+		return -1;
+	if (isatty(fd)) {
+		struct termios t;
+		tcgetattr(fd, &t);
+		cfmakeraw(&t);
+		cfsetispeed(&t, baudrate);
+		cfsetospeed(&t, baudrate);
+		t.c_cflag |= CRTSCTS;
+		if (tcsetattr(fd, TCSANOW, &t) == -1) // GCOVR_EXCL_BR_LINE
+			syslog(							  // GCOVR_EXCL_LINE
+				LOG_WARNING, "%s: Failed to set TTY mode: %m", location);
+	} else {
+		close(fd); // GCOVR_EXCL_LINE
+		return -1; // GCOVR_EXCL_LINE
+	}
+	/* Flush everything that was previously buffered to start new. */
+	struct pollfd pfd = {.fd = fd, .events = POLLIN};
+	while (poll(&pfd, 1, 0) == 1) {
+		uint8_t buf[BUFSIZ];
+		if (read(fd, buf, BUFSIZ) <= 0)
+			return -1;
+	}
+	return fd;
 }
 
-void tty_free(void *cookie) {
+/* Client *********************************************************************/
+
+static bool tty_client_connect(void *cookie, int fd[2]) {
+	struct client *c = (struct client *)cookie;
+	fd[0] = fd[1] = tty_connect(c->location, c->baudrate);
+	return true;
+}
+
+void tty_client_free(void *cookie) {
 	struct ctx *c = (struct ctx *)cookie;
 	free(c);
 }
 
 static const struct rpcclient_stream_funcs sclient = {
-	.connect = tty_connect,
-	.free = tty_free,
+	.connect = tty_client_connect,
+	.free = tty_client_free,
 };
 
 rpcclient_t rpcclient_tty_new(
 	const char *location, unsigned baudrate, enum rpcstream_proto proto) {
-	struct ctx *res = malloc(sizeof *res);
-	*res = (struct ctx){
+	struct client *res = malloc(sizeof *res);
+	*res = (struct client){
 		.location = location,
 		.baudrate = baudrate,
 	};
 	return rpcclient_stream_new(&sclient, res, proto, -1, -1);
+}
+
+/* Server *********************************************************************/
+
+// TODO on platforms that support inotify we can use that to wait for TTY.
+
+static const struct rpcclient_stream_funcs sserver;
+
+static void *tty_server_loop(void *ctx) {
+	struct server *s = ctx;
+	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+	int fd;
+	unsigned cnt = 0;
+	while (true) {
+		while ((fd = tty_connect(s->location, s->baudrate)) == -1) {
+			pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+			sleep(MAX((cnt++ >> 4) + 1, 15));
+			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+		}
+		eventfd_write(s->evfd, 42);
+		rpcclient_t c = rpcclient_stream_new(&sserver, s, s->proto, fd, fd);
+		/* We always send reset to ensure that even if we destroyed our client
+		 * the reset is propagated.
+		 */
+		if (rpcclient_reset(c))
+			return c;
+	}
+}
+
+static bool tty_server_connect(void *cookie, int fd[2]) {
+	/* Dummy connect just to transfer socket ownership on the stream client */
+	return false;
+}
+
+static void tty_server_free(void *cookie) {
+	struct server *s = cookie;
+	if (s->evfd != -1)
+		pthread_create(&s->thread, NULL, tty_server_loop, s);
+}
+
+static const struct rpcclient_stream_funcs sserver = {
+	.connect = tty_server_connect,
+	.free = tty_server_free,
+};
+
+static int tty_server_ctrl(struct rpcserver *server, enum rpcserver_ctrlop op) {
+	struct server *s = (struct server *)server;
+	switch (op) {
+		case RPCS_CTRLOP_POLLFD:
+			return s->evfd;
+		case RPCS_CTRLOP_DESTROY:
+			pthread_cancel(s->thread);
+			rpcclient_t client = NULL;
+			pthread_join(s->thread, (void **)&client);
+			close(s->evfd);
+			s->evfd = -1; /* This is used to identify server exit */
+			if (client != NULL && client != PTHREAD_CANCELED)
+				rpcclient_destroy(client);
+			free(s);
+			return 0;
+	}
+	abort(); // GCOVR_EXCL_LINE
+}
+
+static rpcclient_t tty_server_accept(struct rpcserver *server) {
+	struct server *s = (struct server *)server;
+	eventfd_t val;
+	// TODO do we need to cover for EINTR here?
+	eventfd_read(s->evfd, &val);
+	eventfd_write(s->evfd, 0);
+	rpcclient_t res;
+	pthread_join(s->thread, (void **)&res);
+	return res;
+}
+
+rpcserver_t rpcserver_tty_new(
+	const char *location, unsigned baudrate, enum rpcstream_proto proto) {
+	struct server *res = malloc(sizeof *res);
+	*res = (struct server){
+		.pub = {.ctrl = tty_server_ctrl, .accept = tty_server_accept},
+		.location = location,
+		.baudrate = baudrate,
+		.proto = proto,
+		.evfd = eventfd(0, 0),
+	};
+	pthread_create(&res->thread, NULL, tty_server_loop, res);
+	return &res->pub;
 }

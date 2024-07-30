@@ -1,13 +1,12 @@
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <shv/cp_tools.h>
-#include <shv/rpcurl.h>
-#include <shv/rpcclient_url.h>
-#include <shv/rpcmsg.h>
+#include <shv/rpccall.h>
 #include <shv/rpchandler_app.h>
 #include <shv/rpchandler_login.h>
-#include <shv/rpccall.h>
+#include <shv/rpcmsg.h>
+#include <shv/rpcurl.h>
 #include "opts.h"
 
 #define ERR_COM (RPCERR_USER_CODE + 1)
@@ -56,9 +55,9 @@ int response_callback(enum rpccall_stage stage, struct rpccall_ctx *ctx) {
 			fclose(f);
 			return RPCERR_NO_ERROR;
 		case CALL_S_DONE:
-			if (ctx->errno != RPCERR_NO_ERROR && ctx->errmsg)
+			if (ctx->errnum != RPCERR_NO_ERROR && ctx->errmsg)
 				c->output = strdup(ctx->errmsg);
-			return ctx->errno;
+			return ctx->errnum;
 		case CALL_S_COMERR:
 			return ERR_COM;
 		case CALL_S_TIMERR:
@@ -78,7 +77,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "%*.s^\n", 13 + (int)(errpos - conf.url), "");
 		return 3;
 	}
-	rpcclient_t client = rpcclient_connect(rpcurl);
+	rpcclient_t client = rpcurl_connect_client(rpcurl);
 	if (client == NULL) {
 		fprintf(stderr, "Failed to connect to the: %s\n", conf.url);
 		fprintf(stderr, "Please check your connection to the network\n");

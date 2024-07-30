@@ -8,11 +8,11 @@ TEST_CASE(parse){};
 
 
 struct urld {
-	const char *const str;
+	const char *str;
 	struct rpcurl url;
 };
 
-static struct urld url_d[] = {
+static const struct urld url_d[] = {
 	{"unix:/dev/null",
 		(struct rpcurl){
 			.protocol = RPC_PROTOCOL_UNIX,
@@ -29,6 +29,13 @@ static struct urld url_d[] = {
 			.location = "localhost",
 			.login.username = "test",
 			.port = 4242,
+		}},
+	{"tcp://localhost?user=test@example.com",
+		(struct rpcurl){
+			.protocol = RPC_PROTOCOL_TCP,
+			.location = "localhost",
+			.login.username = "test@example.com",
+			.port = 3755,
 		}},
 	{"tcp://localhost:4242?devid=foo&devmount=/dev/null",
 		(struct rpcurl){
@@ -63,9 +70,21 @@ static struct urld url_d[] = {
 			.location = "::",
 			.port = 4242,
 		}},
+	{"serial:/dev/ttyUSB1",
+		(struct rpcurl){
+			.protocol = RPC_PROTOCOL_TTY,
+			.location = "/dev/ttyUSB1",
+			.tty.baudrate = 115200,
+		}},
+	{"tty:/dev/ttyUSB1?baudrate=1152000",
+		(struct rpcurl){
+			.protocol = RPC_PROTOCOL_TTY,
+			.location = "/dev/ttyUSB1",
+			.tty.baudrate = 1152000,
+		}},
 };
 
-static struct urld parse_d[] = {
+static const struct urld parse_d[] = {
 	{"", (struct rpcurl){.protocol = RPC_PROTOCOL_UNIX}},
 	{"socket",
 		(struct rpcurl){

@@ -5,8 +5,8 @@
  * The utilities for both unpack and pack.
  */
 
-#include <shv/cp_unpack.h>
 #include <shv/cp_pack.h>
+#include <shv/cp_unpack.h>
 
 /*! Copy next item from unpacker to packer.
  *

@@ -1,7 +1,7 @@
-#include <shv/rpcclient_stream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <shv/rpctransport.h>
 
 static const struct rpcclient_stream_funcs sclient = {};
 

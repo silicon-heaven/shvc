@@ -80,7 +80,7 @@ enum rpccall_stage {
 	 *
 	 * Here you can act upon anything you received in @ref CALL_S_RESULT.
 	 *
-	 * You should check @ref rpccall_ctx.errno to see if there was an error
+	 * You should check @ref rpccall_ctx.errnum to see if there was an error
 	 * detected or not.
 	 *
 	 * The value returned from @ref rpccall_func_t is returned by @ref rpccall.
@@ -149,7 +149,7 @@ struct rpccall_ctx {
 			 *
 			 * This must be used only in @ref CALL_S_DONE.
 			 */
-			rpcerrno_t errno;
+			rpcerrno_t errnum;
 			/*! RPC Error message.
 			 *
 			 * This can be `NULL` if there was no error or when error had no

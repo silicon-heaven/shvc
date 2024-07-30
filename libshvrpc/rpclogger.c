@@ -1,10 +1,10 @@
-#include <shv/rpcclient.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <sys/socket.h>
+#include <assert.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
+#include <shv/rpcclient.h>
 #include <shv/rpcmsg.h>
 
 static const size_t boundary = 5; /* ...\n\0 */

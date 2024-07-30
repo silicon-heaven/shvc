@@ -9,6 +9,7 @@ communication protocol.
 rpcclient
 rpcserver
 rpclogger
+rpctransport
 rpcurl
 rpclogin
 rpcmsg

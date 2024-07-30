@@ -2,18 +2,65 @@
 #ifndef SHV_RPCSERVER_H
 #define SHV_RPCSERVER_H
 #include <stdbool.h>
-#include <shv/rpcurl.h>
+#include <shv/rpcclient.h>
 
+/*! Operations performed by control function @ref rpcserver.ctrl for RPC Server.
+ *
+ * This is the same idea as for @ref rpcclient_ctrlop just for servers.
+ */
+enum rpcserver_ctrlop {
+	/*! @ref rpcserver_destroy */
+	RPCS_CTRLOP_DESTROY,
+	/*! @ref rpcserver_pollfd */
+	RPCS_CTRLOP_POLLFD,
+};
+
+/*! Public definition of RPC Server object.
+ *
+ * It provides abstraction on top of multiple different server implementations.
+ */
+struct rpcserver {
+	/*! Control function. Do not use directly. */
+	int (*ctrl)(struct rpcserver *server, enum rpcserver_ctrlop op);
+	/*! Accept client function. Do not use directly. */
+	rpcclient_t (*accept)(struct rpcserver *server);
+};
+
+/*! Handle used to manage SHV RPC server. */
 typedef struct rpcserver *rpcserver_t;
 
 
-rpcserver_t rpcserver_listen(const struct rpcurl *url);
+/*! Destroy the RPC server object.
+ *
+ * @param SERVER Pointer to the RPC server object.
+ */
+#define rpcserver_destroy(SERVER) \
+	((void)(SERVER)->ctrl(SERVER, RPCS_CTRLOP_DESTROY))
 
-rpcserver_t rpcserver_stream_new(int readfd, int writefd);
-rpcserver_t rpcserver_stream_tcp_listen(const char *location, int port);
-rpcserver_t rpcserver_stream_unix_listen(const char *location);
+/*! Accept the new client.
+ *
+ * It is not guaranteed if this is blocking or non-blocking call. In general if
+ * @ref rpcserver_pollfd provides valid file descriptor then this should be most
+ * likely blocking, but you should always use polling to detect if there is a
+ * client ready to be accepted.
+ *
+ * @param SERVER Pointer to the RPC server object.
+ * @returns RPC Client object. It can also return `NULL` in case client wasn't
+ * accepted by the server.
+ */
+#define rpcserver_accept(SERVER) ((rpcclient_t)(SERVER)->accept(SERVER))
 
-rpcserver_t rpcserver_datagram_new(void);
-rpcserver_t rpcserver_datagram_udp_listen(const char *location, int port);
+/*! This provides access to the underlying file descriptor used for accepting
+ * clients.
+ *
+ * This should be used only in poll operations. Do not use other operations on
+ * it because that can break internal state consistency of the RPC server.
+ *
+ * @param SERVER Pointer to the RPC server object.
+ * @returns Integer with file descriptor or `-1` if server implementation can't
+ *   provide it.
+ */
+#define rpcserver_pollfd(SERVER) \
+	((int)(SERVER)->ctrl(SERVER, RPCS_CTRLOP_POLLFD))
 
 #endif

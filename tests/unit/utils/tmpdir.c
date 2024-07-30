@@ -1,6 +1,9 @@
 #include "tmpdir.h"
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <dirent.h>
+#include <fcntl.h>
 #include <check.h>
 
 
@@ -17,13 +20,28 @@ void setup_tmpdir(void) {
 	ck_assert_ptr_eq(mkdtemp(tmpdir), tmpdir);
 }
 
+static void _rmdir(int fd) {
+	ck_assert_int_ge(fd, 0);
+	DIR *dfd = fdopendir(fd);
+	ck_assert_ptr_nonnull(dfd);
+	struct dirent *de;
+	while ((de = readdir(dfd)) != NULL) {
+		if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, ".."))
+			continue;
+		if (de->d_type == DT_DIR) {
+			_rmdir(openat(fd, de->d_name, O_DIRECTORY));
+			ck_assert_int_eq(unlinkat(fd, de->d_name, AT_REMOVEDIR), 0);
+		} else
+			ck_assert_int_eq(unlinkat(fd, de->d_name, 0), 0);
+	}
+	closedir(dfd);
+}
+
 void teardown_tmpdir(void) {
 	if (tmpdir == NULL)
 		return;
-	char *cmd;
-	ck_assert_int_gt(asprintf(&cmd, "rm -rf '%s'", tmpdir), 0);
-	ck_assert_int_eq(system(cmd), 0);
-	free(cmd);
+	_rmdir(open(tmpdir, O_DIRECTORY));
+	ck_assert_int_eq(rmdir(tmpdir), 0);
 	free(tmpdir);
 	tmpdir = NULL;
 }

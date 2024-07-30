@@ -1,7 +1,7 @@
-#include <shv/cp_unpack.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <sys/param.h>
+#include <assert.h>
+#include <shv/cp_unpack.h>
 
 static void cp_unpack_chainpack_func(void *ptr, struct cpitem *item) {
 	struct cp_unpack_chainpack *p = ptr;

@@ -1,7 +1,7 @@
-#include <shv/rpchandler_device.h>
-#include <shv/rpchandler_impl.h>
 #include <stdlib.h>
 #include <sys/sysinfo.h>
+#include <shv/rpchandler_device.h>
+#include <shv/rpchandler_impl.h>
 
 #include "rpchandler_device_method.gperf.h"
 

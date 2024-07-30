@@ -1,5 +1,5 @@
-#include <shv/rpcmsg.h>
 #include <stdlib.h>
+#include <shv/rpcmsg.h>
 
 #define SUITE "rpcaccess"
 #include <check_suite.h>

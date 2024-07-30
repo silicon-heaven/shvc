@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <pthread.h>
-#include <shv/rpcurl.h>
-#include <shv/rpcclient_url.h>
+#include <string.h>
+#include <shv/rpccall.h>
 #include <shv/rpchandler_app.h>
 #include <shv/rpchandler_login.h>
 #include <shv/rpchandler_responses.h>
-#include <shv/rpccall.h>
+#include <shv/rpcurl.h>
 #include "opts.h"
 
 #define TRACK_ID "4"
@@ -37,11 +36,11 @@ static int rpccall_app_name(enum rpccall_stage stage, struct rpccall_ctx *ctx) {
 			*name = cp_unpack_strdup(ctx->unpack, ctx->item);
 			break;
 		case CALL_S_DONE:
-			if (ctx->errno != RPCERR_NO_ERROR) {
+			if (ctx->errnum != RPCERR_NO_ERROR) {
 				printf("Got error?\n");
 				fprintf(stderr, "Error: %s\n", ctx->errmsg);
 			}
-			return ctx->errno;
+			return ctx->errnum;
 		case CALL_S_COMERR:
 		case CALL_S_TIMERR:
 			return -1;
@@ -62,9 +61,9 @@ static int rpccall_has_device(enum rpccall_stage stage, struct rpccall_ctx *ctx)
 				ctx->item->as.Bool;
 			break;
 		case CALL_S_DONE:
-			if (ctx->errno != RPCERR_NO_ERROR)
+			if (ctx->errnum != RPCERR_NO_ERROR)
 				fprintf(stderr, "Error: %s\n", ctx->errmsg);
-			return ctx->errno;
+			return ctx->errnum;
 		case CALL_S_COMERR:
 		case CALL_S_TIMERR:
 			return -1;
@@ -94,9 +93,9 @@ static int rpccall_track_get(enum rpccall_stage stage, struct rpccall_ctx *ctx) 
 			}
 			break;
 		case CALL_S_DONE:
-			if (ctx->errno != RPCERR_NO_ERROR)
+			if (ctx->errnum != RPCERR_NO_ERROR)
 				fprintf(stderr, "Error: %s\n", ctx->errmsg);
-			return ctx->errno;
+			return ctx->errnum;
 		case CALL_S_COMERR:
 		case CALL_S_TIMERR:
 			return -1;
@@ -119,9 +118,9 @@ static int rpccall_track_set(enum rpccall_stage stage, struct rpccall_ctx *ctx) 
 		case CALL_S_RESULT:
 			break;
 		case CALL_S_DONE:
-			if (ctx->errno != RPCERR_NO_ERROR)
+			if (ctx->errnum != RPCERR_NO_ERROR)
 				fprintf(stderr, "Error: %s\n", ctx->errmsg);
-			return ctx->errno;
+			return ctx->errnum;
 		case CALL_S_COMERR:
 		case CALL_S_TIMERR:
 			return -1;
@@ -145,7 +144,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "%*s^\n", 21 + (unsigned)offset, "");
 		return exit_code;
 	}
-	rpcclient_t client = rpcclient_connect(url);
+	rpcclient_t client = rpcurl_connect_client(url);
 	if (client == NULL) {
 		fprintf(stderr, "Error: Connection failed to: '%s'.\n", conf.url);
 		fprintf(stderr, "Hint: Make sure broker is running and URL is correct.\n");

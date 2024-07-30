@@ -1,12 +1,12 @@
-#include "check.h"
 #include <shv/cp.h>
+#include "check.h"
 
 #define SUITE "cpon"
 #include <check_suite.h>
 
-#include "packstream.h"
-#include "item.h"
 #include "bdata.h"
+#include "item.h"
+#include "packstream.h"
 
 
 TEST_CASE(pack, setup_packstream, teardown_packstream){};

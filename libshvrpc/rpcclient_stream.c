@@ -1,4 +1,3 @@
-#include <shv/rpcclient_stream.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
@@ -6,6 +5,7 @@
 #include <sys/poll.h>
 #include <shv/chainpack.h>
 #include <shv/crc32.h>
+#include <shv/rpcclient_stream.h>
 
 #define STX (0xA2)
 #define ETX (0xA3)
@@ -378,9 +378,11 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 			return true;
 		case RPCC_CTRLOP_RESET:
 			if (c->rfd < 0) {
+				bool sendrst = false;
 				if (c->sclient->connect)
-					c->sclient->connect(c->sclient_cookie, c->fds);
-				return c->rfd >= 0;
+					sendrst = c->sclient->connect(c->sclient_cookie, c->fds);
+				if (!sendrst || c->rfd < 0)
+					return c->rfd >= 0;
 			}
 			putc(0, c->f);
 			return stream_ctrl(client, RPCC_CTRLOP_SENDMSG);
