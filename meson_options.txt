@@ -5,6 +5,14 @@ option(
   description: 'Expect tests to be build and check for their dependencies',
 )
 
+# Options to disable various functionalities
+option(
+  'tcp',
+  type: 'boolean',
+  value: true,
+  description: 'Include TCP/IP RPC transport. You might want to disable this if you do not have IP support on your platform.',
+)
+
 # Applications
 option(
   'shvc',

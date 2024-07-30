@@ -6,6 +6,7 @@
 #include <pty.h>
 #include <shv/cp_unpack.h>
 #include <shv/rpctransport.h>
+#include "shvc_config.h"
 
 #define SUITE "rpctransport"
 #include <check_suite.h>
@@ -37,7 +38,7 @@ static void test_receive(rpcclient_t c, int val) {
 	ck_assert(rpcclient_validmsg(c));
 }
 
-
+#ifdef SHVC_TCP
 TEST_CASE(tcp) {}
 
 static void *tcp_client(void *arg) {
@@ -99,6 +100,7 @@ TEST(unx, unix_exchange) {
 	rpcserver_destroy(s);
 	free(location);
 }
+#endif
 
 
 TEST_CASE(tty) {}

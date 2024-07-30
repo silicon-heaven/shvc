@@ -6,6 +6,22 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <shv/rpctransport.h>
+#include "shvc_config.h"
+
+#ifndef SHVC_TCP
+
+rpcclient_t rpcclient_tcp_new(
+	const char *location, int port, enum rpcstream_proto proto) {
+	return NULL;
+}
+
+rpcserver_t rpcserver_tcp_new(
+	const char *location, int port, enum rpcstream_proto proto) {
+	return NULL;
+}
+
+#else
+
 
 struct client {
 	const char *location;
@@ -152,3 +168,5 @@ rpcserver_t rpcserver_tcp_new(
 	};
 	return &res->pub;
 }
+
+#endif

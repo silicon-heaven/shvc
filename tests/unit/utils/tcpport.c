@@ -6,9 +6,11 @@
 #include <sys/types.h>
 #include <check.h>
 #include <netdb.h>
+#include "shvc_config.h"
 
 
 bool tcpport_isbound(int port) {
+#ifdef SHVC_TCP
 	struct addrinfo hints;
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_STREAM;
@@ -36,6 +38,9 @@ bool tcpport_isbound(int port) {
 
 	freeaddrinfo(addrs);
 	return success;
+#else
+	return true;
+#endif
 }
 
 int tcpport_empty(void) {

@@ -33,3 +33,5 @@ libshvcaller_headers = files(
 )
 libshvcallee_headers = files('shv/rpchandler_device.h')
 libshvbroker_headers = files('shv/rpcbroker.h')
+
+configure_file(output: 'shvc_config.h', configuration: conf)

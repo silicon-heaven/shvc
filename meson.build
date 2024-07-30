@@ -15,6 +15,8 @@ python = import('python')
 add_project_arguments('-D_GNU_SOURCE', language: 'c')
 add_project_arguments('-DPROJECT_VERSION="@0@"'.format(meson.project_version()), language: 'c')
 
+conf = configuration_data()
+conf.set('SHVC_TCP', get_option('tcp'), description:'If TCP/IP should be compiled in.')
 
 if not isnuttx
   m = cc.find_library('m', required : false)
