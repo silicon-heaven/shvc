@@ -82,11 +82,8 @@ def fixture_broker_config(url):
             "tester",
             {"test/*"},
             {
-                shv.RpcMethodAccess.BROWSE: {
-                    shv.RpcRI("**", "ls"),
-                    shv.RpcRI("**", "dir"),
-                },
-                shv.RpcMethodAccess.COMMAND: {shv.RpcRI("test/**")},
+                shv.RpcMethodAccess.BROWSE: {"**:ls", "**:dir"},
+                shv.RpcMethodAccess.COMMAND: {"test/**:*"},
             },
         )
     )

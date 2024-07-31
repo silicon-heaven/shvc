@@ -4,7 +4,7 @@
   inputs = {
     semver.url = "github:cynerd/nixsemver";
     check-suite.url = "github:cynerd/check-suite";
-    pyshv.url = "git+https://gitlab.com/silicon-heaven/pyshv.git";
+    pyshv.url = "gitlab:silicon-heaven/pyshv";
   };
 
   outputs = {

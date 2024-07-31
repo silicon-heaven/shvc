@@ -24,7 +24,7 @@ async def test_valid(shvc_exec, url, broker, path, method, result):
 async def test_param(shvc_exec, url, broker):
     """Check that we can pass parameter."""
     stdout, stderr = await subproc(
-        *shvc_exec, "-d", "-u", str(url), ".broker/currentClient", "subscribe", "{}"
+        *shvc_exec, "-d", "-u", str(url), ".broker/currentClient", "subscribe", '"**"'
     )
     assert stdout == [b"true", b""]
     assert stderr[0] == b'=> <1:1,8:1,9:"",10:"hello">i{}'
@@ -35,7 +35,7 @@ async def test_param(shvc_exec, url, broker):
     )
     assert stderr[3:] == [
         b"<= <8:2>i{}",
-        b'=> <1:1,8:4,9:".broker/currentClient",10:"subscribe">i{1:{}}',
+        b'=> <1:1,8:4,9:".broker/currentClient",10:"subscribe">i{1:"**"}',
         b"<= <8:4>i{2:true...",
         b"",
     ]
@@ -50,7 +50,7 @@ async def test_param_stdin(shvc_exec, url, broker):
         str(url),
         ".broker/currentClient",
         "subscribe",
-        stdin=b"{}",
+        stdin=b'"**"',
     )
     assert stdout == [b"true", b""]
     assert stderr == [b""]
