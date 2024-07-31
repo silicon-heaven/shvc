@@ -224,6 +224,44 @@ void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth)
 		cpitem_extract_uint(___item, DEST); \
 	})
 
+/*! Unpack boolean and place it to the destination.
+ *
+ * This combines @ref cp_unpack with @ref cpitem_extract_bool.
+ *
+ * @param UNPACK: Generic unpacker to be used for unpacking.
+ * @param ITEM: Item where info about the unpacked item and its value is placed
+ *   to. You can use it to identify the real type or error in case of failure.
+ * @param DEST: destination boolean variable (not pointer, the variable
+ *   directly).
+ * @returns Boolean signaling if both unpack was successful and value fit the
+ *   destination. The real issue can be deduced from **ITEM**.
+ */
+#define cp_unpack_bool(UNPACK, ITEM, DEST) \
+	({ \
+		struct cpitem *___item = ITEM; \
+		cp_unpack(UNPACK, ___item); \
+		cpitem_extract_bool(___item, DEST); \
+	})
+
+/*! Unpack @ref cpdatetime and place it to the destination.
+ *
+ * This combines @ref cp_unpack with @ref cpitem_extract_datetime.
+ *
+ * @param UNPACK: Generic unpacker to be used for unpacking.
+ * @param ITEM: Item where info about the unpacked item and its value is placed
+ *   to. You can use it to identify the real type or error in case of failure.
+ * @param DEST: destination @ref cpdatetime variable (not pointer, the variable
+ *   directly).
+ * @returns Boolean signaling if both unpack was successful and value fit the
+ *   destination. The real issue can be deduced from **ITEM**.
+ */
+#define cp_unpack_datetime(UNPACK, ITEM, DEST) \
+	({ \
+		struct cpitem *___item = ITEM; \
+		cp_unpack(UNPACK, ___item); \
+		cpitem_extract_datetime(___item, DEST); \
+	})
+
 /*! Unpack a single byte from string.
  *
  * @param unpack: Unpack handle.

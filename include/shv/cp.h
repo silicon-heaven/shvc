@@ -461,6 +461,45 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 		__valid; \
 	})
 
+/*! Extract boolean from the item.
+ *
+ * @param ITEM: item from which boolean is extract.
+ * @param DEST: destination boolean variable (not pointer, the variable
+ *   directly).
+ * @returns `true` in case value was @ref CPITEM_BOOL and value fits to the
+ *   destination, otherwise `false` is returned. The destination is not modified
+ *   when `false` is returned.
+ */
+#define cpitem_extract_bool(ITEM, DEST) \
+	({ \
+		struct cpitem *__item = ITEM; \
+		bool __valid = false; \
+		if (__item->type == CPITEM_BOOL) { \
+			(DEST) = __item->as.Bool; \
+			__valid = true; \
+		} \
+		__valid; \
+	})
+
+/*! Extract @ref cpdatetime from the item.
+ *
+ * @param ITEM: item from which @ref cpdatetime is extract.
+ * @param DEST: destination @ref cpdatetime variable (not pointer, the variable
+ *   directly).
+ * @returns `true` in case value was @ref CPITEM_DATETIME and value fits to the
+ *   destination, otherwise `false` is returned. The destination is not modified
+ *   when `false` is returned.
+ */
+#define cpitem_extract_datetime(ITEM, DEST) \
+	({ \
+		struct cpitem *__item = ITEM; \
+		bool __valid = false; \
+		if (__item->type == CPITEM_DATETIME) { \
+			(DEST) = __item->as.Datetime; \
+			__valid = true; \
+		} \
+		__valid; \
+	})
 
 /*! Unpack item from ChainPack data format.
  *
