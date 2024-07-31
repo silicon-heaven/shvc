@@ -36,7 +36,7 @@ struct ctx {
 		int fds[2];
 	};
 	int errnum;
-	FILE *f;
+	FILE *fr, *fw;
 
 	union {
 		struct rpcclient_ctx_block {
@@ -311,7 +311,7 @@ static enum rpcclient_msg_type rpcclient_stream_serial_nextmsg(struct ctx *c) {
 
 static bool rpcclient_stream_serial_validate(struct ctx *c) {
 	assert(c->serial.rmsg != RMSG_DATA);
-	if (ferror(c->f)) /* Do not read CRC if error was reported */
+	if (ferror(c->fr)) /* Do not read CRC if error was reported */
 		return false;
 	if (c->proto != RPCSTREAM_P_SERIAL_CRC)
 		return true;
@@ -339,20 +339,20 @@ static bool stream_pack(void *ptr, const struct cpitem *item) {
 	rpclogger_log_item(c->pub.logger_out, item);
 	if ((c->proto == RPCSTREAM_P_BLOCK && c->block.wbuflen == 0) ||
 		(c->proto != RPCSTREAM_P_BLOCK && !c->serial.wmsg))
-		putc(1, c->f); /* Chainpack identifier */
-	return chainpack_pack(c->f, item) > 0;
+		putc(1, c->fw); /* Chainpack identifier */
+	return chainpack_pack(c->fw, item) > 0;
 }
 
 static void stream_unpack(void *ptr, struct cpitem *item) {
 	struct ctx *c = (struct ctx *)((char *)ptr - offsetof(struct ctx, pub.unpack));
-	chainpack_unpack(c->f, item);
+	chainpack_unpack(c->fr, item);
 	rpclogger_log_item(c->pub.logger_in, item);
 }
 
 static void flushmsg(struct ctx *c) {
 	/* Flush the rest of the message. Read up to the EOF. */
 	char buf[BUFSIZ];
-	while (fread(buf, 1, BUFSIZ, c->f) > 0) {}
+	while (fread(buf, 1, BUFSIZ, c->fr) > 0) {}
 }
 
 static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
@@ -361,7 +361,8 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 		case RPCC_CTRLOP_DESTROY:
 			if (c->sclient->connect)
 				stream_ctrl(client, RPCC_CTRLOP_DISCONNECT);
-			fclose(c->f);
+			fclose(c->fr);
+			fclose(c->fw);
 			if (c->proto == RPCSTREAM_P_BLOCK)
 				free(c->block.wbuf);
 			if (c->sclient->free)
@@ -384,7 +385,7 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 				if (!sendrst || c->rfd < 0)
 					return c->rfd >= 0;
 			}
-			putc(0, c->f);
+			putc(0, c->fw);
 			return stream_ctrl(client, RPCC_CTRLOP_SENDMSG);
 		case RPCC_CTRLOP_ERRNO:
 			if (c->rfd < 0)
@@ -401,9 +402,9 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 					res = rpcclient_stream_serial_nextmsg(c);
 				if (res != RPCC_MESSAGE)
 					return res;
-				clearerr(c->f);
+				clearerr(c->fr);
 				/* Read identifier byte */
-				switch (getc(c->f)) {
+				switch (getc(c->fr)) {
 					case 1: /* Chainpack message */
 						return res;
 					case 0: /* Reset requested */
@@ -460,14 +461,18 @@ rpcclient_t rpcclient_stream_new(const struct rpcclient_stream_funcs *sclient,
 		.rfd = rfd,
 		.wfd = wfd,
 		.errnum = 0,
-		.f = fopencookie(res, "r+",
+		.fr = fopencookie(res, "r+",
 			(cookie_io_functions_t){
 				.read = proto == RPCSTREAM_P_BLOCK ? cookie_read_block
 												   : cookie_read_serial,
+			}),
+		.fw = fopencookie(res, "r+",
+			(cookie_io_functions_t){
 				.write = proto == RPCSTREAM_P_BLOCK ? cookie_write_block
 													: cookie_write_serial,
 			}),
 	};
-	setbuf(res->f, NULL); // TODO is this really more efficient?
+	setbuf(res->fr, NULL);
+	setbuf(res->fw, NULL);
 	return &res->pub;
 }
