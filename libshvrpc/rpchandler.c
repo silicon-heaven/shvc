@@ -90,6 +90,7 @@ void rpchandler_destroy(rpchandler_t handler) {
 	if (handler == NULL)
 		return;
 	obstack_free(&handler->obstack, NULL);
+	pthread_mutex_destroy(&handler->lock);
 	pthread_mutex_destroy(&handler->send_lock);
 	free(handler);
 }
