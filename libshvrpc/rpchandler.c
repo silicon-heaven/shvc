@@ -254,29 +254,40 @@ static void handle_msg(struct msg_ctx *ctx) {
 
 bool rpchandler_next(struct rpchandler *handler) {
 	pthread_mutex_lock(&handler->lock);
-	if (rpcclient_nextmsg(handler->client)) {
-		void *obs_base = obstack_base(&handler->obstack);
-		struct cpitem item;
-		cpitem_unpack_init(&item);
-		struct rpcmsg_meta meta;
+	switch (rpcclient_nextmsg(handler->client)) {
+		case RPCC_MESSAGE:
+			void *obs_base = obstack_base(&handler->obstack);
+			struct cpitem item;
+			cpitem_unpack_init(&item);
+			struct rpcmsg_meta meta;
 
-		cp_unpack_t unpack = rpcclient_unpack(handler->client);
-		if (rpcmsg_head_unpack(unpack, &item, &meta, NULL, &handler->obstack)) {
-			struct msg_ctx ctx = {
-				.ctx.meta = meta,
-				.ctx.unpack = unpack,
-				.ctx.item = &item,
-				.handler = handler,
-			};
-			if (meta.type == RPCMSG_T_REQUEST && !strcmp(meta.method, "ls"))
-				handle_ls(&ctx);
-			else if (meta.type == RPCMSG_T_REQUEST && !strcmp(meta.method, "dir"))
-				handle_dir(&ctx);
-			else
-				handle_msg(&ctx);
-			clock_gettime(CLOCK_MONOTONIC, &handler->last_receive);
-		}
-		obstack_free(&handler->obstack, obs_base);
+			cp_unpack_t unpack = rpcclient_unpack(handler->client);
+			if (rpcmsg_head_unpack(unpack, &item, &meta, NULL, &handler->obstack)) {
+				struct msg_ctx ctx = {
+					.ctx.meta = meta,
+					.ctx.unpack = unpack,
+					.ctx.item = &item,
+					.handler = handler,
+				};
+				if (meta.type == RPCMSG_T_REQUEST && !strcmp(meta.method, "ls"))
+					handle_ls(&ctx);
+				else if (meta.type == RPCMSG_T_REQUEST &&
+					!strcmp(meta.method, "dir"))
+					handle_dir(&ctx);
+				else
+					handle_msg(&ctx);
+				clock_gettime(CLOCK_MONOTONIC, &handler->last_receive);
+			}
+			obstack_free(&handler->obstack, obs_base);
+			break;
+		case RPCC_RESET:
+			for (const struct rpchandler_stage *s = handler->stages; s->funcs; s++)
+				if (s->funcs->reset)
+					s->funcs->reset(s->cookie);
+			break;
+		case RPCC_ERROR: /* Handled by rpcclient_connected */
+		case RPCC_NOTHING:
+			break; /* Nothing to do */
 	}
 	pthread_mutex_unlock(&handler->lock);
 	return rpcclient_connected(handler->client);

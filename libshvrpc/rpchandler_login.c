@@ -110,6 +110,14 @@ int rpc_idle(void *cookie, struct rpchandler_idle *ctx) {
 	return LOGIN_TIMEOUT;
 }
 
+void rpc_reset(void *cookie) {
+	struct rpchandler_login *handler_login = cookie;
+	handler_login->logged = false;
+	handler_login->nonce[0] = '\0';
+	handler_login->errnum = RPCERR_NO_ERROR;
+	handler_login->errmsg = NULL;
+}
+
 static const struct rpchandler_funcs rpc_funcs = {
 	.msg = rpc_msg,
 	.idle = rpc_idle,

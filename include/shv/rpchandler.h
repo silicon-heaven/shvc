@@ -142,6 +142,14 @@ struct rpchandler_funcs {
 	 *   invocation.
 	 */
 	int (*idle)(void *cookie, struct rpchandler_idle *ctx);
+	/*! The state reset.
+	 *
+	 * During the communication the reset of the state can be requested by the
+	 * peer as well as, if enabled, handler can perform reconnect and in such
+	 * case everything must be reverted to the initial state of the
+	 * communication.
+	 */
+	void (*reset)(void *cookie);
 };
 
 /*! Single stage in the RPC Handler.
