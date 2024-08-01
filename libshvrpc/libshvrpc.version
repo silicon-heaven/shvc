@@ -59,6 +59,9 @@ V0.0 {
 		rpcurl_new_client;
 		rpcurl_new_server;
 
+		# shv/rpcri.h
+		rpcri_match;
+
 		# shv/rpchandler.h
 		rpchandler_new;
 		rpchandler_destroy;

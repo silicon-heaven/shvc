@@ -17,6 +17,7 @@ libshvrpc_sources = [
     'rpcmsg_head.c',
     'rpcmsg_pack.c',
     'rpcmsg_request_id.c',
+    'rpcri.c',
     'rpcurl.c',
     'rpcurl_new.c',
     'strset.c',

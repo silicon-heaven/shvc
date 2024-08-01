@@ -21,6 +21,7 @@ libshvrpc_headers = files(
   'shv/rpclogger.h',
   'shv/rpclogin.h',
   'shv/rpcmsg.h',
+  'shv/rpcri.h',
   'shv/rpcserver.h',
   'shv/rpctransport.h',
   'shv/rpcurl.h',

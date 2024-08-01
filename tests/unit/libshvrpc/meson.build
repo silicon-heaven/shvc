@@ -11,6 +11,7 @@ unittest_libshvrpc = executable(
     'rpcmsg_pack.c',
     'rpctransport.c',
     'rpcurl.c',
+    'rpcri.c',
     unittest_utils_src,
   ],
   dependencies: [libshvrpc_dep, check_suite],
