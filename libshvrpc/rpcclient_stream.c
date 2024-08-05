@@ -357,6 +357,7 @@ static void flushmsg(struct ctx *c) {
 
 static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 	struct ctx *c = (struct ctx *)client;
+	bool res;
 	switch (op) {
 		case RPCC_CTRLOP_DESTROY:
 			if (c->sclient->connect)
@@ -393,20 +394,20 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 			return c->errnum;
 		case RPCC_CTRLOP_NEXTMSG: {
 			rpclogger_log_end(c->pub.logger_in, RPCLOGGER_ET_UNKNOWN);
-			int res;
+			int ret;
 			while (true) {
 				if (c->proto == RPCSTREAM_P_BLOCK) {
 					flushmsg(c);
-					res = rpcclient_stream_block_nextmsg(c);
+					ret = rpcclient_stream_block_nextmsg(c);
 				} else
-					res = rpcclient_stream_serial_nextmsg(c);
-				if (res != RPCC_MESSAGE)
-					return res;
+					ret = rpcclient_stream_serial_nextmsg(c);
+				if (ret != RPCC_MESSAGE)
+					return ret;
 				clearerr(c->fr);
 				/* Read identifier byte */
 				switch (getc(c->fr)) {
 					case 1: /* Chainpack message */
-						return res;
+						return ret;
 					case 0: /* Reset requested */
 						if (stream_ctrl(client, RPCC_CTRLOP_VALIDMSG))
 							return RPCC_RESET;
@@ -418,16 +419,15 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 		}
 		case RPCC_CTRLOP_VALIDMSG:
 			flushmsg(c);
-			bool res = c->proto == RPCSTREAM_P_BLOCK
+			res = c->proto == RPCSTREAM_P_BLOCK
 				? true /* Block protocol doesn't have validation */
 				: rpcclient_stream_serial_validate(c);
 			rpclogger_log_end(c->pub.logger_in,
 				res ? RPCLOGGER_ET_VALID : RPCLOGGER_ET_INVALID);
 			return res;
 		case RPCC_CTRLOP_SENDMSG: {
-			bool res = c->proto == RPCSTREAM_P_BLOCK
-				? rpcclient_stream_block_send(c)
-				: rpcclient_stream_serial_send(c);
+			res = c->proto == RPCSTREAM_P_BLOCK ? rpcclient_stream_block_send(c)
+												: rpcclient_stream_serial_send(c);
 			if (c->sclient->flush)
 				c->sclient->flush(c->sclient_cookie, c->wfd);
 			rpclogger_log_end(c->pub.logger_out, RPCLOGGER_ET_VALID);

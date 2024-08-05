@@ -22,7 +22,7 @@ static bool unix_client_connect(void *cookie, int fd[2]) {
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, location, sizeof(addr.sun_path) - 1);
 
-	if (connect(nfd, &addr, sizeof(addr)) != -1) {
+	if (connect(nfd, (const struct sockaddr *)&addr, sizeof(addr)) != -1) {
 		fd[1] = fd[0] = nfd;
 	} else
 		close(nfd);
@@ -85,7 +85,8 @@ rpcserver_t rpcserver_unix_new(const char *location, enum rpcstream_proto proto)
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, location, sizeof(addr.sun_path) - 1);
 
-	if (bind(fd, &addr, sizeof(addr)) == -1 || listen(fd, 8) == -1) {
+	if (bind(fd, (const struct sockaddr *)&addr, sizeof(addr)) == -1 ||
+		listen(fd, 8) == -1) {
 		close(fd);
 		return NULL;
 	}

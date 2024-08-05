@@ -119,7 +119,7 @@ ssize_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) 
 					(int)(item->as.Datetime.msecs % 1000));
 				if (item->as.Datetime.offutc)
 					PRINTF("%s%.2d:%.2d\"", item->as.Datetime.offutc > 0 ? "+" : "",
-						item->as.Datetime.offutc / 60,
+						(int)(item->as.Datetime.offutc / 60),
 						abs(item->as.Datetime.offutc) % 60);
 				else
 					PUTS("Z\"");
