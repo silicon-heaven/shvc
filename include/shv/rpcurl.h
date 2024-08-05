@@ -12,6 +12,15 @@
 #include <shv/rpclogin.h>
 #include <shv/rpcserver.h>
 
+/*! Default TPC/IP port used for RPC protocol TCP. */
+#define RPCURL_TCP_PORT (3755)
+/*! Default TPC/IP port used for RPC protocol TCPS. */
+#define RPCURL_TCPS_PORT (3765)
+/*! Default TPC/IP port used for RPC protocol TCP. */
+#define RPCURL_SSL_PORT (3756)
+/*! Default TPC/IP port used for RPC protocol TCPS. */
+#define RPCURL_SSLS_PORT (3766)
+
 /*! Protocol used to connect client to the server or to listen for connection on
  */
 enum rpc_protocol {

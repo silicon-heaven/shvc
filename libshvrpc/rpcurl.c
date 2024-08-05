@@ -8,7 +8,6 @@
 #include "rpcurl_scheme.gperf.h"
 
 #define DEFAULT_PROTOCOL (RPC_PROTOCOL_UNIX)
-#define DEFAULT_PORT (3755)
 #define DEFAULT_BAUDRATE (115200)
 #define DECIMAL_BASE (10)
 
@@ -286,10 +285,27 @@ struct rpcurl *rpcurl_parse(const char *url, const char **error_pos) {
 
 	ERR_CHECK(parse_protocol(&uri, res, error_pos));
 
-	if (protocol_contains_authority(res))
-		res->rpcurl.port = DEFAULT_PORT;
-	if (res->rpcurl.protocol == RPC_PROTOCOL_TTY)
-		res->rpcurl.tty.baudrate = DEFAULT_BAUDRATE;
+	switch (res->rpcurl.protocol) {
+		case RPC_PROTOCOL_TCP:
+			res->rpcurl.port = RPCURL_TCP_PORT;
+			break;
+		case RPC_PROTOCOL_TCPS:
+			res->rpcurl.port = RPCURL_TCPS_PORT;
+			break;
+		case RPC_PROTOCOL_SSL:
+			res->rpcurl.port = RPCURL_SSL_PORT;
+			break;
+		case RPC_PROTOCOL_SSLS:
+			res->rpcurl.port = RPCURL_SSLS_PORT;
+			break;
+		case RPC_PROTOCOL_UNIX:
+			break;
+		case RPC_PROTOCOL_UNIXS:
+			break;
+		case RPC_PROTOCOL_TTY:
+			res->rpcurl.tty.baudrate = DEFAULT_BAUDRATE;
+			break;
+	}
 
 	parse_user_info(&uri, res);
 	ERR_CHECK(parse_host(&uri, res, error_pos));
