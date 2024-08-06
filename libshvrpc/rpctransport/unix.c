@@ -10,6 +10,13 @@ struct server {
 	enum rpcstream_proto proto;
 };
 
+static size_t unix_peername(char *buf, size_t size, const char *location) {
+	const char *prefix = "unix:";
+	char *b = stpncpy(buf, prefix, size);
+	strncpy(b, location, size - (b - buf));
+	return strlen(prefix) + strlen(location);
+}
+
 /* Client *********************************************************************/
 
 static bool unix_client_connect(void *cookie, int fd[2]) {
@@ -29,6 +36,11 @@ static bool unix_client_connect(void *cookie, int fd[2]) {
 	return false;
 }
 
+static size_t unix_client_peername(void *cookie, int fd[2], char *buf, size_t size) {
+	char *location = cookie;
+	return unix_peername(buf, size, location);
+}
+
 void unix_client_free(void *cookie) {
 	char *location = cookie;
 	free(location);
@@ -36,6 +48,7 @@ void unix_client_free(void *cookie) {
 
 static const struct rpcclient_stream_funcs sclient = {
 	.connect = unix_client_connect,
+	.peername = unix_client_peername,
 	.free = unix_client_free,
 };
 
@@ -51,8 +64,17 @@ static bool unix_server_connect(void *cookie, int fd[2]) {
 	return false;
 }
 
+static size_t unix_server_peername(void *cookie, int fd[2], char *buf, size_t size) {
+	struct sockaddr_un addr;
+	socklen_t addr_len = sizeof(addr);
+	if (getsockname(fd[0], (struct sockaddr *)&addr, &addr_len) == -1)
+		strcpy(addr.sun_path, "NOT-CONNECTED");
+	return snprintf(buf, size, "unix:%s", addr.sun_path);
+}
+
 static const struct rpcclient_stream_funcs sserver = {
 	.connect = unix_server_connect,
+	.peername = unix_server_peername,
 };
 
 static int unix_server_ctrl(struct rpcserver *server, enum rpcserver_ctrlop op) {

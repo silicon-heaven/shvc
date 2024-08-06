@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/socket.h>
+#include <alloca.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -82,6 +83,11 @@ static bool tcp_client_connect(void *cookie, int fd[2]) {
 	return false;
 }
 
+static size_t tcp_client_peername(void *cookie, int fd[2], char *buf, size_t size) {
+	struct client *c = cookie;
+	return snprintf(buf, size, "tcp:%s:%d", c->location, c->port);
+}
+
 void tcp_client_free(void *cookie) {
 	struct client *c = cookie;
 	free(c);
@@ -90,6 +96,7 @@ void tcp_client_free(void *cookie) {
 static const struct rpcclient_stream_funcs sclient = {
 	.connect = tcp_client_connect,
 	.flush = tcp_flush,
+	.peername = tcp_client_peername,
 	.free = tcp_client_free,
 };
 
@@ -110,9 +117,22 @@ static bool tcp_server_connect(void *cookie, int fd[2]) {
 	return false;
 }
 
+static size_t tcp_server_peername(void *cookie, int fd[2], char *buf, size_t size) {
+	char host[NI_MAXHOST];
+	char serv[NI_MAXSERV];
+	struct sockaddr_storage addr;
+	socklen_t addr_len = sizeof(addr);
+	if (getpeername(fd[0], (struct sockaddr *)&addr, &addr_len) == -1 ||
+		getnameinfo((struct sockaddr *)&addr, addr_len, host, sizeof(host),
+			serv, sizeof(serv), NI_NUMERICSERV) == -1)
+		return snprintf(buf, size, "tcp:NOT-CONNECTED");
+	return snprintf(buf, size, "tcp:%s:%s", host, serv);
+}
+
 static const struct rpcclient_stream_funcs sserver = {
 	.connect = tcp_server_connect,
 	.flush = tcp_flush,
+	.peername = tcp_server_peername,
 };
 
 static int tcp_server_ctrl(struct rpcserver *server, enum rpcserver_ctrlop op) {

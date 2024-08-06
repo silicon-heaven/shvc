@@ -52,6 +52,9 @@ struct rpcclient {
 	/*! Control function. Do not use directly. */
 	int (*ctrl)(struct rpcclient *, enum rpcclient_ctrlop);
 
+	/*! Optional query for the peer's name. */
+	size_t (*peername)(struct rpcclient *, char *buf, size_t siz);
+
 	/*! Unpack function. Please use @ref rpcclient_unpack instead. */
 	cp_unpack_func_t unpack;
 
@@ -220,5 +223,27 @@ enum rpcclient_msg_type {
  */
 #define rpcclient_pollfd(CLIENT) \
 	((int)(CLIENT)->ctrl(CLIENT, RPCC_CTRLOP_POLLFD))
+
+/*! Get peer's name.
+ *
+ * This can be used to identify the peer with its string description.
+ *
+ * @param client The RPC client object.
+ * @param buf Pointer to the buffer where string will be stored. You can pass
+ *   `NULL` alongside with `size == 0` and in such case this function only
+ *   calculates amount of space required for the string.
+ * @param size Size of the `buf` in bytes.
+ * @returns Number of bytes written (excluding the terminating null byte). If
+ *   buffer is too small then it returns number bytes it would wrote. This can
+ *   be used to detect truncated output due to small buffer.
+ */
+__attribute__((nonnull(1))) static inline size_t rpcclient_peername(
+	rpcclient_t client, char *buf, size_t size) {
+	if (client->peername)
+		return client->peername(client, buf, size);
+	if (buf && size > 0)
+		*buf = '\0';
+	return 0;
+}
 
 #endif

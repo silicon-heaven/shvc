@@ -60,6 +60,11 @@ static bool tty_client_connect(void *cookie, int fd[2]) {
 	return true;
 }
 
+static size_t tty_client_peername(void *cookie, int fd[2], char *buf, size_t size) {
+	struct client *c = (struct client *)cookie;
+	return snprintf(buf, size, "tty:%s", c->location);
+}
+
 void tty_client_free(void *cookie) {
 	struct ctx *c = (struct ctx *)cookie;
 	free(c);
@@ -67,6 +72,7 @@ void tty_client_free(void *cookie) {
 
 static const struct rpcclient_stream_funcs sclient = {
 	.connect = tty_client_connect,
+	.peername = tty_client_peername,
 	.free = tty_client_free,
 };
 
@@ -113,6 +119,11 @@ static bool tty_server_connect(void *cookie, int fd[2]) {
 	return false;
 }
 
+static size_t tty_server_peername(void *cookie, int fd[2], char *buf, size_t size) {
+	struct server *s = (struct server *)cookie;
+	return snprintf(buf, size, "tty:%s", s->location);
+}
+
 static void tty_server_free(void *cookie) {
 	struct server *s = cookie;
 	if (s->evfd != -1)
@@ -121,6 +132,7 @@ static void tty_server_free(void *cookie) {
 
 static const struct rpcclient_stream_funcs sserver = {
 	.connect = tty_server_connect,
+	.peername = tty_server_peername,
 	.free = tty_server_free,
 };
 

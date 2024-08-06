@@ -445,6 +445,15 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 	abort(); // GCOVR_EXCL_LINE
 }
 
+static size_t stream_peername(rpcclient_t client, char *buf, size_t siz) {
+	struct ctx *c = (struct ctx *)client;
+	if (c->sclient->peername)
+		return c->sclient->peername(c->sclient_cookie, c->fds, buf, siz);
+	if (buf && siz > 0)
+		*buf = '\0';
+	return 0;
+}
+
 rpcclient_t rpcclient_stream_new(const struct rpcclient_stream_funcs *sclient,
 	void *sclient_cookie, enum rpcstream_proto proto, int rfd, int wfd) {
 	struct ctx *res = malloc(sizeof *res);
@@ -452,6 +461,7 @@ rpcclient_t rpcclient_stream_new(const struct rpcclient_stream_funcs *sclient,
 		.pub =
 			(struct rpcclient){
 				.ctrl = stream_ctrl,
+				.peername = stream_peername,
 				.pack = stream_pack,
 				.unpack = stream_unpack,
 			},

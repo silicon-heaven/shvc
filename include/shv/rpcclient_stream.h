@@ -41,6 +41,10 @@ struct rpcclient_stream_funcs {
 	 * provided in `fd`. It can be `NULL` if this is not required.
 	 */
 	void (*flush)(void *cookie, int fd);
+	/*! Called as propagation of @ref rpcclient_peername. The provided `fd` are
+	 * read and write file descriptors provided for convenience.
+	 */
+	size_t (*peername)(void *cookie, int fd[2], char *buf, size_t size);
 	/*! Called as part of the client object destruction and should be used to
 	 * free the cookie.
 	 */

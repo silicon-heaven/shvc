@@ -3,7 +3,16 @@
 #include <unistd.h>
 #include <shv/rpctransport.h>
 
-static const struct rpcclient_stream_funcs sclient = {};
+
+static size_t pipe_peername(void *cookie, int fd[2], char *buf, size_t size) {
+	const char *msg = "pipe";
+	strncpy(buf, msg, size);
+	return strlen(msg);
+}
+
+static const struct rpcclient_stream_funcs sclient = {
+	.peername = pipe_peername,
+};
 
 rpcclient_t rpcclient_pipe_new(int pipes[2], enum rpcstream_proto proto) {
 	int rpipe[2];
