@@ -96,7 +96,7 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 			bool value_changed = false;
 			if (invalid_param) {
 				free(res);
-				rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAMS,
+				rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM,
 					"Only list of integers is allowed");
 			} else {
 				value_changed = state->tracks[tid].cnt != cnt ||

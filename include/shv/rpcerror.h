@@ -20,8 +20,8 @@ typedef unsigned rpcerrno_t;
 #define RPCERR_INVALID_REQUEST (1)
 /*! Method is can't be found or you do not have access to it. */
 #define RPCERR_METHOD_NOT_FOUND (2)
-/*! Request received but with invalid parameters. */
-#define RPCERR_INVALID_PARAMS (3)
+/*! Request received but with invalid parameter. */
+#define RPCERR_INVALID_PARAM (3)
 /*! Request can't be processes due to the internal error. */
 #define RPCERR_INTERNAL_ERR (4)
 /*! Message content can't be parsed correctly. */

@@ -103,7 +103,7 @@ async def test_call(demo_device, client, path, method, result):
         ("test/device/track/none", "ls", None, shv.RpcMethodNotFoundError),
         ("test/device/track/none", "dir", None, shv.RpcMethodNotFoundError),
         ("test/device/track/none", "set", None, shv.RpcMethodNotFoundError),
-        ("test/device/track/1", "set", None, shv.RpcInvalidParamsError),
+        ("test/device/track/1", "set", None, shv.RpcInvalidParamError),
     ),
 )
 async def test_call_error(demo_device, client, path, method, param, error):

@@ -12,7 +12,7 @@ static const struct cponerr {
 	const char *errmsg;
 	const char *cpon;
 } pairs_d[] = {
-	{RPCERR_INVALID_PARAMS, "Use Int", "i{1:3,2:\"Use Int\"}"},
+	{RPCERR_INVALID_PARAM, "Use Int", "i{1:3,2:\"Use Int\"}"},
 };
 
 

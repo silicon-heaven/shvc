@@ -77,8 +77,7 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 		return true;
 
 	if (has_param) {
-		rpchandler_msg_send_error(
-			ctx, RPCERR_INVALID_PARAMS, "Must be only 'null'");
+		rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM, "Must be only 'null'");
 		return true;
 	}
 

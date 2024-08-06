@@ -211,11 +211,11 @@
         "nixpkgs": "nixpkgs_4"
       },
       "locked": {
-        "lastModified": 1722505583,
-        "narHash": "sha256-VcUicx/UeGtZdzIEilcJXpwyVKCWOiYxwqpRTsFMVqU=",
+        "lastModified": 1722779792,
+        "narHash": "sha256-kQoFRJWP2H7cQg+q4qlsqmr62J/uGMqOxwUCgA0e6go=",
         "owner": "silicon-heaven",
         "repo": "pyshv",
-        "rev": "5623c1beb4d09b7fe31f3a3c0bc4ef94f0754fc9",
+        "rev": "5e8cdb167f95528e9e92b9e1da691224b9ce008e",
         "type": "gitlab"
       },
       "original": {

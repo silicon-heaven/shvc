@@ -147,7 +147,7 @@ static bool common_ls_dir(struct msg_ctx *ctx, char **name) {
 	if (!invalid_param)
 		return true;
 	rpchandler_msg_send_error(
-		&ctx->ctx, RPCERR_INVALID_PARAMS, "Use Null or String with node name");
+		&ctx->ctx, RPCERR_INVALID_PARAM, "Use Null or String with node name");
 	return false;
 }
 
