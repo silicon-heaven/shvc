@@ -211,6 +211,16 @@ void rpchandler_destroy(rpchandler_t rpchandler);
 void rpchandler_change_stages(rpchandler_t handler,
 	const struct rpchandler_stage *stages) __attribute__((nonnull));
 
+/*! Provides access to the wrapped RPC client.
+ *
+ * Do not use this to send or receive messages! It is provided only for the
+ * convenience and status control. The message exchange should always be
+ * performed through RPC handler.
+ *
+ * @param handler RPC handler instance.
+ */
+rpcclient_t rpchandler_client(rpchandler_t handler) __attribute__((nonnull));
+
 /*! Handle next message.
  *
  * This blocks until the next message is received and fully handled. In general

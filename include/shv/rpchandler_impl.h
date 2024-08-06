@@ -113,7 +113,9 @@ void rpchandler_dir_exists(struct rpchandler_dir *ctx) __attribute__((nonnull));
 
 
 /// @cond
-struct obstack *_rpchandler_obstack(rpchandler_t rpchandler)
+struct obstack *_rpchandler_msg_obstack(struct rpchandler_msg *ctx)
+	__attribute__((nonnull));
+struct obstack *_rpchandler_idle_obstack(struct rpchandler_idle *ctx)
 	__attribute__((nonnull));
 /// @endcond
 /*! Provides access to the obstack in RPC Handler object.
@@ -124,12 +126,10 @@ struct obstack *_rpchandler_obstack(rpchandler_t rpchandler)
  * @param CTX Context passed to @ref rpchandler_funcs functions.
  * @returns Pointer to the obstack instance.
  */
-#define rpchandler_obstack(CTX) \
-	_Generic((CTX), \
-		const struct rpchandler_msg *: _rpchandler_obstack, \
-		const struct rpchandler_msg *: _rpchandler_obstack, \
-		const struct rpchandler_idle *: _rpchandler_obstack)( \
-		(rpchandler_t)(CTX)->_internal)
+#define rpchandler_obstack(HANDLER) \
+	_Generic((HANDLER), \
+		struct rpchandler_msg *: _rpchandler_msg_obstack, \
+		struct rpchandler_idle *: _rpchandler_idle_obstack)(HANDLER)
 
 
 /*! Combined call to the @ref rpchandler_msg_new and @ref rpcmsg_pack_response.
@@ -187,7 +187,7 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_send_response_void(
  * @param msg Optional message describing the error details.
  * @returns Value returned from @ref rpchandler_msg_send.
  */
-__attribute__((nonnull)) static inline bool rpchandler_msg_send_error(
+__attribute__((nonnull(1))) static inline bool rpchandler_msg_send_error(
 	struct rpchandler_msg *ctx, rpcerrno_t error, const char *msg) {
 	cp_pack_t pack = rpchandler_msg_new(ctx);
 	if (pack == NULL)

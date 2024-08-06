@@ -62,6 +62,7 @@ V0.0 {
 		rpchandler_new;
 		rpchandler_destroy;
 		rpchandler_change_stages;
+		rpchandler_client;
 		rpchandler_next;
 		rpchandler_idling;
 		rpchandler_run;
@@ -86,7 +87,8 @@ V0.0 {
 		rpchandler_ls_exists;
 		rpchandler_dir_result;
 		rpchandler_dir_exists;
-		_rpchandler_obstack;
+		_rpchandler_msg_obstack;
+		_rpchandler_idle_obstack;
 		rpchandler_msg_send_method_not_found;
 
 		# shv/rpchandler_app.h

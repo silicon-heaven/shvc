@@ -102,6 +102,10 @@ void rpchandler_change_stages(
 	pthread_mutex_unlock(&handler->lock);
 }
 
+rpcclient_t rpchandler_client(rpchandler_t handler) {
+	return handler->client;
+}
+
 static void priority_send_lock(rpchandler_t handler) {
 	handler->send_priority = true;
 	pthread_mutex_lock(&handler->send_lock);
@@ -498,6 +502,11 @@ bool rpchandler_msg_send_method_not_found(struct rpchandler_msg *ctx) {
 }
 
 
-struct obstack *_rpchandler_obstack(rpchandler_t rpchandler) {
-	return &rpchandler->obstack;
+struct obstack *_rpchandler_msg_obstack(struct rpchandler_msg *ctx) {
+	struct msg_ctx *mctx = (struct msg_ctx *)ctx;
+	return &mctx->handler->obstack;
+}
+struct obstack *_rpchandler_idle_obstack(struct rpchandler_idle *ctx) {
+	struct idle_ctx *ictx = (struct idle_ctx *)ctx;
+	return &ictx->handler->obstack;
 }
