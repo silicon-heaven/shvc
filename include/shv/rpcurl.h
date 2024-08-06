@@ -122,6 +122,8 @@ rpcclient_t rpcurl_new_client(const struct rpcurl *url);
  */
 static inline rpcclient_t rpcurl_connect_client(const struct rpcurl *url) {
 	rpcclient_t res = rpcurl_new_client(url);
+	if (!res)
+		return NULL;
 	if (rpcclient_reset(res))
 		return res;
 	rpcclient_destroy(res);
