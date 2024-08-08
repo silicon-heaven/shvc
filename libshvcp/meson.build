@@ -7,6 +7,7 @@ libshvcp_sources = files(
   'cp_unpack.c',
   'cpdatetime.c',
   'cpdecimal.c',
+  'cperror.c',
   'cpitem.c',
   'cpon_pack.c',
   'cpon_unpack.c',

@@ -249,6 +249,13 @@ enum cperror {
 	CPERR_OVERFLOW,
 };
 
+/*! Provides string describing the CP error.
+ *
+ * @param error CP error
+ * @returns statically allocated error description message.
+ */
+const char *cperror_str(enum cperror error);
+
 /*! Flag used in @ref cpbufinfo.flags to inform about first block of Blob or
  * String. This is always set when new string or blob is encountered.
  */

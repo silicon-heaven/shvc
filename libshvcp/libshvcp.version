@@ -8,6 +8,7 @@ V0.0 {
 		cpdttotm;
 		cptmtodt;
 		clock_cpdatetime;
+		cperror_str;
 		chainpack_pack;
 		_chainpack_pack_uint;
 		chainpack_unpack;
