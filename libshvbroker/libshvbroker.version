@@ -1,6 +1,13 @@
 V0.0 {
 	global:
-		foo;
+		# rpcbroker.h
+		rpcbroker_new;
+		rpcbroker_destroy;
+		rpcbroker_client_register;
+		rpcbroker_login_client_register;
+		rpcbroker_client_unregister;
+		rpcbroker_client_handler;
+		rpcbroker_run;
 
 	local: *;
 };

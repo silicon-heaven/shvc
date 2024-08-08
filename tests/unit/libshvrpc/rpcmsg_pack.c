@@ -27,8 +27,8 @@ TEST(all, signal) {
 END_TEST
 
 TEST(all, signal_void) {
-	rpcmsg_pack_signal_void(
-		packstream_pack, "node", "version", "chng", "foo", RPCACCESS_COMMAND, true);
+	rpcmsg_pack_signal_void(packstream_pack, "node", "version", "chng", "foo",
+		RPCACCESS_COMMAND, true);
 	ck_assert_packstr(
 		"<1:1,9:\"node\",10:\"chng\",19:\"version\",16:\"foo\",17:24,20:true>i{}");
 }

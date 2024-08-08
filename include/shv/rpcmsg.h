@@ -437,4 +437,25 @@ bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
 	rpcerrno_t errnum, const char *fmt, va_list args)
 	__attribute__((nonnull(1, 2, 4)));
 
+/*! Pack message based on the provided meta.
+ *
+ * This pack should be followed by packing parameter or result (based on the
+ * meta) and by @ref cp_pack_container_end as message end.
+ *
+ * @param pack Pack context the meta should be written to.
+ * @param meta Meta with info for message to be packed.
+ * @returns Boolean signaling the pack success or failure.
+ */
+bool rpcmsg_pack_meta(cp_pack_t pack, const struct rpcmsg_meta *meta)
+	__attribute__((nonnull));
+
+/*! Pack message based on the provided meta without parameter or result.
+ *
+ * @param pack Pack context the meta should be written to.
+ * @param meta Meta with info for message to be packed.
+ * @returns Boolean signaling the pack success or failure.
+ */
+bool rpcmsg_pack_meta_void(cp_pack_t pack, const struct rpcmsg_meta *meta)
+	__attribute__((nonnull));
+
 #endif

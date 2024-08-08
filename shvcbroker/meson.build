@@ -1,4 +1,7 @@
-shvcbroker_sources = files('config.c')
+shvcbroker_sources = files(
+  'config.c',
+  'opts.c',
+)
 shvcbroker_dependencies = [libshvbroker_dep]
 
 
@@ -8,3 +11,5 @@ shvcbroker = executable(
   dependencies: shvcbroker_dependencies,
   install: true,
 )
+
+shvcbroker_internal_includes = include_directories('.')

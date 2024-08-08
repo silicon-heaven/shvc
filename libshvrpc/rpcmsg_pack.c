@@ -146,3 +146,77 @@ bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
 
 	return cp_pack_container_end(pack);
 }
+
+__attribute__((nonnull)) static bool _rpcmsg_pack_meta(
+	cp_pack_t pack, const struct rpcmsg_meta *meta) {
+	meta_begin(pack);
+	bool is_rre = meta->type == RPCMSG_T_REQUEST ||
+		meta->type == RPCMSG_T_RESPONSE || meta->type == RPCMSG_T_ERROR;
+	bool is_rs = meta->type == RPCMSG_T_REQUEST || meta->type == RPCMSG_T_SIGNAL;
+	if (is_rre) {
+		cp_pack_int(pack, RPCMSG_TAG_REQUEST_ID);
+		cp_pack_int(pack, meta->request_id);
+	}
+	if (is_rs && meta->path && *meta->path != '\0') {
+		cp_pack_int(pack, RPCMSG_TAG_SHV_PATH);
+		cp_pack_str(pack, meta->path);
+	}
+	if (is_rs) {
+		/* This also covers RPCMSG_TAG_SIGNAL */
+		if (!meta->method || *meta->method == '\0')
+			return false; /* Invalid meta */
+		cp_pack_int(pack, RPCMSG_TAG_METHOD);
+		cp_pack_str(pack, meta->method);
+	}
+	if (is_rre && meta->cids_cnt > 0) {
+		cp_pack_int(pack, RPCMSG_TAG_CALLER_IDS);
+		if (meta->cids_cnt > 1) {
+			cp_pack_list_begin(pack);
+			for (size_t i = 0; i < meta->cids_cnt; i++)
+				cp_pack_int(pack, meta->cids[i]);
+			cp_pack_container_end(pack);
+		} else
+			cp_pack_int(pack, meta->cids[0]);
+	}
+	// TODO RPCMSG_TAG_ACCESS for copatibility with clients using that
+	if (is_rs && meta->user_id) {
+		cp_pack_int(pack, RPCMSG_TAG_USER_ID);
+		cp_pack_str(pack, meta->user_id);
+	}
+	if (is_rs) {
+		cp_pack_int(pack, RPCMSG_TAG_ACCESS_LEVEL);
+		cp_pack_int(pack, meta->access);
+	}
+	if (meta->type == RPCMSG_T_SIGNAL) {
+		cp_pack_int(pack, RPCMSG_TAG_SOURCE);
+		cp_pack_str(pack, meta->source);
+	}
+	if (meta->type == RPCMSG_T_SIGNAL && meta->repeat) {
+		cp_pack_int(pack, RPCMSG_TAG_REPEAT);
+		cp_pack_bool(pack, true);
+	}
+	for (struct rpcmsg_meta_extra *extra = meta->extra; extra; extra = extra->next) {
+		// TODO copy additional extra fields
+	}
+	cp_pack_container_end(pack);
+
+	return cp_pack_imap_begin(pack);
+}
+
+bool rpcmsg_pack_meta(cp_pack_t pack, const struct rpcmsg_meta *meta) {
+	_rpcmsg_pack_meta(pack, meta);
+	if (meta->type == RPCMSG_T_REQUEST || meta->type == RPCMSG_T_SIGNAL)
+		return cp_pack_int(pack, RPCMSG_KEY_PARAM);
+	if (meta->type == RPCMSG_T_RESPONSE)
+		return cp_pack_int(pack, RPCMSG_KEY_RESULT);
+	if (meta->type == RPCMSG_T_ERROR)
+		return cp_pack_int(pack, RPCMSG_KEY_ERROR);
+	return false;
+}
+
+bool rpcmsg_pack_meta_void(cp_pack_t pack, const struct rpcmsg_meta *meta) {
+	if (meta->type == RPCMSG_T_ERROR)
+		return false; /* Error can't be void */
+	_rpcmsg_pack_meta(pack, meta);
+	return cp_pack_container_end(pack);
+}

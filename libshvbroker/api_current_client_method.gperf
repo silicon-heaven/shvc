@@ -1,0 +1,36 @@
+%compare-lengths
+%compare-strncmp
+
+%pic
+%enum
+%readonly-tables
+%switch=1
+%language=ANSI-C
+
+%define hash-function-name gperf_api_current_client_method_hash
+%define lookup-function-name gperf_api_current_client_method
+%define string-pool-name gperf_api_current_client_method_string
+%define constants-prefix GPERF_API_CURRENT_CLIENT_METHOD_
+%define slot-name offset
+
+%struct-type
+%{
+struct gperf_api_current_client_method_match {
+	int offset;
+	enum current_client_methods {
+		M_INFO,
+		M_SUBSCRIPTIONS,
+		M_SUBSCRIBE,
+		M_UNSUBSCRIBE,
+	} method;
+};
+%}
+
+struct gperf_api_current_client_method_match;
+
+%%
+info, M_INFO
+subscriptions, M_SUBSCRIPTIONS
+subscribe, M_SUBSCRIBE
+unsubscribe, M_UNSUBSCRIBE
+%%

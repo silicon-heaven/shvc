@@ -149,6 +149,8 @@ struct rpchandler_funcs {
 	 * - Can send various messages including requests but with limitation that
 	 *   only one message can be send by all stages together at one idle
 	 *   invocation.
+	 *
+	 * This function returns negative number to signal error.
 	 */
 	int (*idle)(void *cookie, struct rpchandler_idle *ctx);
 	/*! The state reset.
@@ -249,7 +251,7 @@ rpcclient_t rpchandler_client(rpchandler_t handler) __attribute__((nonnull));
  * @returns `true` if message handled (even by dropping) and `false` if
  *   connection error encountered in RPC Client. `false` pretty much means that
  *   loop calling repeatedly this should should terminate because we are no
- *   longer able to read messages.
+ *   longer able to read or process messages.
  */
 bool rpchandler_next(rpchandler_t rpchandler) __attribute__((nonnull));
 

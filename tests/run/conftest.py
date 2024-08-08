@@ -1,5 +1,6 @@
 import os
 import shlex
+import dataclasses
 import shv
 import shv.broker
 
@@ -69,6 +70,15 @@ def fixture_url(port):
             password="test",
             login_type=shv.RpcLoginType.PLAIN,
         ),
+    )
+
+
+@pytest.fixture(name="admin_url", scope="module")
+def fixture_admin_url(url):
+    """RPC URL for TCP/IP communication."""
+    return dataclasses.replace(
+        url,
+        login=dataclasses.replace(url.login, username="admin", password="admin!123"),
     )
 
 

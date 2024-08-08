@@ -12,6 +12,12 @@ option(
   value: true,
   description: 'Include TCP/IP RPC transport. You might want to disable this if you do not have IP support on your platform.',
 )
+option(
+  'cryptorand',
+  type: 'boolean',
+  value: true,
+  description: 'Use cryptographic-random instead of pseudo-random for generated authnetication tokens.',
+)
 
 # Applications
 option(

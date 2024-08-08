@@ -43,6 +43,8 @@ static inline const char *rpcri_match_negation(const char *p, const char *s) {
 	return p;
 }
 
+// TODO we should be able to select if this should be handled as path or not
+// (the slash won't be the splitter in such a case).
 static bool rpcri_match_one(const char *pattern, const char *string, size_t n) {
 	const char *p;
 	int i;
@@ -120,4 +122,12 @@ bool rpcri_match(
 	}
 
 	return true;
+}
+
+bool rpcpath_match(const char *pattern, const char *path) {
+	return rpcri_match_one(pattern, path, strlen(pattern));
+}
+
+bool rpcstr_match(const char *pattern, const char *string) {
+	return rpcri_match_one(pattern, string, strlen(pattern));
 }

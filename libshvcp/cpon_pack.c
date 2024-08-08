@@ -277,9 +277,10 @@ static ssize_t ctxpush(
 }
 
 static enum cpitem_type ctxpop(struct cpon_state *state) {
-	assert(state->depth > 0);
-	state->depth--;
-	if (state->depth < state->cnt)
-		return state->ctx[state->depth].tp;
+	if (state->depth > 0) {
+		state->depth--;
+		if (state->depth < state->cnt)
+			return state->ctx[state->depth].tp;
+	}
 	return CPITEM_INVALID;
 }

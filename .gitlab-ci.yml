@@ -62,7 +62,7 @@ build-werror:
 nix:
   extends: .build
   script:
-    - nix build .?submodules=1
+    - nix build --log-lines 10000 .?submodules=1
 
 nix-appimage:
   extends: .build

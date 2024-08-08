@@ -51,3 +51,12 @@ char *tmpdir_path(const char *name) {
 	ck_assert_int_gt(asprintf(&res, "%s/%s", tmpdir, name), 0);
 	return res;
 }
+
+char *tmpdir_file(const char *name, const char *content) {
+	char *res = tmpdir_path(name);
+	FILE *f = fopen(res, "w");
+	ck_assert_ptr_nonnull(f);
+	ck_assert_int_ne(fwrite(content, strlen(content), 1, f), -1);
+	fclose(f);
+	return res;
+}

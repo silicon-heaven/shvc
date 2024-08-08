@@ -30,6 +30,12 @@ const char *rpcaccess_granted_str(rpcaccess_t acc) {
 	}
 }
 
+rpcaccess_t rpcaccess_granted_access(const char *str) {
+	const struct gperf_rpcaccess_match *match = gperf_rpcaccess(str, strlen(str));
+	if (match)
+		return match->acc;
+	return RPCACCESS_NONE;
+}
 
 rpcaccess_t rpcaccess_granted_extract(char *str) {
 	rpcaccess_t res = RPCACCESS_NONE;

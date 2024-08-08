@@ -126,10 +126,10 @@ struct obstack *_rpchandler_idle_obstack(struct rpchandler_idle *ctx)
  * @param CTX Context passed to @ref rpchandler_funcs functions.
  * @returns Pointer to the obstack instance.
  */
-#define rpchandler_obstack(HANDLER) \
-	_Generic((HANDLER), \
+#define rpchandler_obstack(CTX) \
+	_Generic((CTX), \
 		struct rpchandler_msg *: _rpchandler_msg_obstack, \
-		struct rpchandler_idle *: _rpchandler_idle_obstack)(HANDLER)
+		struct rpchandler_idle *: _rpchandler_idle_obstack)(CTX)
 
 
 /*! Combined call to the @ref rpchandler_msg_new and @ref rpcmsg_pack_response.

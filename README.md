@@ -22,7 +22,7 @@ they provide complete SHV RPC toolkit.
   dedicated tools for for device applications.
 * **libshvbroker** is a library that implements SHV RPC Broker and thus broker's
   functionality can be combined with other to create combined and custom
-  applications providing SHV RPC broker functionality. (NOT IMPLEMENTED YET)
+  applications providing SHV RPC broker functionality.
 * **libshvhistory** is a library that provides implementation for history
   application. It can be used to create logging facility that is part of SHV
   RPC. (NOT IMPLEMENTED YET)
@@ -33,7 +33,7 @@ they provide complete SHV RPC toolkit.
   YET)
 * **shvctio** is CLI tool for attaching console to the exchange nodes in SHV
   RPC. (NOT IMPLEMENTED YET)
-* **shvcbroker** is standalone SHV RPC Broker application. (NOT IMPLEMENTED YET)
+* **shvcbroker** is standalone SHV RPC Broker application.
 
 ## Dependencies
 

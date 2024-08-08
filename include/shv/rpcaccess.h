@@ -74,6 +74,14 @@ typedef uint8_t rpcaccess_t;
  */
 const char *rpcaccess_granted_str(rpcaccess_t access);
 
+/*! Convert string representation for granted access to access level.
+ *
+ * @param str Granted access string representation.
+ * @returns Access level (in case of an invalid string it returns @ref
+ *   RPCACCESS_NONE).
+ */
+rpcaccess_t rpcaccess_granted_access(const char *str) __attribute__((nonnull));
+
 /*! Extract access level from access granted string.
  *
  * The access level is removed from the passed string (and thus making it
@@ -85,6 +93,6 @@ const char *rpcaccess_granted_str(rpcaccess_t access);
  * @param str String with access specifier.
  * @returns Access level.
  */
-rpcaccess_t rpcaccess_granted_extract(char *str);
+rpcaccess_t rpcaccess_granted_extract(char *str) __attribute__((nonnull));
 
 #endif

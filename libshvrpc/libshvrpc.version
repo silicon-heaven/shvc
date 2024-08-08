@@ -13,9 +13,12 @@ V0.0 {
 		rpcmsg_pack_error;
 		rpcmsg_pack_ferror;
 		rpcmsg_pack_vferror;
+		rpcmsg_pack_meta;
+		rpcmsg_pack_meta_void;
 
 		# shv/rpcaccess.h
 		rpcaccess_granted_str;
+		rpcaccess_granted_access;
 		rpcaccess_granted_extract;
 
 		# shv/rpcerror.h
@@ -62,6 +65,8 @@ V0.0 {
 
 		# shv/rpcri.h
 		rpcri_match;
+		rpcpath_match;
+		rpcstr_match;
 
 		# shv/rpchandler.h
 		rpchandler_new;

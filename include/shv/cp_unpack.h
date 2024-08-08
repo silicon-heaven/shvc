@@ -275,6 +275,7 @@ __attribute__((nonnull)) static inline int cp_unpack_getc(
 	item->buf = &res;
 	item->bufsiz = 1;
 	cp_unpack(unpack, item);
+	item->bufsiz = 0;
 	if (item->type != CPITEM_STRING)
 		return -1;
 	return res;

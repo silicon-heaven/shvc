@@ -44,20 +44,26 @@ bool rpclogin_pack(cp_pack_t pack, const struct rpclogin *login,
 		cp_pack_container_end(pack);
 	}
 
-	if (login->device_id || login->device_mountpoint) {
+	if (login->idle_timeout > 0 || login->device_id || login->device_mountpoint) {
 		cp_pack_str(pack, "options");
 		cp_pack_map_begin(pack);
-		cp_pack_str(pack, "device");
-		cp_pack_map_begin(pack);
-		if (login->device_id) {
-			cp_pack_str(pack, "deviceId");
-			cp_pack_str(pack, login->device_id);
+		if (login->device_id || login->device_mountpoint) {
+			cp_pack_str(pack, "device");
+			cp_pack_map_begin(pack);
+			if (login->device_id) {
+				cp_pack_str(pack, "deviceId");
+				cp_pack_str(pack, login->device_id);
+			}
+			if (login->device_mountpoint) {
+				cp_pack_str(pack, "mountPoint");
+				cp_pack_str(pack, login->device_mountpoint);
+			}
+			cp_pack_container_end(pack);
 		}
-		if (login->device_mountpoint) {
-			cp_pack_str(pack, "mountPoint");
-			cp_pack_str(pack, login->device_mountpoint);
+		if (login->idle_timeout) {
+			cp_pack_str(pack, "idleWatchDogTimeOut");
+			cp_pack_int(pack, login->idle_timeout);
 		}
-		cp_pack_container_end(pack);
 		cp_pack_container_end(pack);
 	}
 
@@ -129,6 +135,9 @@ struct rpclogin *rpclogin_unpack(
 						} else
 							cp_unpack_skip(unpack, item);
 					}
+				} else if (!strcmp(okey, "idleWatchDogTimeOut")) {
+					if (!cp_unpack_int(unpack, item, res->idle_timeout))
+						FAIL;
 				} else
 					cp_unpack_skip(unpack, item);
 			}

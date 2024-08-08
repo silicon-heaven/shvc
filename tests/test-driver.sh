@@ -13,6 +13,7 @@
 set -eu
 ################################################################################
 declare -a default_valgrind_args
+default_valgrind_args+=('--quiet')
 default_valgrind_args+=('--error-exitcode=118')
 default_valgrind_args+=('--show-error-list=yes')
 default_valgrind_args+=("--suppressions=$(readlink -f "${0%/*}")/valgrind.supp")

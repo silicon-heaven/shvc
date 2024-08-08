@@ -3,6 +3,9 @@
 #define SHV_RPCSERVER_H
 #include <stdbool.h>
 #include <shv/rpcclient.h>
+/*! @file
+ * Handle managing a server waiting for connections for SHV RPC.
+ */
 
 /*! Operations performed by control function @ref rpcserver.ctrl for RPC Server.
  *

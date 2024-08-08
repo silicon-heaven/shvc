@@ -55,7 +55,7 @@ test(
   ],
   env: pytest_env,
   protocol: 'tap',
-  timeout: 500,
+  timeout: 1000,
   depends: pytest_depends,
   suite: ['run'],
 )

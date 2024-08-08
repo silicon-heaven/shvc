@@ -40,9 +40,10 @@ static const struct {
 		 .username = "test",
 		 .password = "a94a8fe5ccb19ba61c4c0873d391e987982fbbd3",
 		 .login_type = RPC_LOGIN_SHA1,
+		 .idle_timeout = 250,
 	 },
 		false,
-		"{\"login\":{\"user\":\"test\",\"password\":\"771ee79c4614cba556455d5fe0149e24ba0c56f5\",\"type\":\"SHA1\"}}"},
+		"{\"login\":{\"user\":\"test\",\"password\":\"771ee79c4614cba556455d5fe0149e24ba0c56f5\",\"type\":\"SHA1\"},\"options\":{\"idleWatchDogTimeOut\":250}}"},
 	{(struct rpclogin){
 		 .device_id = "foo",
 	 },
@@ -88,14 +89,12 @@ static const struct {
 			.password = "a7162d463b28666737f63034db39f03bca59b060",
 			.login_type = RPC_LOGIN_SHA1,
 		}},
+	{"{\"options\":{\"idleWatchDogTimeOut\":250}}",
+		(struct rpclogin){.idle_timeout = 250}},
 	{"{\"options\":{\"device\":{\"deviceId\":\"foo\"}}}",
-		(struct rpclogin){
-			.device_id = "foo",
-		}},
+		(struct rpclogin){.device_id = "foo"}},
 	{"{\"options\":{\"device\":{\"mountPoint\":\"test/foo\",\"unknown\":[1,2,3]},\"question\":42},\"any\":i{}}",
-		(struct rpclogin){
-			.device_mountpoint = "test/foo",
-		}},
+		(struct rpclogin){.device_mountpoint = "test/foo"}},
 };
 ARRAY_TEST(unpack, unpacker) {
 	struct cpitem item;
@@ -129,6 +128,7 @@ static const char *const unpack_invalid_d[] = {
 	"{\"options\":{\"device\":[]}}",
 	"{\"options\":{\"device\":{\"deviceId\":[]}}}",
 	"{\"options\":{\"device\":{\"mountPoint\":[]}}}",
+	"{\"options\":{\"idleWatchDogTimeOut\":[]}}",
 };
 ARRAY_TEST(unpack, unpack_invalid) {
 	struct cpitem item;

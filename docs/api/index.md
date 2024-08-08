@@ -7,4 +7,5 @@ libshvcp
 libshvrpc
 libshvcaller
 libshvcallee
+libshvbroker
 ```

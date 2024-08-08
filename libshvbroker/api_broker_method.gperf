@@ -1,0 +1,40 @@
+%compare-lengths
+%compare-strncmp
+
+%pic
+%enum
+%readonly-tables
+%switch=1
+%language=ANSI-C
+
+%define hash-function-name gperf_api_broker_method_hash
+%define lookup-function-name gperf_api_broker_method
+%define string-pool-name gperf_api_broker_method_string
+%define constants-prefix GPERF_API_BROKER_METHOD_
+%define slot-name offset
+
+%struct-type
+%{
+struct gperf_api_broker_method_match {
+	int offset;
+	enum methods {
+		M_NAME,
+		M_CLIENT_INFO,
+		M_MOUNTED_CLIENT_INFO,
+		M_CLIENTS,
+		M_MOUNTS,
+		M_DISCONNECT_CLIENT,
+	} method;
+};
+%}
+
+struct gperf_api_broker_method_match;
+
+%%
+name, M_NAME
+clientInfo, M_CLIENT_INFO
+mountedClientInfo, M_MOUNTED_CLIENT_INFO
+clients, M_CLIENTS
+mounts, M_MOUNTS
+disconnectClient, M_DISCONNECT_CLIENT
+%%

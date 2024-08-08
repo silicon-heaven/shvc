@@ -29,11 +29,15 @@ async def test_shvcbroker_help(shvcbroker_exec):
     stdout, stderr = await subproc(*shvcbroker_exec, "-h")
     assert stdout == [b""]
     assert stderr == [
-        f"{shvcbroker_exec[-1]} [-Vh] [-c FILE]".encode(),
+        f"{shvcbroker_exec[-1]} [-vqdVh] [-c FILE]".encode(),
+        b"SHV RPC Broker.",
         b"",
         b"Arguments:",
-        b"  -c FILE  Configuration file",
-        b"  -V       Print version and exit",
+        b"  -c FILE  Path to the configuration file",
+        b"  -v       Increase logging level of the communication",
+        b"  -q       Decrease logging level of the communication",
+        b"  -d       Set maximul logging level of the communication",
+        b"  -V       Print SHVC version and exit",
         b"  -h       Print this help text",
         b"",
     ]

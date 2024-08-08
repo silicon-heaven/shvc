@@ -13,6 +13,9 @@
  */
 #define SHV_NONCE_MAXLEN (32)
 
+/*! Default timeout for @ref rpclogin.idle_timeout. */
+#define SHV_IDLE_TIMEOUT_DEFAULT (180)
+
 
 /*! The format of the password passed to the login process. */
 enum rpclogin_type {
@@ -30,9 +33,22 @@ struct rpclogin {
 	const char *password;
 	/*! The format of the password */
 	enum rpclogin_type login_type;
-	/*! Device ID sent as part of login information to the server */
+	/*! Timeout to be specified on the server in number of seconds before
+	 * automatic disconnect. You can use `0` to not specify this option and thus
+	 * use default value of the server.
+	 *
+	 * This is login option `idleWatchDogTimeOut`.
+	 */
+	unsigned idle_timeout;
+	/*! Device ID sent as part of login information to the server.
+	 *
+	 * This is login option `device.deviceId`.
+	 */
 	const char *device_id;
-	/*! Device's requested mount point on server */
+	/*! Device's requested mount point on server.
+	 *
+	 * This is login option `device.mountPoint`.
+	 */
 	const char *device_mountpoint;
 };
 

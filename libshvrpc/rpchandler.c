@@ -454,26 +454,14 @@ void rpchandler_ls_result_fmt(struct rpchandler_ls *ctx, const char *fmt, ...) {
 void rpchandler_ls_result_vfmt(
 	struct rpchandler_ls *ctx, const char *fmt, va_list args) {
 	struct ls_ctx *lsctx = (struct ls_ctx *)ctx;
+	char *str;
+	// TODO this is not freed sometimes. Why?
+	assert(vasprintf(&str, fmt, args) > 0);
 	if (ctx->name) {
-		if (lsctx->located)
-			return;
-		va_list cargs;
-		va_copy(cargs, args);
-		// https://github.com/llvm/llvm-project/issues/40656
-		int siz = vsnprintf( // NOLINT(clang-analyzer-valist.Uninitialized)
-			NULL, 0, fmt, cargs);
-		va_end(cargs);
-		if (siz != strlen(ctx->name)) {
-			return;
-		}
-		char str[siz];
-		assert(vsnprintf(str, siz, fmt, args) == siz);
 		lsctx->located = !strcmp(ctx->name, str);
-	} else {
-		char *str;
-		assert(vasprintf(&str, fmt, args) > 0);
+		free(str);
+	} else
 		shv_strset_add_dyn(&lsctx->strset, str);
-	}
 }
 
 void rpchandler_ls_exists(struct rpchandler_ls *ctx) {
