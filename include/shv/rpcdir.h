@@ -106,7 +106,7 @@ bool rpcdir_pack(cp_pack_t pack, const struct rpcdir *method)
 /*! Unpack dir's method description.
  *
  * This stores the whole description in the obstack. To everything (including
- * what was allocated in the obstack after call to this function) you can the
+ * what was allocated in the obstack after call to this function) you can use
  * the result of this function from obstack.
  *
  * @param unpack The generic unpacker to be used to unpack items.

@@ -6,6 +6,7 @@
  */
 
 #include <shv/cp_pack.h>
+#include <shv/cp_unpack.h>
 
 /*! Maximum number of characters SHV standard defines for nonce provided by
  * SHV RPC method `hello`.
@@ -48,5 +49,36 @@ struct rpclogin {
  */
 bool rpclogin_pack(cp_pack_t pack, const struct rpclogin *login,
 	const char *nonce, bool trusted) __attribute__((nonnull));
+
+/*! Unpack login parameter.
+ *
+ * This stores the whole item in the obstack. To free everything (including what
+ * was allocated in the obstack after call to this function) you can free with
+ * pointer returned from this function.
+ *
+ * @param unpack The generic unpacker to be used to unpack items.
+ * @param item The item instance that was used to unpack the previous item.
+ * @param obstack Pointer to the obstack instance to be used to allocate storage
+ *   for the unpacked items.
+ * @returns Pointer to the unpacked login parameter or `NULL` in case of an
+ *   unpack error. You can investigate `item` to identify the failure cause.
+ */
+struct rpclogin *rpclogin_unpack(cp_unpack_t unpack, struct cpitem *item,
+	struct obstack *obstack) __attribute__((nonnull));
+
+/*! Validate password of the login against provided reference.
+ *
+ * This performs login validation and is expected to be used after @ref
+ * rpclogin_unpack.
+ *
+ * @param login The login that should be verified.
+ * @param password The authoritative password.
+ * @param nonce Nonce used for SHA1 login.
+ * @param type The format of the `password`.
+ * @returns `true` in case login matches the authoritation password and `false`
+ *   otherwise.
+ */
+bool rpclogin_validate_password(const struct rpclogin *login, const char *password,
+	const char *nonce, enum rpclogin_type type) __attribute__((nonnull));
 
 #endif

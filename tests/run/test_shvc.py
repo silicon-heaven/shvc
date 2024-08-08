@@ -30,7 +30,7 @@ async def test_param(shvc_exec, url, broker):
     assert stderr[0] == b'=> <1:1,8:1,9:"",10:"hello">i{}'
     assert re.fullmatch(rb'<= <8:1>i\{2:\{"nonce":"[^"]*"...', stderr[1])
     assert re.fullmatch(
-        rb'=> <1:1,8:2,9:"",10:"login">i\{1:\{"login":\{"password":"[^"]*","user":"test","type":"SHA1"\}\}\}',
+        rb'=> <1:1,8:2,9:"",10:"login">i\{1:\{"login":\{"user":"test","password":"[^"]*","type":"SHA1"\}\}\}',
         stderr[2],
     )
     assert stderr[3:] == [

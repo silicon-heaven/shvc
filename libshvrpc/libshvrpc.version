@@ -50,6 +50,8 @@ V0.0 {
 
 		# shv/rpclogin.h
 		rpclogin_pack;
+		rpclogin_unpack;
+		rpclogin_validate_password;
 
 		# shv/rpcurl.h
 		rpcurl_parse;
