@@ -85,30 +85,20 @@ struct rpcurl {
 };
 
 
+
 /*! Parse string URL.
  *
+ * This function uses obstack to allocate parsed URL. This way you can free
+ * the whole parsed URL by freeing the returned address.
+ *
  * @param url String representation of URL
- * @param error_pos Pointer to the position of error in the URL string.
+ * @param errpos Pointer to the position of error in the URL string.
  *   `NULL` can be passed if you are not interested in the error location.
- * @returns `struct rpcurl` allocated using `malloc`. or `NULL` in case of URL
- *   parse error. Do not free returned memory using `free`, you need to use
- *   `rpcurl_free` instead.
+ * @param obstack obstack used for allocation.
+ * @returns Pointer to the @ref rpcurl or `NULL` in case of URL parse error.
  */
-struct rpcurl *rpcurl_parse(const char *url, const char **error_pos)
-	__attribute__((nonnull(1)));
-
-/*! Free RPC URL representation previously parsed using by `rpcurl_parse`.
- *
- * @param rpc_url pointer returned by `rpcurl_parse` or `NULL`.
- */
-void rpcurl_free(struct rpcurl *rpc_url);
-
-/*! Convert RPC URL to the string representation.
- *
- * @param rpc_url Pointer to the RPC URL to be converted to the string.
- * @returns `malloc` allocated string with URL.
- */
-char *rpcurl_str(struct rpcurl *rpc_url) __attribute__((nonnull));
+struct rpcurl *rpcurl_parse(const char *url, const char **errpos,
+	struct obstack *obstack) __attribute__((nonnull(1, 3)));
 
 
 /*! Create RPC client based on the provided URL.

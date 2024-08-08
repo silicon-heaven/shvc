@@ -9,6 +9,9 @@
 #include <shv/rpcurl.h>
 #include "opts.h"
 
+#define obstack_chunk_alloc malloc
+#define obstack_chunk_free free
+
 #define TRACK_ID "4"
 
 static size_t logsiz = BUFSIZ > 128 ? BUFSIZ : 128;
@@ -134,8 +137,10 @@ int main(int argc, char **argv) {
 	parse_opts(argc, argv, &conf);
 
 	/* Setup client connection. */
+	struct obstack obstack;
+	obstack_init(&obstack);
 	const char *errpos;
-	struct rpcurl *url = rpcurl_parse(conf.url, &errpos);
+	struct rpcurl *url = rpcurl_parse(conf.url, &errpos, &obstack);
 	if (url == NULL) {
 		fprintf(stderr, "Error: Invalid URL: '%s'.\n", conf.url);
 		/* The number 21 in this case refers to the number of chars that precede
@@ -148,7 +153,7 @@ int main(int argc, char **argv) {
 	if (client == NULL) {
 		fprintf(stderr, "Error: Connection failed to: '%s'.\n", conf.url);
 		fprintf(stderr, "Hint: Make sure broker is running and URL is correct.\n");
-		rpcurl_free(url);
+		obstack_free(&obstack, NULL);
 		return exit_code;
 	}
 	client->logger_in =
@@ -235,7 +240,6 @@ cleanup:
 	rpclogger_destroy(client->logger_in);
 	rpclogger_destroy(client->logger_out);
 	rpcclient_destroy(client);
-	rpcurl_free(url);
-
+	obstack_free(&obstack, NULL);
 	return exit_code;
 }

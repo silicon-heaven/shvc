@@ -11,6 +11,9 @@
 #include "handler.h"
 #include "opts.h"
 
+#define obstack_chunk_alloc malloc
+#define obstack_chunk_free free
+
 static size_t logsiz = BUFSIZ > 128 ? BUFSIZ : 128;
 
 static volatile sig_atomic_t halt = false;
@@ -23,8 +26,10 @@ int main(int argc, char **argv) {
 	struct conf conf;
 	parse_opts(argc, argv, &conf);
 
+	struct obstack obstack;
+	obstack_init(&obstack);
 	const char *errpos;
-	struct rpcurl *rpcurl = rpcurl_parse(conf.url, &errpos);
+	struct rpcurl *rpcurl = rpcurl_parse(conf.url, &errpos, &obstack);
 	if (rpcurl == NULL) {
 		fprintf(stderr, "Invalid URL: %s\n", conf.url);
 		fprintf(stderr, "%*.s^\n", 13 + (int)(errpos - conf.url), "");
@@ -34,7 +39,7 @@ int main(int argc, char **argv) {
 	if (client == NULL) {
 		fprintf(stderr, "Failed to connect to the: %s\n", rpcurl->location);
 		fprintf(stderr, "Please check your connection to the network\n");
-		rpcurl_free(rpcurl);
+		obstack_free(&obstack, NULL);
 		return 1;
 	}
 	client->logger_in =
@@ -71,6 +76,6 @@ int main(int argc, char **argv) {
 	rpclogger_destroy(client->logger_in);
 	rpclogger_destroy(client->logger_out);
 	rpcclient_destroy(client);
-	rpcurl_free(rpcurl);
+	obstack_free(&obstack, NULL);
 	return 0;
 }

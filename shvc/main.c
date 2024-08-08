@@ -9,6 +9,9 @@
 #include <shv/rpcurl.h>
 #include "opts.h"
 
+#define obstack_chunk_alloc malloc
+#define obstack_chunk_free free
+
 #define ERR_COM (RPCERR_USER_CODE + 1)
 #define ERR_TIM (RPCERR_USER_CODE + 2)
 #define ERR_PARAM (RPCERR_USER_CODE + 3)
@@ -70,18 +73,21 @@ int main(int argc, char **argv) {
 	struct conf conf;
 	parse_opts(argc, argv, &conf);
 
+	struct obstack obstack;
+	obstack_init(&obstack);
 	const char *errpos;
-	struct rpcurl *rpcurl = rpcurl_parse(conf.url, &errpos);
+	struct rpcurl *rpcurl = rpcurl_parse(conf.url, &errpos, &obstack);
 	if (rpcurl == NULL) {
 		fprintf(stderr, "Invalid URL: %s\n", conf.url);
 		fprintf(stderr, "%*.s^\n", 13 + (int)(errpos - conf.url), "");
+		obstack_free(&obstack, NULL);
 		return 3;
 	}
 	rpcclient_t client = rpcurl_connect_client(rpcurl);
 	if (client == NULL) {
 		fprintf(stderr, "Failed to connect to the: %s\n", conf.url);
 		fprintf(stderr, "Please check your connection to the network\n");
-		rpcurl_free(rpcurl);
+		obstack_free(&obstack, NULL);
 		return 3;
 	}
 	client->logger_in =
@@ -175,6 +181,6 @@ cleanup:
 	rpclogger_destroy(client->logger_in);
 	rpclogger_destroy(client->logger_out);
 	rpcclient_destroy(client);
-	rpcurl_free(rpcurl);
+	obstack_free(&obstack, NULL);
 	return ec;
 }

@@ -53,8 +53,6 @@ V0.0 {
 
 		# shv/rpcurl.h
 		rpcurl_parse;
-		rpcurl_free;
-		rpcurl_str;
 		rpcurl_new_client;
 		rpcurl_new_server;
 

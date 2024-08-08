@@ -1,18 +1,21 @@
+#include <stdlib.h>
 #include <shv/rpcurl.h>
 
 #define SUITE "rpcurl"
 #include <check_suite.h>
+#include "url.h"
+
+#define obstack_chunk_alloc malloc
+#define obstack_chunk_free free
 
 
 TEST_CASE(parse){};
 
 
-struct urld {
+static const struct {
 	const char *str;
 	struct rpcurl url;
-};
-
-static const struct urld url_d[] = {
+} parse_d[] = {
 	{"unix:/dev/null",
 		(struct rpcurl){
 			.protocol = RPC_PROTOCOL_UNIX,
@@ -82,9 +85,6 @@ static const struct urld url_d[] = {
 			.location = "/dev/ttyUSB1",
 			.tty.baudrate = 1152000,
 		}},
-};
-
-static const struct urld parse_d[] = {
 	{"", (struct rpcurl){.protocol = RPC_PROTOCOL_UNIX}},
 	{"socket",
 		(struct rpcurl){
@@ -120,42 +120,31 @@ static const struct urld parse_d[] = {
 			.login.device_id = "foo",
 		}},
 };
-static void parse_test(struct urld _d) {
+ARRAY_TEST(parse, parse) {
+	struct obstack obstack;
+	obstack_init(&obstack);
 	const char *err;
-	struct rpcurl *url = rpcurl_parse(_d.str, &err);
+	struct rpcurl *url = rpcurl_parse(_d.str, &err, &obstack);
 	ck_assert_ptr_nonnull(url);
 	ck_assert_ptr_null(err);
-	ck_assert_int_eq(url->protocol, _d.url.protocol);
-	ck_assert_pstr_eq(url->location, _d.url.location);
-	ck_assert_int_eq(url->port, _d.url.port);
-	ck_assert_pstr_eq(url->login.username, _d.url.login.username);
-	ck_assert_pstr_eq(url->login.password, _d.url.login.password);
-	ck_assert_int_eq(url->login.login_type, _d.url.login.login_type);
-	ck_assert_pstr_eq(url->login.device_id, _d.url.login.device_id);
-	ck_assert_pstr_eq(url->login.device_mountpoint, _d.url.login.device_mountpoint);
-	rpcurl_free(url);
+	ck_assert_rpcurl_eq(url, &_d.url);
+	obstack_free(&obstack, NULL);
 }
-ARRAY_TEST(parse, parse_url, url_d) {
-	parse_test(_d);
-}
-END_TEST
-ARRAY_TEST(parse, parse_parse, parse_d) {
-	parse_test(_d);
-}
-END_TEST
 
 static const struct {
 	const char *const str;
 	size_t error;
 } parse_invalid_d[] = {
 	{"foo://some", 0},
-	{"tcp://some:none?password=foo", 15}, // We parse it backward so end of the
-										  // port
+	{"tcp://some:none?password=foo", 15}, // We parse it backward so port end
 	{"tcp://some?invalid=foo", 11},
 };
 ARRAY_TEST(parse, parse_invalid, parse_invalid_d) {
+	struct obstack obstack;
+	obstack_init(&obstack);
 	const char *err;
-	ck_assert_ptr_null(rpcurl_parse(_d.str, &err));
+	ck_assert_ptr_null(rpcurl_parse(_d.str, &err, &obstack));
 	ck_assert_ptr_eq(err, _d.str + _d.error);
+	obstack_free(&obstack, NULL);
 }
 END_TEST
