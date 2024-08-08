@@ -11,7 +11,6 @@
 
 TEST_CASE(parse){};
 
-
 static const struct {
 	const char *str;
 	struct rpcurl url;
@@ -148,3 +147,67 @@ ARRAY_TEST(parse, parse_invalid, parse_invalid_d) {
 	obstack_free(&obstack, NULL);
 }
 END_TEST
+
+
+TEST_CASE(str){};
+
+static const struct {
+	struct rpcurl url;
+	const char *str;
+} str_d[] = {
+	{(struct rpcurl){
+		 .protocol = RPC_PROTOCOL_TCP,
+		 .location = "localhost",
+		 .port = RPCURL_TCP_PORT,
+	 },
+		"tcp://localhost"},
+	{(struct rpcurl){
+		 .protocol = RPC_PROTOCOL_TCPS,
+		 .location = "localhost",
+		 .port = RPCURL_TCPS_PORT,
+		 .login = {.username = "foo", .password = "test", .login_type = RPC_LOGIN_PLAIN},
+	 },
+		"tcps://foo@localhost?password=test"},
+	{(struct rpcurl){
+		 .protocol = RPC_PROTOCOL_SSL,
+		 .location = "localhost",
+		 .port = RPCURL_SSL_PORT,
+	 },
+		"ssl://localhost"},
+	{(struct rpcurl){
+		 .protocol = RPC_PROTOCOL_SSLS,
+		 .location = "localhost",
+		 .port = RPCURL_SSLS_PORT,
+		 .login =
+			 {
+				 .username = "alice@example.com",
+				 .password = "xxxxxxxx",
+				 .login_type = RPC_LOGIN_SHA1,
+			 },
+	 },
+		"ssls://localhost?user=alice%40example.com&shapass=xxxxxxxx"},
+	{(struct rpcurl){
+		 .protocol = RPC_PROTOCOL_TCP,
+		 .location = "0.0.0.0",
+		 .port = 4242,
+		 .login = {.device_id = "some", .device_mountpoint = "test/some"},
+	 },
+		"tcp://0.0.0.0:4242?devid=some&devmount=test%2Fsome"},
+	{(struct rpcurl){
+		 .protocol = RPC_PROTOCOL_SSLS,
+		 .location = "localhost",
+		 .port = 2424,
+	 },
+		"ssls://localhost:2424"},
+	{(struct rpcurl){
+		 .protocol = RPC_PROTOCOL_UNIX,
+		 .location = "/dev/null",
+	 },
+		"unix:/dev/null"},
+};
+ARRAY_TEST(str, str) {
+	const size_t siz = strlen(_d.str);
+	char str[siz + 1];
+	ck_assert_int_eq(rpcurl_str(&_d.url, str, siz + 1), siz);
+	ck_assert_str_eq(str, _d.str);
+}

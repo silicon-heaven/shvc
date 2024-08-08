@@ -72,8 +72,8 @@ struct rpcurl {
 			const char *key;
 			/*! Path to the file with certification revocation list. */
 			const char *crl;
-			/*! Controls if server certificate is validated by client. */
-			bool verify;
+			/*! Controls if server certificate is not validated by client. */
+			bool noverify;
 		}
 		/*! Use this to access SSL specific options for @ref RPC_PROTOCOL_SSL
 		 * and @ref RPC_PROTOCOL_SSLS.
@@ -100,6 +100,19 @@ struct rpcurl {
 struct rpcurl *rpcurl_parse(const char *url, const char **errpos,
 	struct obstack *obstack) __attribute__((nonnull(1, 3)));
 
+/*! Convert RPC URL to string.
+ *
+ * @param rpcurl @ref rpcurl to be converted to string.
+ * @param buf Pointer to the buffer where string will be stored. You can pass
+ *   `NULL` alongside with `size == 0` and in such case this function only
+ *   calculates amount of space required for the string.
+ * @param size Size of the `buf` in bytes.
+ * @returns Number of bytes written (excluding the terminating null byte). If
+ *   buffer is too small then it returns number bytes it would wrote. This can
+ *   be used to detect truncated output due to small buffer.
+ */
+size_t rpcurl_str(const struct rpcurl *rpcurl, char *buf, size_t size)
+	__attribute__((nonnull(1)));
 
 /*! Create RPC client based on the provided URL.
  *

@@ -10,6 +10,14 @@
 #define DEFAULT_PROTOCOL (RPC_PROTOCOL_UNIX)
 #define DEFAULT_BAUDRATE (115200)
 
+#define aprintf(...) \
+	({ \
+		int siz = snprintf(NULL, 0, __VA_ARGS__) + 1; \
+		char *res = alloca(siz); \
+		snprintf(res, siz, __VA_ARGS__); \
+		res; \
+	})
+
 /* Example URIs:
  *
  *      userinfo    host   port
@@ -46,6 +54,26 @@ inline static bool protocol_must_contain_path(const struct rpcurl *res) {
 	return ((res->protocol == RPC_PROTOCOL_UNIX) ||
 		(res->protocol == RPC_PROTOCOL_UNIXS) ||
 		(res->protocol == RPC_PROTOCOL_TTY));
+}
+
+inline static bool protocol_ssl(const struct rpcurl *res) {
+	return ((res->protocol == RPC_PROTOCOL_SSL) ||
+		(res->protocol == RPC_PROTOCOL_SSLS));
+}
+
+static int default_port(enum rpc_protocol protocol) {
+	switch (protocol) {
+		case RPC_PROTOCOL_TCP:
+			return RPCURL_TCP_PORT;
+		case RPC_PROTOCOL_TCPS:
+			return RPCURL_TCPS_PORT;
+		case RPC_PROTOCOL_SSL:
+			return RPCURL_SSL_PORT;
+		case RPC_PROTOCOL_SSLS:
+			return RPCURL_SSLS_PORT;
+		default:
+			return 0;
+	}
 }
 
 static inline char *strdupo(struct obstack *obstack, const char *str) {
@@ -97,37 +125,32 @@ static bool parse_query(const UriUriA *uri, struct rpcurl *res,
 				res->login.device_mountpoint = strdupo(obstack, q->value);
 				break;
 			case GPERF_RPCURL_QUERY_CA:
-				if (res->protocol != RPC_PROTOCOL_SSL &&
-					res->protocol != RPC_PROTOCOL_SSLS)
+				if (protocol_ssl(res))
 					PARSE_ERR(uri->query.first);
 				res->ssl.ca = strdupo(obstack, q->value);
 				break;
 			case GPERF_RPCURL_QUERY_CERT:
-				if (res->protocol != RPC_PROTOCOL_SSL &&
-					res->protocol != RPC_PROTOCOL_SSLS)
+				if (protocol_ssl(res))
 					PARSE_ERR(uri->query.first);
 				res->ssl.cert = strdupo(obstack, q->value);
 				break;
 			case GPERF_RPCURL_QUERY_KEY:
-				if (res->protocol != RPC_PROTOCOL_SSL &&
-					res->protocol != RPC_PROTOCOL_SSLS)
+				if (protocol_ssl(res))
 					PARSE_ERR(uri->query.first);
 				res->ssl.key = strdupo(obstack, q->value);
 				break;
 			case GPERF_RPCURL_QUERY_CRL:
-				if (res->protocol != RPC_PROTOCOL_SSL &&
-					res->protocol != RPC_PROTOCOL_SSLS)
+				if (protocol_ssl(res))
 					PARSE_ERR(uri->query.first);
 				res->ssl.crl = strdupo(obstack, q->value);
 				break;
 			case GPERF_RPCURL_QUERY_VERIFY:
-				if (res->protocol != RPC_PROTOCOL_SSL &&
-					res->protocol != RPC_PROTOCOL_SSLS)
+				if (protocol_ssl(res))
 					PARSE_ERR(uri->query.first);
 				if (!strcasecmp(q->value, "true")) {
-					res->ssl.verify = true;
+					res->ssl.noverify = false;
 				} else if (!strcasecmp(q->value, "false")) {
-					res->ssl.verify = false;
+					res->ssl.noverify = true;
 				} else
 					// TODO we should point to the value here
 					PARSE_ERR(uri->query.first);
@@ -180,27 +203,9 @@ struct rpcurl *rpcurl_parse(
 		res->protocol = match->protocol;
 	}
 
-	switch (res->protocol) {
-		case RPC_PROTOCOL_TCP:
-			res->port = RPCURL_TCP_PORT;
-			break;
-		case RPC_PROTOCOL_TCPS:
-			res->port = RPCURL_TCPS_PORT;
-			break;
-		case RPC_PROTOCOL_SSL:
-			res->port = RPCURL_SSL_PORT;
-			break;
-		case RPC_PROTOCOL_SSLS:
-			res->port = RPCURL_SSLS_PORT;
-			break;
-		case RPC_PROTOCOL_UNIX:
-			break;
-		case RPC_PROTOCOL_UNIXS:
-			break;
-		case RPC_PROTOCOL_TTY:
-			res->tty.baudrate = DEFAULT_BAUDRATE;
-			break;
-	}
+	res->port = default_port(res->protocol);
+	if (res->protocol == RPC_PROTOCOL_TTY)
+		res->tty.baudrate = DEFAULT_BAUDRATE;
 
 	if (is_uri_segment_present(&uri.userInfo)) {
 		res->login.username = obstack_copy0(
@@ -246,4 +251,104 @@ struct rpcurl *rpcurl_parse(
 error:
 	uriFreeUriMembersA(&uri);
 	return res;
+}
+
+
+static inline UriTextRangeA uri_range(const char *text) {
+	return (UriTextRangeA){
+		.first = text,
+		.afterLast = text + strlen(text),
+	};
+}
+
+static UriTextRangeA protocol_str(enum rpc_protocol protocol) {
+	static const char *rpcurl_scheme[] = {
+		[RPC_PROTOCOL_TCP] = "tcp",
+		[RPC_PROTOCOL_TCPS] = "tcps",
+		[RPC_PROTOCOL_SSL] = "ssl",
+		[RPC_PROTOCOL_SSLS] = "ssls",
+		[RPC_PROTOCOL_UNIX] = "unix",
+		[RPC_PROTOCOL_UNIXS] = "unixs",
+		[RPC_PROTOCOL_TTY] = "tty",
+	};
+	return uri_range(rpcurl_scheme[protocol]);
+}
+
+
+size_t rpcurl_str(const struct rpcurl *rpcurl, char *buf, size_t size) {
+	UriUriA uri;
+	memset(&uri, 0, sizeof uri);
+	uri.scheme = protocol_str(rpcurl->protocol);
+	if (rpcurl->login.username && !strchr(rpcurl->login.username, '@'))
+		uri.userInfo = uri_range(rpcurl->login.username);
+	if (protocol_contains_authority(rpcurl)) {
+		uri.hostText = uri_range(rpcurl->location);
+		if (rpcurl->port != default_port(rpcurl->protocol))
+			uri.portText = uri_range(aprintf("%d", rpcurl->port));
+	} else {
+		uri.pathHead = alloca(sizeof *uri.pathHead);
+		uri.pathHead->text = uri_range(rpcurl->location);
+		uri.pathHead->next = NULL;
+		uri.pathTail = uri.pathHead;
+	}
+
+	UriQueryListA *fquery = NULL, *lquery = NULL;
+#define QUERY_ADD(KEY, VAL) \
+	({ \
+		UriQueryListA *__new = alloca(sizeof *__new); \
+		*__new = (UriQueryListA){.key = KEY, .value = VAL}; \
+		if (!fquery) \
+			fquery = __new; \
+		if (lquery) \
+			lquery->next = __new; \
+		lquery = __new; \
+	})
+	if (rpcurl->login.username && strchr(rpcurl->login.username, '@'))
+		QUERY_ADD("user", rpcurl->login.username);
+	if (rpcurl->login.password) {
+		switch (rpcurl->login.login_type) {
+			case RPC_LOGIN_PLAIN:
+				QUERY_ADD("password", rpcurl->login.password);
+				break;
+			case RPC_LOGIN_SHA1:
+				QUERY_ADD("shapass", rpcurl->login.password);
+				break;
+		}
+	}
+	if (rpcurl->login.device_id)
+		QUERY_ADD("devid", rpcurl->login.device_id);
+	if (rpcurl->login.device_mountpoint)
+		QUERY_ADD("devmount", rpcurl->login.device_mountpoint);
+	if (protocol_ssl(rpcurl)) {
+		if (rpcurl->ssl.ca)
+			QUERY_ADD("ca", rpcurl->ssl.ca);
+		if (rpcurl->ssl.cert)
+			QUERY_ADD("cert", rpcurl->ssl.cert);
+		if (rpcurl->ssl.key)
+			QUERY_ADD("key", rpcurl->ssl.key);
+		if (rpcurl->ssl.crl)
+			QUERY_ADD("crl", rpcurl->ssl.crl);
+		if (rpcurl->ssl.noverify)
+			QUERY_ADD("verify", "false");
+	}
+	if (rpcurl->protocol == RPC_PROTOCOL_TTY)
+		QUERY_ADD("baudrate", aprintf("%d", rpcurl->tty.baudrate));
+
+	if (fquery) {
+		int query_chars;
+		uriComposeQueryCharsRequiredA(fquery, &query_chars);
+		char *query = alloca(query_chars + 1);
+		uriComposeQueryA(query, fquery, query_chars + 1, NULL);
+		/* Note: query_chars for some reason calcualtes way bigger number and
+		 * thus we need to calculate the correct length here.
+		 */
+		uri.query =
+			(UriTextRangeA){.first = query, .afterLast = query + strlen(query)};
+	}
+
+	// TODO errors
+	int chars;
+	uriToStringCharsRequiredA(&uri, &chars);
+	uriToStringA(buf, &uri, size, NULL);
+	return chars;
 }
