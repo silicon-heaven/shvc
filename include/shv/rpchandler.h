@@ -80,7 +80,7 @@ struct rpchandler_idle {
 struct rpchandler_funcs {
 	/*! This is the primary function that is called to handle generic message.
 	 *
-	 * RPC Handler calls this for received requests in sequence given by stages
+	 * RPC Handler calls this for received messages in sequence given by stages
 	 * array until some function returns `true`.
 	 *
 	 * This function must investigate @ref rpchandler_msg.meta to see if it
@@ -111,24 +111,30 @@ struct rpchandler_funcs {
 	bool (*msg)(void *cookie, struct rpchandler_msg *ctx);
 	/*! ls method implementation.
 	 *
-	 * RPC Handler handles all calls to the *ls* methods, It only needs to know
+	 * RPC Handler handles calls to the *ls* methods. It only needs to know
 	 * nodes that are present on given path. This function serves that purpose.
 	 * It is called every time ls request is being processed to fetch the nodes
 	 * for the given path.
 	 *
 	 * The implementation needs to call @ref rpchandler_ls_result and variants
 	 * of that function for every node in the requested path.
+	 *
+	 * Note that this is attempted only if request is not handled by
+	 * `rpchandler_funcs.msg`.
 	 */
 	void (*ls)(void *cookie, struct rpchandler_ls *ctx);
 	/*! dir method implementation.
 	 *
-	 * RPC Handler handles all calls to the *dir* methods, It only needs to know
+	 * RPC Handler handles calls to the *dir* methods. It only needs to know
 	 * methods that are associated with node on the given path. This function
 	 * serves that purpose. It is called every time dir request is being
 	 * processed to fetch the method descriptions for the given path.
 	 *
 	 * The implementation needs to call @ref rpchandler_dir_result and variants
 	 * of that function for every method on the requested path.
+	 *
+	 * Note that this is attempted only if request is not handled by
+	 * `rpchandler_funcs.msg`.
 	 */
 	void (*dir)(void *cookie, struct rpchandler_dir *ctx);
 	/*! The implementation of the idle operations.
@@ -198,6 +204,14 @@ rpchandler_t rpchandler_new(rpcclient_t client,
  */
 void rpchandler_destroy(rpchandler_t rpchandler);
 
+/*! Provides access to the current array of stages.
+ *
+ * @param handler RPC Handler instance.
+ * @returns Pointer to the array of states.
+ */
+const struct rpchandler_stage *rpchandler_stages(rpchandler_t handler)
+	__attribute__((nonnull));
+
 /*! This allows you to change the current array of stages.
  *
  * Be aware that this uses locks internally and waits for any concurrent thread
@@ -258,9 +272,10 @@ int rpchandler_idling(rpchandler_t rpchandler) __attribute__((nonnull));
  * handlers.
  *
  * @param rpchandler RPC Handler instance.
- * @param halt Pointer to the variable that can be set non-zero to halt
- *   handler's loop on next iteration. You can pass `NULL` if you do not plan on
- *   terminating loop this way.
+ * @param halt Pointer to the variable that can be set non-zero in the signal
+ *   handler to halt the loop on next iteration. You can pass `NULL` if you do
+ *   not plan on terminating loop this way. Note that this works only if signal
+ *   is delivered to this function's calling thread.
  */
 void rpchandler_run(rpchandler_t rpchandler, volatile sig_atomic_t *halt)
 	__attribute__((nonnull(1)));

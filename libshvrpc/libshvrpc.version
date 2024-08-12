@@ -62,6 +62,7 @@ V0.0 {
 		# shv/rpchandler.h
 		rpchandler_new;
 		rpchandler_destroy;
+		rpchandler_stages;
 		rpchandler_change_stages;
 		rpchandler_client;
 		rpchandler_next;

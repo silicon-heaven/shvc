@@ -95,6 +95,10 @@ void rpchandler_destroy(rpchandler_t handler) {
 	free(handler);
 }
 
+const struct rpchandler_stage *rpchandler_stages(rpchandler_t handler) {
+	return handler->stages;
+}
+
 void rpchandler_change_stages(
 	rpchandler_t handler, const struct rpchandler_stage *stages) {
 	pthread_mutex_lock(&handler->lock);
@@ -250,6 +254,14 @@ static void handle_msg(struct msg_ctx *ctx) {
 	for (const struct rpchandler_stage *s = ctx->handler->stages; s->funcs; s++)
 		if (s->funcs->msg && s->funcs->msg(s->cookie, &ctx->ctx))
 			return;
+
+	if (ctx->ctx.meta.type == RPCMSG_T_REQUEST &&
+		!strcmp(ctx->ctx.meta.method, "ls"))
+		return handle_ls(ctx);
+	else if (ctx->ctx.meta.type == RPCMSG_T_REQUEST &&
+		!strcmp(ctx->ctx.meta.method, "dir"))
+		return handle_dir(ctx);
+
 	if (!rpchandler_msg_valid(&ctx->ctx))
 		return;
 	if (ctx->ctx.meta.type == RPCMSG_T_REQUEST)
@@ -273,13 +285,7 @@ bool rpchandler_next(struct rpchandler *handler) {
 					.ctx.item = &item,
 					.handler = handler,
 				};
-				if (meta.type == RPCMSG_T_REQUEST && !strcmp(meta.method, "ls"))
-					handle_ls(&ctx);
-				else if (meta.type == RPCMSG_T_REQUEST &&
-					!strcmp(meta.method, "dir"))
-					handle_dir(&ctx);
-				else
-					handle_msg(&ctx);
+				handle_msg(&ctx);
 				clock_gettime(CLOCK_MONOTONIC, &handler->last_receive);
 			}
 			obstack_free(&handler->obstack, obs_base);
