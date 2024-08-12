@@ -35,10 +35,10 @@ void parse_opts(int argc, char **argv, struct conf *conf) {
 	};
 
 	int c;
-	while ((c = getopt(argc, argv, "ujvqdVh")) != -1) {
+	while ((c = getopt(argc, argv, "u:jvqdVh")) != -1) {
 		switch (c) {
 			case 'u':
-				conf->url = argv[optind];
+				conf->url = optarg;
 				break;
 			case 'j':
 				conf->json = true;

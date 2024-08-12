@@ -51,6 +51,7 @@ struct ctx {
 				RMSG_NO,   /* Not reading any message */
 				RMSG_STX,  /* Read STX but nothing more */
 				RMSG_DATA, /* Reading message data */
+				RMSG_ETX,  /* Read ETX but nothing more */
 			} rmsg;
 			crc32_t rcrc, wcrc;
 		} serial;
@@ -193,6 +194,8 @@ static enum rpcclient_msg_type rpcclient_stream_block_nextmsg(struct ctx *c) {
 
 static ssize_t cookie_read_serial(void *cookie, char *buf, size_t size) {
 	struct ctx *c = (struct ctx *)cookie;
+	if (c->serial.rmsg != RMSG_DATA)
+		return c->errnum ? -1 : 0;
 	size_t i;
 	for (i = 0; i < size; i++) {
 		int v = xreadc(c, IDLETIM);
@@ -201,7 +204,7 @@ static ssize_t cookie_read_serial(void *cookie, char *buf, size_t size) {
 				c->serial.rmsg = RMSG_STX;
 				return -1;
 			case ETX:
-				c->serial.rmsg = RMSG_NO;
+				c->serial.rmsg = RMSG_ETX;
 				return i;
 			case ESC:
 				c->serial.rcrc = crc32_cupdate(c->serial.rcrc, v);
@@ -216,8 +219,10 @@ static ssize_t cookie_read_serial(void *cookie, char *buf, size_t size) {
 				c->serial.rmsg = RMSG_NO;
 				return -1;
 			default:
-				if (v < 0)
+				if (v < 0) {
+					c->serial.rmsg = RMSG_NO;
 					return v;
+				}
 				c->serial.rcrc = crc32_cupdate(c->serial.rcrc, v);
 				buf[i] = v;
 				break;
@@ -310,8 +315,7 @@ static enum rpcclient_msg_type rpcclient_stream_serial_nextmsg(struct ctx *c) {
 }
 
 static bool rpcclient_stream_serial_validate(struct ctx *c) {
-	assert(c->serial.rmsg != RMSG_DATA);
-	if (ferror(c->fr)) /* Do not read CRC if error was reported */
+	if (c->serial.rmsg != RMSG_ETX)
 		return false;
 	if (c->proto != RPCSTREAM_P_SERIAL_CRC)
 		return true;
@@ -322,9 +326,8 @@ static bool rpcclient_stream_serial_validate(struct ctx *c) {
 			return false;
 		if (v == ESC) {
 			v = xreadc(c, IDLETIM);
-			if (!ESCAPED(v)) {
+			if (!ESCAPED(v))
 				return false;
-			}
 			v = DESCX(v);
 		}
 		crc = (crc << 8) | (v & 0xff);
