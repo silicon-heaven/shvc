@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
+#include "shvc_config.h"
 
-static const char *default_url = "tcp://test@localhost?password=test";
 static const int default_timeout = 300;
 
 
@@ -17,7 +17,8 @@ static void print_help(const char *argv0) {
 	fprintf(stderr, "SHV RPC client call.\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Arguments:\n");
-	fprintf(stderr, "  -u URL   Where to connect to (default %s)\n", default_url);
+	fprintf(stderr,
+		"  -u URL   Where to connect to (default " SHVC_DEFAULT_URL ")\n");
 	fprintf(stderr,
 		"  -t SEC   Number of seconds before call is abandoned (default %d)\n",
 		default_timeout);
@@ -31,7 +32,7 @@ static void print_help(const char *argv0) {
 
 void parse_opts(int argc, char **argv, struct conf *conf) {
 	*conf = (struct conf){
-		.url = default_url,
+		.url = SHVC_DEFAULT_URL,
 		.path = ".app",
 		.method = "ping",
 		.param = NULL,

@@ -3,8 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
-
-static const char *default_url = "tcp://test@localhost?password=test";
+#include "shvc_config.h"
 
 static void print_usage(const char *argv0) {
 	fprintf(stderr, "%s [-v] [URL]\n", argv0);
@@ -24,7 +23,7 @@ static void print_help(const char *argv0) {
 
 void parse_opts(int argc, char **argv, struct conf *conf) {
 	*conf = (struct conf){
-		.url = default_url,
+		.url = SHVC_DEFAULT_URL,
 		.verbose = 0,
 	};
 

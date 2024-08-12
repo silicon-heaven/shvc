@@ -17,6 +17,7 @@ add_project_arguments('-DPROJECT_VERSION="@0@"'.format(meson.project_version()),
 
 conf = configuration_data()
 conf.set('SHVC_TCP', get_option('tcp'), description:'If TCP/IP should be compiled in.')
+conf.set_quoted('SHVC_DEFAULT_URL', get_option('default-url'), description:'The default connection URL.')
 
 if not isnuttx
   m = cc.find_library('m', required : false)

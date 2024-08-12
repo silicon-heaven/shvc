@@ -3,8 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
-
-static const char *default_url = "tcp://test@localhost?password=test";
+#include "shvc_config.h"
 
 
 static void print_usage(const char *argv0) {
@@ -16,7 +15,8 @@ static void print_help(const char *argv0) {
 	fprintf(stderr, "SHV RPC client.\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Arguments:\n");
-	fprintf(stderr, "  -u URL   Where to connect to (default %s)\n", default_url);
+	fprintf(stderr,
+		"  -u URL   Where to connect to (default " SHVC_DEFAULT_URL ")\n");
 	fprintf(stderr, "  -j       Output in JSON format instead of CPON\n");
 	fprintf(stderr, "  -v       Increase logging level of the communication\n");
 	fprintf(stderr, "  -q       Decrease logging level of the communication\n");
@@ -27,7 +27,7 @@ static void print_help(const char *argv0) {
 
 void parse_opts(int argc, char **argv, struct conf *conf) {
 	*conf = (struct conf){
-		.url = default_url,
+		.url = SHVC_DEFAULT_URL,
 		.path = NULL,
 		.method = "dir",
 		.param = NULL,

@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
+#include "shvc_config.h"
 
-static const char *default_url =
-	"tcp://test@localhost?password=test&devmount=test/device";
+static const char *default_url = SHVC_DEFAULT_URL "&devmount=test/device";
 
 
 static void print_usage(const char *argv0) {

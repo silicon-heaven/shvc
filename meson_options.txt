@@ -58,3 +58,10 @@ option(
   value: true,
   description: 'Build SHV RPC demo client application.',
 )
+# Applications defaults
+option(
+  'default-url',
+  type: 'string',
+  value: 'tcp://test@localhost?password=test',
+  description: 'Default RPC URL used by client tools.',
+)
