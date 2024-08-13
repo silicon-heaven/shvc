@@ -15,7 +15,7 @@ struct rpchandler_device {
 
 static void rpc_ls(void *cookie, struct rpchandler_ls *ctx) {
 	if (ctx->path[0] == '\0')
-		rpchandler_ls_result(ctx, ".device");
+		rpchandler_ls_result_const(ctx, ".device");
 }
 
 static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
