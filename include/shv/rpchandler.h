@@ -23,8 +23,11 @@ typedef struct rpchandler *rpchandler_t;
 
 /*! Context passed to the callbacks @ref rpchandler_funcs.msg */
 struct rpchandler_msg {
-	/*! The unpacked meta for the received message. */
-	const struct rpcmsg_meta meta;
+	/*! The unpacked meta for the received message.
+	 *
+	 * Stages can edit this if they wish to influence subsequent stages.
+	 */
+	struct rpcmsg_meta meta;
 	/*! Unpacker that can be used to unpack parameter and result (depending on
 	 * the message type).
 	 */

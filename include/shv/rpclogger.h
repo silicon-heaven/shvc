@@ -24,7 +24,8 @@ typedef void (*rpclogger_func_t)(const char *line);
 /*! Create a new RPC Client logger handle.
  *
  * @param callback Function called when line should be outputed.
- * @param prefix The prefix to be added before every line.
+ * @param prefix The prefix to be added before every line. The provided pointer
+ *   doesn't have be valid after this call finishes because content is copied.
  * @param bufsiz Size of the buffer for this logger.
  * @param maxdepth The output is in CPON format and this allows you to limit
  *   the maximum depth of containers you want to see in the logs. By specifying

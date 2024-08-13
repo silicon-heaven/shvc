@@ -275,16 +275,12 @@ bool rpchandler_next(struct rpchandler *handler) {
 			void *obs_base = obstack_base(&handler->obstack);
 			struct cpitem item;
 			cpitem_unpack_init(&item);
-			struct rpcmsg_meta meta;
-
-			cp_unpack_t unpack = rpcclient_unpack(handler->client);
-			if (rpcmsg_head_unpack(unpack, &item, &meta, NULL, &handler->obstack)) {
-				struct msg_ctx ctx = {
-					.ctx.meta = meta,
-					.ctx.unpack = unpack,
-					.ctx.item = &item,
-					.handler = handler,
-				};
+			struct msg_ctx ctx;
+			ctx.ctx.item = &item;
+			ctx.handler = handler;
+			ctx.ctx.unpack = rpcclient_unpack(handler->client);
+			if (rpcmsg_head_unpack(ctx.ctx.unpack, &item, &ctx.ctx.meta, NULL,
+					&handler->obstack)) {
 				handle_msg(&ctx);
 				clock_gettime(CLOCK_MONOTONIC, &handler->last_receive);
 			}
