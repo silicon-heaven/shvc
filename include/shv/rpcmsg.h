@@ -335,10 +335,12 @@ bool rpcmsg_pack_request_void(cp_pack_t pack, const char *path, const char *meth
  * @param access The access level for this signal. This is used to filter
  *   access  to the signals and in general should be consistent with access
  *   level of the method this signal is associated with.
+ * @param repeat Signals that this is repeat of some previous signal and this
+ *   value didn't change right now but some time in the past.
  * @returns Boolean signaling the pack success or failure.
  */
 bool rpcmsg_pack_signal(cp_pack_t pack, const char *path, const char *source,
-	const char *signal, const char *uid, rpcaccess_t access)
+	const char *signal, const char *uid, rpcaccess_t access, bool repeat)
 	__attribute__((nonnull(1, 2, 3, 4)));
 
 /*! Pack signal message with no value.
@@ -359,11 +361,13 @@ bool rpcmsg_pack_signal(cp_pack_t pack, const char *path, const char *source,
  * @param access The access level for this signal. This is used to filter
  *   access  to the signals and in general should be consistent with access
  *   level of the method this signal is associated with.
+ * @param repeat Signals that this is repeat of some previous signal and this
+ *   value didn't change right now but some time in the past.
  * @returns Boolean signaling the pack success or failure.
  */
 bool rpcmsg_pack_signal_void(cp_pack_t pack, const char *path,
-	const char *source, const char *signal, const char *uid, rpcaccess_t access)
-	__attribute__((nonnull(1, 2, 3, 4)));
+	const char *source, const char *signal, const char *uid, rpcaccess_t access,
+	bool repeat) __attribute__((nonnull(1, 2, 3, 4)));
 
 /*! Pack response message meta based on the provided meta.
  *

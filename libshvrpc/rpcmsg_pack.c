@@ -9,7 +9,7 @@ static inline bool meta_begin(cp_pack_t pack) {
 	return cp_pack_int(pack, 1);
 }
 
-__attribute__((nonnull(1, 2, 3))) bool _rpcmsg_pack_request(cp_pack_t pack,
+__attribute__((nonnull(1, 2, 3))) static bool _rpcmsg_pack_request(cp_pack_t pack,
 	const char *path, const char *method, const char *uid, int rid) {
 	meta_begin(pack);
 	cp_pack_int(pack, RPCMSG_TAG_REQUEST_ID);
@@ -40,7 +40,8 @@ bool rpcmsg_pack_request_void(cp_pack_t pack, const char *path,
 }
 
 static bool _rpcmsg_pack_signal(cp_pack_t pack, const char *path,
-	const char *source, const char *signal, const char *uid, rpcaccess_t access) {
+	const char *source, const char *signal, const char *uid, rpcaccess_t access,
+	bool repeat) {
 	meta_begin(pack);
 	cp_pack_int(pack, RPCMSG_TAG_SHV_PATH);
 	cp_pack_str(pack, path ?: "");
@@ -60,20 +61,24 @@ static bool _rpcmsg_pack_signal(cp_pack_t pack, const char *path,
 		cp_pack_int(pack, RPCMSG_TAG_ACCESS_LEVEL);
 		cp_pack_int(pack, access);
 	}
+	if (repeat) {
+		cp_pack_int(pack, RPCMSG_TAG_REPEAT);
+		cp_pack_bool(pack, true);
+	}
 	cp_pack_container_end(pack);
 
 	return cp_pack_imap_begin(pack);
 }
 
 bool rpcmsg_pack_signal(cp_pack_t pack, const char *path, const char *source,
-	const char *signal, const char *uid, rpcaccess_t access) {
-	_rpcmsg_pack_signal(pack, path, source, signal, uid, access);
+	const char *signal, const char *uid, rpcaccess_t access, bool repeat) {
+	_rpcmsg_pack_signal(pack, path, source, signal, uid, access, repeat);
 	return cp_pack_int(pack, RPCMSG_KEY_PARAM);
 }
 
-bool rpcmsg_pack_signal_void(cp_pack_t pack, const char *path,
-	const char *source, const char *signal, const char *uid, rpcaccess_t access) {
-	_rpcmsg_pack_signal(pack, path, source, signal, uid, access);
+bool rpcmsg_pack_signal_void(cp_pack_t pack, const char *path, const char *source,
+	const char *signal, const char *uid, rpcaccess_t access, bool repeat) {
+	_rpcmsg_pack_signal(pack, path, source, signal, uid, access, repeat);
 	return cp_pack_container_end(pack);
 }
 

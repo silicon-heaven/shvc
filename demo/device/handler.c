@@ -109,8 +109,8 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 
 			if (value_changed) {
 				cp_pack_t pack = rpchandler_msg_new(ctx);
-				rpcmsg_pack_signal(
-					pack, ctx->meta.path, "get", "chng", NULL, RPCACCESS_READ);
+				rpcmsg_pack_signal(pack, ctx->meta.path, "get", "chng", NULL,
+					RPCACCESS_READ, false);
 				cp_pack_list_begin(pack);
 				for (size_t i = 0; i < cnt; i++)
 					cp_pack_int(pack, res[i]);

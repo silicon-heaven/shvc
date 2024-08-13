@@ -21,16 +21,16 @@ END_TEST
 
 TEST(all, signal) {
 	rpcmsg_pack_signal(
-		packstream_pack, "value", "get", "qchng", NULL, RPCACCESS_READ);
+		packstream_pack, "value", "get", "qchng", NULL, RPCACCESS_READ, false);
 	ck_assert_packstr("<1:1,9:\"value\",10:\"qchng\">i{1");
 }
 END_TEST
 
 TEST(all, signal_void) {
 	rpcmsg_pack_signal_void(
-		packstream_pack, "node", "version", "chng", "foo", RPCACCESS_COMMAND);
+		packstream_pack, "node", "version", "chng", "foo", RPCACCESS_COMMAND, true);
 	ck_assert_packstr(
-		"<1:1,9:\"node\",10:\"chng\",19:\"version\",16:\"foo\",17:24>i{}");
+		"<1:1,9:\"node\",10:\"chng\",19:\"version\",16:\"foo\",17:24,20:true>i{}");
 }
 END_TEST
 
