@@ -56,16 +56,18 @@ void shv_strset_free(struct strset *set) {
 	set->siz = 0;
 }
 
-void shv_strset_add(struct strset *set, const char *str) {
+bool shv_strset_add(struct strset *set, const char *str) {
 	char *s = strdup(str);
-	if (!add(set, s, true))
+	bool res = add(set, s, true);
+	if (!res)
 		free(s);
+	return res;
 }
 
-void shv_strset_add_const(struct strset *set, const char *str) {
-	add(set, str, false);
+bool shv_strset_add_const(struct strset *set, const char *str) {
+	return add(set, str, false);
 }
 
-void shv_strset_add_dyn(struct strset *set, char *str) {
-	add(set, str, true);
+bool shv_strset_add_dyn(struct strset *set, char *str) {
+	return add(set, str, true);
 }

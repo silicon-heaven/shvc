@@ -85,7 +85,7 @@ async def fixture_device(shvcbroker, url):
     (
         ("", [".app", ".broker", "test"]),
         (".app", []),
-        (".broker", ["client", "currentClient"]),
+        (".broker", ["currentClient", "client"]),
         (".broker/client", ["1", "2"]),
         (".broker/client/1", [".app"]),
         (".broker/client/1/.app", []),

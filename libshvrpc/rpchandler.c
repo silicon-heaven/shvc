@@ -49,6 +49,8 @@ struct msg_ctx {
 
 struct ls_ctx {
 	struct rpchandler_ls ctx;
+	struct msg_ctx *mctx;
+	cp_pack_t pack;
 	struct strset strset;
 	bool located;
 };
@@ -188,6 +190,8 @@ static void handle_ls(struct msg_ctx *ctx) {
 	struct ls_ctx lsctx = (struct ls_ctx){
 		.ctx.path = ctx->ctx.meta.path ?: "",
 		.ctx.name = name,
+		.mctx = ctx,
+		.pack = NULL,
 		.strset = (struct strset){},
 		.located = false,
 	};
@@ -202,17 +206,18 @@ static void handle_ls(struct msg_ctx *ctx) {
 			&ctx->ctx, RPCERR_METHOD_NOT_FOUND, "No such node");
 		return;
 	}
-	cp_pack_t pack = rpchandler_msg_new_response(&ctx->ctx);
-	assert(pack);
 	if (lsctx.ctx.name == NULL) {
-		cp_pack_list_begin(pack);
-		for (size_t i = 0; i < lsctx.strset.cnt; i++)
-			cp_pack_str(pack, lsctx.strset.items[i].str);
-		cp_pack_container_end(pack);
+		if (lsctx.pack == NULL) {
+			lsctx.pack = rpchandler_msg_new_response(&ctx->ctx);
+			cp_pack_list_begin(lsctx.pack);
+		}
+		cp_pack_container_end(lsctx.pack);
 		shv_strset_free(&lsctx.strset);
-	} else
-		cp_pack_bool(pack, lsctx.located);
-	cp_pack_container_end(pack);
+	} else {
+		lsctx.pack = rpchandler_msg_new_response(&ctx->ctx);
+		cp_pack_bool(lsctx.pack, lsctx.located);
+	}
+	cp_pack_container_end(lsctx.pack);
 	rpchandler_msg_send(&ctx->ctx);
 }
 
@@ -431,19 +436,26 @@ bool rpchandler_msg_valid(struct rpchandler_msg *ctx) {
 }
 
 
+static void pack_ls_result(struct ls_ctx *lsctx, const char *name) {
+	if (lsctx->pack == NULL) {
+		lsctx->pack = rpchandler_msg_new_response(&lsctx->mctx->ctx);
+		cp_pack_list_begin(lsctx->pack);
+	}
+	cp_pack_str(lsctx->pack, name);
+}
 void rpchandler_ls_result(struct rpchandler_ls *ctx, const char *name) {
 	struct ls_ctx *lsctx = (struct ls_ctx *)ctx;
 	if (ctx->name)
 		lsctx->located = lsctx->located || !strcmp(ctx->name, name);
-	else
-		shv_strset_add(&lsctx->strset, name);
+	else if (shv_strset_add(&lsctx->strset, name))
+		pack_ls_result(lsctx, name);
 }
 void rpchandler_ls_result_const(struct rpchandler_ls *ctx, const char *name) {
 	struct ls_ctx *lsctx = (struct ls_ctx *)ctx;
 	if (ctx->name)
 		lsctx->located = lsctx->located || !strcmp(ctx->name, name);
-	else
-		shv_strset_add_const(&lsctx->strset, name);
+	else if (shv_strset_add_const(&lsctx->strset, name))
+		pack_ls_result(lsctx, name);
 }
 void rpchandler_ls_result_fmt(struct rpchandler_ls *ctx, const char *fmt, ...) {
 	va_list args;
@@ -454,14 +466,17 @@ void rpchandler_ls_result_fmt(struct rpchandler_ls *ctx, const char *fmt, ...) {
 void rpchandler_ls_result_vfmt(
 	struct rpchandler_ls *ctx, const char *fmt, va_list args) {
 	struct ls_ctx *lsctx = (struct ls_ctx *)ctx;
+	if (ctx->name && lsctx->located)
+		return; /* Faster return when already located */
 	char *str;
-	// TODO this is not freed sometimes. Why?
 	assert(vasprintf(&str, fmt, args) > 0);
 	if (ctx->name) {
 		lsctx->located = !strcmp(ctx->name, str);
-		free(str);
-	} else
-		shv_strset_add_dyn(&lsctx->strset, str);
+	} else if (shv_strset_add_dyn(&lsctx->strset, str)) {
+		pack_ls_result(lsctx, str);
+		return;
+	}
+	free(str);
 }
 
 void rpchandler_ls_exists(struct rpchandler_ls *ctx) {
