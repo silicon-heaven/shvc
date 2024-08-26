@@ -83,7 +83,7 @@ static const struct {
 			.password = "test",
 			.login_type = RPC_LOGIN_PLAIN,
 		}},
-	{"{\"login\":{\"user\":\"test\",\"password\":\"a7162d463b28666737f63034db39f03bca59b060\",\"type\":\"SHA1\",\"additional\":{}}}",
+	{"{\"login\":{\"user\":\"test\",\"password\":\"a7162d463b28666737f63034db39f03bca59b060\",\"type\":\"SHA1\",\"additional\":{}},\"options\":null}",
 		(struct rpclogin){
 			.username = "test",
 			.password = "a7162d463b28666737f63034db39f03bca59b060",
@@ -91,7 +91,7 @@ static const struct {
 		}},
 	{"{\"options\":{\"idleWatchDogTimeOut\":250}}",
 		(struct rpclogin){.idle_timeout = 250}},
-	{"{\"options\":{\"device\":{\"deviceId\":\"foo\"}}}",
+	{"{\"login\":null,\"options\":{\"device\":{\"deviceId\":\"foo\"}}}",
 		(struct rpclogin){.device_id = "foo"}},
 	{"{\"options\":{\"device\":{\"mountPoint\":\"test/foo\",\"unknown\":[1,2,3]},\"question\":42},\"any\":i{}}",
 		(struct rpclogin){.device_mountpoint = "test/foo"}},

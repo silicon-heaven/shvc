@@ -85,8 +85,14 @@ struct rpclogin *rpclogin_unpack(
 	} while (false)
 	for_cp_unpack_map(unpack, item, key, 8) {
 		if (!strcmp(key, "login")) {
-			if (cp_unpack_type(unpack, item) != CPITEM_MAP)
-				FAIL;
+			switch (cp_unpack_type(unpack, item)) {
+				case CPITEM_MAP:
+					break;
+				case CPITEM_NULL:
+					continue;
+				default:
+					FAIL;
+			}
 			for_cp_unpack_map(unpack, item, lkey, 8) {
 				if (!strcmp(lkey, "user")) {
 					res->username = cp_unpack_strdupo(unpack, item, obstack);
@@ -114,8 +120,14 @@ struct rpclogin *rpclogin_unpack(
 					cp_unpack_skip(unpack, item);
 			}
 		} else if (!strcmp(key, "options")) {
-			if (cp_unpack_type(unpack, item) != CPITEM_MAP)
-				FAIL;
+			switch (cp_unpack_type(unpack, item)) {
+				case CPITEM_MAP:
+					break;
+				case CPITEM_NULL:
+					continue;
+				default:
+					FAIL;
+			}
 			for_cp_unpack_map(unpack, item, okey, 20) {
 				// TODO idleWatchDogTimeOut
 				if (!strcmp(okey, "device")) {
