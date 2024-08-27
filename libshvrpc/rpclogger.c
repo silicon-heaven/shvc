@@ -7,7 +7,7 @@
 #include <shv/rpcclient.h>
 #include <shv/rpcmsg.h>
 
-static const size_t boundary = 5; /* ...\n\0 */
+static const size_t boundary = 6; /* RESET\0 and ...\n\0 */
 
 struct rpclogger {
 	rpclogger_func_t callback;
@@ -114,6 +114,12 @@ void rpclogger_log_item(rpclogger_t logger, const struct cpitem *item) {
 		cpon_pack(logger->f, &logger->cpon_state, item);
 		logger->ellipsis = false;
 	}
+}
+
+void rpclogger_log_reset(rpclogger_t logger) {
+	if (logger == NULL)
+		return;
+	fputs("RESET", logger->f);
 }
 
 void rpclogger_log_end(rpclogger_t logger, enum rpclogger_end_type tp) {

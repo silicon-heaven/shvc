@@ -60,6 +60,18 @@ void rpclogger_destroy(rpclogger_t logger);
 void rpclogger_log_item(rpclogger_t logger, const struct cpitem *item)
 	__attribute__((nonnull(2)));
 
+/*! Log received reset.
+ *
+ * This is API intended to be called by RPC Client implementations. It is not
+ * desirable to call this outside of that context.
+ *
+ * It is handled the same way as @ref rpclogger_log_item item is and it is
+ * expected that @ref rpclogger_log_end will be called afterwards.
+ *
+ * @param logger Logger handle.
+ */
+void rpclogger_log_reset(rpclogger_t logger);
+
 /*! Identification of the message end type.
  *
  * This controls hinting at the end of the line to identify if this message.

@@ -390,6 +390,7 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 					return c->rfd >= 0;
 			}
 			putc(0, c->fw);
+			rpclogger_log_reset(c->pub.logger_out);
 			return stream_ctrl(client, RPCC_CTRLOP_SENDMSG);
 		case RPCC_CTRLOP_ERRNO:
 			if (c->rfd < 0)
@@ -412,6 +413,7 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 					case 1: /* Chainpack message */
 						return ret;
 					case 0: /* Reset requested */
+						rpclogger_log_reset(c->pub.logger_in);
 						if (stream_ctrl(client, RPCC_CTRLOP_VALIDMSG))
 							return RPCC_RESET;
 						break;
