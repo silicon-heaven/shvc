@@ -3,6 +3,7 @@ unittest_libshvcp = executable(
   [
     'chainpack.c',
     'chainpackh.c',
+    'cph.c',
     'cp_pack.c',
     'cp_unpack.c',
     'cpdatetime.c',

@@ -427,7 +427,7 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  */
 #define cpitem_extract_int(ITEM, DEST) \
 	({ \
-		struct cpitem *__item = ITEM; \
+		const struct cpitem *__item = ITEM; \
 		bool __valid = false; \
 		if (__item->type == CPITEM_INT) { \
 			if (sizeof(DEST) < sizeof(long long)) { \
@@ -455,15 +455,15 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  */
 #define cpitem_extract_uint(ITEM, DEST) \
 	({ \
-		struct cpitem *__item = ITEM; \
+		const struct cpitem *__item = ITEM; \
 		bool __valid = false; \
 		if (__item->type == CPITEM_UINT) { \
 			if (sizeof(DEST) < sizeof(unsigned long long)) { \
-				unsigned long long __lim = 1LL << ((sizeof(DEST) * 8) - 1); \
-				__valid = __item->as.Int < __lim; \
+				unsigned long long __lim = 1ULL << (sizeof(DEST) * 8); \
+				__valid = __item->as.UInt < __lim; \
 			} else \
 				__valid = true; \
-			(DEST) = __item->as.Int; \
+			(DEST) = __item->as.UInt; \
 		} \
 		__valid; \
 	})
@@ -479,7 +479,7 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  */
 #define cpitem_extract_bool(ITEM, DEST) \
 	({ \
-		struct cpitem *__item = ITEM; \
+		const struct cpitem *__item = ITEM; \
 		bool __valid = false; \
 		if (__item->type == CPITEM_BOOL) { \
 			(DEST) = __item->as.Bool; \
@@ -499,7 +499,7 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  */
 #define cpitem_extract_datetime(ITEM, DEST) \
 	({ \
-		struct cpitem *__item = ITEM; \
+		const struct cpitem *__item = ITEM; \
 		bool __valid = false; \
 		if (__item->type == CPITEM_DATETIME) { \
 			(DEST) = __item->as.Datetime; \
