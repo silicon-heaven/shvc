@@ -6,7 +6,6 @@
  */
 
 #include <stdarg.h>
-#include <errno.h>
 #include <shv/cp_pack.h>
 #include <shv/cp_unpack.h>
 
@@ -79,5 +78,19 @@ bool rpcerror_unpack(cp_unpack_t unpack, struct cpitem *item,
  */
 bool rpcerror_pack(cp_pack_t pack, rpcerrno_t errnum, const char *errmsg)
 	__attribute__((nonnull(1)));
+
+/*! Provides string representation of the error as defined in SHV standard.
+ *
+ * @param errnum The error number the name will be provided for.
+ * @returns Statically allocated string with error's name.
+ */
+const char *rpcerror_str(rpcerrno_t errnum) __attribute__((returns_nonnull));
+
+/*! Provides description of the error as defined in SHV standard.
+ *
+ * @param errnum The error number the description will be provided for.
+ * @returns Statically allocated string with error's description.
+ */
+const char *rpcerror_desc(rpcerrno_t errnum) __attribute__((returns_nonnull));
 
 #endif

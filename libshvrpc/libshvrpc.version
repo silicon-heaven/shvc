@@ -24,6 +24,8 @@ V0.0 {
 		# shv/rpcerror.h
 		rpcerror_unpack;
 		rpcerror_pack;
+		rpcerror_str;
+		rpcerror_desc;
 
 		# shv/rpcdir.h
 		rpcdir_pack;
