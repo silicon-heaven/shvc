@@ -14,10 +14,10 @@ struct rpchandler_responses {
 	pthread_mutex_t lock;
 };
 
-static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
+static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 	struct rpchandler_responses *resp = cookie;
 	if (ctx->meta.type != RPCMSG_T_RESPONSE && ctx->meta.type != RPCMSG_T_ERROR)
-		return false;
+		return RPCHANDLER_MSG_SKIP;
 	pthread_mutex_lock(&resp->lock);
 	rpcresponse_t *pr = &resp->resp;
 	while (*pr) {
@@ -29,12 +29,12 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 				pthread_cond_signal(&r->cond);
 			}
 			pthread_mutex_unlock(&resp->lock);
-			return true;
+			return RPCHANDLER_MSG_DONE;
 		}
 		pr = &r->next;
 	};
 	pthread_mutex_unlock(&resp->lock);
-	return false;
+	return RPCHANDLER_MSG_SKIP;
 }
 
 static struct rpchandler_funcs rpc_funcs = {.msg = rpc_msg};

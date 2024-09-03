@@ -8,6 +8,7 @@
 
 #include <stdarg.h>
 #include <stdbool.h>
+#include <limits.h>
 #include <pthread.h>
 #include <signal.h>
 #include <shv/rpcclient.h>
@@ -20,6 +21,27 @@
  * process them.
  */
 typedef struct rpchandler *rpchandler_t;
+
+
+/*! Result used by @ref rpchandler_funcs.msg. */
+enum rpchandler_msg_res {
+	/*! Message wasn't handled. The next stage will be asked to handle it. */
+	RPCHANDLER_MSG_SKIP,
+	/*! Message was handled in one way or another. Further stages are not used.
+	 */
+	RPCHANDLER_MSG_DONE,
+	/*! Message was handled and handler should stop.
+	 *
+	 * Use this if you wish to terminate the handler execution for what ever
+	 * reason.
+	 *
+	 * Note that you don't have to use this if you encounter communication
+	 * error because that is recorded in @ref rpcclient and thus handler's loop
+	 * is terminated anyway. It is safe and preferred to just use @ref
+	 * RPCHANDLER_MSG_DONE.
+	 */
+	RPCHANDLER_MSG_STOP,
+};
 
 /*! Context passed to the callbacks @ref rpchandler_funcs.msg */
 struct rpchandler_msg {
@@ -74,6 +96,32 @@ struct rpchandler_idle {
 	struct timespec last_send;
 };
 
+/*! Result that can be returned from @ref rpchandler_funcs.idle.
+ *
+ * Use this if you have nothing special to do right now and don't care when idle
+ * will be called again. It is just alias to `INT_MAX` as a maximal idle time.
+ */
+#define RPCHANDLER_IDLE_SKIP (INT_MAX)
+/*! Result that can be returned from @ref rpchandler_funcs.idle.
+ *
+ * Use this to signal error or just request to terminate the handler's loop.
+ * This will be propagated from @ref rpchandler_idling as error.
+ */
+#define RPCHANDLER_IDLE_STOP (INT_MIN)
+/*! Result that can be returned from @ref rpchandler_funcs.idle.
+ *
+ * This should be used if @ref rpchandler_msg_new returned `NULL`. The value is
+ * zero which causes idle to be run again as soon as possible (after message
+ * retrieval is attempted).
+ */
+#define RPCHANDLER_IDLE_AGAIN (0)
+/*! Result that can be returned from @ref rpchandler_funcs.idle.
+ *
+ * Use this to suppress further stages, their idle implementations won't be
+ * executed.
+ */
+#define RPCHANDLER_IDLE_LAST(V) (-(V))
+
 /*! Pointers to the functions called by RPC Handler.
  *
  * This is set of functions needed by handler to handle messages. It is common
@@ -84,17 +132,18 @@ struct rpchandler_funcs {
 	/*! This is the primary function that is called to handle generic message.
 	 *
 	 * RPC Handler calls this for received messages in sequence given by stages
-	 * array until some function returns `true`.
+	 * array until some function returns @ref RPCHANDLER_MSG_DONE or @ref
+	 * RPCHANDLER_MSG_STOP.
 	 *
 	 * This function must investigate @ref rpchandler_msg.meta to see if it
 	 * should handle that message. It can immediately return `false` or it can
 	 * proceed to handle it. It is prohibited to use @ref rpchandler_msg.unpack
-	 * if it returns `false`.
+	 * if `false` is returned.
 	 *
 	 * The handling of the message consist of receiving the message parameters
 	 * and validating the message. Handler is allowed to pack response or it
-	 * needs to copy @ref rpcmsg_meta.request_id for sending response later on.
-	 * It is not allowed to pack any requests!
+	 * needs to copy @ref rpcmsg_meta for sending response later on. It is not
+	 * allowed to pack any requests!
 	 *
 	 * The message parameters are parsed with @ref rpchandler_msg.unpack and
 	 * @ref rpchandler_msg.item. Before you invoke first @ref cp_unpack you must
@@ -106,12 +155,12 @@ struct rpchandler_funcs {
 	 * The received message needs to be validated after unpack with @ref
 	 * rpchandler_msg_valid (internally uses @ref rpcclient_validmsg).
 	 *
-	 * If you encounter error on receive or sending then you need to still
-	 * return `true`. The invalid messages are dropped this way (unpack error
-	 * due to the invalid data) and communication error is recorded in RPC
-	 * Client that RPC Handler uses.
+	 * If you encounter error on unpack or sending then you need to still
+	 * return @ref RPCHANDLER_MSG_DONE or @ref RPCHANDLER_MSG_STOP. The invalid
+	 * messages are dropped this way (unpack error due to the invalid data) and
+	 * communication error is recorded in RPC Client that RPC Handler uses.
 	 */
-	bool (*msg)(void *cookie, struct rpchandler_msg *ctx);
+	enum rpchandler_msg_res (*msg)(void *cookie, struct rpchandler_msg *ctx);
 	/*! ls method implementation.
 	 *
 	 * RPC Handler handles calls to the *ls* methods. It only needs to know
@@ -122,8 +171,8 @@ struct rpchandler_funcs {
 	 * The implementation needs to call @ref rpchandler_ls_result and variants
 	 * of that function for every node in the requested path.
 	 *
-	 * Note that this is attempted only if request is not handled by
-	 * `rpchandler_funcs.msg`.
+	 * Note that this is attempted only if request for `ls` method is not
+	 * handled by `rpchandler_funcs.msg`.
 	 */
 	void (*ls)(void *cookie, struct rpchandler_ls *ctx);
 	/*! dir method implementation.
@@ -136,21 +185,30 @@ struct rpchandler_funcs {
 	 * The implementation needs to call @ref rpchandler_dir_result and variants
 	 * of that function for every method on the requested path.
 	 *
-	 * Note that this is attempted only if request is not handled by
-	 * `rpchandler_funcs.msg`.
+	 * Note that this is attempted only if request for `dir` method is not
+	 * handled by `rpchandler_funcs.msg`.
 	 */
 	void (*dir)(void *cookie, struct rpchandler_dir *ctx);
 	/*! The implementation of the idle operations.
 	 *
 	 * Idle is called when there is no message to be handled. It has two major
 	 * use cases:
-	 * - It decudes the maximal time we can just wait for message without
-	 *   idle beeing called again.
+	 * - It deduces the maximal time we can just wait for message without
+	 *   idle being called again.
 	 * - Can send various messages including requests but with limitation that
-	 *   only one message can be send by all stages together at one idle
+	 *   only one message can be sent by all stages together at one idle
 	 *   invocation.
 	 *
-	 * This function returns negative number to signal error.
+	 * The returned integer is the time in milliseconds idle can be safely not
+	 * called again. Note that handler can and will be called more often; the
+	 * value provides only the upper limit. The negative number can be returned
+	 * that is interpreted as its positive value but further stages are not run
+	 * at that moment. It is preferred to use @ref RPCHANDLER_IDLE_LAST macro to
+	 * make this more explicit over just returning the negative number. The
+	 * special value is the lowest negative number (it doesn't have positive
+	 * counterpart), aliased with @ref RPCHANDLER_IDLE_STOP, that is used to
+	 * request handler's loop termination (the @ref rpchandler_idling will
+	 * signal error).
 	 */
 	int (*idle)(void *cookie, struct rpchandler_idle *ctx);
 	/*! The state reset.
@@ -249,9 +307,8 @@ rpcclient_t rpchandler_client(rpchandler_t handler) __attribute__((nonnull));
  *
  * @param rpchandler RPC Handler instance.
  * @returns `true` if message handled (even by dropping) and `false` if
- *   connection error encountered in RPC Client. `false` pretty much means that
- *   loop calling repeatedly this should should terminate because we are no
- *   longer able to read or process messages.
+ *   error was encountered by RPC Client. `false` pretty much means that loop
+ *   calling repeatedly this function should be terminated.
  */
 bool rpchandler_next(rpchandler_t rpchandler) __attribute__((nonnull));
 
@@ -265,8 +322,8 @@ bool rpchandler_next(rpchandler_t rpchandler) __attribute__((nonnull));
  * @param rpchandler RPC Handler instance.
  * @returns The maximal time during which idle doesn't have to be called (unless
  *   new message is received). It is in milliseconds. Negative number can be
- *   returned that signals error and should be handled same as `false` in @ref
- *   rpchandler_next.
+ *   returned that signals error and should be handled same as @ref
+ *   RPCHANDLER_MSG_STOP with @ref rpchandler_next.
  */
 int rpchandler_idling(rpchandler_t rpchandler) __attribute__((nonnull));
 

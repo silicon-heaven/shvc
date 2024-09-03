@@ -4,13 +4,13 @@
 #include "util.h"
 
 
-static bool access_msg(void *cookie, struct rpchandler_msg *ctx) {
+static enum rpchandler_msg_res access_msg(void *cookie, struct rpchandler_msg *ctx) {
 	struct clientctx *c = cookie;
 	c->last_activity = get_time();
 	if (c->role == NULL) {
 		if (ctx->meta.type == RPCMSG_T_REQUEST)
 			rpcbroker_api_login_msg(c, ctx);
-		return true;
+		return RPCHANDLER_MSG_DONE;
 	}
 
 	if (ctx->meta.type == RPCMSG_T_REQUEST) {
@@ -21,16 +21,18 @@ static bool access_msg(void *cookie, struct rpchandler_msg *ctx) {
 		ctx->meta.access = ctx->meta.access < newaccess ? ctx->meta.access
 														: newaccess;
 	}
-	return false;
+	return RPCHANDLER_MSG_SKIP;
 }
 
-int access_idle(void *cookie, struct rpchandler_idle *ctx) {
+static int access_idle(void *cookie, struct rpchandler_idle *ctx) {
 	struct clientctx *c = cookie;
 	broker_lock(c->broker);
-	int res = c->activity_timeout != -1 &&
-			get_time() > c->last_activity + c->activity_timeout
-		? -1
-		: INT_MAX;
+	int res;
+	if (c->activity_timeout != -1) {
+		int timeout = c->last_activity + c->activity_timeout - get_time();
+		res = timeout >= 0 ? timeout : RPCHANDLER_IDLE_STOP;
+	} else
+		res = RPCHANDLER_IDLE_SKIP;
 	broker_unlock(c->broker);
 	return res;
 }

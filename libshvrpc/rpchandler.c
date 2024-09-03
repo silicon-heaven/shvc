@@ -21,15 +21,11 @@ struct rpchandler {
 	/* Lock for handler specific variables here */
 	pthread_mutex_t lock;
 
-	/*! The last time we received message.
-	 *
-	 * This can be used by RPC Broker to detect inactive clients.
-	 */
-	struct timespec last_receive;
 	/*! Last time we sent message.
 	 *
-	 * This can be used by RPC clients to detect that thay should perform some
-	 * activity to stay connected to the RPC Broker.
+	 * This is provided to stages. The primary use case is in broker connection
+	 * where clients must keep communication up by sending messages here and
+	 * there.
 	 */
 	struct timespec last_send;
 
@@ -76,16 +72,12 @@ rpchandler_t rpchandler_new(rpcclient_t client,
 	struct rpchandler *res = malloc(sizeof *res);
 	res->stages = stages;
 	res->meta_limits = limits;
-	pthread_mutex_init(&res->lock, NULL);
-
 	res->client = client;
-	clock_gettime(CLOCK_MONOTONIC, &res->last_receive);
+	pthread_mutex_init(&res->lock, NULL);
 	clock_gettime(CLOCK_MONOTONIC, &res->last_send);
-
 	obstack_init(&res->obstack);
 	pthread_mutex_init(&res->send_lock, NULL);
 	res->send_priority = false;
-
 	return res;
 }
 
@@ -183,10 +175,10 @@ static bool valid_path(rpchandler_t handler, char *path) {
 	return lsctx.located;
 }
 
-static void handle_ls(struct msg_ctx *ctx) {
+static bool handle_ls(struct msg_ctx *ctx) {
 	char *name;
 	if (!common_ls_dir(ctx, &name))
-		return;
+		return true;
 
 	struct ls_ctx lsctx = (struct ls_ctx){
 		.ctx.path = ctx->ctx.meta.path ?: "",
@@ -205,7 +197,7 @@ static void handle_ls(struct msg_ctx *ctx) {
 		!valid_path(ctx->handler, ctx->ctx.meta.path)) {
 		rpchandler_msg_send_error(
 			&ctx->ctx, RPCERR_METHOD_NOT_FOUND, "No such node");
-		return;
+		return true;
 	}
 	if (lsctx.ctx.name == NULL) {
 		if (lsctx.pack == NULL) {
@@ -220,16 +212,17 @@ static void handle_ls(struct msg_ctx *ctx) {
 	}
 	cp_pack_container_end(lsctx.pack);
 	rpchandler_msg_send(&ctx->ctx);
+	return true;
 }
 
-static void handle_dir(struct msg_ctx *ctx) {
+static bool handle_dir(struct msg_ctx *ctx) {
 	char *name;
 	if (!common_ls_dir(ctx, &name))
-		return;
+		return true;
 	if (!valid_path(ctx->handler, ctx->ctx.meta.path)) {
 		rpchandler_msg_send_error(
 			&ctx->ctx, RPCERR_METHOD_NOT_FOUND, "No such node");
-		return;
+		return true;
 	}
 
 	cp_pack_t pack = rpchandler_msg_new_response(&ctx->ctx);
@@ -254,12 +247,16 @@ static void handle_dir(struct msg_ctx *ctx) {
 		cp_pack_bool(dirctx.pack, dirctx.located);
 	cp_pack_container_end(dirctx.pack);
 	rpchandler_msg_send(&ctx->ctx);
+	return true;
 }
 
-static void handle_msg(struct msg_ctx *ctx) {
+static bool handle_msg(struct msg_ctx *ctx) {
 	for (const struct rpchandler_stage *s = ctx->handler->stages; s->funcs; s++)
-		if (s->funcs->msg && s->funcs->msg(s->cookie, &ctx->ctx))
-			return;
+		if (s->funcs->msg) {
+			enum rpchandler_msg_res res = s->funcs->msg(s->cookie, &ctx->ctx);
+			if (res != RPCHANDLER_MSG_SKIP)
+				return res == RPCHANDLER_MSG_DONE;
+		}
 
 	if (ctx->ctx.meta.type == RPCMSG_T_REQUEST &&
 		!strcmp(ctx->ctx.meta.method, "ls"))
@@ -268,13 +265,13 @@ static void handle_msg(struct msg_ctx *ctx) {
 		!strcmp(ctx->ctx.meta.method, "dir"))
 		return handle_dir(ctx);
 
-	if (!rpchandler_msg_valid(&ctx->ctx))
-		return;
-	if (ctx->ctx.meta.type == RPCMSG_T_REQUEST)
+	if (rpchandler_msg_valid(&ctx->ctx) && ctx->ctx.meta.type == RPCMSG_T_REQUEST)
 		rpchandler_msg_send_method_not_found(&ctx->ctx);
+	return true;
 }
 
 bool rpchandler_next(struct rpchandler *handler) {
+	bool res = true;
 	pthread_mutex_lock(&handler->lock);
 	switch (rpcclient_nextmsg(handler->client)) {
 		case RPCC_MESSAGE:
@@ -287,8 +284,7 @@ bool rpchandler_next(struct rpchandler *handler) {
 			ctx.ctx.unpack = rpcclient_unpack(handler->client);
 			if (rpcmsg_head_unpack(ctx.ctx.unpack, &item, &ctx.ctx.meta, NULL,
 					&handler->obstack)) {
-				handle_msg(&ctx);
-				clock_gettime(CLOCK_MONOTONIC, &handler->last_receive);
+				res = handle_msg(&ctx);
 			}
 			obstack_free(&handler->obstack, obs_base);
 			break;
@@ -302,7 +298,7 @@ bool rpchandler_next(struct rpchandler *handler) {
 			break; /* Nothing to do */
 	}
 	pthread_mutex_unlock(&handler->lock);
-	return rpcclient_connected(handler->client);
+	return res && rpcclient_connected(handler->client);
 }
 
 int rpchandler_idling(rpchandler_t handler) {
@@ -312,8 +308,9 @@ int rpchandler_idling(rpchandler_t handler) {
 		.handler = handler,
 		.msg_sent = false,
 	};
-	int res = INT_MAX;
-	for (const struct rpchandler_stage *s = handler->stages; s->funcs; s++) {
+	int res = RPCHANDLER_IDLE_SKIP;
+	for (const struct rpchandler_stage *s = handler->stages;
+		 s->funcs && res > 0; s++) {
 		if (s->funcs->idle) {
 			int t = s->funcs->idle(s->cookie, &ctx.ctx);
 			if (res > t)
@@ -321,34 +318,31 @@ int rpchandler_idling(rpchandler_t handler) {
 		}
 	}
 	pthread_mutex_unlock(&handler->lock);
-	return res;
+	return res == RPCHANDLER_IDLE_STOP ? -1 : abs(res);
 }
 
 void rpchandler_run(rpchandler_t handler, volatile sig_atomic_t *halt) {
-	while ((!halt || !*halt) && rpcclient_connected(handler->client)) {
-		// TODO attempt client reset when that is implemented
-		int timeout = 0;
-		struct pollfd pfd = {
-			.fd = rpcclient_pollfd(handler->client),
-			.events = POLLIN | POLLHUP,
-		};
-		while (timeout >= 0 && (!halt || !*halt)) {
-			int pr = poll(&pfd, 1, timeout);
-			int cancelstate;
-			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cancelstate);
-			if (pr != 0) {
-				timeout = 0;
-				if ((pr == -1 && errno != EINTR) || pfd.revents & POLLERR)
-					abort(); // TODO
-				/* Even on POLLHUP we request so RPC Client actually detest
-				 * the disconnect not just us.
-				 */
-				if (pfd.revents & (POLLIN | POLLHUP) && !rpchandler_next(handler))
-					timeout = -1;
-			} else
-				timeout = rpchandler_idling(handler);
-			pthread_setcancelstate(cancelstate, NULL);
-		}
+	int timeout = 0;
+	struct pollfd pfd = {
+		.fd = rpcclient_pollfd(handler->client),
+		.events = POLLIN | POLLHUP,
+	};
+	while (timeout >= 0 && (!halt || !*halt)) {
+		int pr = poll(&pfd, 1, timeout);
+		int cancelstate;
+		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &cancelstate);
+		if (pr != 0) {
+			timeout = 0;
+			if ((pr == -1 && errno != EINTR) || pfd.revents & POLLERR)
+				abort(); // TODO
+			/* Even on POLLHUP we request so RPC Client actually detest
+			 * the disconnect not just us.
+			 */
+			if (pfd.revents & (POLLIN | POLLHUP) && !rpchandler_next(handler))
+				timeout = -1;
+		} else
+			timeout = rpchandler_idling(handler);
+		pthread_setcancelstate(cancelstate, NULL);
 	}
 }
 

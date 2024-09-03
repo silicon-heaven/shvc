@@ -64,10 +64,22 @@ int main(int argc, char **argv) {
 	signal(SIGHUP, sigint_handler);
 	signal(SIGTERM, sigint_handler);
 
-	// TODO terminate on failed login
-
 	rpchandler_run(handler, &halt);
-	printf("Terminating due to: %s\n", strerror(rpcclient_errno(client)));
+
+	int ec = 1;
+	if (rpcclient_errno(client)) {
+		fprintf(stderr, "Connection failure: %s\n",
+			strerror(rpcclient_errno(client)));
+	} else {
+		rpcerrno_t login_errnum;
+		const char *login_errmsg;
+		rpchandler_login_status(login, &login_errnum, &login_errmsg);
+		if (login_errnum) {
+			fprintf(stderr, "Login failure: %s\n",
+				login_errmsg ?: rpcerror_str(login_errnum));
+		} else
+			ec = 0;
+	}
 
 	rpchandler_destroy(handler);
 	rpchandler_app_destroy(app);
@@ -77,5 +89,5 @@ int main(int argc, char **argv) {
 	rpclogger_destroy(client->logger_out);
 	rpcclient_destroy(client);
 	obstack_free(&obstack, NULL);
-	return 0;
+	return ec;
 }

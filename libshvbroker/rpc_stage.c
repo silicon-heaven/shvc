@@ -23,13 +23,14 @@ static void propagate_msg(struct rpchandler_msg *ctx, struct clientctx *client) 
 		rpchandler_msg_drop(handler);
 }
 
-static inline bool rpc_msg_request(struct clientctx *c, struct rpchandler_msg *ctx) {
+static inline enum rpchandler_msg_res rpc_msg_request(
+	struct clientctx *c, struct rpchandler_msg *ctx) {
 	rpcaccess_t newaccess = c->role
 		? c->role->access(c->role->access_cookie, ctx->meta.path, ctx->meta.method)
 		: RPCACCESS_NONE;
 	ctx->meta.access = ctx->meta.access < newaccess ? ctx->meta.access : newaccess;
 	if (rpcbroker_api_msg(c, ctx))
-		return true;
+		return RPCHANDLER_MSG_DONE;
 
 	/* Propagate to some mount point if not handled locally */
 	broker_lock(c->broker);
@@ -37,7 +38,7 @@ static inline bool rpc_msg_request(struct clientctx *c, struct rpchandler_msg *c
 	struct clientctx *client = mounted_client(c->broker, ctx->meta.path, &rpath);
 	if (!client) {
 		broker_unlock(c->broker);
-		return false;
+		return RPCHANDLER_MSG_SKIP;
 	}
 
 	struct obstack *obs = rpchandler_obstack(ctx);
@@ -61,23 +62,23 @@ static inline bool rpc_msg_request(struct clientctx *c, struct rpchandler_msg *c
 		ctx->meta.user_id = obstack_finish(obs);
 	}
 	propagate_msg(ctx, client);
-	return true;
+	return RPCHANDLER_MSG_DONE;
 }
 
-static inline bool rpc_msg_response(
+static inline enum rpchandler_msg_res rpc_msg_response(
 	struct clientctx *c, struct rpchandler_msg *ctx) {
 	broker_lock(c->broker);
 	if (ctx->meta.cids_cnt == 0 ||
 		!cid_valid(c->broker, ctx->meta.cids[ctx->meta.cids_cnt - 1])) {
 		broker_unlock(c->broker);
-		return false;
+		return RPCHANDLER_MSG_SKIP;
 	}
 
 	struct clientctx *dest =
 		&c->broker->clients[ctx->meta.cids[ctx->meta.cids_cnt - 1]];
 	ctx->meta.cids_cnt--;
 	propagate_msg(ctx, dest);
-	return true;
+	return RPCHANDLER_MSG_DONE;
 }
 
 struct multipack {
@@ -94,10 +95,11 @@ static bool multipack_func(void *ptr, const struct cpitem *item) {
 	return res;
 }
 
-static inline bool rpc_msg_signal(struct clientctx *c, struct rpchandler_msg *ctx) {
+static inline enum rpchandler_msg_res rpc_msg_signal(
+	struct clientctx *c, struct rpchandler_msg *ctx) {
 	broker_lock(c->broker);
 	if (!c->role || !c->role->mount_point)
-		return false;
+		return RPCHANDLER_MSG_SKIP;
 	if (ctx->meta.path && *ctx->meta.path != '\0') {
 		struct obstack *obs = rpchandler_obstack(ctx);
 		obstack_printf(obs, "%s/%s", c->role->mount_point, ctx->meta.path);
@@ -111,7 +113,7 @@ static inline bool rpc_msg_signal(struct clientctx *c, struct rpchandler_msg *ct
 				ctx->meta.source, ctx->meta.signal))
 			nbool_or(&dest, c->broker->subscriptions[i].clients);
 	if (dest == NULL) /* Not handling. Nobody cares about it */
-		return false;
+		return RPCHANDLER_MSG_SKIP;
 	size_t siz = 0;
 	for_nbool(dest, cid) siz++;
 	cp_pack_t packs[siz];
@@ -141,10 +143,10 @@ static inline bool rpc_msg_signal(struct clientctx *c, struct rpchandler_msg *ct
 				rpchandler_msg_drop(c->broker->clients[cid].handler);
 		}
 	}
-	return true;
+	return RPCHANDLER_MSG_SKIP;
 }
 
-static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
+static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 	struct clientctx *c = cookie;
 	switch (ctx->meta.type) {
 		case RPCMSG_T_REQUEST:
@@ -157,7 +159,7 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 		case RPCMSG_T_INVALID:
 			break;
 	}
-	return false;
+	return RPCHANDLER_MSG_SKIP;
 }
 
 static void rpc_ls(void *cookie, struct rpchandler_ls *ctx) {

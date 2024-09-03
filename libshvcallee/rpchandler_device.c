@@ -63,22 +63,22 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 		});
 }
 
-static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
+static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 	struct rpchandler_device *rpchandler_device = cookie;
 	if (ctx->meta.type != RPCMSG_T_REQUEST || strcmp(ctx->meta.path, ".device"))
-		return false;
+		return RPCHANDLER_MSG_SKIP;
 	const struct gperf_rpchandler_device_method_match *match =
 		gperf_rpchandler_device_method(ctx->meta.method, strlen(ctx->meta.method));
 	if (match == NULL)
-		return false;
+		return RPCHANDLER_MSG_SKIP;
 
 	bool has_param = rpcmsg_has_value(ctx->item);
 	if (!rpchandler_msg_valid(ctx))
-		return true;
+		return RPCHANDLER_MSG_DONE;
 
 	if (has_param) {
 		rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM, "Must be only 'null'");
-		return true;
+		return RPCHANDLER_MSG_DONE;
 	}
 
 	cp_pack_t pack;
@@ -119,7 +119,7 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 					ctx, RPCERR_NOT_IMPLEMENTED, "Reset is not available");
 			break;
 	}
-	return true;
+	return RPCHANDLER_MSG_DONE;
 }
 
 static const struct rpchandler_funcs rpc_funcs = {

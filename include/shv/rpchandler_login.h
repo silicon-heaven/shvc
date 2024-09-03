@@ -14,7 +14,7 @@
 #include <shv/rpchandler.h>
 #include <shv/rpclogin.h>
 
-/*! Object representing SHV RPC Application Handle.
+/*! Object representing SHV RPC Login Handle.
  *
  * It provides login functionality and should be the first handler in the
  * sequence to manage all messages until login is successful.
@@ -44,19 +44,32 @@ void rpchandler_login_destroy(rpchandler_login_t rpchandler_login);
  * This provides you with stage to be used in list of stages for the RPC
  * handler.
  *
+ * This stage should be the first stage in the sequence to ensure that login is
+ * performed before anything else is allowed.
+ *
  * @param rpchandler_login RPC Login Handler object.
  * @returns Stage to be used in array of stages for RPC Handler.
  */
 struct rpchandler_stage rpchandler_login_stage(
 	rpchandler_login_t rpchandler_login) __attribute__((nonnull));
 
-/*! Query the current login status.
+/*! Query the current login process status.
  *
  * @param rpchandler_login RPC Login Handler object.
- * @returns `true` if login was performed and `false` otherwise.
+ * @param errnum Pointer to the variable where error number that Broker
+ *   responded with on login is stored. Can be `NULL` if you are not interested.
+ * @param errmsg Pointer to the variable where error string that Broker
+ *   responded with on login is stored. Can be `NULL` if you are not interested.
+ *   This is set only if `errnum` is not equal @ref RPCERR_NO_ERROR. Note that
+ *   this string is kept valid only until object is valid and handler is not
+ *   running again. The login error will signal error to the RPC Handler which
+ *   should terminate it but it can be started again and in such case this
+ *   string will be freed.
+ * @returns `true` if login was performed and `false` otherwise. On `true` you
+ *   must investigate `errnum` parameter to find out if login was successful.
  */
-bool rpchandler_login_status(rpchandler_login_t rpchandler_login)
-	__attribute__((nonnull(1)));
+bool rpchandler_login_status(rpchandler_login_t rpchandler_login,
+	rpcerrno_t *errnum, const char **errmsg) __attribute__((nonnull(1)));
 
 /*! Wait until login is performed.
  *
@@ -65,6 +78,11 @@ bool rpchandler_login_status(rpchandler_login_t rpchandler_login)
  *   responded with on login is stored. Can be `NULL` if you are not interested.
  * @param errmsg Pointer to the variable where error string that Broker
  *   responded with on login is stored. Can be `NULL` if you are not interested.
+ *   This is set only if `errnum` is not equal @ref RPCERR_NO_ERROR. Note that
+ *   this string is kept valid only until object is valid and handler is not
+ *   running again. The login error will signal error to the RPC Handler which
+ *   should terminate it but it can be started again and in such case this
+ *   string will be freed.
  * @param abstime The absolute time when wait will result into a timeout. It
  *   can be `NULL` if it should never timeout.
  * @returns `true` if login was performed and `false` if wait timed out or
@@ -72,8 +90,5 @@ bool rpchandler_login_status(rpchandler_login_t rpchandler_login)
  */
 bool rpchandler_login_wait(rpchandler_login_t rpchandler_login, rpcerrno_t *errnum,
 	const char **errmsg, struct timespec *abstime) __attribute__((nonnull(1)));
-
-// TODO disable rpchandler_msg_new when not signed in
-
 
 #endif

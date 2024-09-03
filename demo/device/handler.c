@@ -49,15 +49,15 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 	}
 }
 
-static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
+static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 	struct device_state *state = cookie;
 	int tid = trackid(ctx->meta.path);
 	if (tid != -1) {
 		if (!strcmp(ctx->meta.method, "get")) {
 			if (!rpchandler_msg_valid(ctx))
-				return true;
+				return RPCHANDLER_MSG_DONE;
 			if (!rpchandler_msg_access_level(ctx, RPCACCESS_READ))
-				return true;
+				return RPCHANDLER_MSG_DONE;
 			cp_pack_t pack = rpchandler_msg_new_response(ctx);
 			cp_pack_list_begin(pack);
 			for (size_t i = 0; i < state->tracks[tid].cnt; i++)
@@ -65,7 +65,7 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 			cp_pack_container_end(pack);
 			cp_pack_container_end(pack);
 			rpchandler_msg_send(ctx);
-			return true;
+			return RPCHANDLER_MSG_DONE;
 		} else if (!strcmp(ctx->meta.method, "set")) {
 			size_t siz = 2;
 			size_t cnt = 0;
@@ -90,7 +90,7 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 			if (!rpchandler_msg_valid(ctx) ||
 				!rpchandler_msg_access_level(ctx, RPCACCESS_WRITE)) {
 				free(res);
-				return true;
+				return RPCHANDLER_MSG_DONE;
 			}
 
 			bool value_changed = false;
@@ -118,10 +118,10 @@ static bool rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 				cp_pack_container_end(pack);
 				rpchandler_msg_send(ctx);
 			}
-			return true;
+			return RPCHANDLER_MSG_DONE;
 		}
 	}
-	return false;
+	return RPCHANDLER_MSG_SKIP;
 }
 
 

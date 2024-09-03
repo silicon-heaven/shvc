@@ -1,5 +1,6 @@
 """Check if our demo applications communicate with each other."""
 
+import dataclasses
 import asyncio
 import logging
 import shv
@@ -128,6 +129,18 @@ async def test_set(demo_device, client, i):
     assert await signal == [path, [32, 42, 52]]
     client.on_change(path, None)
     await client.prop_get(path) == [32, 42, 52]
+
+
+async def test_device_invalid_login(demo_device_exec, url, broker):
+    nurl = dataclasses.replace(
+        url, login=dataclasses.replace(url.login, password="invalid")
+    )
+    stdout, stderr = await subproc(*demo_device_exec, str(nurl), exit_code=1)
+    assert stdout == [b""]
+    assert stderr == [
+        "Login failure: Invalid login".encode(),
+        b"",
+    ]
 
 
 async def test_demo_client(demo_device, demo_client_exec, url):
