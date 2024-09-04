@@ -21,7 +21,10 @@
 #define ESCAPED(X) \
 	((X) == ESC_STX || (X) == ESC_ETX || (X) == ESC_ATX || (X) == ESC_ESC)
 
-#define IDLETIM (5000)
+#define TIMEOUT_RD (5000)
+#define TIMEOUT_WR (200)
+// TODO possibly add two levels of message priority and increase write timeout
+// for requests and responses and keep it low only for signals.
 
 struct ctx {
 	struct rpcclient pub;
@@ -100,8 +103,21 @@ static int xreadc(struct ctx *c, int timeout) {
 
 /* Reliable variant of standard write */
 static bool xwrite(struct ctx *c, const void *buf, size_t siz) {
+	if (c->errnum != 0 && c->errnum != EAGAIN)
+		return false;
 	uint8_t *data = (uint8_t *)buf;
 	while (siz > 0) {
+		struct pollfd pfd = {
+			.fd = c->wfd,
+			.events = POLLOUT | POLLHUP,
+		};
+		int pollres = poll(&pfd, 1, c->errnum ? 0 : TIMEOUT_WR);
+		if (pollres <= 0) {
+			c->errnum = pollres < 0 ? errno : EWOULDBLOCK;
+			return false;
+		} else if (c->errnum)
+			c->errnum = 0;
+
 		ssize_t i = write(c->wfd, data, siz);
 		if (i == -1) {
 			if (errno != EINTR) {
@@ -125,7 +141,7 @@ static ssize_t cookie_read_block(void *cookie, char *buf, size_t size) {
 		size = c->block.rmsgoff;
 	if (size == 0)
 		return 0;
-	ssize_t res = xread(c, buf, size, IDLETIM);
+	ssize_t res = xread(c, buf, size, TIMEOUT_RD);
 	if (res >= 0)
 		c->block.rmsgoff -= res;
 	return res;
@@ -179,7 +195,7 @@ static enum rpcclient_msg_type rpcclient_stream_block_nextmsg(struct ctx *c) {
 	unsigned bytes = chainpack_int_bytes(v);
 	size_t msgsiz = chainpack_uint_value1(v, bytes);
 	for (unsigned i = 1; i < bytes; i++) {
-		if ((v = xreadc(c, IDLETIM)) == -1)
+		if ((v = xreadc(c, TIMEOUT_RD)) == -1)
 			return RPCC_ERROR;
 		msgsiz = (msgsiz << 8) | v;
 	}
@@ -198,7 +214,7 @@ static ssize_t cookie_read_serial(void *cookie, char *buf, size_t size) {
 		return c->errnum ? -1 : 0;
 	size_t i;
 	for (i = 0; i < size; i++) {
-		int v = xreadc(c, IDLETIM);
+		int v = xreadc(c, TIMEOUT_RD);
 		switch (v) {
 			case STX:
 				c->serial.rmsg = RMSG_STX;
@@ -208,7 +224,7 @@ static ssize_t cookie_read_serial(void *cookie, char *buf, size_t size) {
 				return i;
 			case ESC:
 				c->serial.rcrc = crc32_cupdate(c->serial.rcrc, v);
-				v = xreadc(c, IDLETIM);
+				v = xreadc(c, TIMEOUT_RD);
 				if (ESCAPED(v)) {
 					c->serial.rcrc = crc32_cupdate(c->serial.rcrc, v);
 					buf[i] = DESCX(v);
@@ -321,11 +337,11 @@ static bool rpcclient_stream_serial_validate(struct ctx *c) {
 		return true;
 	uint32_t crc = 0;
 	for (int i = 0; i < 4; i++) {
-		int v = xreadc(c, IDLETIM);
+		int v = xreadc(c, TIMEOUT_RD);
 		if (v < 0)
 			return false;
 		if (v == ESC) {
-			v = xreadc(c, IDLETIM);
+			v = xreadc(c, TIMEOUT_RD);
 			if (!ESCAPED(v))
 				return false;
 			v = DESCX(v);
@@ -360,7 +376,6 @@ static void flushmsg(struct ctx *c) {
 
 static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 	struct ctx *c = (struct ctx *)client;
-	bool res;
 	switch (op) {
 		case RPCC_CTRLOP_DESTROY:
 			if (c->sclient->connect)
@@ -422,27 +437,38 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 				}
 			}
 		}
-		case RPCC_CTRLOP_VALIDMSG:
+		case RPCC_CTRLOP_VALIDMSG: {
 			flushmsg(c);
-			res = c->proto == RPCSTREAM_P_BLOCK
+			bool res = c->proto == RPCSTREAM_P_BLOCK
 				? true /* Block protocol doesn't have validation */
 				: rpcclient_stream_serial_validate(c);
 			rpclogger_log_end(c->pub.logger_in,
 				res ? RPCLOGGER_ET_VALID : RPCLOGGER_ET_INVALID);
 			return res;
+		}
 		case RPCC_CTRLOP_SENDMSG: {
-			res = c->proto == RPCSTREAM_P_BLOCK ? rpcclient_stream_block_send(c)
-												: rpcclient_stream_serial_send(c);
+			bool res = c->proto == RPCSTREAM_P_BLOCK
+				? rpcclient_stream_block_send(c)
+				: rpcclient_stream_serial_send(c);
 			if (c->sclient->flush)
 				c->sclient->flush(c->sclient_cookie, c->wfd);
 			rpclogger_log_end(c->pub.logger_out, RPCLOGGER_ET_VALID);
+			if (c->errnum == EWOULDBLOCK)
+				c->errnum = EAGAIN;
 			return res;
 		}
-		case RPCC_CTRLOP_DROPMSG:
-			rpclogger_log_end(c->pub.logger_out, RPCLOGGER_ET_INVALID);
-			return c->proto == RPCSTREAM_P_BLOCK
+		case RPCC_CTRLOP_DROPMSG: {
+			bool res = c->proto == RPCSTREAM_P_BLOCK
 				? rpcclient_stream_block_drop(c)
 				: rpcclient_stream_serial_drop(c);
+			// TODO this is pretty much same as send (merge the code)
+			if (c->sclient->flush)
+				c->sclient->flush(c->sclient_cookie, c->wfd);
+			rpclogger_log_end(c->pub.logger_out, RPCLOGGER_ET_INVALID);
+			if (c->errnum == EWOULDBLOCK)
+				c->errnum = EAGAIN;
+			return res;
+		}
 		case RPCC_CTRLOP_POLLFD:
 			return c->rfd;
 	}

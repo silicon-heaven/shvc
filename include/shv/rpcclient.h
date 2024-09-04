@@ -6,6 +6,7 @@
  */
 
 #include <stdbool.h>
+#include <errno.h>
 #include <shv/cp_pack.h>
 #include <shv/cp_unpack.h>
 #include <shv/rpclogger.h>
@@ -103,7 +104,10 @@ typedef struct rpcclient *rpcclient_t;
  * @returns `true` in case client seems to be connected and `false` otherwise.
  */
 #define rpcclient_connected(CLIENT) \
-	((CLIENT)->ctrl(CLIENT, RPCC_CTRLOP_ERRNO) == 0)
+	({ \
+		int __errnum = rpcclient_errno(CLIENT); \
+		__errnum == 0 || __errnum == EWOULDBLOCK || __errnum == EAGAIN; \
+	})
 
 /*! Get errno recorded for error in RPC Client.
  *

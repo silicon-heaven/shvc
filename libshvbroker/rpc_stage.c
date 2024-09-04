@@ -90,8 +90,12 @@ static bool multipack_func(void *ptr, const struct cpitem *item) {
 	struct multipack *p = ptr;
 	bool res = false;
 	for (size_t i = 0; i < p->cnt; i++)
-		if (p->packs[i])
-			res |= cp_pack(p->packs[i], item);
+		if (p->packs[i]) {
+			if (cp_pack(p->packs[i], item))
+				res = true;
+			else
+				p->packs[i] = NULL;
+		}
 	return res;
 }
 

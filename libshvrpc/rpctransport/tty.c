@@ -98,20 +98,21 @@ static void *tty_server_loop(void *ctx) {
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
 	int fd;
 	unsigned cnt = 0;
-	while (true) {
-		while ((fd = tty_connect(s->location, s->baudrate)) == -1) {
-			pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-			sleep(MAX((cnt++ >> 4) + 1, 15));
-			pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-		}
-		eventfd_write(s->evfd, 42);
-		rpcclient_t c = rpcclient_stream_new(&sserver, s, s->proto, fd, fd);
-		/* We always send reset to ensure that even if we destroyed our client
-		 * the reset is propagated.
-		 */
-		if (rpcclient_reset(c))
-			return c;
+	while ((fd = tty_connect(s->location, s->baudrate)) == -1) {
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+		sleep(MAX((cnt++ >> 4) + 1, 15));
+		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 	}
+	eventfd_write(s->evfd, 42);
+	rpcclient_t c = rpcclient_stream_new(&sserver, s, s->proto, fd, fd);
+	/* We always send reset to ensure that even if we destroyed our client
+	 * the reset is propagated.
+	 * Note that sending reset can fail if buffer is full; thus we ignore reset
+	 * failure because otherwise we would be caught in the infinite loop here of
+	 * trying to send reset again and again.
+	 */
+	__attribute__((unused)) bool _ = rpcclient_reset(c);
+	return c;
 }
 
 static bool tty_server_connect(void *cookie, int fd[2]) {
