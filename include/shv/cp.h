@@ -10,6 +10,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <time.h>
 
@@ -458,11 +459,10 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 		const struct cpitem *__item = ITEM; \
 		bool __valid = false; \
 		if (__item->type == CPITEM_UINT) { \
-			if (sizeof(DEST) < sizeof(unsigned long long)) { \
-				unsigned long long __lim = 1ULL << (sizeof(DEST) * 8); \
-				__valid = __item->as.UInt < __lim; \
-			} else \
-				__valid = true; \
+			unsigned long long __lim = sizeof(DEST) < sizeof(unsigned long long) \
+				? (1ULL << (sizeof(DEST) * 8)) - 1 \
+				: ULLONG_MAX; \
+			__valid = __item->as.UInt <= __lim; \
 			(DEST) = __item->as.UInt; \
 		} \
 		__valid; \

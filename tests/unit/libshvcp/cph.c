@@ -85,6 +85,26 @@ ARRAY_TEST(all, extract_uint16) {
 
 static const struct {
 	struct cpitem item;
+	uint64_t value;
+} extract_uint64_d[] = {
+	{
+		.item = (struct cpitem){.type = CPITEM_UINT, .as.UInt = UINT64_MAX},
+		.value = UINT64_MAX,
+	},
+	{
+		.item = (struct cpitem){.type = CPITEM_UINT, .as.UInt = 42},
+		.value = 42,
+	},
+};
+ARRAY_TEST(all, extract_uint64) {
+	uint64_t val;
+	ck_assert(cpitem_extract_uint(&_d.item, val));
+	ck_assert_int_eq(val, _d.value);
+}
+
+
+static const struct {
+	struct cpitem item;
 	bool valid;
 	bool value;
 } extract_bool_d[] = {
