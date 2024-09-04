@@ -58,11 +58,11 @@ shvc_opt = get_option('shvc')
 if shvc_opt
   subdir('shvc')
 endif
-shvcsub_opt = get_option('shvcsub')
-if shvcsub_opt
-  subdir('shvcsub')
+shvcs_opt = get_option('shvcs')
+if shvcs_opt
+  subdir('shvcs')
 endif
-shvcp_opt = get_option('shvcsub')
+shvcp_opt = get_option('shvcp')
 if shvcp_opt
   subdir('shvcp')
 endif

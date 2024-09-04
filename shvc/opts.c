@@ -9,7 +9,8 @@ static const int default_timeout = 300;
 
 
 static void print_usage(const char *argv0) {
-	fprintf(stderr, "%s [-ujvqdVh] [PATH] [METHOD] [PARAM]\n", argv0);
+	fprintf(stderr, "%s [-ivqdVh] [-u URL] [-t SEC] [PATH] [METHOD] [PARAM]\n",
+		argv0);
 }
 
 static void print_help(const char *argv0) {
@@ -25,7 +26,7 @@ static void print_help(const char *argv0) {
 	fprintf(stderr, "  -i       Read parameter from STDIN instead of argument\n");
 	fprintf(stderr, "  -v       Increase logging level of the communication\n");
 	fprintf(stderr, "  -q       Decrease logging level of the communication\n");
-	fprintf(stderr, "  -d       Set maximul logging level of the communication\n");
+	fprintf(stderr, "  -d       Set maximal logging level of the communication\n");
 	fprintf(stderr, "  -V       Print SHVC version and exit\n");
 	fprintf(stderr, "  -h       Print this help text\n");
 }
@@ -42,19 +43,18 @@ void parse_opts(int argc, char **argv, struct conf *conf) {
 	};
 
 	int c;
-	while ((c = getopt(argc, argv, "utivqdVh")) != -1) {
+	while ((c = getopt(argc, argv, "u:t:ivqdVh")) != -1) {
 		switch (c) {
 			case 'u':
-				conf->url = argv[optind++];
+				conf->url = optarg;
 				break;
 			case 't': {
 				char *end;
-				conf->timeout = strtol(argv[optind], &end, 10);
+				conf->timeout = strtol(optarg, &end, 10);
 				if (*end != '\0') {
-					fprintf(stderr, "Invalid timeout: %s\n", argv[optind]);
+					fprintf(stderr, "Invalid timeout: %s\n", optarg);
 					exit(-1);
 				}
-				optind++;
 				break;
 			}
 			case 'i':

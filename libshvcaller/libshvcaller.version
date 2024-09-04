@@ -13,5 +13,14 @@ V0.0 {
 		rpcresponse_waitfor;
 		rpcresponse_send_request_void;
 
+		# shv/rpchandler_signals.h
+		rpchandler_signals_new;
+		rpchandler_signals_destroy;
+		rpchandler_signals_stage;
+		rpchandler_signals_subscribe;
+		rpchandler_signals_unsubscribe;
+		rpchandler_signals_status;
+		rpchandler_signals_wait;
+
 	local: *;
 };

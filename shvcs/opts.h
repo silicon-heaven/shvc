@@ -4,11 +4,8 @@
 
 struct conf {
 	const char *url;
-	const char *path;
-	const char *method;
-	const char *param;
 	unsigned verbose;
-	bool json;
+	char **ris;
 };
 
 /* Parse arguments. */

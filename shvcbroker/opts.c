@@ -17,7 +17,7 @@ static void print_help(const char *argv0) {
 	fprintf(stderr, "  -c FILE  Path to the configuration file\n");
 	fprintf(stderr, "  -v       Increase logging level of the communication\n");
 	fprintf(stderr, "  -q       Decrease logging level of the communication\n");
-	fprintf(stderr, "  -d       Set maximul logging level of the communication\n");
+	fprintf(stderr, "  -d       Set maximal logging level of the communication\n");
 	fprintf(stderr, "  -V       Print SHVC version and exit\n");
 	fprintf(stderr, "  -h       Print this help text\n");
 }

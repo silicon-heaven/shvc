@@ -1,6 +1,7 @@
 libshvcaller_sources = files(
   'rpccall.c',
   'rpchandler_responses.c',
+  'rpchandler_signals.c',
 )
 libshvcaller_dependencies = [libshvrpc_dep]
 

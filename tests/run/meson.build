@@ -18,9 +18,9 @@ if shvcp_opt
   pytest_depends += shvcp
   pytest_env += 'SHVCP=' + shvcp.full_path()
 endif
-if shvcsub_opt
-  pytest_depends += shvcsub
-  pytest_env += 'SHVCSUB=' + shvcsub.full_path()
+if shvcs_opt
+  pytest_depends += shvcs
+  pytest_env += 'SHVCS=' + shvcs.full_path()
 endif
 if shvctio_opt
   pytest_depends += shvctio

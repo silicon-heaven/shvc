@@ -103,7 +103,6 @@ async def test_invalid_login(shvc_exec, url, broker):
     stdout, stderr = await subproc(*shvc_exec, "-u", str(nurl), exit_code=3)
     assert stdout == [b""]
     assert stderr == [
-        f"Failed to login to: {nurl}".encode(),
-        b"Invalid login",
+        b"Login failure: Invalid login",
         b"",
     ]

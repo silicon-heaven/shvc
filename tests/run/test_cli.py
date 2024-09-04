@@ -9,7 +9,7 @@ async def test_shvc_help(shvc_exec):
     stdout, stderr = await subproc(*shvc_exec, "-h")
     assert stdout == [b""]
     assert stderr == [
-        f"{shvc_exec[-1]} [-ujvqdVh] [PATH] [METHOD] [PARAM]".encode(),
+        f"{shvc_exec[-1]} [-ivqdVh] [-u URL] [-t SEC] [PATH] [METHOD] [PARAM]".encode(),
         b"SHV RPC client call.",
         b"",
         b"Arguments:",
@@ -18,7 +18,25 @@ async def test_shvc_help(shvc_exec):
         b"  -i       Read parameter from STDIN instead of argument",
         b"  -v       Increase logging level of the communication",
         b"  -q       Decrease logging level of the communication",
-        b"  -d       Set maximul logging level of the communication",
+        b"  -d       Set maximal logging level of the communication",
+        b"  -V       Print SHVC version and exit",
+        b"  -h       Print this help text",
+        b"",
+    ]
+
+
+async def test_shvcsub_help(shvcs_exec):
+    stdout, stderr = await subproc(*shvcs_exec, "-h")
+    assert stdout == [b""]
+    assert stderr == [
+        f"{shvcs_exec[-1]} [-vqdVh] [-u URL] [RI]...".encode(),
+        b"SHV RPC subscription client.",
+        b"",
+        b"Arguments:",
+        b"  -u URL   Where to connect to (default tcp://test@localhost?password=test)",
+        b"  -v       Increase logging level of the communication",
+        b"  -q       Decrease logging level of the communication",
+        b"  -d       Set maximal logging level of the communication",
         b"  -V       Print SHVC version and exit",
         b"  -h       Print this help text",
         b"",
@@ -36,7 +54,7 @@ async def test_shvcbroker_help(shvcbroker_exec):
         b"  -c FILE  Path to the configuration file",
         b"  -v       Increase logging level of the communication",
         b"  -q       Decrease logging level of the communication",
-        b"  -d       Set maximul logging level of the communication",
+        b"  -d       Set maximal logging level of the communication",
         b"  -V       Print SHVC version and exit",
         b"  -h       Print this help text",
         b"",

@@ -2,6 +2,7 @@
 
 import subprocess
 import asyncio
+import asyncio.subprocess
 import collections.abc
 import re
 import logging
@@ -26,11 +27,10 @@ async def subproc(
     *cmd: str, exit_code: int = 0, stdin: bytes | None = None
 ) -> tuple[list[bytes], list[bytes]]:
     proc = await asyncio.create_subprocess_exec(
-        cmd[0],
-        *cmd[1:],
-        stdin=subprocess.PIPE if stdin is not None else None,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        *cmd,
+        stdin=asyncio.subprocess.PIPE if stdin is not None else None,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
     )
     stdout, stderr = await proc.communicate(stdin)
     assert proc.returncode is not None

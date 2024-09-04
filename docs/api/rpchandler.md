@@ -18,6 +18,9 @@ rpchandler_app
 rpchandler_login
 ```
 
+Other libraries that are part of this project provide additonal handlers as
+well.
+
 To implement your custom handler the following API is available:
 ```{toctree}
 :maxdepth: 2

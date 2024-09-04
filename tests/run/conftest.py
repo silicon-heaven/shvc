@@ -26,6 +26,15 @@ def fixture_shvc_exec(valgrind_exec):
     return [*valgrind_exec, env]
 
 
+@pytest.fixture(name="shvcs_exec", scope="session")
+def fixture_shvcs_exec(valgrind_exec):
+    """Provide the shvcs application."""
+    env = os.getenv("SHVCS")
+    if not env:
+        pytest.skip("SHVCS not provided")
+    return [*valgrind_exec, env]
+
+
 @pytest.fixture(name="shvcbroker_exec", scope="session")
 def fixture_shvcbroker_exec(valgrind_exec):
     """Provide the shvcbroker application."""

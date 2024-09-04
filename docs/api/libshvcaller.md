@@ -8,5 +8,6 @@ methods and receive signals.
 :maxdepth: 2
 
 rpchandler_responses
+rpchandler_signals
 rpccall
 ```

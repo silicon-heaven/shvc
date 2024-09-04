@@ -5,22 +5,22 @@
 #include <limits.h>
 #include "shvc_config.h"
 
+static char *ris_default[] = {"**:*:*", NULL};
 
 static void print_usage(const char *argv0) {
-	fprintf(stderr, "%s [-ujvqdVh] [PATH] [METHOD] [PARAM]\n", argv0);
+	fprintf(stderr, "%s [-vqdVh] [-u URL] [RI]...\n", argv0);
 }
 
 static void print_help(const char *argv0) {
 	print_usage(argv0);
-	fprintf(stderr, "SHV RPC client.\n");
+	fprintf(stderr, "SHV RPC subscription client.\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Arguments:\n");
 	fprintf(stderr,
 		"  -u URL   Where to connect to (default " SHVC_DEFAULT_URL ")\n");
-	fprintf(stderr, "  -j       Output in JSON format instead of CPON\n");
 	fprintf(stderr, "  -v       Increase logging level of the communication\n");
 	fprintf(stderr, "  -q       Decrease logging level of the communication\n");
-	fprintf(stderr, "  -d       Set maximul logging level of the communication\n");
+	fprintf(stderr, "  -d       Set maximal logging level of the communication\n");
 	fprintf(stderr, "  -V       Print SHVC version and exit\n");
 	fprintf(stderr, "  -h       Print this help text\n");
 }
@@ -28,21 +28,15 @@ static void print_help(const char *argv0) {
 void parse_opts(int argc, char **argv, struct conf *conf) {
 	*conf = (struct conf){
 		.url = SHVC_DEFAULT_URL,
-		.path = NULL,
-		.method = "dir",
-		.param = NULL,
 		.verbose = 0,
-		.json = false,
+		.ris = ris_default,
 	};
 
 	int c;
-	while ((c = getopt(argc, argv, "ujvqdVh")) != -1) {
+	while ((c = getopt(argc, argv, "u:vqdVh")) != -1) {
 		switch (c) {
 			case 'u':
-				conf->url = argv[optind];
-				break;
-			case 'j':
-				conf->json = true;
+				conf->url = optarg;
 				break;
 			case 'v':
 				if (conf->verbose < UINT_MAX)
@@ -68,11 +62,6 @@ void parse_opts(int argc, char **argv, struct conf *conf) {
 		}
 	}
 	if (optind < argc)
-		conf->path = argv[optind++];
-	if (optind < argc)
-		conf->method = argv[optind++];
-	if (optind < argc) {
-		fprintf(stderr, "Invalid argument: %s\n", argv[optind]);
-		exit(2);
-	}
+		conf->ris = &argv[optind];
+	// TODO validate RIs
 }

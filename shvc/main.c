@@ -112,12 +112,12 @@ int main(int argc, char **argv) {
 
 	int ec = 0;
 
-	rpcerrno_t login_err;
+	rpcerrno_t login_errnum;
 	const char *login_errmsg;
-	if (!rpchandler_login_wait(login, &login_err, &login_errmsg, NULL)) {
+	if (!rpchandler_login_wait(login, &login_errnum, &login_errmsg, NULL)) {
 		ec = 3;
-		fprintf(stderr, "Failed to login to: %s\n", conf.url);
-		fprintf(stderr, "%s\n", login_errmsg);
+		fprintf(stderr, "Login failure: %s\n",
+			login_errmsg ?: rpcerror_str(login_errnum));
 		goto cleanup;
 	}
 

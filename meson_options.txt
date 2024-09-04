@@ -27,10 +27,10 @@ option(
   description: 'Build shvc tool that can call methods over SHV RPC protocol.',
 )
 option(
-  'shvcsub',
+  'shvcs',
   type: 'boolean',
   value: true,
-  description: 'Build shvcsub tool that can subscribe and receive SHV RPC signals.',
+  description: 'Build shvcs tool that can receive SHV RPC signals.',
 )
 option(
   'shvcp',
