@@ -16,5 +16,6 @@ rpcmsg
 rpcerror
 rpcaccess
 rpchandler
+rpccall
 rpcutils
 ```

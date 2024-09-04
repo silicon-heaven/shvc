@@ -1,5 +1,5 @@
 shvc_sources = files('opts.c')
-shvc_dependencies = [libshvcaller_dep]
+shvc_dependencies = [libshvrpc_dep]
 
 
 shvc = executable(

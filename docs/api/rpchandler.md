@@ -15,11 +15,11 @@ For the RPC Handler there are some prepared handlers you want to use:
 :maxdepth: 2
 
 rpchandler_app
+rpchandler_device
 rpchandler_login
+rpchandler_responses
+rpchandler_signals
 ```
-
-Other libraries that are part of this project provide additonal handlers as
-well.
 
 To implement your custom handler the following API is available:
 ```{toctree}

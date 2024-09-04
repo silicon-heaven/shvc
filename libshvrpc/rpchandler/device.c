@@ -3,7 +3,7 @@
 #include <shv/rpchandler_device.h>
 #include <shv/rpchandler_impl.h>
 
-#include "rpchandler_device_method.gperf.h"
+#include "device_method.gperf.h"
 
 struct rpchandler_device {
 	const char *name;

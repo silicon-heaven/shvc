@@ -1,9 +1,0 @@
-V0.0 {
-	global:
-		# shv/rpchandler_device.h
-		rpchandler_device_new;
-		rpchandler_device_destroy;
-		rpchandler_device_stage;
-
-	local: *;
-};

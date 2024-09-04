@@ -3,7 +3,7 @@
 #include <shv/rpchandler_impl.h>
 #include <shv/version.h>
 
-#include "rpchandler_app_method.gperf.h"
+#include "app_method.gperf.h"
 
 struct rpchandler_app {
 	const char *name;

@@ -116,6 +116,33 @@ V0.0 {
 		rpchandler_login_status;
 		rpchandler_login_wait;
 
+		# shv/rpchandler_device.h
+		rpchandler_device_new;
+		rpchandler_device_destroy;
+		rpchandler_device_stage;
+
+		# shv/rpchandler_responses.h
+		rpchandler_responses_new;
+		rpchandler_responses_destroy;
+		rpchandler_responses_stage;
+		rpcresponse_expect;
+		rpcresponse_request_id;
+		rpcresponse_discard;
+		rpcresponse_waitfor;
+		rpcresponse_send_request_void;
+
+		# shv/rpchandler_signals.h
+		rpchandler_signals_new;
+		rpchandler_signals_destroy;
+		rpchandler_signals_stage;
+		rpchandler_signals_subscribe;
+		rpchandler_signals_unsubscribe;
+		rpchandler_signals_status;
+		rpchandler_signals_wait;
+
+		# shv/rpccall.h
+		_rpccall;
+
 		# shv/crc32.h
 		crc32_update;
 
