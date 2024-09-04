@@ -1,9 +1,11 @@
 """Check functionality of shvcs."""
 
-import dataclasses
 import asyncio
 import asyncio.subprocess
+import dataclasses
+
 import pytest
+
 from .device import Device
 from .utils import subproc
 

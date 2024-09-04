@@ -1,8 +1,10 @@
 """Check the functionality of shvc."""
 
 import dataclasses
-import pytest
 import re
+
+import pytest
+
 from .utils import subproc
 
 

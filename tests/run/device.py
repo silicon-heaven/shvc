@@ -1,8 +1,9 @@
 """Device used in the tests."""
 
-import shv
-import typing
 import collections.abc
+import typing
+
+import shv
 
 
 class Device(shv.SimpleClient):
@@ -13,7 +14,7 @@ class Device(shv.SimpleClient):
 
     def _ls(self, path: str) -> collections.abc.Iterator[str]:
         yield from super()._ls(path)
-        if path == "":
+        if not path:
             yield "value"
             yield "lock"
 

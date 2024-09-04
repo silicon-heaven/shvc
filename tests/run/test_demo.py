@@ -1,11 +1,12 @@
 """Check if our demo applications communicate with each other."""
 
-import dataclasses
 import asyncio
+import dataclasses
 import logging
-import shv
 
 import pytest
+import shv
+
 from .__version__ import version
 from .utils import subproc
 
@@ -122,13 +123,13 @@ async def test_set(demo_device, client, i):
         signal.set_result([pth, param])
 
     path = f"test/device/track/{i}"
-    await client.prop_get(path) == list(range(1, i))
+    assert await client.prop_get(path) == list(range(1, i + 1))
     client.on_change(path, callback)
     await client.subscribe(f"{path}:*:*")
     await client.prop_set(path, [32, 42, 52])
     assert await signal == [path, [32, 42, 52]]
     client.on_change(path, None)
-    await client.prop_get(path) == [32, 42, 52]
+    assert await client.prop_get(path) == [32, 42, 52]
 
 
 async def test_device_invalid_login(demo_device_exec, url, broker):
@@ -138,7 +139,7 @@ async def test_device_invalid_login(demo_device_exec, url, broker):
     stdout, stderr = await subproc(*demo_device_exec, str(nurl), exit_code=1)
     assert stdout == [b""]
     assert stderr == [
-        "Login failure: Invalid login".encode(),
+        b"Login failure: Invalid login",
         b"",
     ]
 

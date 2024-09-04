@@ -5,18 +5,20 @@ This is communication between pyshv and shvc.
 
 from __future__ import annotations
 
-import contextlib
 import collections.abc
-import threading
+import contextlib
+import dataclasses
 import io
 import logging
-import select
 import os
 import pty
+import select
+import threading
+
 import pytest
 import shv
+
 from .utils import subproc
-import dataclasses
 
 logger = logging.getLogger(__name__)
 

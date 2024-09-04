@@ -139,25 +139,36 @@ include:
   - template: Security/Secret-Detection.gitlab-ci.yml
 
 ## Linters #####################################################################
-.linter:
+.lint:
   stage: lint
   extends: .nix
   needs: ["devenv"]
   allow_failure: true
 
 clang-tidy:
-  extends: .linter
+  extends: .lint
   needs: ["build"]
   script:
     - nix develop --quiet -c ninja -C build clang-tidy
 
+ruff:
+  extends: .lint
+  script:
+    - nix develop --quiet -c ruff check .
+
+mypy:
+  extends: .lint
+  script:
+    - mkdir .mypy-cache
+    - nix develop --quiet -c mypy --cache-dir .mypy-cache .
+
 shellcheck:
-  extends: .linter
+  extends: .lint
   script:
     - git ls-files '**.sh' | xargs nix develop --quiet -c shellcheck
 
 statix:
-  extends: .linter
+  extends: .lint
   script:
     - nix develop --quiet -c statix check .
 
@@ -182,6 +193,12 @@ clang-format:
     - nix develop --quiet -c meson setup build
     - nix develop --quiet -c ninja -C build clang-format
     - git diff --exit-code
+
+ruff-format:
+  extends: .style
+  script:
+    - nix develop --quiet -c ruff format --diff .
+    - nix develop --quiet -c ruff check --diff .
 
 shell-format:
   extends: .style

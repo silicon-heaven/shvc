@@ -147,6 +147,8 @@
             editorconfig-checker
             muon
             shellcheck
+            ruff
+            mypy
             shfmt
             statix
             deadnix

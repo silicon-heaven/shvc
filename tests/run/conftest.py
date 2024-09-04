@@ -1,15 +1,15 @@
+import dataclasses
 import os
 import shlex
-import dataclasses
-import shv
-import shv.broker
 
 import pytest
+import shv
+import shv.broker
 
 
 @pytest.fixture(name="valgrind_exec", scope="session")
 def fixture_valgrind_exec():
-    """Parse and provide valgrind executer and its arugments
+    """Parse and provide valgrind executer and its arugments.
 
     It is provided through the environment variable.
     """
@@ -93,7 +93,7 @@ def fixture_admin_url(url):
 
 @pytest.fixture(name="broker_config", scope="module")
 def fixture_broker_config(url):
-    """Configuration for SHV RPC Broker."""
+    """Provide configuration for SHV RPC Broker."""
     config = shv.broker.RpcBrokerConfig()
     config.listen = [url]
     config.roles.add(

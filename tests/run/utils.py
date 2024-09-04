@@ -1,11 +1,11 @@
 """Various utilities that are used in multiple tests."""
 
-import subprocess
 import asyncio
 import asyncio.subprocess
 import collections.abc
-import re
 import logging
+import re
+import subprocess
 
 logger = logging.getLogger(__name__)
 

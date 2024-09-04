@@ -1,5 +1,5 @@
-import subprocess
 import pathlib
+import subprocess
 
 version_script = pathlib.Path(__file__).parents[2] / ".version.sh"
 version = (

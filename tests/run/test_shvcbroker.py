@@ -1,12 +1,14 @@
 """Check the shvcbroker implementation."""
 
-import socket
+import asyncio
+import contextlib
 import dataclasses
 import logging
-import contextlib
-import asyncio
-import shv
+import socket
+
 import pytest
+import shv
+
 from .device import Device
 
 logger = logging.getLogger(__name__)
@@ -18,23 +20,21 @@ async def fixture_shvcbroker(shvcbroker_exec, tmp_path, url):
     conf = tmp_path / "config.cpon"
     with conf.open("w") as file:
         file.write(
-            shv.Cpon.pack(
-                {
-                    "name": "testbroker",
-                    "listen": [str(url)],
-                    "users": {
-                        "admin": {"password": "admin!123", "role": "admin"},
-                        "test": {"password": "test", "role": "test"},
+            shv.Cpon.pack({
+                "name": "testbroker",
+                "listen": [str(url)],
+                "users": {
+                    "admin": {"password": "admin!123", "role": "admin"},
+                    "test": {"password": "test", "role": "test"},
+                },
+                "roles": {
+                    "admin": {"mountPoints": "**", "access": {"dev": "**:*"}},
+                    "test": {
+                        "mountPoints": "test/**",
+                        "access": {"cmd": "test/**:*", "bws": ["**:ls", "**:dir"]},
                     },
-                    "roles": {
-                        "admin": {"mountPoints": "**", "access": {"dev": "**:*"}},
-                        "test": {
-                            "mountPoints": "test/**",
-                            "access": {"cmd": "test/**:*", "bws": ["**:ls", "**:dir"]},
-                        },
-                    },
-                }
-            )
+                },
+            })
         )
 
     cmd = [shvcbroker_exec[0], *shvcbroker_exec[1:], "-d", "-c", conf]
