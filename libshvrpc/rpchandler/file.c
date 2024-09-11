@@ -165,10 +165,8 @@ static void rpc_handle_write(struct rpchandler_msg *ctx, const char *path) {
 
 	cp_unpack_memcpy(ctx->unpack, ctx->item, buf, SHVC_FILE_MAXWRITE);
 
-	if (!rpchandler_msg_valid(ctx) ||
-		!rpchandler_msg_access_level(ctx, RPCACCESS_WRITE)) {
+	if (!rpchandler_msg_valid(ctx))
 		return;
-	}
 
 	int fd = open(path, O_RDWR, S_IRUSR | S_IWUSR);
 	if (fd < 0) {
@@ -209,10 +207,8 @@ static void rpc_handle_append(struct rpchandler_msg *ctx, const char *path) {
 
 	cp_unpack_memcpy(ctx->unpack, ctx->item, buf, SHVC_FILE_MAXWRITE);
 
-	if (!rpchandler_msg_valid(ctx) ||
-		!rpchandler_msg_access_level(ctx, RPCACCESS_WRITE)) {
+	if (!rpchandler_msg_valid(ctx))
 		return;
-	}
 
 	int fd = open(path, O_RDWR | O_APPEND, S_IRUSR | S_IWUSR);
 	if (fd < 0) {
@@ -271,12 +267,7 @@ static bool rpcfile_unpack_validation(
 		return false;
 	}
 
-	if (!rpchandler_msg_valid(ctx) ||
-		!rpchandler_msg_access_level(ctx, RPCACCESS_READ)) {
-		return false;
-	}
-
-	return true;
+	return rpchandler_msg_valid(ctx);
 }
 
 static void rpc_handle_crc(struct rpchandler_msg *ctx, const char *path) {
@@ -378,10 +369,8 @@ static void rpc_handle_read(struct rpchandler_msg *ctx, const char *path) {
 		return;
 	}
 
-	if (!rpchandler_msg_valid(ctx) ||
-		!rpchandler_msg_access_level(ctx, RPCACCESS_READ)) {
+	if (!rpchandler_msg_valid(ctx))
 		return;
-	}
 
 	stat(path, &st);
 	len = offset + len > st.st_size ? st.st_size - offset : len;
@@ -438,82 +427,80 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 		const struct gperf_rpchandler_file_method_match *match =
 			gperf_rpchandler_file_method(
 				ctx->meta.method, strlen(ctx->meta.method));
-		if (match == NULL)
-			return RPCHANDLER_MSG_SKIP;
-
-		switch (match->method) {
-			case M_STAT: {
-				if (!rpchandler_msg_valid(ctx) ||
-					!rpchandler_msg_access_level(ctx, RPCACCESS_READ))
-					return RPCHANDLER_MSG_DONE;
-				update_cached_stats(file->list->file_path, &file->stat);
-				cp_pack_t pack = rpchandler_msg_new_response(ctx);
-				rpcfile_stat_pack(pack, &file->stat);
-				rpchandler_msg_send_response(ctx, pack);
-				return RPCHANDLER_MSG_DONE;
-			}
-			case M_SIZE: {
-				if (!rpchandler_msg_valid(ctx) ||
-					!rpchandler_msg_access_level(ctx, RPCACCESS_READ))
-					return RPCHANDLER_MSG_DONE;
-				update_cached_stats(file->list->file_path, &file->stat);
-				cp_pack_t pack = rpchandler_msg_new_response(ctx);
-				cp_pack_int(pack, file->stat.size);
-				rpchandler_msg_send_response(ctx, pack);
-				return RPCHANDLER_MSG_DONE;
-			}
-			case M_WRITE:
-				if (file->list->access & RPCFILE_ACCESS_WRITE)
-					rpc_handle_write(ctx, file->list->file_path);
-				else
-					rpchandler_msg_send_method_not_found(ctx);
-				return RPCHANDLER_MSG_DONE;
-			case M_TRUNCATE:
-				if (file->list->access & RPCFILE_ACCESS_TRUNCATE) {
-					size_t length;
-					if (!cp_unpack_int(ctx->unpack, ctx->item, length)) {
-						rpchandler_msg_valid(ctx);
-						rpchandler_msg_send_error(
-							ctx, RPCERR_INVALID_PARAM, "Int expected.");
-						return RPCHANDLER_MSG_DONE;
+		if (match != NULL)
+			switch (match->method) {
+				case M_STAT: {
+					if (ctx->meta.access < RPCACCESS_READ)
+						break;
+					if (rpchandler_msg_valid_nullparam(ctx)) {
+						update_cached_stats(file->list->file_path, &file->stat);
+						cp_pack_t pack = rpchandler_msg_new_response(ctx);
+						rpcfile_stat_pack(pack, &file->stat);
+						rpchandler_msg_send_response(ctx, pack);
 					}
-
-					if (!rpchandler_msg_valid(ctx) ||
-						!rpchandler_msg_access_level(ctx, RPCACCESS_WRITE))
-						return RPCHANDLER_MSG_DONE;
-					if (truncate(file->list->file_path, length) < 0) {
-						rpchandler_msg_send_error(
-							ctx, RPCERR_INTERNAL_ERR, "truncate failed.");
-					} else
-						rpchandler_msg_send_response_void(ctx);
-				} else
-					rpchandler_msg_send_method_not_found(ctx);
-				return RPCHANDLER_MSG_DONE;
-			case M_READ:
-				if (file->list->access & RPCFILE_ACCESS_READ)
+					return RPCHANDLER_MSG_DONE;
+				}
+				case M_SIZE: {
+					if (ctx->meta.access < RPCACCESS_READ)
+						break;
+					if (rpchandler_msg_valid_nullparam(ctx)) {
+						update_cached_stats(file->list->file_path, &file->stat);
+						cp_pack_t pack = rpchandler_msg_new_response(ctx);
+						cp_pack_int(pack, file->stat.size);
+						cp_pack_container_end(pack);
+						rpchandler_msg_send(ctx);
+					}
+					return RPCHANDLER_MSG_DONE;
+				}
+				case M_WRITE:
+					if (!(file->list->access & RPCFILE_ACCESS_WRITE) ||
+						ctx->meta.access < RPCACCESS_WRITE)
+						break;
+					rpc_handle_write(ctx, file->list->file_path);
+					return RPCHANDLER_MSG_DONE;
+				case M_TRUNCATE:
+					if (!(file->list->access & RPCFILE_ACCESS_TRUNCATE) ||
+						ctx->meta.access < RPCACCESS_WRITE)
+						break;
+					size_t length;
+					bool valid = cp_unpack_int(ctx->unpack, ctx->item, length);
+					if (rpchandler_msg_valid(ctx)) {
+						if (valid) {
+							if (truncate(file->list->file_path, length) < 0)
+								rpchandler_msg_send_error(ctx,
+									RPCERR_INTERNAL_ERR, "truncate failed.");
+							else
+								rpchandler_msg_send_response_void(ctx);
+						} else
+							rpchandler_msg_send_error(
+								ctx, RPCERR_INVALID_PARAM, "Int expected.");
+					}
+					return RPCHANDLER_MSG_DONE;
+				case M_READ:
+					if (!(file->list->access & RPCFILE_ACCESS_READ) ||
+						ctx->meta.access < RPCACCESS_READ)
+						break;
 					rpc_handle_read(ctx, file->list->file_path);
-				else
-					rpchandler_msg_send_method_not_found(ctx);
-				return RPCHANDLER_MSG_DONE;
-			case M_APPEND:
-				if (file->list->access & RPCFILE_ACCESS_APPEND)
+					return RPCHANDLER_MSG_DONE;
+				case M_APPEND:
+					if (!(file->list->access & RPCFILE_ACCESS_APPEND) ||
+						ctx->meta.access < RPCACCESS_READ)
+						break;
 					rpc_handle_append(ctx, file->list->file_path);
-				else
-					rpchandler_msg_send_method_not_found(ctx);
-				return RPCHANDLER_MSG_DONE;
-			case M_CRC:
-				if (file->list->access & RPCFILE_ACCESS_VALIDATION)
+					return RPCHANDLER_MSG_DONE;
+				case M_CRC:
+					if (!(file->list->access & RPCFILE_ACCESS_VALIDATION) ||
+						ctx->meta.access < RPCACCESS_READ)
+						break;
 					rpc_handle_crc(ctx, file->list->file_path);
-				else
-					rpchandler_msg_send_method_not_found(ctx);
-				return RPCHANDLER_MSG_DONE;
-			case M_SHA1:
-				if (file->list->access & RPCFILE_ACCESS_VALIDATION)
+					return RPCHANDLER_MSG_DONE;
+				case M_SHA1:
+					if (!(file->list->access & RPCFILE_ACCESS_VALIDATION) ||
+						ctx->meta.access < RPCACCESS_READ)
+						break;
 					rpc_handle_sha1(ctx, file->list->file_path);
-				else
-					rpchandler_msg_send_method_not_found(ctx);
-				return RPCHANDLER_MSG_DONE;
-		}
+					return RPCHANDLER_MSG_DONE;
+			}
 	}
 	return RPCHANDLER_MSG_SKIP;
 }

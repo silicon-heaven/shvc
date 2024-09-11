@@ -69,57 +69,58 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 		return RPCHANDLER_MSG_SKIP;
 	const struct gperf_rpchandler_device_method_match *match =
 		gperf_rpchandler_device_method(ctx->meta.method, strlen(ctx->meta.method));
-	if (match == NULL)
-		return RPCHANDLER_MSG_SKIP;
-
-	bool has_param = rpcmsg_has_value(ctx->item);
-	if (!rpchandler_msg_valid(ctx))
-		return RPCHANDLER_MSG_DONE;
-
-	if (has_param) {
-		rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM, "Must be only 'null'");
-		return RPCHANDLER_MSG_DONE;
-	}
-
-	cp_pack_t pack;
-	switch (match->method) {
-		case M_NAME:
-			pack = rpchandler_msg_new_response(ctx);
-			cp_pack_str(pack, rpchandler_device->name);
-			rpchandler_msg_send_response(ctx, pack);
-			break;
-		case M_VERSION:
-			pack = rpchandler_msg_new_response(ctx);
-			cp_pack_str(pack, rpchandler_device->version);
-			rpchandler_msg_send_response(ctx, pack);
-			break;
-		case M_SERIAL_NUMBER:
-			pack = rpchandler_msg_new_response(ctx);
-			cp_pack_str(pack, rpchandler_device->serial_number);
-			rpchandler_msg_send_response(ctx, pack);
-			break;
-		case M_UPTIME: {
-			if (!rpchandler_msg_access_level(ctx, RPCACCESS_READ))
-				break;
-			struct sysinfo si;
-			sysinfo(&si);
-			pack = rpchandler_msg_new_response(ctx);
-			cp_pack_int(pack, si.uptime);
-			rpchandler_msg_send_response(ctx, pack);
-			break;
+	if (match != NULL)
+		switch (match->method) {
+			case M_NAME:
+				/* No need to check for browse level access */
+				if (rpchandler_msg_valid_nullparam(ctx)) {
+					cp_pack_t pack = rpchandler_msg_new_response(ctx);
+					cp_pack_str(pack, rpchandler_device->name);
+					rpchandler_msg_send_response(ctx, pack);
+				}
+				return RPCHANDLER_MSG_DONE;
+			case M_VERSION:
+				/* No need to check for browse level access */
+				if (rpchandler_msg_valid_nullparam(ctx)) {
+					cp_pack_t pack = rpchandler_msg_new_response(ctx);
+					cp_pack_str(pack, rpchandler_device->version);
+					rpchandler_msg_send_response(ctx, pack);
+				}
+				return RPCHANDLER_MSG_DONE;
+			case M_SERIAL_NUMBER:
+				/* No need to check for browse level access */
+				if (rpchandler_msg_valid_nullparam(ctx)) {
+					cp_pack_t pack = rpchandler_msg_new_response(ctx);
+					cp_pack_str(pack, rpchandler_device->serial_number);
+					rpchandler_msg_send_response(ctx, pack);
+				}
+				return RPCHANDLER_MSG_DONE;
+			case M_UPTIME:
+				if (ctx->meta.access < RPCACCESS_READ)
+					break;
+				if (rpchandler_msg_valid_nullparam(ctx)) {
+					struct sysinfo si;
+					sysinfo(&si);
+					cp_pack_t pack = rpchandler_msg_new_response(ctx);
+					cp_pack_int(pack, si.uptime);
+					rpchandler_msg_send_response(ctx, pack);
+				} else
+					rpchandler_msg_send_method_not_found(ctx);
+				return RPCHANDLER_MSG_DONE;
+			case M_RESET:
+				if (ctx->meta.access < RPCACCESS_COMMAND)
+					break;
+				if (rpchandler_msg_valid_nullparam(ctx)) {
+					if (rpchandler_device->reset) {
+						rpchandler_msg_send_response_void(ctx);
+						rpchandler_device->reset();
+					} else
+						rpchandler_msg_send_error(ctx, RPCERR_NOT_IMPLEMENTED,
+							"Reset is not available");
+				}
+				return RPCHANDLER_MSG_DONE;
 		}
-		case M_RESET:
-			if (!rpchandler_msg_access_level(ctx, RPCACCESS_COMMAND))
-				break;
-			if (rpchandler_device->reset) {
-				rpchandler_msg_send_response_void(ctx);
-				rpchandler_device->reset();
-			} else
-				rpchandler_msg_send_error(
-					ctx, RPCERR_NOT_IMPLEMENTED, "Reset is not available");
-			break;
-	}
-	return RPCHANDLER_MSG_DONE;
+	return RPCHANDLER_MSG_SKIP;
 }
 
 static const struct rpchandler_funcs rpc_funcs = {

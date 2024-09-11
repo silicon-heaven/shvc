@@ -65,13 +65,12 @@ static void rpcfetch_result(struct rpchandler_records *handler,
 
 static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
 	struct rpchandler_records *handler = cookie;
-	char *path = malloc(strlen(".records/") + strlen(handler->name) + 1);
-	strcpy(path, ".records/");
-	strcat(path, handler->name);
-
-	if (ctx->meta.path && !strcmp(ctx->meta.path, path)) {
-		free(path);
-		if (!strcmp(ctx->meta.method, "fetch")) {
+	const char *const prefix = ".records/";
+	if (ctx->meta.type == RPCMSG_T_REQUEST &&
+		!strncmp(ctx->meta.path, prefix, strlen(prefix)) &&
+		!strcmp(ctx->meta.path + strlen(prefix), handler->name)) {
+		if (!strcmp(ctx->meta.method, "fetch") &&
+			ctx->meta.access >= RPCACCESS_SERVICE) {
 			size_t start;
 			size_t num;
 			bool invalid_param = false;
@@ -80,8 +79,7 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 				!cp_unpack_int(ctx->unpack, ctx->item, num))
 				invalid_param = true;
 
-			if (!rpchandler_msg_valid(ctx) ||
-				!rpchandler_msg_access_level(ctx, RPCACCESS_SERVICE))
+			if (!rpchandler_msg_valid(ctx))
 				return RPCHANDLER_MSG_DONE;
 
 			if (invalid_param) {
@@ -91,25 +89,19 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 				rpcfetch_result(handler, ctx, start, num);
 
 			return RPCHANDLER_MSG_DONE;
-		} else if (!strcmp(ctx->meta.method, "span")) {
-			if (!rpchandler_msg_valid(ctx) ||
-				!rpchandler_msg_access_level(ctx, RPCACCESS_SERVICE))
-				return RPCHANDLER_MSG_DONE;
-			uint64_t min;
-			uint64_t max;
-			uint64_t span;
-			if (!handler->ops->get_index_range(handler->log, &min, &max, &span)) {
-				rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM,
-					"Could not retrieve information from the log.");
-				return RPCHANDLER_MSG_DONE;
+		} else if (!strcmp(ctx->meta.method, "span") &&
+			ctx->meta.access >= RPCACCESS_SERVICE) {
+			if (rpchandler_msg_valid_nullparam(ctx)) {
+				uint64_t min, max, span;
+				if (handler->ops->get_index_range(handler->log, &min, &max, &span)) {
+					rpcspan_result(ctx, min, max, span);
+				} else
+					rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM,
+						"Could not retrieve information from the log.");
 			}
-			rpcspan_result(ctx, min, max, span);
 			return RPCHANDLER_MSG_DONE;
 		}
-	} else {
-		free(path);
 	}
-
 	return RPCHANDLER_MSG_SKIP;
 }
 

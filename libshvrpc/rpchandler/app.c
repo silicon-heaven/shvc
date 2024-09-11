@@ -76,47 +76,42 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 		gperf_rpchandler_app_method(ctx->meta.method, strlen(ctx->meta.method));
 	if (match == NULL)
 		return RPCHANDLER_MSG_SKIP;
-
-	bool has_param = rpcmsg_has_value(ctx->item);
-	if (!rpchandler_msg_valid(ctx))
-		return RPCHANDLER_MSG_DONE;
-
-	if (has_param) {
-		rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM, "Must be only 'null'");
-		return RPCHANDLER_MSG_DONE;
-	}
-
-	cp_pack_t pack;
-	switch (match->method) {
-		case M_SHV_VERSION_MAJOR:
-			pack = rpchandler_msg_new_response(ctx);
-			cp_pack_int(pack, SHV_VERSION_MAJOR);
-			rpchandler_msg_send_response(ctx, pack);
-			break;
-		case M_SHV_VERSION_MINOR:
-			pack = rpchandler_msg_new_response(ctx);
-			cp_pack_int(pack, SHV_VERSION_MINOR);
-			rpchandler_msg_send_response(ctx, pack);
-			break;
-		case M_NAME:
-			pack = rpchandler_msg_new_response(ctx);
-			cp_pack_str(pack, rpchandler_app->name ?: "shvc");
-			rpchandler_msg_send_response(ctx, pack);
-			break;
-		case M_VERSION:
-			pack = rpchandler_msg_new_response(ctx);
-			cp_pack_str(pack, rpchandler_app->version ?: PROJECT_VERSION);
-			rpchandler_msg_send_response(ctx, pack);
-			break;
-		case M_PING:
-			rpchandler_msg_send_response_void(ctx);
-			break;
-		case M_DATE:
-			pack = rpchandler_msg_new_response(ctx);
-			cp_pack_datetime(pack, clock_cpdatetime());
-			rpchandler_msg_send_response(ctx, pack);
-			break;
-	}
+	if (rpchandler_msg_valid_nullparam(ctx))
+		switch (match->method) {
+			case M_SHV_VERSION_MAJOR: {
+				cp_pack_t pack = rpchandler_msg_new_response(ctx);
+				cp_pack_int(pack, SHV_VERSION_MAJOR);
+				rpchandler_msg_send_response(ctx, pack);
+				break;
+			}
+			case M_SHV_VERSION_MINOR: {
+				cp_pack_t pack = rpchandler_msg_new_response(ctx);
+				cp_pack_int(pack, SHV_VERSION_MINOR);
+				rpchandler_msg_send_response(ctx, pack);
+				break;
+			}
+			case M_NAME: {
+				cp_pack_t pack = rpchandler_msg_new_response(ctx);
+				cp_pack_str(pack, rpchandler_app->name ?: "shvc");
+				rpchandler_msg_send_response(ctx, pack);
+				break;
+			}
+			case M_VERSION: {
+				cp_pack_t pack = rpchandler_msg_new_response(ctx);
+				cp_pack_str(pack, rpchandler_app->version ?: PROJECT_VERSION);
+				rpchandler_msg_send_response(ctx, pack);
+				break;
+			}
+			case M_PING:
+				rpchandler_msg_send_response_void(ctx);
+				break;
+			case M_DATE: {
+				cp_pack_t pack = rpchandler_msg_new_response(ctx);
+				cp_pack_datetime(pack, clock_cpdatetime());
+				rpchandler_msg_send_response(ctx, pack);
+				break;
+			}
+		}
 	return RPCHANDLER_MSG_DONE;
 }
 

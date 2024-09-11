@@ -53,10 +53,8 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 	struct device_state *state = cookie;
 	int tid = trackid(ctx->meta.path);
 	if (tid != -1) {
-		if (!strcmp(ctx->meta.method, "get")) {
+		if (!strcmp(ctx->meta.method, "get") && ctx->meta.access >= RPCACCESS_READ) {
 			if (!rpchandler_msg_valid(ctx))
-				return RPCHANDLER_MSG_DONE;
-			if (!rpchandler_msg_access_level(ctx, RPCACCESS_READ))
 				return RPCHANDLER_MSG_DONE;
 			cp_pack_t pack = rpchandler_msg_new_response(ctx);
 			cp_pack_list_begin(pack);
@@ -66,16 +64,17 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 			cp_pack_container_end(pack);
 			rpchandler_msg_send(ctx);
 			return RPCHANDLER_MSG_DONE;
-		} else if (!strcmp(ctx->meta.method, "set")) {
+		} else if (!strcmp(ctx->meta.method, "set") &&
+			ctx->meta.access >= RPCACCESS_WRITE) {
 			size_t siz = 2;
 			size_t cnt = 0;
 			int *res = malloc(sizeof(int) * siz);
-			bool invalid_param = false;
+			bool valid_param = true;
 			cp_unpack(ctx->unpack, ctx->item);
 			if (ctx->item->type == CPITEM_LIST) {
 				for_cp_unpack_list(ctx->unpack, ctx->item) {
 					if (ctx->item->type != CPITEM_INT) {
-						invalid_param = true;
+						valid_param = false;
 						break;
 					}
 					if (cnt >= siz) {
@@ -86,37 +85,34 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 					res[cnt++] = ctx->item->as.Int;
 				}
 			} else
-				invalid_param = true;
-			if (!rpchandler_msg_valid(ctx) ||
-				!rpchandler_msg_access_level(ctx, RPCACCESS_WRITE)) {
+				valid_param = false;
+			if (!rpchandler_msg_valid(ctx)) {
 				free(res);
 				return RPCHANDLER_MSG_DONE;
 			}
 
 			bool value_changed = false;
-			if (invalid_param) {
-				free(res);
-				rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM,
-					"Only list of integers is allowed");
-			} else {
+			if (valid_param) {
 				value_changed = state->tracks[tid].cnt != cnt ||
 					memcmp(state->tracks[tid].values, res, cnt);
 				free(state->tracks[tid].values);
 				state->tracks[tid].values = res;
 				state->tracks[tid].cnt = cnt;
 				rpchandler_msg_send_response_void(ctx);
+			} else {
+				free(res);
+				rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM,
+					"Only list of integers is allowed");
 			}
 
 			if (value_changed) {
-				cp_pack_t pack = rpchandler_msg_new(ctx);
-				rpcmsg_pack_signal(pack, ctx->meta.path, "get", "chng", NULL,
-					RPCACCESS_READ, false);
+				cp_pack_t pack = rpchandler_msg_new_signal(
+					ctx, "get", "chng", RPCACCESS_READ, false);
 				cp_pack_list_begin(pack);
 				for (size_t i = 0; i < cnt; i++)
 					cp_pack_int(pack, res[i]);
 				cp_pack_container_end(pack);
-				cp_pack_container_end(pack);
-				rpchandler_msg_send(ctx);
+				rpchandler_msg_send_signal(ctx, pack);
 			}
 			return RPCHANDLER_MSG_DONE;
 		}

@@ -25,7 +25,6 @@
  */
 bool rpchandler_msg_valid(struct rpchandler_msg *ctx) __attribute__((nonnull));
 
-
 /*! Add result of `ls`.
  *
  * This is intended to be called only from @ref rpchandler_funcs.ls functions.
@@ -241,19 +240,96 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_send_ferror(
 bool rpchandler_msg_send_method_not_found(struct rpchandler_msg *ctx)
 	__attribute__((nonnull));
 
-/*! Utility to check if received request has sufficient access level.
+/*! Combined call to the @ref rpchandler_msg_new and @ref rpcmsg_pack_signal.
  *
- * @ref rpchandler_msg_send_method_not_found if access level is not suffient.
+ * This function should be followed by packing of signal value and call to @ref
+ * rpchandler_msg_send_signal. You can abandon this message with @ref
+ * rpchandler_msg_drop.
+ *
+ * The signal path and user's ID is automatically taken from received request
+ * and thus must be called only if `ctx->meta.type == RPCMSG_T_REQUEST`.
  *
  * @param ctx Context passed to @ref rpchandler_funcs.msg
- * @param access The minimal required access level.
- * @returns `true` if access is sufficient and `false` otherwise.
+ * @param source name of the method the signal is associated with.
+ * @param signal name of the signal.
+ * @param access The access level for this signal. This is used to filter
+ *   access  to the signals and in general should be consistent with access
+ *   level of the method this signal is associated with.
+ * @param repeat Signals that this is repeat of some previous signal and this
+ *   value didn't change right now but some time in the past.
+ * @returns Packer object or `NULL` in case signal can't be sent.
  */
-__attribute__((nonnull)) static inline bool rpchandler_msg_access_level(
-	struct rpchandler_msg *ctx, rpcaccess_t access) {
-	if (ctx->meta.access >= access)
-		return true;
-	rpchandler_msg_send_method_not_found(ctx);
+__attribute__((nonnull)) static inline cp_pack_t rpchandler_msg_new_signal(
+	struct rpchandler_msg *ctx, const char *source, const char *signal,
+	rpcaccess_t access, bool repeat) {
+	cp_pack_t pack = rpchandler_msg_new(ctx);
+	if (pack)
+		rpcmsg_pack_signal(pack, ctx->meta.path, source, signal,
+			ctx->meta.user_id, access, repeat);
+	return pack;
+}
+
+/*! Combined call to the @ref cp_pack_container_end and @ref
+ * rpchandler_msg_send.
+ *
+ * It is provided for visual consistency with @ref rpchandler_msg_new_signal.
+ *
+ * @param ctx Context passed to @ref rpchandler_funcs.msg
+ * @param pack Packer returned from @ref rpchandler_msg_new_response.
+ * @returns Packer object or `NULL` in case resposne can't be sent.
+ */
+__attribute__((nonnull(1))) static inline bool rpchandler_msg_send_signal(
+	struct rpchandler_msg *ctx, cp_pack_t pack) {
+	if (pack == NULL)
+		return false;
+	cp_pack_container_end(pack);
+	return rpchandler_msg_send(ctx);
+}
+
+/*! Combined call to the @ref rpchandler_msg_new, @ref rpcmsg_pack_signal_void,
+ * and @ref rpchandler_msg_send.
+ *
+ * The signal path and user's ID is automatically taken from received request
+ * and thus must be called only if `ctx->meta.type == RPCMSG_T_REQUEST`.
+ *
+ * @param ctx Context passed to @ref rpchandler_funcs.msg
+ * @param source name of the method the signal is associated with.
+ * @param signal name of the signal.
+ * @param access The access level for this signal. This is used to filter
+ *   access  to the signals and in general should be consistent with access
+ *   level of the method this signal is associated with.
+ * @param repeat Signals that this is repeat of some previous signal and this
+ *   value didn't change right now but some time in the past.
+ * @returns Value returned from @ref rpchandler_msg_send.
+ */
+__attribute__((nonnull)) static inline bool rpchandler_msg_new_signal_void(
+	struct rpchandler_msg *ctx, const char *source, const char *signal,
+	rpcaccess_t access, bool repeat) {
+	cp_pack_t pack = rpchandler_msg_new(ctx);
+	if (pack == NULL)
+		return false;
+	rpcmsg_pack_signal_void(pack, ctx->meta.path, source, signal,
+		ctx->meta.user_id, access, repeat);
+	return rpchandler_msg_send(ctx);
+}
+
+/*! Check for null parameter and validate message.
+ *
+ * This is convenient combination of checking for null parameter and @ref
+ * rpchandler_msg_valid.
+ *
+ * @param ctx Handle context passed to @ref rpchandler_funcs.msg.
+ * @returns `true` if request should be handled and `false` otherwise.
+ */
+static inline bool rpchandler_msg_valid_nullparam(struct rpchandler_msg *ctx) {
+	bool is_null = !rpcmsg_has_value(ctx->item) ||
+		cp_unpack_type(ctx->unpack, ctx->item) == CPITEM_NULL;
+	if (rpchandler_msg_valid(ctx)) {
+		if (is_null)
+			return true;
+		rpchandler_msg_send_error(
+			ctx, RPCERR_INVALID_PARAM, "No parameter expected");
+	}
 	return false;
 }
 
