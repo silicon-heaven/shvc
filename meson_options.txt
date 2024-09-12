@@ -1,7 +1,6 @@
 option(
   'tests',
   type: 'feature',
-  value: 'auto',
   description: 'Expect tests to be build and check for their dependencies',
 )
 
@@ -31,54 +30,47 @@ option(
 # Applications
 option(
   'shvc',
-  type: 'boolean',
-  value: true,
+  type: 'feature',
   description: 'Build shvc tool that can call methods over SHV RPC protocol.',
 )
 option(
   'shvcs',
-  type: 'boolean',
-  value: true,
+  type: 'feature',
   description: 'Build shvcs tool that can receive SHV RPC signals.',
 )
 option(
   'shvcp',
-  type: 'boolean',
-  value: true,
+  type: 'feature',
   description: 'Build shvcp tool that can copy files over SHV RPC protocol.',
 )
 option(
   'shvctio',
-  type: 'boolean',
-  value: true,
+  type: 'feature',
   description: 'Build shvctio terminal interface for SHV RPC exchange nodes.',
 )
 option(
   'shvcbroker',
-  type: 'boolean',
-  value: true,
+  type: 'feature',
   description: 'Build SHV RPC Broker standalone application.',
 )
 
 # Demo applications
 option(
   'demo-device',
-  type: 'boolean',
-  value: true,
+  type: 'feature',
   description: 'Build SHV RPC demo device application.',
 )
 option(
   'demo-client',
-  type: 'boolean',
-  value: true,
+  type: 'feature',
   description: 'Build SHV RPC demo client application.',
 )
 option(
   'demo-history',
-  type: 'boolean',
-  value: true,
+  type: 'feature',
   description: 'Build SHV RPC demo history application.',
 )
+
 # Applications defaults
 option(
   'default-url',

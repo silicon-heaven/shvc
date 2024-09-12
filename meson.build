@@ -59,23 +59,23 @@ subdir('libshvbroker')
 subdir('libshvhistory')
 
 shvc_opt = get_option('shvc')
-if shvc_opt
+if shvc_opt.enabled() or (shvc_opt.auto() and not meson.is_subproject())
   subdir('shvc')
 endif
 shvcs_opt = get_option('shvcs')
-if shvcs_opt
+if shvcs_opt.enabled() or (shvcs_opt.auto() and not meson.is_subproject())
   subdir('shvcs')
 endif
 shvcp_opt = get_option('shvcp')
-if shvcp_opt
+if shvcp_opt.enabled() or (shvcp_opt.auto() and not meson.is_subproject())
   subdir('shvcp')
 endif
 shvctio_opt = get_option('shvctio')
-if shvctio_opt
+if shvctio_opt.enabled() or (shvctio_opt.auto() and not meson.is_subproject())
   subdir('shvctio')
 endif
 shvcbroker_opt = get_option('shvcbroker')
-if shvcbroker_opt
+if shvcbroker_opt.enabled() or (shvcbroker_opt.auto() and not meson.is_subproject())
   subdir('shvcbroker')
 endif
 demo_device_opt = get_option('demo-device')
