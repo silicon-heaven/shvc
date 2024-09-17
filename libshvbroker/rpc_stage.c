@@ -107,6 +107,7 @@ static inline enum rpchandler_msg_res rpc_msg_signal(
 	if (ctx->meta.path && *ctx->meta.path != '\0') {
 		struct obstack *obs = rpchandler_obstack(ctx);
 		obstack_printf(obs, "%s/%s", c->role->mount_point, ctx->meta.path);
+		obstack_1grow(obs, '\0');
 		ctx->meta.path = obstack_finish(obs);
 	} else
 		ctx->meta.path = (char *)c->role->mount_point;
