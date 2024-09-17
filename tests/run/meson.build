@@ -10,35 +10,35 @@ python_pytest = python.find_installation(
 
 pytest_depends = []
 pytest_env = []
-if shvc_opt.enabled()
+if not shvc_opt.disabled()
   pytest_depends += shvc
   pytest_env += 'SHVC=' + shvc.full_path()
 endif
-if shvcs_opt.enabled()
+if not shvcs_opt.disabled()
   pytest_depends += shvcs
   pytest_env += 'SHVCS=' + shvcs.full_path()
 endif
-if shvcp_opt.enabled()
+if not shvcp_opt.disabled()
   pytest_depends += shvcp
   pytest_env += 'SHVCP=' + shvcp.full_path()
 endif
-if shvctio_opt.enabled()
+if not shvctio_opt.disabled()
   pytest_depends += shvctio
   pytest_env += 'SHVCTIO=' + shvctio.full_path()
 endif
-if shvcbroker_opt.enabled()
+if not shvcbroker_opt.disabled()
   pytest_depends += shvcbroker
   pytest_env += 'SHVCBROKER=' + shvcbroker.full_path()
 endif
-if demo_device_opt.enabled()
+if not demo_device_opt.disabled()
   pytest_depends += demo_device
   pytest_env += 'DEMO_DEVICE=' + demo_device.full_path()
 endif
-if demo_client_opt.enabled()
+if not demo_client_opt.disabled()
   pytest_depends += demo_client
   pytest_env += 'DEMO_CLIENT=' + demo_client.full_path()
 endif
-if demo_history_opt.enabled()
+if not demo_history_opt.disabled()
   pytest_depends += demo_history
   pytest_env += 'DEMO_HISTORY=' + demo_history.full_path()
 endif

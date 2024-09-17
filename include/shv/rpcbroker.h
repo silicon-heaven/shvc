@@ -175,8 +175,8 @@ void rpcbroker_client_unregister(rpcbroker_t broker, int client_id)
  *
  * @param broker Broker object.
  * @param client_id The ID of the previously registered client. That is
- *   integer previously returned either by @ref rpcbroker_client_register and
- *   not unregistered yet.
+ *   integer previously returned by @ref rpcbroker_client_register and not
+ *   unregistered yet.
  * @returns The @ref rpchandler_t or `NULL` in case of invalid client ID.
  */
 rpchandler_t rpcbroker_client_handler(rpcbroker_t broker, int client_id)

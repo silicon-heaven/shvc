@@ -3,6 +3,7 @@
 
 #include "api.h"
 #include "broker.h"
+#include "multipack.h"
 #include "stages.h"
 #include "util.h"
 
@@ -81,24 +82,6 @@ static inline enum rpchandler_msg_res rpc_msg_response(
 	return RPCHANDLER_MSG_DONE;
 }
 
-struct multipack {
-	cp_pack_func_t func;
-	cp_pack_t *packs;
-	size_t cnt;
-};
-static bool multipack_func(void *ptr, const struct cpitem *item) {
-	struct multipack *p = ptr;
-	bool res = false;
-	for (size_t i = 0; i < p->cnt; i++)
-		if (p->packs[i]) {
-			if (cp_pack(p->packs[i], item))
-				res = true;
-			else
-				p->packs[i] = NULL;
-		}
-	return res;
-}
-
 static inline enum rpchandler_msg_res rpc_msg_signal(
 	struct clientctx *c, struct rpchandler_msg *ctx) {
 	broker_lock(c->broker);
@@ -112,42 +95,20 @@ static inline enum rpchandler_msg_res rpc_msg_signal(
 	} else
 		ctx->meta.path = (char *)c->role->mount_point;
 
-	nbool_t dest = NULL;
-	for (size_t i = 0; i < c->broker->subscriptions_cnt; i++)
-		if (rpcri_match(c->broker->subscriptions[i].ri, ctx->meta.path,
-				ctx->meta.source, ctx->meta.signal))
-			nbool_or(&dest, c->broker->subscriptions[i].clients);
+	nbool_t dest = signal_destinations(c->broker, ctx->meta.path,
+		ctx->meta.source, ctx->meta.signal, ctx->meta.access);
 	if (dest == NULL) /* Not handling. Nobody cares about it */
 		return RPCHANDLER_MSG_SKIP;
-	size_t siz = 0;
-	for_nbool(dest, cid) siz++;
-	cp_pack_t packs[siz];
-	size_t packi = 0;
-	for_nbool(dest, cid) {
-		if (cid_active(c->broker, cid) &&
-			c->role->access(c->role->access_cookie, ctx->meta.path,
-				ctx->meta.method) >= ctx->meta.access)
-			packs[packi++] = rpchandler_msg_new(c->broker->clients[cid].handler);
-		else
-			siz--;
-	}
-	struct multipack mp = {multipack_func, packs, siz};
-	cp_pack_t pack = &mp.func;
+	struct multipack multipack;
+	cp_pack_t pack = multipack_init(c->broker, &multipack, dest);
 	if (rpcmsg_has_value(ctx->item)) {
 		rpcmsg_pack_meta(pack, &ctx->meta);
 		cp_repack(ctx->unpack, ctx->item, pack);
 		cp_pack_container_end(pack);
 	} else
 		rpcmsg_pack_meta_void(pack, &ctx->meta);
-	bool send = rpchandler_msg_valid(ctx);
-	for_nbool(dest, cid) {
-		if (cid_active(c->broker, cid)) {
-			if (send)
-				rpchandler_msg_send(c->broker->clients[cid].handler);
-			else
-				rpchandler_msg_drop(c->broker->clients[cid].handler);
-		}
-	}
+	multipack_done(c->broker, &multipack, dest, rpchandler_msg_valid(ctx));
+	free(dest);
 	return RPCHANDLER_MSG_SKIP;
 }
 
@@ -191,7 +152,7 @@ int rpc_idle(void *cookie, struct rpchandler_idle *ctx) {
 			res = ttlres;
 	}
 
-	// TODO subbobroker subscribe
+	// TODO subbroker subscribe
 	broker_unlock(c->broker);
 	return res;
 }

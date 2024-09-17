@@ -1,9 +1,57 @@
 #include "mount.h"
+#include "multipack.h"
 
 static int mntcmp(const void *a, const void *b) {
 	const struct mount *da = a;
 	const struct mount *db = b;
 	return strcmp(da->path, db->path);
+}
+
+static void lsmod(struct clientctx *c, bool val) {
+	size_t mount_len = strlen(c->role->mount_point);
+	char mount[mount_len + 1];
+	strncpy(mount, c->role->mount_point, mount_len);
+	mount[mount_len] = '\0';
+
+	size_t plen = 0;
+	for (size_t i = 0; i < c->broker->mounts_cnt; i++) {
+		const char *end = c->broker->mounts[i].path;
+		while (true) {
+			end = strchr(end, '/');
+			size_t siz = end - c->broker->mounts[i].path;
+			if (end && !strncmp(c->broker->mounts[i].path, mount, siz) &&
+				mount[siz] == '/') {
+				plen = plen < siz ? siz : plen;
+				end++;
+			} else
+				break;
+		}
+	}
+	const char *prefix, *node;
+	if (plen) {
+		prefix = mount;
+		mount[plen] = '\0';
+		node = mount + plen + 1;
+	} else {
+		prefix = "";
+		node = mount;
+	}
+	*strchrnul(node, '/') = '\0';
+
+	nbool_t dest =
+		signal_destinations(c->broker, prefix, "ls", "lsmod", RPCACCESS_BROWSE);
+	if (dest == NULL)
+		return;
+	struct multipack multipack;
+	cp_pack_t pack = multipack_init(c->broker, &multipack, dest);
+	rpcmsg_pack_signal(pack, prefix, "ls", "lsmod", NULL, RPCACCESS_BROWSE, false);
+	cp_pack_map_begin(pack);
+	cp_pack_str(pack, node);
+	cp_pack_bool(pack, val);
+	cp_pack_container_end(pack);
+	cp_pack_container_end(pack);
+	multipack_done(c->broker, &multipack, dest, true);
+	free(dest);
 }
 
 bool mount_register(struct clientctx *c) {
@@ -12,6 +60,7 @@ bool mount_register(struct clientctx *c) {
 			return false;
 	if (mounted_client(c->broker, c->role->mount_point, NULL))
 		return false;
+	lsmod(c, true);
 	struct mount *mnt = ARR_ADD(c->broker->mounts);
 	*mnt = (struct mount){
 		.path = c->role->mount_point,
@@ -27,6 +76,7 @@ void mount_unregister(struct clientctx *c) {
 	if (!mnt)
 		return;
 	ARR_DEL(c->broker->mounts, mnt);
+	lsmod(c, false);
 }
 
 struct clientctx *mounted_client(

@@ -4,6 +4,7 @@ libshvbroker_sources = [
     'api.c',
     'api_login.c',
     'mount.c',
+    'multipack.c',
     'role.c',
     'rpc_stage.c',
     'rpcbroker.c',
