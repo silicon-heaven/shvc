@@ -14,7 +14,7 @@ void rpcbroker_api_ls(struct clientctx *c, struct rpchandler_ls *ctx) {
 	} else if (!strcmp(ctx->path, ".broker/client")) {
 		broker_lock(c->broker);
 		for_cid(c->broker) {
-			if (cid_valid(c->broker, cid) && c->broker->clients[cid].role)
+			if (cid_valid(c->broker, cid) && c->broker->clients[cid]->role)
 				rpchandler_ls_result_fmt(ctx, "%d", cid);
 		}
 		broker_unlock(c->broker);
@@ -122,30 +122,28 @@ bool rpcbroker_api_dir(struct rpchandler_dir *ctx) {
 
 static void pack_subscriptions(cp_pack_t pack, struct clientctx *client) {
 	cp_pack_map_begin(pack);
-	int cid = client - client->broker->clients;
-	time_t now = get_time();
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
 	for (size_t i = 0; i < client->broker->subscriptions_cnt; i++)
-		if (nbool(client->broker->subscriptions[i].clients, cid)) {
+		if (nbool(client->broker->subscriptions[i].clients, client->cid)) {
 			cp_pack_str(pack, client->broker->subscriptions[i].ri);
 			size_t y = 0;
 			while (y < client->ttlsubs_cnt &&
 				client->ttlsubs[y].ri != client->broker->subscriptions[i].ri)
 				y++;
 			if (y < client->ttlsubs_cnt)
-				cp_pack_int(pack, client->ttlsubs[y].ttl - now);
+				cp_pack_int(pack, client->ttlsubs[y].ttl - now.tv_sec);
 			else
 				cp_pack_null(pack);
 		}
 	cp_pack_container_end(pack);
 }
 
-static void send_client_info(
-	struct rpcbroker *broker, int cid, struct rpchandler_msg *ctx) {
-	struct clientctx *client = &broker->clients[cid];
+static void send_client_info(struct clientctx *client, struct rpchandler_msg *ctx) {
 	cp_pack_t pack = rpchandler_msg_new_response(ctx);
 	cp_pack_map_begin(pack);
 	cp_pack_str(pack, "clientId");
-	cp_pack_int(pack, cid);
+	cp_pack_int(pack, client->cid);
 	if (client->role) {
 		if (client->username) {
 			cp_pack_str(pack, "userName");
@@ -202,7 +200,7 @@ static inline bool rpc_msg_request_broker(
 				}
 				broker_lock(c->broker);
 				if (cid_valid(c->broker, cid))
-					send_client_info(c->broker, cid, ctx);
+					send_client_info(c->broker->clients[cid], ctx);
 				else
 					rpchandler_msg_send_response_void(ctx);
 				broker_unlock(c->broker);
@@ -223,7 +221,7 @@ static inline bool rpc_msg_request_broker(
 				broker_lock(c->broker);
 				struct clientctx *client = mounted_client(c->broker, path, NULL);
 				if (client)
-					send_client_info(c->broker, client - c->broker->clients, ctx);
+					send_client_info(client, ctx);
 				else
 					rpchandler_msg_send_response_void(ctx);
 				broker_unlock(c->broker);
@@ -243,9 +241,10 @@ static inline bool rpc_msg_request_broker(
 				cp_pack_t pack = rpchandler_msg_new_response(ctx);
 				cp_pack_list_begin(pack);
 				broker_lock(c->broker);
-				for (int i = 0; i < c->broker->clients_cnt; i++)
-					if (cid_valid(c->broker, i))
-						cp_pack_int(pack, i);
+				for_cid(c->broker) {
+					if (cid_valid(c->broker, cid))
+						cp_pack_int(pack, cid);
+				}
 				broker_unlock(c->broker);
 				cp_pack_container_end(pack);
 				rpchandler_msg_send_response(ctx, pack);
@@ -288,7 +287,7 @@ static inline bool rpc_msg_request_broker(
 				valid = cid_valid(c->broker, cid);
 				if (valid)
 					rpcclient_disconnect(
-						rpchandler_client(c->broker->clients[cid].handler));
+						rpchandler_client(c->broker->clients[cid]->handler));
 				broker_unlock(c->broker);
 				if (valid)
 					rpchandler_msg_send_response_void(ctx);
@@ -323,7 +322,7 @@ static inline bool rpc_msg_request_broker_current_client(
 					return true;
 				}
 				broker_lock(c->broker);
-				send_client_info(c->broker, c - c->broker->clients, ctx);
+				send_client_info(c, ctx);
 				broker_unlock(c->broker);
 				return true;
 			}
@@ -348,7 +347,7 @@ static inline bool rpc_msg_request_broker_current_client(
 					return true;
 				}
 				broker_lock(c->broker);
-				bool res = subscribe(c->broker, ri, c - c->broker->clients);
+				bool res = subscribe(c->broker, ri, c->cid);
 				if (ttl > 0) {
 					struct ttlsub *ttlsub = NULL;
 					if (res) {
@@ -362,7 +361,9 @@ static inline bool rpc_msg_request_broker_current_client(
 							}
 						assert(ttlsub);
 					}
-					ttlsub->ttl = get_time() + ttl;
+					struct timespec now;
+					clock_gettime(CLOCK_MONOTONIC, &now);
+					ttlsub->ttl = now.tv_sec + ttl;
 					ARR_QSORT(c->ttlsubs, subttlcmp);
 				}
 				broker_unlock(c->broker);
@@ -387,7 +388,7 @@ static inline bool rpc_msg_request_broker_current_client(
 						ARR_DEL(c->ttlsubs, c->ttlsubs + i);
 						break;
 					}
-				bool res = unsubscribe(c->broker, ri, c - c->broker->clients);
+				bool res = unsubscribe(c->broker, ri, c->cid);
 				broker_unlock(c->broker);
 				cp_pack_t pack = rpchandler_msg_new_response(ctx);
 				cp_pack_bool(pack, res);

@@ -64,7 +64,7 @@ bool mount_register(struct clientctx *c) {
 	struct mount *mnt = ARR_ADD(c->broker->mounts);
 	*mnt = (struct mount){
 		.path = c->role->mount_point,
-		.cid = c - c->broker->clients,
+		.cid = c->cid,
 	};
 	ARR_QSORT(c->broker->mounts, mntcmp);
 	return true;
@@ -90,7 +90,7 @@ struct clientctx *mounted_client(
 			return NULL;
 		if (rpath)
 			*rpath = end + (*end == '\0' ? 0 : 1);
-		return &broker->clients[cid];
+		return broker->clients[cid];
 	}
 
 	/* Now the real mount points */
@@ -105,7 +105,7 @@ struct clientctx *mounted_client(
 			size_t mntlen = strlen(mnt);
 			if (rpath)
 				*rpath = path + mntlen + (path[mntlen] == '/' ? 1 : 0);
-			return &broker->clients[broker->mounts[p].cid];
+			return broker->clients[broker->mounts[p].cid];
 		} else if (r < 0)
 			u = p - 1;
 		else

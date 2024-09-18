@@ -1,12 +1,13 @@
 #include "api_login.h"
 #include "broker.h"
 #include "stages.h"
-#include "util.h"
 
 
 static enum rpchandler_msg_res access_msg(void *cookie, struct rpchandler_msg *ctx) {
 	struct clientctx *c = cookie;
-	c->last_activity = get_time();
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
+	c->last_activity = now.tv_sec;
 	if (c->role == NULL) {
 		if (ctx->meta.type == RPCMSG_T_REQUEST)
 			rpcbroker_api_login_msg(c, ctx);
@@ -28,8 +29,10 @@ static int access_idle(void *cookie, struct rpchandler_idle *ctx) {
 	struct clientctx *c = cookie;
 	broker_lock(c->broker);
 	int res;
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
 	if (c->activity_timeout != -1) {
-		int timeout = c->last_activity + c->activity_timeout - get_time();
+		int timeout = c->last_activity + c->activity_timeout - now.tv_sec;
 		res = timeout >= 0 ? timeout : RPCHANDLER_IDLE_STOP;
 	} else
 		res = RPCHANDLER_IDLE_SKIP;

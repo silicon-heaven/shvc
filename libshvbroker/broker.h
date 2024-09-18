@@ -7,42 +7,41 @@
 
 #include "arr.h"
 #include "nbool.h"
-#include "util.h"
 
-#define IN_USE ((time_t) - 1)
 #define REUSE_TIMEOUT (600) /* Ten minutes before client ID reuse */
 #define NONCE_LEN (10)
 #define IDLE_TIMEOUT_LOGIN (5)
 
+struct clientctx {
+	int cid;
+	struct rpcbroker *broker;
+	/* RPC handler of this client */
+	rpchandler_t handler;
+	/* Role of the client in the broker. */
+	const struct rpcbroker_role *role;
+	/* Login */
+	char nonce[NONCE_LEN + 1];
+	char *username;
+	unsigned activity_timeout;
+	time_t last_activity;
+	/* Subscriptions TTL */
+	ARR(
+		struct ttlsub {
+			const char *ri;
+			time_t ttl;
+		},
+		ttlsubs);
+};
+
 struct rpcbroker {
 	const char *name;
+	int flags;
 	rpcbroker_login_t login;
 	void *login_cookie;
 
-	struct clientctx {
-		/* Last use of this client context. It marks this slot for reuse after
-		 * REUSE_TIMEOUT. When slot is in active use it is set to `IN_USE`.
-		 */
-		time_t lastuse;
-		/* RPC handler of this client */
-		rpchandler_t handler;
-		/* Login */
-		char nonce[NONCE_LEN + 1];
-		char *username;
-		unsigned activity_timeout;
-		time_t last_activity;
-		/* Role of the client in the broker. */
-		const struct rpcbroker_role *role;
-		struct rpcbroker *broker;
-		/* Subscriptions TTL */
-		ARR(
-			struct ttlsub {
-				const char *ri;
-				time_t ttl;
-			},
-			ttlsubs);
-	} *clients;
-	size_t clients_cnt;
+	struct clientctx **clients;
+	time_t *clients_lastuse;
+	size_t clients_siz;
 
 	ARR(
 		struct mount {
@@ -59,17 +58,18 @@ struct rpcbroker {
 		subscriptions);
 
 	pthread_mutex_t lock;
-	bool use_lock;
 };
 
 __attribute__((nonnull)) static inline void broker_lock(struct rpcbroker *broker) {
 	// TODO possibly could be RW lock
-	if (broker->use_lock)
+	if (!(broker->flags & RPCBROKER_F_NOLOCK)) {
+		printf("LOCK\n");
 		pthread_mutex_lock(&broker->lock);
+	}
 }
 
 __attribute__((nonnull)) static inline void broker_unlock(struct rpcbroker *broker) {
-	if (broker->use_lock)
+	if (!(broker->flags & RPCBROKER_F_NOLOCK))
 		pthread_mutex_unlock(&broker->lock);
 }
 
@@ -79,7 +79,7 @@ __attribute__((nonnull)) static inline void broker_unlock(struct rpcbroker *brok
  *
  * Make sure to call this while holding lock.
  */
-#define for_cid(BROKER) for (int cid = 0; cid < (BROKER)->clients_cnt; cid++)
+#define for_cid(BROKER) for (int cid = 0; cid < (BROKER)->clients_siz; cid++)
 
 /* Check if given CID is valid for some client of this broker.
  *
@@ -87,8 +87,7 @@ __attribute__((nonnull)) static inline void broker_unlock(struct rpcbroker *brok
  */
 __attribute__((nonnull)) static inline bool cid_valid(
 	struct rpcbroker *broker, int cid) {
-	return cid >= 0 && cid < broker->clients_cnt &&
-		broker->clients[cid].lastuse == IN_USE;
+	return cid >= 0 && cid < broker->clients_siz && broker->clients[cid];
 }
 
 /* Check if given CID is valid and has assigned role for some client of this
@@ -98,40 +97,7 @@ __attribute__((nonnull)) static inline bool cid_valid(
  */
 __attribute__((nonnull)) static inline bool cid_active(
 	struct rpcbroker *broker, int cid) {
-	return cid_valid(broker, cid) && broker->clients[cid].role;
-}
-
-/* Allocate a new CID.
- *
- * Make sure to call this while holding lock.
- */
-__attribute__((nonnull)) static inline int cid_new(struct rpcbroker *broker) {
-	time_t now = get_time();
-	int cid;
-	for (cid = 0; cid < broker->clients_cnt &&
-		 (broker->clients[cid].lastuse >= now - REUSE_TIMEOUT ||
-			 broker->clients[cid].lastuse == IN_USE);
-		 cid++) {}
-	if (cid == broker->clients_cnt) {
-		broker->clients_cnt *= 2;
-		struct clientctx *nclients = realloc(
-			broker->clients, broker->clients_cnt * sizeof *broker->clients);
-		assert(nclients); // TODO
-		broker->clients = nclients;
-		memset(broker->clients + cid, 0,
-			(broker->clients_cnt / 2) * sizeof *broker->clients);
-	}
-	return cid;
-}
-
-/* Free the CID.
- *
- * Make sure to call this while holding lock.
- */
-__attribute__((nonnull)) static inline void cid_free(
-	struct rpcbroker *broker, int cid) {
-	broker->clients[cid].handler = NULL;
-	broker->clients[cid].lastuse = get_time();
+	return cid_valid(broker, cid) && broker->clients[cid]->role;
 }
 
 enum role_res {

@@ -11,7 +11,6 @@ libshvbroker_sources = [
     'rpcbroker_run.c',
     'signal.c',
     'subscription.c',
-    'util.c',
   ),
   gperf.process('api_broker_method.gperf'),
   gperf.process('api_current_client_method.gperf'),

@@ -9,8 +9,9 @@ nbool_t signal_destinations(struct rpcbroker *broker, const char *path,
 		if (rpcri_match(broker->subscriptions[i].ri, path, source, signal))
 			nbool_or(&res, broker->subscriptions[i].clients);
 	for_nbool(res, cid) if (!cid_active(broker, cid) ||
-		broker->clients[cid].role->access(broker->clients[cid].role->access_cookie,
-			path, source) < access) nbool_clear(&res, cid);
+		broker->clients[cid]->role->access(
+			broker->clients[cid]->role->access_cookie, path, source) < access)
+		nbool_clear(&res, cid);
 	return res;
 }
 
@@ -33,7 +34,7 @@ cp_pack_t multipack_init(struct rpcbroker *broker, struct multipack *multipack,
 	cp_pack_t *packs = malloc(nbool_nbits(destinations) * sizeof *packs);
 	size_t cnt = 0;
 	for_nbool(destinations, cid) {
-		packs[cnt++] = rpchandler_msg_new(broker->clients[cid].handler);
+		packs[cnt++] = rpchandler_msg_new(broker->clients[cid]->handler);
 	}
 	*multipack = (struct multipack){pack_func, packs, cnt};
 	return &multipack->func;
@@ -44,9 +45,9 @@ void multipack_done(struct rpcbroker *broker, struct multipack *multipack,
 	size_t i = 0;
 	for_nbool(destinations, cid) {
 		if (multipack->packs[i++] && send)
-			rpchandler_msg_send(broker->clients[cid].handler);
+			rpchandler_msg_send(broker->clients[cid]->handler);
 		else
-			rpchandler_msg_drop(broker->clients[cid].handler);
+			rpchandler_msg_drop(broker->clients[cid]->handler);
 	}
 	free(multipack->packs);
 }

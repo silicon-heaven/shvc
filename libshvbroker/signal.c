@@ -46,6 +46,7 @@ static inline bool done(struct sigctx *ctx, bool val) {
 }
 
 bool rpcbroker_send_signal(struct rpcbroker_sigctx *ctx) {
+	cp_pack_container_end(ctx->pack);
 	return done((struct sigctx *)ctx, true);
 }
 

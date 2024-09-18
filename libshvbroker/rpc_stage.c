@@ -5,7 +5,6 @@
 #include "broker.h"
 #include "multipack.h"
 #include "stages.h"
-#include "util.h"
 
 
 static void propagate_msg(struct rpchandler_msg *ctx, struct clientctx *client) {
@@ -46,7 +45,7 @@ static inline enum rpchandler_msg_res rpc_msg_request(
 	ctx->meta.path = (char *)rpath;
 	long long *ncids = obstack_alloc(obs, (ctx->meta.cids_cnt + 1) * sizeof *ncids);
 	memcpy(ncids, ctx->meta.cids, ctx->meta.cids_cnt * sizeof *ncids);
-	ncids[ctx->meta.cids_cnt++] = c - c->broker->clients;
+	ncids[ctx->meta.cids_cnt++] = c->cid;
 	ctx->meta.cids = ncids;
 	if (ctx->meta.user_id) {
 		if (*ctx->meta.user_id != '\0') {
@@ -76,7 +75,7 @@ static inline enum rpchandler_msg_res rpc_msg_response(
 	}
 
 	struct clientctx *dest =
-		&c->broker->clients[ctx->meta.cids[ctx->meta.cids_cnt - 1]];
+		c->broker->clients[ctx->meta.cids[ctx->meta.cids_cnt - 1]];
 	ctx->meta.cids_cnt--;
 	propagate_msg(ctx, dest);
 	return RPCHANDLER_MSG_DONE;
@@ -139,15 +138,16 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 int rpc_idle(void *cookie, struct rpchandler_idle *ctx) {
 	struct clientctx *c = cookie;
 	int res = INT_MAX;
-	time_t now = get_time();
+	struct timespec now;
+	clock_gettime(CLOCK_MONOTONIC, &now);
 	broker_lock(c->broker);
 
 	size_t i;
-	for (i = 0; i < c->ttlsubs_cnt && c->ttlsubs[i].ttl <= now; i++)
-		unsubscribe(c->broker, c->ttlsubs[i].ri, c - c->broker->clients);
+	for (i = 0; i < c->ttlsubs_cnt && c->ttlsubs[i].ttl <= now.tv_sec; i++)
+		unsubscribe(c->broker, c->ttlsubs[i].ri, c->cid);
 	ARR_DROP(c->ttlsubs, i);
 	if (c->ttlsubs_cnt > 0) {
-		int ttlres = (c->ttlsubs[0].ttl - now) * 1000;
+		int ttlres = (c->ttlsubs[0].ttl - now.tv_sec) * 1000;
 		if (ttlres < res)
 			res = ttlres;
 	}
@@ -160,7 +160,7 @@ int rpc_idle(void *cookie, struct rpchandler_idle *ctx) {
 static void rpc_reset(void *cookie) {
 	struct clientctx *c = cookie;
 	broker_lock(c->broker);
-	unsubscribe_all(c->broker, c - c->broker->clients);
+	unsubscribe_all(c->broker, c->cid);
 	ARR_RESET(c->ttlsubs);
 	broker_unlock(c->broker);
 }

@@ -24,6 +24,7 @@ static void generate_nonce(char nonce[NONCE_LEN + 1]) {
 		nonce[i * 2] = hex[buf[i] & 0xf];
 		nonce[i * 2 + 1] = hex[(buf[i] >> 4) & 0xf];
 	}
+	nonce[NONCE_LEN] = '\0';
 }
 
 void rpcbroker_api_login_msg(struct clientctx *c, struct rpchandler_msg *ctx) {

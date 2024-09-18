@@ -18,7 +18,7 @@ enum role_res role_assign(struct clientctx *ctx, const struct rpcbroker_role *ro
 	}
 	if (role->subscriptions)
 		for (const char **ri = role->subscriptions; *ri; ri++)
-			subscribe(ctx->broker, *ri, ctx - ctx->broker->clients);
+			subscribe(ctx->broker, *ri, ctx->cid);
 
 error:
 	if (res != ROLE_RES_OK) {
