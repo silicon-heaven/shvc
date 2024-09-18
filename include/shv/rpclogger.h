@@ -134,10 +134,18 @@ void rpclogger_log_flush(rpclogger_t logger);
 
 /*! Predefined callback that outputs line to the stderr.
  *
- * This is provided because it is a common way to do logging.
+ * This is provided because it is one of the common ways to do logging.
  *
  * @param line See @ref rpclogger_func_t.
  */
 void rpclogger_func_stderr(const char *line);
+
+/*! Predefined callback that outputs line to the syslog with debug priority.
+ *
+ * This is provided because it is one of the common ways to do logging.
+ *
+ * @param line See @ref rpclogger_func_t.
+ */
+void rpclogger_func_syslog_debug(const char *line);
 
 #endif

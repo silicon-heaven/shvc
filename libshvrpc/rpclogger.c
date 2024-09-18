@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <netinet/udp.h>
+#include <syslog.h>
 #include <shv/rpcclient.h>
 #include <shv/rpcmsg.h>
 
@@ -150,4 +151,8 @@ void rpclogger_log_flush(rpclogger_t logger) {
 
 void rpclogger_func_stderr(const char *line) {
 	fputs(line, stderr);
+}
+
+void rpclogger_func_syslog_debug(const char *line) {
+	syslog(LOG_DEBUG, "%s", line);
 }
