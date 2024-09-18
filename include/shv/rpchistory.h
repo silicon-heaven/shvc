@@ -9,7 +9,7 @@
  * libshvhistory nodes.
  */
 
-/*! Possible @ref rpchistory_record types */
+/*! Possible @ref rpchistory_record_head types */
 enum rpchistory_record_types {
 	/*! Normal record. */
 	RPCHISTORY_RECORD_NORMAL = 1,
@@ -23,7 +23,7 @@ enum rpchistory_record_types {
 	 *
 	 *  This is information that all previous recorded times should actually be
 	 *  considered to be with time modification. The time offset is specified in
-	 *  timestamp field of @ref rpchistory_record structure.
+	 *  timestamp field of @ref rpchistory_record_head structure.
 	 */
 	RPCHISTORY_RECORD_TIMEJUMP,
 	/*! Time ambiguity record.

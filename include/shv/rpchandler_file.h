@@ -60,7 +60,7 @@ struct rpchandler_file_cb {
 	 *
 	 * @param file_path: Path to the file. This path might be updated.
 	 * @param shv_path: SHV path to the file. This is not updated, but might
-	 *  be used as a reference to determine correct @ref file_path.
+	 *  be used as a reference to determine correct `file_path`.
 	 * @returns 0 on success, -1 on failure.
 	 */
 	int (*update_paths)(const char **file_path, const char *shv_path);
