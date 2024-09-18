@@ -112,21 +112,6 @@ enum cpitem_type {
 	/*! Container end item used to terminate lists, maps and metas.
 	 */
 	CPITEM_CONTAINER_END,
-	/*! The special item type that signals raw operation on the data. Sometimes
-	 * it is required to bypass the parser (because there are binary data
-	 * inserted in the data) or it is just more efficient to copy data without
-	 * interpreting them. For that this special type is available.
-	 *
-	 * For unpacker you need to provide pointer to the writable buffer in @ref
-	 * cpitem.buf and unpacker will store up to @ref cpitem.bufsiz bytes in it.
-	 * Number of valid bytes will be stored in @ref cpbufinfo.len
-	 * "cpitem.as.Blob.len".
-	 *
-	 * For packer you need to provide pointer to the data in @ref cpitem.rbuf
-	 * and packer will write @ref cpbufinfo.len "cpitem.as.Blob.len" bytes
-	 * without interpreting them.
-	 */
-	CPITEM_RAW = 256,
 };
 
 /*! Receive string name for the item type.

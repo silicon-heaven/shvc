@@ -103,32 +103,3 @@ ARRAY_TEST(unpack, skip) {
 	fclose(f);
 }
 END_TEST
-
-static struct bdata genericd = B(0x01, 0x02, 0xf8, 0xff);
-TEST(pack, pack_raw) {
-	struct cpitem item = {
-		.type = CPITEM_RAW, .rbuf = genericd.v, .as.Blob.len = genericd.len};
-	ck_assert_int_eq(chainpack_pack(packstream, &item), genericd.len);
-	ck_assert_packbuf(genericd.v, genericd.len);
-}
-END_TEST
-TEST(unpack, unpack_raw) {
-	FILE *f = fmemopen((void *)genericd.v, genericd.len, "r");
-	uint8_t buf[BUFSIZ];
-	struct cpitem item = {.type = CPITEM_RAW, .buf = buf, .bufsiz = BUFSIZ};
-	ck_assert_int_eq(chainpack_unpack(f, &item), genericd.len);
-	ck_assert_int_eq(item.as.Blob.len, genericd.len);
-	ck_assert_mem_eq(item.buf, genericd.v, genericd.len);
-	fclose(f);
-}
-END_TEST
-
-TEST(unpack, unpack_drop) {
-	FILE *f = fmemopen((void *)genericd.v, genericd.len, "r");
-	struct cpitem item = {.type = CPITEM_RAW, .buf = NULL, .bufsiz = BUFSIZ};
-	ck_assert_int_eq(chainpack_unpack(f, &item), genericd.len);
-	ck_assert(feof(f));
-	ck_assert(!ferror(f));
-	fclose(f);
-}
-END_TEST

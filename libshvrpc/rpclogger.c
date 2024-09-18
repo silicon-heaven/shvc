@@ -97,11 +97,7 @@ void rpclogger_log_item(rpclogger_t logger, const struct cpitem *item) {
 		return;
 	if (logger->buflen == logger->prefixlen && logger->cpon_state.depth > 0)
 		ellipsis(logger);
-	if (item->type == CPITEM_RAW) {
-		/* We do not want to print raw data and thus just replace it with dots */
-		if (!logger->ellipsis)
-			ellipsis(logger);
-	} else if ((item->type == CPITEM_BLOB || item->type == CPITEM_STRING) &&
+	if ((item->type == CPITEM_BLOB || item->type == CPITEM_STRING) &&
 		item->buf == NULL) {
 		/* Blob and string skipping. Data is not received. */
 		struct cpitem nitem = *item;
