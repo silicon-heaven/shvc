@@ -79,19 +79,19 @@ static const struct {
 		"\"\\f\\a\\b\\t\""},
 	{{.type = CPITEM_BLOB,
 		 .rbuf = (const uint8_t[]){},
-		 .as.String = {.flags = CPBI_F_SINGLE | CPBI_F_STREAM}},
+		 .as.Blob = {.flags = CPBI_F_SINGLE | CPBI_F_STREAM}},
 		"b\"\""},
 	{{.type = CPITEM_BLOB,
 		 .rbuf = (const uint8_t[]){0x61, 0x62, 0xcd, 0x0b, 0x0d, 0x0a},
-		 .as.String = {.len = 6, .flags = CPBI_F_SINGLE | CPBI_F_STREAM}},
+		 .as.Blob = {.len = 6, .flags = CPBI_F_SINGLE | CPBI_F_STREAM}},
 		"b\"ab\\CD\\v\\r\\n\""},
 	{{.type = CPITEM_BLOB,
 		 .rbuf = (const uint8_t[]){},
-		 .as.String = {.flags = CPBI_F_SINGLE | CPBI_F_STREAM}},
+		 .as.Blob = {.flags = CPBI_F_SINGLE | CPBI_F_STREAM}},
 		"b\"\""},
 	{{.type = CPITEM_BLOB,
 		 .rbuf = (const uint8_t[]){0xfe, 0x00, 0x42},
-		 .as.String = {.len = 3, .flags = CPBI_F_SINGLE | CPBI_F_STREAM | CPBI_F_HEX}},
+		 .as.Blob = {.len = 3, .flags = CPBI_F_SINGLE | CPBI_F_STREAM | CPBI_F_HEX}},
 		"x\"FE0042\""},
 };
 ARRAY_TEST(pack, pack_single, single_d) {
@@ -111,6 +111,50 @@ ARRAY_TEST(unpack, unpack_single, single_d) {
 	ck_assert_item(item, _d.item);
 }
 END_TEST
+
+static void cpon_state_realloc(struct cpon_state *state) {
+	state->cnt = state->cnt ? state->cnt * 2 : 1;
+	state->ctx = realloc(state->ctx, state->cnt * sizeof *state->ctx);
+}
+TEST(pack, pack_str_chain) {
+	struct cpon_state st = {.realloc = cpon_state_realloc};
+	cpon_pack(packstream, &st, &(struct cpitem){.type = CPITEM_LIST});
+	cpon_pack(packstream, &st,
+		&(struct cpitem){.type = CPITEM_STRING,
+			.rchr = "foo",
+			.as.String = {.len = 3, .flags = CPBI_F_STREAM | CPBI_F_FIRST}});
+	cpon_pack(packstream, &st,
+		&(struct cpitem){.type = CPITEM_STRING,
+			.rchr = "fee",
+			.as.String = {.len = 3, .flags = CPBI_F_STREAM}});
+	cpon_pack(packstream, &st,
+		&(struct cpitem){.type = CPITEM_STRING,
+			.rchr = "faa",
+			.as.String = {.len = 3, .flags = CPBI_F_STREAM | CPBI_F_LAST}});
+	cpon_pack(packstream, &st, &(struct cpitem){.type = CPITEM_CONTAINER_END});
+	ck_assert_packstr("[\"foofeefaa\"]");
+	free(st.ctx);
+}
+TEST(pack, pack_blob_chain) {
+	struct cpon_state st = {.realloc = cpon_state_realloc};
+	cpon_pack(packstream, &st, &(struct cpitem){.type = CPITEM_IMAP});
+	cpon_pack(packstream, &st, &(struct cpitem){.type = CPITEM_INT, .as.Int = 42});
+	cpon_pack(packstream, &st,
+		&(struct cpitem){.type = CPITEM_BLOB,
+			.rbuf = (const uint8_t[]){0x61, 0x62},
+			.as.Blob = {.len = 2, .flags = CPBI_F_STREAM | CPBI_F_FIRST}});
+	cpon_pack(packstream, &st,
+		&(struct cpitem){.type = CPITEM_STRING,
+			.rbuf = (const uint8_t[]){0x63, 0x64},
+			.as.Blob = {.len = 2, .flags = CPBI_F_STREAM}});
+	cpon_pack(packstream, &st,
+		&(struct cpitem){.type = CPITEM_STRING,
+			.rbuf = (const uint8_t[]){0x65, 0x66},
+			.as.Blob = {.len = 2, .flags = CPBI_F_STREAM | CPBI_F_LAST}});
+	cpon_pack(packstream, &st, &(struct cpitem){.type = CPITEM_CONTAINER_END});
+	ck_assert_packstr("i{42:b\"abcdef\"}");
+	free(st.ctx);
+}
 
 
 static struct bdata genericd = B(0x01, 0x02, 0xf8, 0xff);

@@ -53,7 +53,9 @@ ssize_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) 
 		return res;
 
 	if (state->depth <= state->cnt) {
-		if (state->depth > 0 && item->type != CPITEM_CONTAINER_END) {
+		if (state->depth > 0 && item->type != CPITEM_CONTAINER_END &&
+			(item->type != CPITEM_STRING || item->as.String.flags & CPBI_F_FIRST) &&
+			(item->type != CPITEM_BLOB || item->as.Blob.flags & CPBI_F_FIRST)) {
 			struct cpon_state_ctx *ctx = &state->ctx[state->depth - 1];
 			if (!ctx->meta) {
 				switch (ctx->tp) {
