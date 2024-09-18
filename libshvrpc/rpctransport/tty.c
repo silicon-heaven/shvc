@@ -100,7 +100,7 @@ static void *tty_server_loop(void *ctx) {
 	unsigned cnt = 0;
 	while ((fd = tty_connect(s->location, s->baudrate)) == -1) {
 		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-		sleep(MAX((cnt++ >> 4) + 1, 15));
+		sleep(MIN((cnt++ >> 4) + 1, 15));
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 	}
 	eventfd_write(s->evfd, 42);
