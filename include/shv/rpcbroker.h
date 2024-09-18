@@ -183,6 +183,71 @@ rpchandler_t rpcbroker_client_handler(rpcbroker_t broker, int client_id)
 	__attribute__((nonnull));
 
 
+/*! Context used for sending signals through broker. */
+struct rpcbroker_sigctx {
+	/*! Packer you must use to pack signal parameter. */
+	cp_pack_t pack;
+};
+
+/*! Prepare packing for signal propagated through the whole broker.
+ *
+ * Call to this functions must be eventually followed by @ref
+ * rpcbroker_send_signal or @ref rpcbroker_drop_signal.
+ *
+ * @param broker Broker object.
+ * @param path SHV path to the node method is associated with.
+ * @param source name of the method the signal is associated with.
+ * @param signal name of the signal.
+ * @param uid User's ID to be added to the signal. It can be `NULL` and in
+ *   such case User ID won't be part of the message.
+ * @param access The access level for this signal. This is used to filter
+ *   access  to the signals and in general should be consistent with access
+ *   level of the method this signal is associated with.
+ * @param repeat Signals that this is repeat of some previous signal and this
+ *   value didn't change right now but some time in the past.
+ * @returns Context to be used for packing and released by @ref
+ *   rpcbroker_send_signal or @ref rpcbroker_drop_signal. `NULL` is returned if
+ *   this signal would not be propagated to any peer and thus should not be
+ *   packed at all.
+ */
+struct rpcbroker_sigctx *rpcbroker_new_signal(rpcbroker_t broker,
+	const char *path, const char *source, const char *signal, const char *uid,
+	rpcaccess_t access, bool repeat) __attribute__((nonnull(1, 2, 3, 4)));
+
+/*! Send signal message.
+ *
+ * @param ctx Context provided by @ref rpcbroker_new_signal.
+ * @returns Boolean signaling if sending was successful.
+ */
+bool rpcbroker_send_signal(struct rpcbroker_sigctx *ctx) __attribute__((nonnull));
+
+/*! Drop signal message.
+ *
+ * @param ctx Context provided by @ref rpcbroker_new_signal.
+ * @returns Boolean signaling if dropping was successful.
+ */
+bool rpcbroker_drop_signal(struct rpcbroker_sigctx *ctx) __attribute__((nonnull));
+
+/*! Send signal propagated through the whole broker.
+ *
+ * @param broker Broker object.
+ * @param path SHV path to the node method is associated with.
+ * @param source name of the method the signal is associated with.
+ * @param signal name of the signal.
+ * @param uid User's ID to be added to the signal. It can be `NULL` and in
+ *   such case User ID won't be part of the message.
+ * @param access The access level for this signal. This is used to filter
+ *   access  to the signals and in general should be consistent with access
+ *   level of the method this signal is associated with.
+ * @param repeat Signals that this is repeat of some previous signal and this
+ *   value didn't change right now but some time in the past.
+ * @returns Boolean signaling if sending was successful.
+ */
+bool rpcbroker_send_signal_void(rpcbroker_t broker, const char *path,
+	const char *source, const char *signal, const char *uid, rpcaccess_t access,
+	bool repeat) __attribute__((nonnull(1, 2, 3, 4)));
+
+
 /*! The state used in @ref rpcbroker_run. */
 struct rpcbroker_state {
 	/*! Broker object. */

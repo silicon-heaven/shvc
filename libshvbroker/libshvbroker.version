@@ -7,6 +7,10 @@ V0.0 {
 		rpcbroker_login_client_register;
 		rpcbroker_client_unregister;
 		rpcbroker_client_handler;
+		rpcbroker_new_signal;
+		rpcbroker_send_signal;
+		rpcbroker_drop_signal;
+		rpcbroker_send_signal_void;
 		rpcbroker_run;
 
 	local: *;

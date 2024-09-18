@@ -9,6 +9,7 @@ libshvbroker_sources = [
     'rpc_stage.c',
     'rpcbroker.c',
     'rpcbroker_run.c',
+    'signal.c',
     'subscription.c',
     'util.c',
   ),
