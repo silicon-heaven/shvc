@@ -18,7 +18,7 @@ from .utils import subproc
     ),
 )
 async def test_valid(shvc_exec, url, broker, path, method, result):
-    stdout, stderr = await subproc(*shvc_exec, "-u", str(url), path, method)
+    stdout, stderr = await subproc(*shvc_exec, "-u", str(url), f"{path}:{method}")
     assert stdout == [result.encode(), b""]
     assert stderr == [b""]
 
@@ -26,7 +26,7 @@ async def test_valid(shvc_exec, url, broker, path, method, result):
 async def test_param(shvc_exec, url, broker):
     """Check that we can pass parameter."""
     stdout, stderr = await subproc(
-        *shvc_exec, "-d", "-u", str(url), ".broker/currentClient", "subscribe", '"**"'
+        *shvc_exec, "-d", "-u", str(url), ".broker/currentClient:subscribe", '"**"'
     )
     assert stdout == [b"true", b""]
     assert stderr[0] == b'=> <1:1,8:1,9:"",10:"hello">i{}'
@@ -50,8 +50,7 @@ async def test_param_stdin(shvc_exec, url, broker):
         "-i",
         "-u",
         str(url),
-        ".broker/currentClient",
-        "subscribe",
+        ".broker/currentClient:subscribe",
         stdin=b'"**"',
     )
     assert stdout == [b"true", b""]
@@ -72,7 +71,7 @@ async def test_param_stdin(shvc_exec, url, broker):
 )
 async def test_invalid(shvc_exec, url, broker, path, method, error, exit_code):
     stdout, stderr = await subproc(
-        *shvc_exec, "-u", str(url), path, method, exit_code=exit_code
+        *shvc_exec, "-u", str(url), f"{path}:{method}", exit_code=exit_code
     )
     assert stdout == [b""]
     assert stderr == [f"SHV Error: {error}".encode(), b""]

@@ -8,7 +8,7 @@ async def test_shvc_help(shvc_exec):
     stdout, stderr = await subproc(*shvc_exec, "-h")
     assert stdout == [b""]
     assert stderr == [
-        f"{shvc_exec[-1]} [-ivqdVh] [-u URL] [-t SEC] [PATH] [METHOD] [PARAM]".encode(),
+        f"{shvc_exec[-1]} [-ivqdVh] [-u URL] [-t SEC] [PATH:METHOD] [PARAM]".encode(),
         b"SHV RPC client call.",
         b"",
         b"Arguments:",

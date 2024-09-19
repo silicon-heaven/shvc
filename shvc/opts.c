@@ -3,13 +3,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <limits.h>
+#include <string.h>
 #include "shvc_config.h"
 
 static const int default_timeout = 300;
 
 
 static void print_usage(const char *argv0) {
-	fprintf(stderr, "%s [-ivqdVh] [-u URL] [-t SEC] [PATH] [METHOD] [PARAM]\n",
+	fprintf(stderr, "%s [-ivqdVh] [-u URL] [-t SEC] [PATH:METHOD] [PARAM]\n",
 		argv0);
 }
 
@@ -83,10 +84,16 @@ void parse_opts(int argc, char **argv, struct conf *conf) {
 				exit(-1);
 		}
 	}
-	if (optind < argc)
-		conf->path = argv[optind++];
-	if (optind < argc)
-		conf->method = argv[optind++];
+	if (optind < argc) {
+		conf->path = argv[optind];
+		char *colon = strchr(argv[optind], ':');
+		if (colon) {
+			*colon = '\0';
+			conf->method = colon + 1;
+		} else
+			conf->method = "ls";
+		optind++;
+	}
 	if (optind < argc && !conf->stdin_param)
 		conf->param = argv[optind++];
 	if (optind < argc) {
