@@ -5,10 +5,15 @@
 #include <pthread.h>
 #include <string.h>
 #include <sys/eventfd.h>
+#include <sys/ioctl.h>
 #include <sys/param.h>
 #include <syslog.h>
 #include <termios.h>
 #include <shv/rpctransport.h>
+#ifdef __NuttX__
+#include <nuttx/usb/cdc.h>
+#include <nuttx/usb/cdcacm.h>
+#endif
 
 struct client {
 	const char *location;
@@ -39,8 +44,9 @@ static int tty_connect(const char *location, unsigned baudrate) {
 			syslog(							  // GCOVR_EXCL_LINE
 				LOG_WARNING, "%s: Failed to set TTY mode: %m", location);
 	} else {
-		close(fd); // GCOVR_EXCL_LINE
-		return -1; // GCOVR_EXCL_LINE
+		syslog(LOG_WARNING, "%s: Not a TTY", location); // GCOVR_EXCL_LINE
+		close(fd);										// GCOVR_EXCL_LINE
+		return -1;										// GCOVR_EXCL_LINE
 	}
 	/* Flush everything that was previously buffered to start new. */
 	struct pollfd pfd = {.fd = fd, .events = POLLIN};
@@ -92,10 +98,17 @@ rpcclient_t rpcclient_tty_new(
 
 static const struct rpcclient_stream_funcs sserver;
 
+#ifdef __NuttX__
+static void tty_server_loop_fd_cleanup(void *ptr) {
+	int *fd = ptr;
+	if (*fd >= 0)
+		close(*fd);
+}
+#endif
+
 static void *tty_server_loop(void *ctx) {
 	struct server *s = ctx;
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
 	int fd;
 	unsigned cnt = 0;
 	while ((fd = tty_connect(s->location, s->baudrate)) == -1) {
@@ -103,7 +116,23 @@ static void *tty_server_loop(void *ctx) {
 		sleep(MIN((cnt++ >> 4) + 1, 15));
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 	}
-	eventfd_write(s->evfd, 42);
+#ifdef __NuttX__
+	int fdclean = fd;
+	pthread_cleanup_push(tty_server_loop_fd_cleanup, &fdclean);
+	cnt = 0;
+	while (true) {
+		int val;
+		assert(ioctl(fd, CAIOC_GETCTRLLINE, &val) != -1);
+		if (val & CDC_LINEST_ONHOOK)
+			break;
+		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+		sleep(MIN((cnt++ >> 4) + 1, 15));
+		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
+	}
+	fdclean = -1;
+	pthread_cleanup_pop(1);
+#endif
+
 	rpcclient_t c = rpcclient_stream_new(&sserver, s, s->proto, fd, fd);
 	/* We always send reset to ensure that even if we destroyed our client
 	 * the reset is propagated.
@@ -112,6 +141,7 @@ static void *tty_server_loop(void *ctx) {
 	 * trying to send reset again and again.
 	 */
 	__attribute__((unused)) bool _ = rpcclient_reset(c);
+	eventfd_write(s->evfd, 42);
 	return c;
 }
 
