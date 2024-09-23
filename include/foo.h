@@ -4,8 +4,8 @@
  * Prague, 184 00
  * info@elektroline.cz (+420 284 021 111)
  *****************************************************************************/
-#ifndef _FOO_H_
-#define _FOO_H_
+#ifndef FOO_H
+#define FOO_H
 #include <stdio.h>
 
 /*! Count number of foo lines in data read from provided file.

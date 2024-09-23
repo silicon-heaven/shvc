@@ -1,9 +1,3 @@
-/*****************************************************************************
- * Copyright (C) 2022 Elektroline Inc. All rights reserved.
- * K Ladvi 1805/20
- * Prague, 184 00
- * info@elektroline.cz (+420 284 021 111)
- *****************************************************************************/
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
