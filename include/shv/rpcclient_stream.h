@@ -54,6 +54,8 @@ struct rpcclient_stream_funcs {
 	 * read and write file descriptors provided for convenience.
 	 */
 	size_t (*peername)(void *cookie, int fd[2], char *buf, size_t size);
+	/*! The result of the @ref rpcclient_contrack. */
+	bool contrack;
 };
 
 

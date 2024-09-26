@@ -83,6 +83,7 @@ static const struct rpcclient_stream_funcs sclient = {
 	.connect = tty_client_connect,
 	.disconnect = tty_client_disconnect,
 	.peername = tty_client_peername,
+	.contrack = false,
 };
 
 rpcclient_t rpcclient_tty_new(
@@ -143,6 +144,7 @@ static size_t tty_server_peername(void *cookie, int fd[2], char *buf, size_t siz
 static const struct rpcclient_stream_funcs sserver = {
 	.disconnect = tty_server_disconnect,
 	.peername = tty_server_peername,
+	.contrack = false,
 };
 
 static int tty_server_ctrl(struct rpcserver *server, enum rpcserver_ctrlop op) {

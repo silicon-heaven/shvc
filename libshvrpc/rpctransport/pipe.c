@@ -12,6 +12,7 @@ static size_t pipe_peername(void *cookie, int fd[2], char *buf, size_t size) {
 
 static const struct rpcclient_stream_funcs sclient = {
 	.peername = pipe_peername,
+	.contrack = true,
 };
 
 rpcclient_t rpcclient_pipe_new(int pipes[2], enum rpcstream_proto proto) {

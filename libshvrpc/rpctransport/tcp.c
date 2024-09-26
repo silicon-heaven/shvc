@@ -100,6 +100,7 @@ static const struct rpcclient_stream_funcs sclient = {
 	.disconnect = tcp_client_disconnect,
 	.flush = tcp_flush,
 	.peername = tcp_client_peername,
+	.contrack = true,
 };
 
 rpcclient_t rpcclient_tcp_new(
@@ -139,6 +140,7 @@ static const struct rpcclient_stream_funcs sserver = {
 	.disconnect = tcp_server_disconnect,
 	.flush = tcp_flush,
 	.peername = tcp_server_peername,
+	.contrack = true,
 };
 
 static int tcp_server_ctrl(struct rpcserver *server, enum rpcserver_ctrlop op) {

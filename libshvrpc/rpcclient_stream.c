@@ -476,6 +476,8 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 				c->errnum = EAGAIN;
 			return res;
 		}
+		case RPCC_CTRLOP_CONTRACK:
+			return c->sclient->contrack;
 		case RPCC_CTRLOP_POLLFD:
 			return c->rfd;
 	}

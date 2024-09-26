@@ -40,6 +40,8 @@ enum rpcclient_ctrlop {
 	RPCC_CTRLOP_SENDMSG,
 	/*! @ref rpcclient_dropmsg */
 	RPCC_CTRLOP_DROPMSG,
+	/*! @ref rpcclient_contrack */
+	RPCC_CTRLOP_CONTRACK,
 	/*! @ref rpcclient_pollfd */
 	RPCC_CTRLOP_POLLFD,
 };
@@ -227,6 +229,20 @@ enum rpcclient_msg_type {
  */
 #define rpcclient_pollfd(CLIENT) \
 	((int)(CLIENT)->ctrl(CLIENT, RPCC_CTRLOP_POLLFD))
+
+/*! Check if client supports connection tracking of the peer.
+ *
+ * Connection tracking in this sense tells you if disconnect is propagated
+ * as disconnect to the other peer or if it is manifested only as silence on the
+ * connection.
+ *
+ * Based on this the different tools can decide what to do in some cases.
+ *
+ * @param CLIENT The RPC client object.
+ * @returns Bool signaling if connection has connection tracking capability.
+ */
+#define rpcclient_contrack(CLIENT) \
+	((int)(CLIENT)->ctrl(CLIENT, RPCC_CTRLOP_CONTRACK))
 
 /*! Get peer's name.
  *

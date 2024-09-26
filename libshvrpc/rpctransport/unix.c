@@ -52,6 +52,7 @@ static const struct rpcclient_stream_funcs sclient = {
 	.connect = unix_client_connect,
 	.disconnect = unix_client_disconnect,
 	.peername = unix_client_peername,
+	.contrack = true,
 };
 
 rpcclient_t rpcclient_unix_new(const char *location, enum rpcstream_proto proto) {
@@ -71,6 +72,7 @@ static size_t unix_server_peername(void *cookie, int fd[2], char *buf, size_t si
 
 static const struct rpcclient_stream_funcs sserver = {
 	.peername = unix_server_peername,
+	.contrack = true,
 };
 
 static int unix_server_ctrl(struct rpcserver *server, enum rpcserver_ctrlop op) {
