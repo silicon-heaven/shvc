@@ -83,21 +83,23 @@ static bool tcp_client_connect(void *cookie, int fd[2]) {
 	return false;
 }
 
+void tcp_client_disconnect(void *cookie, int fd[2], bool destroy) {
+	struct client *c = cookie;
+	close(fd[0]);
+	if (destroy)
+		free(c);
+}
+
 static size_t tcp_client_peername(void *cookie, int fd[2], char *buf, size_t size) {
 	struct client *c = cookie;
 	return snprintf(buf, size, "tcp:%s:%d", c->location, c->port);
 }
 
-void tcp_client_free(void *cookie) {
-	struct client *c = cookie;
-	free(c);
-}
-
 static const struct rpcclient_stream_funcs sclient = {
 	.connect = tcp_client_connect,
+	.disconnect = tcp_client_disconnect,
 	.flush = tcp_flush,
 	.peername = tcp_client_peername,
-	.free = tcp_client_free,
 };
 
 rpcclient_t rpcclient_tcp_new(
@@ -112,9 +114,13 @@ rpcclient_t rpcclient_tcp_new(
 
 /* Server *********************************************************************/
 
-static bool tcp_server_connect(void *cookie, int fd[2]) {
-	/* Dummy connect just to transfer socket ownership on the stream client */
-	return false;
+void tcp_server_disconnect(void *cookie, int fd[2], bool destroy) {
+	struct client *c = cookie;
+	/*printf("Before close\n");*/
+	close(fd[0]);
+	/*printf("After close\n");*/
+	if (destroy)
+		free(c);
 }
 
 static size_t tcp_server_peername(void *cookie, int fd[2], char *buf, size_t size) {
@@ -130,7 +136,7 @@ static size_t tcp_server_peername(void *cookie, int fd[2], char *buf, size_t siz
 }
 
 static const struct rpcclient_stream_funcs sserver = {
-	.connect = tcp_server_connect,
+	.disconnect = tcp_server_disconnect,
 	.flush = tcp_flush,
 	.peername = tcp_server_peername,
 };

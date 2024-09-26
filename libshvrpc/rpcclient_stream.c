@@ -374,26 +374,33 @@ static void flushmsg(struct ctx *c) {
 	while (fread(buf, 1, BUFSIZ, c->fr) > 0) {}
 }
 
+static void default_disconnect(int fd[2]) {
+	if (fd[0] != fd[1])
+		close(fd[0]);
+	close(fd[1]);
+}
+
 static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 	struct ctx *c = (struct ctx *)client;
 	switch (op) {
 		case RPCC_CTRLOP_DESTROY:
-			if (c->sclient->connect)
-				stream_ctrl(client, RPCC_CTRLOP_DISCONNECT);
+			if (c->sclient->disconnect)
+				c->sclient->disconnect(c->sclient_cookie, c->fds, true);
+			else
+				default_disconnect(c->fds);
 			fclose(c->fr);
 			fclose(c->fw);
 			if (c->proto == RPCSTREAM_P_BLOCK)
 				free(c->block.wbuf);
-			if (c->sclient->free)
-				c->sclient->free(c->sclient_cookie);
 			free(c);
 			return true;
 		case RPCC_CTRLOP_DISCONNECT:
 			if (c->rfd < 0)
 				return false;
-			if (c->rfd != c->wfd)
-				close(c->wfd);
-			close(c->rfd);
+			if (c->sclient->disconnect)
+				c->sclient->disconnect(c->sclient_cookie, c->fds, false);
+			else
+				default_disconnect(c->fds);
 			c->rfd = -1;
 			return true;
 		case RPCC_CTRLOP_RESET:

@@ -26,7 +26,7 @@ enum rpcstream_proto {
  * the RPC Client.
  */
 struct rpcclient_stream_funcs {
-	/*! Called when `rpcclient_reset` is called and connection is not
+	/*! Called when @ref rpcclient_reset is called and connection is not
 	 * established. It can be `NULL` and in such case reconnection is not
 	 * possible. This function can set read and write file descriptors to `fd`
 	 * parameter or keep or set it to `-1` to signal connection failure. The
@@ -35,6 +35,15 @@ struct rpcclient_stream_funcs {
 	 * connection in any other way).
 	 */
 	bool (*connect)(void *cookie, int fd[2]);
+	/*! Called when @ref rpcclient_disconnect or @ref rpcclient_destroy is
+	 * called. The argument `destroy` signals if @ref
+	 * rpcclient_stream_funcs.connect won't be called again and thus all
+	 * reasources should be freed. Be aware that client might be disconnected
+	 * before it is destryed and thus make sure that `fd` items are not `-1`.
+	 *
+	 * The default operation if `NULL` is to simply close file descriptors.
+	 */
+	void (*disconnect)(void *cookie, int fd[2], bool destroy);
 	/*! Called for write file descriptor when message is written. Some protocols
 	 * such as TCP would wait for additional data that might not come so instead
 	 * this function is called to force immediate send out. The write socket is
@@ -45,10 +54,6 @@ struct rpcclient_stream_funcs {
 	 * read and write file descriptors provided for convenience.
 	 */
 	size_t (*peername)(void *cookie, int fd[2], char *buf, size_t size);
-	/*! Called as part of the client object destruction and should be used to
-	 * free the cookie.
-	 */
-	void (*free)(void *cookie);
 };
 
 

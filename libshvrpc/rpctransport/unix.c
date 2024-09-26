@@ -36,20 +36,22 @@ static bool unix_client_connect(void *cookie, int fd[2]) {
 	return false;
 }
 
+static void unix_client_disconnect(void *cookie, int fd[2], bool destroy) {
+	char *location = cookie;
+	close(fd[0]);
+	if (destroy)
+		free(location);
+}
+
 static size_t unix_client_peername(void *cookie, int fd[2], char *buf, size_t size) {
 	char *location = cookie;
 	return unix_peername(buf, size, location);
 }
 
-void unix_client_free(void *cookie) {
-	char *location = cookie;
-	free(location);
-}
-
 static const struct rpcclient_stream_funcs sclient = {
 	.connect = unix_client_connect,
+	.disconnect = unix_client_disconnect,
 	.peername = unix_client_peername,
-	.free = unix_client_free,
 };
 
 rpcclient_t rpcclient_unix_new(const char *location, enum rpcstream_proto proto) {
@@ -58,11 +60,6 @@ rpcclient_t rpcclient_unix_new(const char *location, enum rpcstream_proto proto)
 }
 
 /* Server *********************************************************************/
-
-static bool unix_server_connect(void *cookie, int fd[2]) {
-	/* Dummy connect just to transfer socket ownership on the stream client */
-	return false;
-}
 
 static size_t unix_server_peername(void *cookie, int fd[2], char *buf, size_t size) {
 	struct sockaddr_un addr;
@@ -73,7 +70,6 @@ static size_t unix_server_peername(void *cookie, int fd[2], char *buf, size_t si
 }
 
 static const struct rpcclient_stream_funcs sserver = {
-	.connect = unix_server_connect,
 	.peername = unix_server_peername,
 };
 

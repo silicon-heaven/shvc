@@ -10,10 +10,6 @@
 #include <syslog.h>
 #include <termios.h>
 #include <shv/rpctransport.h>
-#ifdef __NuttX__
-#include <nuttx/usb/cdc.h>
-#include <nuttx/usb/cdcacm.h>
-#endif
 
 struct client {
 	const char *location;
@@ -66,6 +62,13 @@ static bool tty_client_connect(void *cookie, int fd[2]) {
 	return true;
 }
 
+static void tty_client_disconnect(void *cookie, int fd[2], bool destroy) {
+	struct client *c = (struct client *)cookie;
+	close(fd[0]);
+	if (destroy)
+		free(c);
+}
+
 static size_t tty_client_peername(void *cookie, int fd[2], char *buf, size_t size) {
 	struct client *c = (struct client *)cookie;
 	return snprintf(buf, size, "tty:%s", c->location);
@@ -78,8 +81,8 @@ void tty_client_free(void *cookie) {
 
 static const struct rpcclient_stream_funcs sclient = {
 	.connect = tty_client_connect,
+	.disconnect = tty_client_disconnect,
 	.peername = tty_client_peername,
-	.free = tty_client_free,
 };
 
 rpcclient_t rpcclient_tty_new(
@@ -98,14 +101,6 @@ rpcclient_t rpcclient_tty_new(
 
 static const struct rpcclient_stream_funcs sserver;
 
-#ifdef __NuttX__
-static void tty_server_loop_fd_cleanup(void *ptr) {
-	int *fd = ptr;
-	if (*fd >= 0)
-		close(*fd);
-}
-#endif
-
 static void *tty_server_loop(void *ctx) {
 	struct server *s = ctx;
 	pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
@@ -116,22 +111,6 @@ static void *tty_server_loop(void *ctx) {
 		sleep(MIN((cnt++ >> 4) + 1, 15));
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
 	}
-#ifdef __NuttX__
-	int fdclean = fd;
-	pthread_cleanup_push(tty_server_loop_fd_cleanup, &fdclean);
-	cnt = 0;
-	while (true) {
-		int val;
-		assert(ioctl(fd, CAIOC_GETCTRLLINE, &val) != -1);
-		if (val & CDC_LINEST_ONHOOK)
-			break;
-		pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
-		sleep(MIN((cnt++ >> 4) + 1, 15));
-		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
-	}
-	fdclean = -1;
-	pthread_cleanup_pop(1);
-#endif
 
 	rpcclient_t c = rpcclient_stream_new(&sserver, s, s->proto, fd, fd);
 	/* We always send reset to ensure that even if we destroyed our client
@@ -145,9 +124,15 @@ static void *tty_server_loop(void *ctx) {
 	return c;
 }
 
-static bool tty_server_connect(void *cookie, int fd[2]) {
-	/* Dummy connect just to transfer socket ownership on the stream client */
-	return false;
+static void tty_server_disconnect(void *cookie, int fd[2], bool destroy) {
+	struct server *s = cookie;
+	if (fd[0] < 0) /* destroy after explicit disconnect */
+		return;
+	/* Set to non-block before close to ensure that flush of data won't block. */
+	fcntl(fd[0], F_SETFL, fcntl(fd[0], F_GETFL) | O_NONBLOCK);
+	close(fd[0]);
+	if (s->evfd != -1)
+		pthread_create(&s->thread, NULL, tty_server_loop, s);
 }
 
 static size_t tty_server_peername(void *cookie, int fd[2], char *buf, size_t size) {
@@ -155,16 +140,9 @@ static size_t tty_server_peername(void *cookie, int fd[2], char *buf, size_t siz
 	return snprintf(buf, size, "tty:%s", s->location);
 }
 
-static void tty_server_free(void *cookie) {
-	struct server *s = cookie;
-	if (s->evfd != -1)
-		pthread_create(&s->thread, NULL, tty_server_loop, s);
-}
-
 static const struct rpcclient_stream_funcs sserver = {
-	.connect = tty_server_connect,
+	.disconnect = tty_server_disconnect,
 	.peername = tty_server_peername,
-	.free = tty_server_free,
 };
 
 static int tty_server_ctrl(struct rpcserver *server, enum rpcserver_ctrlop op) {
