@@ -72,6 +72,15 @@ struct rpcbroker_role {
 	void (*free)(struct rpcbroker_role *role);
 };
 
+/*! Special role that can be used in @ref rpcbroker_client_register.
+ *
+ * This is not a valid role just like `NULL` and thus peer is expected to
+ * perform login but instead of regular timeout for login this client has no
+ * timeout. This should be used with clients that do not support connection
+ * tracking like TTY to just wait infinitely for the login.
+ */
+#define RPCBROKER_ROLE_WAIT4LOGIN ((void *)-1)
+
 /*! Result for the @ref rpcbroker_login_t callback. */
 struct rpcbroker_login_res {
 	/*! This signals if @ref rpcbroker_login_res.errmsg was used (if `false`)
@@ -154,7 +163,8 @@ void rpcbroker_destroy(rpcbroker_t broker);
  * @param rpc_stage Pointer to the stage to be filled in. This stage actually
  *   manages messages. It is commonly at the end of the stage array.
  * @param role The role used by this client. The role must be valid all the time
- *   client stays registered. You must pass `NULL` if role is assigned by login.
+ *   client stays registered. You must pass `NULL` or @ref
+ *   RPCBROKER_ROLE_WAIT4LOGIN if role is assigned by login.
  * @returns ID assigned to the newly registered client.
  */
 int rpcbroker_client_register(rpcbroker_t broker, rpchandler_t handler,

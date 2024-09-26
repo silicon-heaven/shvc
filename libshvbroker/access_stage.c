@@ -43,7 +43,7 @@ static int access_idle(void *cookie, struct rpchandler_idle *ctx) {
 static void access_reset(void *cookie) {
 	struct clientctx *c = cookie;
 	broker_lock(c->broker);
-	if (c->activity_timeout != -1) {
+	if (c->login) {
 		role_unassign(c);
 		c->nonce[0] = '\0';
 		free(c->username);

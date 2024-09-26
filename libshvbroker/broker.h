@@ -20,6 +20,7 @@ struct clientctx {
 	/* Role of the client in the broker. */
 	const struct rpcbroker_role *role;
 	/* Login */
+	bool login;
 	char nonce[NONCE_LEN + 1];
 	char *username;
 	unsigned activity_timeout;
@@ -62,10 +63,8 @@ struct rpcbroker {
 
 __attribute__((nonnull)) static inline void broker_lock(struct rpcbroker *broker) {
 	// TODO possibly could be RW lock
-	if (!(broker->flags & RPCBROKER_F_NOLOCK)) {
-		printf("LOCK\n");
+	if (!(broker->flags & RPCBROKER_F_NOLOCK))
 		pthread_mutex_lock(&broker->lock);
-	}
 }
 
 __attribute__((nonnull)) static inline void broker_unlock(struct rpcbroker *broker) {
