@@ -4,12 +4,12 @@
 #include <obstack.h>
 #include <shv/rpcmsg.h>
 
+#include "shvc_config.h"
 
 const struct rpcmsg_meta_limits rpcmsg_meta_limits_default = {
-	// TODO make this configurable with meson_options
-	.path = 1024,
-	.name = 256,
-	.user_id = 256,
+	.path = SHVC_PATH_LIMIT,
+	.name = SHVC_NAME_LIMIT,
+	.user_id = SHVC_USERID_LIMIT,
 	.extra = false,
 };
 

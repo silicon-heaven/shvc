@@ -194,7 +194,7 @@ struct rpcmsg_meta_limits {
 	 * supported path. It is to detect that this is too long path (because that
 	 * won't be signaled to you in any other way).
 	 *
-	 * You can it to `-1` for unconstrained allocation.
+	 * You can set it to `-1` for unconstrained allocation.
 	 */
 	ssize_t path;
 	/*! Limit on @ref rpcmsg_meta.method, @ref rpcmsg_meta.source, and @ref

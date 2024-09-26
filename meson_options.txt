@@ -27,6 +27,31 @@ option(
   description: 'Set maximal size in bytes of single write operation for file nodes. Larger transfers are rejected.',
 )
 
+# Message meta limits
+option(
+  'path_limit',
+  type: 'integer',
+  min: -1,
+  value: 1024,
+  description: 'Default limit imposed on the path size. You can set it to `-1` for unconstrained allocation.',
+)
+
+option(
+  'name_limit',
+  type: 'integer',
+  min: 1,
+  value: 256,
+  description: 'Default limit imposed on the method, source, and signal size.',
+)
+
+option(
+  'userid_limit',
+  type: 'integer',
+  min: 1,
+  value: 256,
+  description: 'Default limit imposed the on the userid size.',
+)
+
 # Applications
 option(
   'shvc',
