@@ -38,7 +38,8 @@ static bool unix_client_connect(void *cookie, int fd[2]) {
 
 static void unix_client_disconnect(void *cookie, int fd[2], bool destroy) {
 	char *location = cookie;
-	close(fd[0]);
+	if (fd[0] != -1)
+		close(fd[0]);
 	if (destroy)
 		free(location);
 }

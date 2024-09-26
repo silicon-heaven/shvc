@@ -64,7 +64,8 @@ static bool tty_client_connect(void *cookie, int fd[2]) {
 
 static void tty_client_disconnect(void *cookie, int fd[2], bool destroy) {
 	struct client *c = (struct client *)cookie;
-	close(fd[0]);
+	if (fd[0] != -1)
+		close(fd[0]);
 	if (destroy)
 		free(c);
 }

@@ -72,14 +72,16 @@ int rpcbroker_client_register(rpcbroker_t broker, rpchandler_t handler,
 	broker->clients[cid] = ctx;
 	ctx->broker = broker;
 	ctx->handler = handler;
-	ctx->role = role == RPCBROKER_ROLE_WAIT4LOGIN ? NULL : role;
-	ctx->login = ctx->role == NULL;
+	ctx->role = role;
+	ctx->login = role == NULL;
 	ctx->nonce[0] = '\0';
 	ctx->username = NULL;
-	ctx->activity_timeout = role ? -1 : IDLE_TIMEOUT_LOGIN;
+	ctx->activity_timeout = role || !rpcclient_contrack(rpchandler_client(handler))
+		? -1
+		: IDLE_TIMEOUT_LOGIN;
 	ctx->last_activity = now.tv_sec;
 	ARR_INIT(ctx->ttlsubs);
-	if (ctx->role && role_assign(ctx, ctx->role) != ROLE_RES_OK) {
+	if (role && role_assign(ctx, role) != ROLE_RES_OK) {
 		broker->clients_lastuse[cid] = 0;
 		free(ctx);
 		return -1;

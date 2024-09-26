@@ -85,7 +85,8 @@ static bool tcp_client_connect(void *cookie, int fd[2]) {
 
 void tcp_client_disconnect(void *cookie, int fd[2], bool destroy) {
 	struct client *c = cookie;
-	close(fd[0]);
+	if (fd[0] != -1)
+		close(fd[0]);
 	if (destroy)
 		free(c);
 }
@@ -117,9 +118,8 @@ rpcclient_t rpcclient_tcp_new(
 
 void tcp_server_disconnect(void *cookie, int fd[2], bool destroy) {
 	struct client *c = cookie;
-	/*printf("Before close\n");*/
-	close(fd[0]);
-	/*printf("After close\n");*/
+	if (fd[0] != -1)
+		close(fd[0]);
 	if (destroy)
 		free(c);
 }

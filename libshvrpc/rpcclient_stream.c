@@ -375,6 +375,8 @@ static void flushmsg(struct ctx *c) {
 }
 
 static void default_disconnect(int fd[2]) {
+	if (fd[0] == -1)
+		return;
 	if (fd[0] != fd[1])
 		close(fd[0]);
 	close(fd[1]);
@@ -402,6 +404,7 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 			else
 				default_disconnect(c->fds);
 			c->rfd = -1;
+			c->wfd = -1;
 			return true;
 		case RPCC_CTRLOP_RESET:
 			if (c->rfd < 0) {
