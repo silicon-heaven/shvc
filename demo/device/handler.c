@@ -54,15 +54,14 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 	int tid = trackid(ctx->meta.path);
 	if (tid != -1) {
 		if (!strcmp(ctx->meta.method, "get") && ctx->meta.access >= RPCACCESS_READ) {
-			if (!rpchandler_msg_valid(ctx))
+			if (!rpchandler_msg_valid_getparam(ctx, NULL))
 				return RPCHANDLER_MSG_DONE;
 			cp_pack_t pack = rpchandler_msg_new_response(ctx);
 			cp_pack_list_begin(pack);
 			for (size_t i = 0; i < state->tracks[tid].cnt; i++)
 				cp_pack_int(pack, state->tracks[tid].values[i]);
 			cp_pack_container_end(pack);
-			cp_pack_container_end(pack);
-			rpchandler_msg_send(ctx);
+			rpchandler_msg_send_response(ctx, pack);
 			return RPCHANDLER_MSG_DONE;
 		} else if (!strcmp(ctx->meta.method, "set") &&
 			ctx->meta.access >= RPCACCESS_WRITE) {

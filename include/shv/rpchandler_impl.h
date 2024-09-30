@@ -321,7 +321,8 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_new_signal_void(
  * @param ctx Handle context passed to @ref rpchandler_funcs.msg.
  * @returns `true` if request should be handled and `false` otherwise.
  */
-static inline bool rpchandler_msg_valid_nullparam(struct rpchandler_msg *ctx) {
+__attribute__((nonnull)) static inline bool rpchandler_msg_valid_nullparam(
+	struct rpchandler_msg *ctx) {
 	bool is_null = !rpcmsg_has_value(ctx->item) ||
 		cp_unpack_type(ctx->unpack, ctx->item) == CPITEM_NULL;
 	if (rpchandler_msg_valid(ctx)) {
@@ -329,6 +330,35 @@ static inline bool rpchandler_msg_valid_nullparam(struct rpchandler_msg *ctx) {
 			return true;
 		rpchandler_msg_send_error(
 			ctx, RPCERR_INVALID_PARAM, "No parameter expected");
+	}
+	return false;
+}
+
+/*! Check for standard `get` method parameter and validate message.
+ *
+ * This is convenient combination of checking for null or int parameter and @ref
+ * rpchandler_msg_valid that can be used in `get` method implementation.
+ *
+ * @param ctx Handle context passed to @ref rpchandler_funcs.msg.
+ * @param oldness The optional pointer where maximal age of the value will be
+ *   stored. This age is in milliseconds as per SHV standard. It is valid only
+ *   if `true` is returned.
+ * @returns `true` if request should be handled and `false` otherwise.
+ */
+__attribute__((nonnull(1))) static inline bool rpchandler_msg_valid_getparam(
+	struct rpchandler_msg *ctx, long long *oldness) {
+	bool valid = true;
+	if (rpcmsg_has_value(ctx->item)) {
+		cp_unpack(ctx->unpack, ctx->item);
+		valid = ctx->item->type == CPITEM_NULL || ctx->item->type == CPITEM_INT;
+		if (ctx->item->type == CPITEM_INT && oldness)
+			*oldness = ctx->item->as.Int;
+	}
+	if (rpchandler_msg_valid(ctx)) {
+		if (valid)
+			return true;
+		rpchandler_msg_send_error(
+			ctx, RPCERR_INVALID_PARAM, "No parameter or Int expected");
 	}
 	return false;
 }
