@@ -21,6 +21,10 @@ V0.0 {
 		rpcaccess_granted_access;
 		rpcaccess_granted_extract;
 
+		# shv/rpcaccess.h
+		rpcalerts_pack;
+		rpcalerts_unpack;
+
 		# shv/rpcerror.h
 		rpcerror_unpack;
 		rpcerror_pack;
@@ -138,6 +142,8 @@ V0.0 {
 		rpchandler_device_new;
 		rpchandler_device_destroy;
 		rpchandler_device_stage;
+		rpchandler_device_signal_alerts;
+		rpchandler_device_alert;
 
 		# shv/rpchandler_responses.h
 		rpchandler_responses_new;

@@ -12,6 +12,7 @@ libshvrpc_sources = [
     'rpctransport/unix.c',
     'crc32.c',
     'rpcaccess.c',
+    'rpcalerts.c',
     'rpccall.c',
     'rpcclient_stream.c',
     'rpcdir.c',

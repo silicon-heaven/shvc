@@ -10,6 +10,7 @@ libshvcp_headers = files(
 libshvrpc_headers = files(
   'shv/crc32.h',
   'shv/rpcaccess.h',
+  'shv/rpcalerts.h',
   'shv/rpccall.h',
   'shv/rpcclient.h',
   'shv/rpcclient_stream.h',
