@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `long long` and `unsigned long long` are replaced with `intmax_t` and
   `uintmax_t` respectively in the `struct cpitem` and `struct cpdecimal`
+- History handlers and `rpchandler_records` and `rpchandler_files` are merged
+  into a signle handler `rpchandler_history`.
 
 ### Fixed
 - `cpdatetime` now correctly fills in `offutc` field.

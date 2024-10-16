@@ -38,8 +38,7 @@ libshvrpc_headers = files(
 libshvbroker_headers = files('shv/rpcbroker.h')
 
 libshvhistory_headers = files(
-  'shv/rpchandler_files.h',
-  'shv/rpchandler_records.h',
+  'shv/rpchandler_history.h',
   'shv/rpchistory.h',
 )
 

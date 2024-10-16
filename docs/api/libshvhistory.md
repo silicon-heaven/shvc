@@ -17,7 +17,5 @@ There are some prepared handlers you may use:
 ```{toctree}
 :maxdepth: 2
 
-rpchandler_files
 rpchandler_history
-rpchandler_records
 ```

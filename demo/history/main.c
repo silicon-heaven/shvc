@@ -7,9 +7,8 @@
 #include <string.h>
 #include <shv/rpcclient.h>
 #include <shv/rpchandler_app.h>
+#include <shv/rpchandler_history.h>
 #include <shv/rpchandler_login.h>
-#include <shv/rpchandler_records.h>
-#include <shv/rpchistory.h>
 #include <shv/rpcurl.h>
 #include "opts.h"
 
@@ -109,20 +108,24 @@ int main(int argc, char **argv) {
 	client->logger_out =
 		rpclogger_new(rpclogger_func_stderr, "=> ", logsiz, conf.verbose);
 
-	struct rpchandler_records_ops log_ops = {
-		.get_index_range = log_get_index_range,
-		.pack_record = log_pack_record,
-	};
+	struct rpchandler_history_records *records[2] = {
+		&(struct rpchandler_history_records){.name = "records_log",
+			.cookie = NULL,
+			.get_index_range = log_get_index_range,
+			.pack_record = log_pack_record},
+		NULL};
+
+	struct rpchandler_history_facilities facilities = {
+		.records = records, .files = NULL};
 
 	rpchandler_login_t login = rpchandler_login_new(&rpcurl->login);
 	rpchandler_app_t app = rpchandler_app_new("shvc-demo-history", PROJECT_VERSION);
-	rpchandler_records_t records_log =
-		rpchandler_records_new("records_log", NULL, &log_ops);
+	rpchandler_history_t history = rpchandler_history_new(&facilities);
 
 	const struct rpchandler_stage stages[] = {
 		rpchandler_login_stage(login),
 		rpchandler_app_stage(app),
-		rpchandler_records_stage(records_log),
+		rpchandler_history_stage(history),
 		{},
 	};
 	rpchandler_t handler = rpchandler_new(client, stages, NULL);
@@ -139,7 +142,7 @@ int main(int argc, char **argv) {
 	rpchandler_destroy(handler);
 	rpchandler_app_destroy(app);
 	rpchandler_login_destroy(login);
-	rpchandler_records_destroy(records_log);
+	rpchandler_history_destroy(history);
 	rpclogger_destroy(client->logger_in);
 	rpclogger_destroy(client->logger_out);
 	rpcclient_destroy(client);

@@ -26,8 +26,7 @@ For history application you may use following handlers:
 ```{toctree}
 :maxdepth: 2
 
-rpchandler_files
-rpchandler_records
+rpchandler_history
 ```
 
 To implement your custom handler the following API is available:

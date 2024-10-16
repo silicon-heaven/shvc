@@ -1,6 +1,5 @@
 libshvhistory_sources = files(
-  'rpchandler_files.c',
-  'rpchandler_records.c',
+  'rpchandler_history.c',
   'rpchistory.c',
 )
 libshvhistory_dependencies = [libshvrpc_dep]
