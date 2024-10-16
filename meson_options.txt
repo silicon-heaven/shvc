@@ -27,6 +27,14 @@ option(
   description: 'Set maximal size in bytes of single write operation for file nodes. Larger transfers are rejected.',
 )
 
+option(
+  'getlog_limit',
+  type: 'integer',
+  min: 0,
+  value: 1000,
+  description: 'Set the maximal number of records that can be obtained with getLog method.',
+)
+
 # Message meta limits
 option(
   'path_limit',

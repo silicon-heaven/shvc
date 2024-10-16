@@ -24,6 +24,7 @@ conf.set(
   get_option('file_maxwrite'),
   description:'Maximal size in bytes of single write operation for file nodes'
 )
+conf.set('SHVC_GETLOG_LIMIT', get_option('getlog_limit'), description:'Maximal number of records that can be obtained with getLog method.')
 conf.set('SHVC_PATH_LIMIT', get_option('path_limit'), description:'Default limit imposed on the path size. You can set it to `-1` for unconstrained allocation.')
 conf.set('SHVC_NAME_LIMIT', get_option('name_limit'), description:'Default limit imposed on the method, source, and signal size.')
 conf.set('SHVC_USERID_LIMIT', get_option('userid_limit'), description:'Default limit imposed the on the userid size.')

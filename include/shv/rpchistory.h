@@ -48,6 +48,18 @@ enum rpchistory_fetch_keys {
 	RPCHISTORY_FETCH_KEY_TIMEJUMP = 60,
 };
 
+/*! Keys for the getLog's method response description IMap. */
+enum rpchistory_getlog_keys {
+	RPCHISTORY_GETLOG_KEY_TIMESTAMP = 1,
+	RPCHISTORY_GETLOG_KEY_REF = 2,
+	RPCHISTORY_GETLOG_KEY_PATH = 3,
+	RPCHISTORY_GETLOG_KEY_SIGNAL = 4,
+	RPCHISTORY_GETLOG_KEY_SOURCE = 5,
+	RPCHISTORY_GETLOG_KEY_VALUE = 6,
+	RPCHISTORY_GETLOG_KEY_USERID = 7,
+	RPCHISTORY_GETLOG_KEY_REPEAT = 8,
+};
+
 /*! Structure defining record' head for SHV communication.
  *
  *  This is a represenation of record's head. This includes all record's
@@ -78,16 +90,79 @@ struct rpchistory_record_head {
 	struct cpdatetime datetime;
 };
 
+/*! This structure provides fields for getLog method request.
+ *
+ * This structure is returned as a result of
+ * @ref rpchistory_getlog_request_unpack call.
+ */
+struct rpchistory_getlog_request {
+	/*! This is a @ref cpdatetime since logs should be provided. */
+	struct cpdatetime since;
+	/*! This is a @ref cpdatetime until logs should be provided. */
+	struct cpdatetime until;
+	/*! Optional Int as a limitation for the number of records to be at most
+	 * returned.
+	 *
+	 * NOTE: UINT_MAX is used as a default when no limit is specified.
+	 */
+	unsigned count;
+	/*! This controls if virtual records should be inserted at the start that
+	 * copy state of the signals. This provides fixed point to start when you
+	 * for example plotting data. These records are virtual and are not actually
+	 * captured signals.
+	 */
+	bool snapshot;
+	/*! RPC RI that should be used to match path:method:signal. */
+	const char *ri;
+};
+
 /*! Description for fetch method. */
-extern struct rpcdir rpchistory_fetch;
+extern const struct rpcdir rpchistory_fetch;
 /*! Description for span method. */
-extern struct rpcdir rpchistory_span;
+extern const struct rpcdir rpchistory_span;
 /*! Description for getLog method. */
-extern struct rpcdir rpchistory_getlog;
+extern const struct rpcdir rpchistory_getlog;
 /*! Description for sync method. */
-extern struct rpcdir rpchistory_sync;
+extern const struct rpcdir rpchistory_sync;
 /*! Description for lastSync method. */
-extern struct rpcdir rpchistory_lastsync;
+extern const struct rpcdir rpchistory_lastsync;
+
+/*! Begin iMap packing of getLog method response.
+ *
+ * This packs all record's values except for data. The values are passed
+ * with @ref rpchistory_record_head structure and are packed as iMap.
+ * The user should pack the data after this call.
+ *
+ * @param pack: The generic packer where it is about to be packed.
+ * @param head: The pointer to @ref rpchistory_record_head structure.
+ * @param ref: This provides a way to reference the previous record to use it as
+ * the default for path, signal and source instead of obtaining them from
+ * @ref rpchistory_record_head structure. It is Int where 0 is record right
+ * before this one in the list. The offset must always be to the most closest
+ * record that specifies desired default.
+ * @returns `false` if packing encounters failure and `true` otherwise.
+ */
+bool rpchistory_getlog_response_pack_begin(
+	cp_pack_t pack, struct rpchistory_record_head *head, int ref);
+
+/*! Finish iMap packing of getLog method response..
+ *
+ * @param pack: The generic packer where it is about to be packed.
+ * @returns `false` if packing encounters failure and `true` otherwise.
+ */
+bool rpchistory_getlog_response_pack_end(cp_pack_t pack);
+
+/*! Unpack getLog method request.
+ *
+ * @param unpack: The generic unpacker to be used to unpack items.
+ * @param item: The item instance that was used to unpack the previous item.
+ * @param obstack: Pointer to the obstack instance to be used to allocate
+ *   @ref rpchistory_getlog_request structure.
+ * @returns Pointer to @ref rpchistory_getlog_request or `NULL` in case of an
+ * unpack error. You can investigate `item` to identify the failure cause.
+ */
+struct rpchistory_getlog_request *rpchistory_getlog_request_unpack(
+	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack);
 
 /*! Begin iMap packing of the record.
  *
