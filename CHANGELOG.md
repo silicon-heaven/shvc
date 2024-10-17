@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Support for extracting unsigned SHV integer to the signed one and vice versa.
+- Support for `getLog` method in RPCHistory.
 
 ### Changed
 - `long long` and `unsigned long long` are replaced with `intmax_t` and

@@ -20,12 +20,13 @@ static size_t logsiz = BUFSIZ > 128 ? BUFSIZ : 128;
 static const struct rpchistory_record_head heads[] = {
 	(struct rpchistory_record_head){
 		.type = RPCHISTORY_RECORD_NORMAL,
+		.path = "node0/subnode/2",
 		.datetime = {.msecs = 150000, .offutc = 0},
 	},
 	(struct rpchistory_record_head){
 		.type = RPCHISTORY_RECORD_NORMAL,
 		.access = RPCACCESS_BROWSE,
-		.path = "get2",
+		.path = "node2",
 		.signal = "fchng",
 		.source = "src",
 		.userid = "elluser",
@@ -40,14 +41,14 @@ static const struct rpchistory_record_head heads[] = {
 	(struct rpchistory_record_head){
 		.type = RPCHISTORY_RECORD_NORMAL,
 		.access = RPCACCESS_WRITE,
-		.path = "set3",
+		.path = "node1/subnode",
 		.userid = "elluser_wifi",
 		.datetime = {.msecs = 600000, .offutc = 0},
 	},
 	(struct rpchistory_record_head){
 		.type = RPCHISTORY_RECORD_NORMAL,
 		.access = RPCACCESS_SERVICE,
-		.path = "get6",
+		.path = "node0/subnode/1",
 		.userid = "elluser_local",
 		.datetime = {.msecs = 800000, .offutc = 0},
 	},
@@ -80,6 +81,32 @@ static bool log_get_index_range(
 	*min = 1;
 	*max = 6;
 	*span = 6;
+	return true;
+}
+
+static bool log_pack_getlog(struct rpchandler_history_facilities *facilities,
+	struct rpchistory_getlog_request *request, cp_pack_t pack,
+	struct obstack *obstack, const char *path) {
+	/* WARNING: this is not a proper getLog implementation, it just returns
+	 * records on node0/subnode/ path if the path matches. This is only for
+	 * testing purposes of RPC History Handler. The correct getLog
+	 * implementation should take other fields as date, count etc. into account
+	 * and filter records properly.
+	 */
+
+	if (strcmp(path, "node0/subnode"))
+		return true;
+
+	struct rpchistory_record_head head;
+	memcpy(&head, &heads[0], sizeof(struct rpchistory_record_head));
+	rpchistory_getlog_response_pack_begin(pack, &head, -1);
+	cp_pack_null(pack);
+	rpchistory_getlog_response_pack_end(pack);
+	memcpy(&head, &heads[4], sizeof(struct rpchistory_record_head));
+
+	rpchistory_getlog_response_pack_begin(pack, &head, -1);
+	cp_pack_null(pack);
+	rpchistory_getlog_response_pack_end(pack);
 	return true;
 }
 
@@ -116,11 +143,15 @@ int main(int argc, char **argv) {
 		NULL};
 
 	struct rpchandler_history_facilities facilities = {
-		.records = records, .files = NULL};
+		.records = records, .files = NULL, .pack_getlog = log_pack_getlog};
+
+
 
 	rpchandler_login_t login = rpchandler_login_new(&rpcurl->login);
 	rpchandler_app_t app = rpchandler_app_new("shvc-demo-history", PROJECT_VERSION);
-	rpchandler_history_t history = rpchandler_history_new(&facilities);
+	rpchandler_history_t history = rpchandler_history_new(&facilities,
+		(const char *[]){"node0/subnode/1", "node0/subnode/2", "node1/subnode",
+			"node2", NULL});
 
 	const struct rpchandler_stage stages[] = {
 		rpchandler_login_stage(login),

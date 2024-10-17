@@ -84,6 +84,33 @@ struct rpchandler_history_facilities {
 	/*! The array of pointers to @ref rpchandler_history_files structure. The
 	 * array has to be NULL terminated! */
 	struct rpchandler_history_files **files;
+	/*! Callback to user defined implementation of getLog method response pack.
+	 *
+	 * This is a callback to the user/application defined function that
+	 * obtains the records from the logging facilities based on parameters
+	 * passed in @ref rpchistory_getlog_request argument and packs the records.
+	 * The application may use @ref rpchistory_getlog_response_pack_begin and
+	 * @ref rpchistory_getlog_response_pack_end function calls to pack
+	 * the response. The begining and the end of the list is already implemented
+	 * in the RPC History Handler.
+	 *
+	 * The function should fail only if it is not possible to obtain records
+	 * from the log due to some internal error (for example the log is not
+	 * able to correctly represent time). Asking for time span or path
+	 * not present should just return without packing any records and thus
+	 * the response will be an empty list.
+	 *
+	 * @param facilities: The pointer to @ref rpchandler_history_facilities
+	 * structure. This provides an access to the logging facilities.
+	 * @param request: The pointer to unpacked getLog request parameters.
+	 * @param pack: Packing structure @ref cp_pack_t.
+	 * @param obstack: The pointer to RPC Handler obstack.
+	 * @param path: RPC path where the method was called.
+	 * @return True on success, false on failure.
+	 */
+	bool (*pack_getlog)(struct rpchandler_history_facilities *facilities,
+		struct rpchistory_getlog_request *request, cp_pack_t pack,
+		struct obstack *obstack, const char *path);
 };
 
 /*! Object representing RPC Records Handler. */
@@ -93,16 +120,19 @@ typedef struct rpchandler_history *rpchandler_history_t;
  *
  * This handler implements the entire history framework. It combines
  * block based histories (records) and file based histories (files) - NOT YET
- * IMPLEMENTED and is supposed to provide the future implementation of getLog
- * interface.
+ * IMPLEMENTED and provides the implementation of getLog interface.
  *
  * @param facilities: The pointer to @ref rpchandler_history_facilities
  * structure. This provides the information about histories to be used in the
  * framework, it is an array terminated by NULL.
+ * @param signals: Null terminated array with the paths to signals being
+ * recorded by all facilities. These paths are present in the virtual tree under
+ * ./history node and contains getLog method.
  * @returns RPC Records Handler object.
  */
 rpchandler_history_t rpchandler_history_new(
-	struct rpchandler_history_facilities *facilities) __attribute__((malloc));
+	struct rpchandler_history_facilities *facilities, const char **signals)
+	__attribute__((malloc, nonnull));
 
 /*! Get RPC Handler stage for this History Handler.
  *

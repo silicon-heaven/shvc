@@ -192,7 +192,117 @@ async def fixture_demo_history(demo_history_exec, broker, url):
     (
         ("", "ls", None, [".app", ".broker", "test"]),
         ("test", "ls", None, [".history"]),
-        ("test/.history", "ls", None, [".app", ".records"]),
+        ("test/.history", "ls", None, [".app", ".records", "node0", "node1", "node2"]),
+        ("test/.history/node0", "ls", None, ["subnode"]),
+        ("test/.history/node1", "ls", None, ["subnode"]),
+        ("test/.history/node2", "ls", None, []),
+        ("test/.history/node0/subnode", "ls", None, ["1", "2"]),
+        (
+            "test/.history/node0",
+            "dir",
+            None,
+            [
+                {1: "dir", 3: "idir", 4: "odir", 5: 1},
+                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
+                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+            ],
+        ),
+        (
+            "test/.history/node1",
+            "dir",
+            None,
+            [
+                {1: "dir", 3: "idir", 4: "odir", 5: 1},
+                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
+                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+            ],
+        ),
+        (
+            "test/.history/node2",
+            "dir",
+            None,
+            [
+                {1: "dir", 3: "idir", 4: "odir", 5: 1},
+                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
+                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+            ],
+        ),
+        (
+            "test/.history/node0/subnode",
+            "dir",
+            None,
+            [
+                {1: "dir", 3: "idir", 4: "odir", 5: 1},
+                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
+                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+            ],
+        ),
+        (
+            "test/.history/node0/subnode/1",
+            "dir",
+            None,
+            [
+                {1: "dir", 3: "idir", 4: "odir", 5: 1},
+                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
+                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+            ],
+        ),
+        (
+            "test/.history/node0/subnode/2",
+            "dir",
+            None,
+            [
+                {1: "dir", 3: "idir", 4: "odir", 5: 1},
+                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
+                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+            ],
+        ),
+        (
+            "test/.history/node1/subnode",
+            "dir",
+            None,
+            [
+                {1: "dir", 3: "idir", 4: "odir", 5: 1},
+                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
+                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+            ],
+        ),
+        (
+            "test/.history/node2",
+            "dir",
+            None,
+            [
+                {1: "dir", 3: "idir", 4: "odir", 5: 1},
+                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
+                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+            ],
+        ),
+        (
+            "test/.history/node0/subnode",
+            "getLog",
+            {
+                "since": datetime.datetime(6421, 6, 11, 15, 2, 1, tzinfo=datetime.UTC),
+                "until": datetime.datetime(
+                    6421, 6, 11, 14, 51, 11, tzinfo=datetime.UTC
+                ),
+                "count": 5,
+                "snapshot": False,
+                "ri": "**:*",
+            },
+            [
+                {
+                    1: datetime.datetime(6421, 6, 11, 15, 2, 1, tzinfo=datetime.UTC),
+                    3: "node0/subnode/2",
+                    6: None,
+                },
+                {
+                    1: datetime.datetime(6421, 6, 11, 14, 51, 11, tzinfo=datetime.UTC),
+                    3: "node0/subnode/1",
+                    6: None,
+                    7: "elluser_local",
+                },
+            ],
+        ),
         (
             "test/.history/.records",
             "dir",
@@ -223,24 +333,18 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                 {
                     0: 1,
                     1: datetime.datetime(6421, 6, 11, 15, 2, 1, tzinfo=datetime.UTC),
-                    2: "",
-                    3: "chng",
-                    4: "get",
+                    2: "node0/subnode/2",
                     5: 2,
-                    6: 8,
-                    7: None,
-                    8: False,
                 },
                 {
                     0: 1,
                     1: datetime.datetime(6421, 6, 11, 14, 56, 11, tzinfo=datetime.UTC),
-                    2: "get2",
+                    2: "node2",
                     3: "fchng",
                     4: "src",
                     5: 3,
                     6: 1,
                     7: "elluser",
-                    8: False,
                 },
                 {
                     0: 3,
@@ -250,24 +354,18 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                 {
                     0: 1,
                     1: datetime.datetime(6421, 6, 11, 14, 54, 31, tzinfo=datetime.UTC),
-                    2: "set3",
-                    3: "chng",
-                    4: "get",
+                    2: "node1/subnode",
                     5: 5,
                     6: 16,
                     7: "elluser_wifi",
-                    8: False,
                 },
                 {
                     0: 1,
                     1: datetime.datetime(6421, 6, 11, 14, 51, 11, tzinfo=datetime.UTC),
-                    2: "get6",
-                    3: "chng",
-                    4: "get",
+                    2: "node0/subnode/1",
                     5: 6,
                     6: 40,
                     7: "elluser_local",
-                    8: False,
                 },
             ],
         ),
@@ -276,3 +374,33 @@ async def fixture_demo_history(demo_history_exec, broker, url):
 async def test_call_history(demo_history, client, path, method, param, result):
     """Call various methods from Python."""
     assert await client.call(path, method, param) == result
+
+
+@pytest.mark.parametrize(
+    "path,method,param,error",
+    (
+        ("test/.history/node0/subnode1", "ls", None, shv.RpcMethodNotFoundError),
+        ("test/.history/node0/subnode1", "dir", None, shv.RpcMethodNotFoundError),
+        ("test/.history/node0/subnode1", "getLog", None, shv.RpcMethodNotFoundError),
+        ("test/.history/node/subnode1", "getLog", None, shv.RpcMethodNotFoundError),
+        ("test/.history/node0/subnode", "getLog", None, shv.RpcInvalidParamError),
+        ("test/.history/.records", "getLog", None, shv.RpcMethodNotFoundError),
+        ("test/.history/.records/records_log", "fetch", None, shv.RpcInvalidParamError),
+        (
+            "test/.history/.records/records_log",
+            "fetch",
+            ["a", 1],
+            shv.RpcInvalidParamError,
+        ),
+        (
+            "test/.history/.records/records_log",
+            "fetch",
+            [1, "a"],
+            shv.RpcInvalidParamError,
+        ),
+    ),
+)
+async def test_call_error_history(demo_history, client, path, method, param, error):
+    """Call various methods from Python."""
+    with pytest.raises(error):
+        assert await client.call(path, method, param)
