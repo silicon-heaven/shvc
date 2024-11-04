@@ -64,13 +64,17 @@ struct ctx {
 static ssize_t xread(struct ctx *c, char *buf, size_t siz, int timeout) {
 	struct pollfd pfd = {
 		.fd = c->rfd,
-		.events = POLLIN | POLLHUP,
+		.events = POLLIN,
 	};
-	switch (poll(&pfd, 1, timeout)) {
-		case 0:
-			return -2;
-		case -1:
+	while (true) {
+		int pollres = poll(&pfd, 1, timeout);
+		if (pollres < 0) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
 			return -1;
+		} else if (pollres == 0)
+			return -2;
+		break;
 	}
 
 	ssize_t i;
@@ -106,14 +110,19 @@ static bool xwrite(struct ctx *c, const void *buf, size_t siz) {
 	if (c->errnum != 0 && c->errnum != EAGAIN)
 		return false;
 	uint8_t *data = (uint8_t *)buf;
+	struct pollfd pfd = {
+		.fd = c->wfd,
+		.events = POLLOUT,
+	};
 	while (siz > 0) {
-		struct pollfd pfd = {
-			.fd = c->wfd,
-			.events = POLLOUT | POLLHUP,
-		};
 		int pollres = poll(&pfd, 1, c->errnum ? 0 : TIMEOUT_WR);
-		if (pollres <= 0) {
-			c->errnum = pollres < 0 ? errno : EWOULDBLOCK;
+		if (pollres < 0) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+			c->errnum = errno;
+			return false;
+		} else if (pollres == 0) {
+			c->errnum = EWOULDBLOCK;
 			return false;
 		} else if (c->errnum)
 			c->errnum = 0;
