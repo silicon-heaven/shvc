@@ -122,8 +122,8 @@ ssize_t chainpack_pack(FILE *f, const struct cpitem *item) {
 			 */
 			int64_t msecs = item->as.Datetime.msecs - CHAINPACK_EPOCH_MSEC;
 			int offset = (item->as.Datetime.offutc / 15) & 0x7F;
-			int ms = (int)(msecs % 1000);
-			if (ms == 0)
+			bool ms = msecs % 1000;
+			if (!ms)
 				msecs /= 1000;
 			if (offset != 0) {
 				msecs *= 128;
@@ -132,7 +132,7 @@ ssize_t chainpack_pack(FILE *f, const struct cpitem *item) {
 			msecs *= 4;
 			if (offset != 0)
 				msecs |= 1;
-			if (ms == 0)
+			if (!ms)
 				msecs |= 2;
 			CALL(chainpack_pack_int, msecs);
 			break;
