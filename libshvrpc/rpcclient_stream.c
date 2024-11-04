@@ -38,7 +38,7 @@ struct ctx {
 		};
 		int fds[2];
 	};
-	int errnum;
+	_Atomic int errnum;
 	FILE *fr, *fw;
 
 	union {
