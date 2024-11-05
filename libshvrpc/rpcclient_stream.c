@@ -23,6 +23,8 @@
 
 #define TIMEOUT_RD (5000)
 #define TIMEOUT_WR (200)
+#define TIMEOUT_WR_BLOCK \
+	(1000) /* Try harder on block that can't be recovered */
 // TODO possibly add two levels of message priority and increase write timeout
 // for requests and responses and keep it low only for signals.
 
@@ -83,6 +85,8 @@ static ssize_t xread(struct ctx *c, char *buf, size_t siz, int timeout) {
 	} while (i == -1 && errno == EINTR);
 	switch (i) {
 		case -1:
+			/* This can't happen even on O_NONBLOCK because we use poll. */
+			assert(errno != EAGAIN && errno != EWOULDBLOCK);
 			c->errnum = errno;
 			break;
 		case 0:
@@ -115,7 +119,10 @@ static bool xwrite(struct ctx *c, const void *buf, size_t siz) {
 		.events = POLLOUT,
 	};
 	while (siz > 0) {
-		int pollres = poll(&pfd, 1, c->errnum ? 0 : TIMEOUT_WR);
+		int pollres = poll(&pfd, 1,
+			c->errnum
+				? 0
+				: (c->proto == RPCSTREAM_P_BLOCK ? TIMEOUT_WR_BLOCK : TIMEOUT_WR));
 		if (pollres < 0) {
 			if (errno == EINTR || errno == EAGAIN)
 				continue;
@@ -153,6 +160,8 @@ static ssize_t cookie_read_block(void *cookie, char *buf, size_t size) {
 	ssize_t res = xread(c, buf, size, TIMEOUT_RD);
 	if (res >= 0)
 		c->block.rmsgoff -= res;
+	if (res == -2)
+		c->errnum = ETIMEDOUT;
 	return res;
 }
 
@@ -204,8 +213,10 @@ static enum rpcclient_msg_type rpcclient_stream_block_nextmsg(struct ctx *c) {
 	unsigned bytes = chainpack_int_bytes(v);
 	size_t msgsiz = chainpack_uint_value1(v, bytes);
 	for (unsigned i = 1; i < bytes; i++) {
-		if ((v = xreadc(c, TIMEOUT_RD)) == -1)
+		if ((v = xreadc(c, TIMEOUT_RD)) == -1) {
+			c->errnum = ETIMEDOUT;
 			return RPCC_ERROR;
+		}
 		msgsiz = (msgsiz << 8) | v;
 	}
 	if (msgsiz < 0) {
@@ -473,7 +484,10 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 				c->sclient->flush(c->sclient_cookie, c->wfd);
 			rpclogger_log_end(c->pub.logger_out, RPCLOGGER_ET_VALID);
 			if (c->errnum == EWOULDBLOCK)
-				c->errnum = EAGAIN;
+				/* Block protocol can't recover from partial message and thus
+				 * mark its connection and timed out.
+				 */
+				c->errnum = c->proto == RPCSTREAM_P_BLOCK ? ETIMEDOUT : EAGAIN;
 			return res;
 		}
 		case RPCC_CTRLOP_DROPMSG: {
