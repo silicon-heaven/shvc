@@ -126,13 +126,13 @@ const char *cpitem_type_str(enum cpitem_type tp);
 /*! Representation of decimal number.
  *
  * The size of mantisa is chosen to cover the biggest numbers the platform can
- * handle automatically (`long long`). The exponent is chosen smaller (`int`)
+ * handle automatically (`intmax_t`). The exponent is chosen smaller (`int`)
  * because by supporting at least 16 bits is enough range (consider exponent
- * 10^32767 and estimation of number of atoms in the observeble universe 10^82).
+ * 10^32767 and estimation of number of atoms in the observable universe 10^82).
  */
 struct cpdecimal {
 	/*! Mantisa in `mantisa * 10^exponent`. */
-	long long mantisa;
+	intmax_t mantisa;
 	/*! Exponent in `mantisa * 10^exponent`. */
 	int exponent;
 };
@@ -158,7 +158,7 @@ void cpdecnorm(struct cpdecimal *v) __attribute__((nonnull));
 	({ \
 		assert(A->mantisa % 10 || A->mantisa == 0); \
 		assert(B->mantisa % 10 || B->mantisa == 0); \
-		long long res = A->exponent - B->exponment; \
+		intmax_t res = A->exponent - B->exponment; \
 		if (res == 0) \
 			res = A->mantisa - B->mantisa; \
 		res; \
@@ -230,7 +230,7 @@ enum cperror {
 	/*! Data in stream had size outside of the value supported by SHVC.
 	 *
 	 * This applies to integers where SHVC for optimality chooses to use
-	 * sometimes int sometimes long long.
+	 * sometimes int sometimes intmax_t.
 	 */
 	CPERR_OVERFLOW,
 };
@@ -308,9 +308,9 @@ struct cpitem {
 		/*! Used to store value for @ref CPITEM_BOOL. */
 		bool Bool;
 		/*! Used to store value for @ref CPITEM_INT. */
-		long long Int;
+		intmax_t Int;
 		/*! Used to store value for @ref CPITEM_UINT. */
-		unsigned long long UInt;
+		uintmax_t UInt;
 		/*! Used to store value for @ref CPITEM_DOUBLE. */
 		double Double;
 		/*! Used to store value for @ref CPITEM_DECIMAL. */
@@ -399,7 +399,7 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 /*! Extract integer from the item and check if it fits to the destination.
  *
  * ChainPack and CPON support pretty large integer types. That is limited by
- * platform to `long long` but in applications it is more common to use `int` or
+ * platform to `intmax_t` but in applications it is more common to use `int` or
  * other types. By simple assignment the number can just be mangled to some
  * invalid value if it is too big and thus this macro is provided to extract
  * integer from item while it checks for the destination limits.
@@ -419,14 +419,14 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 		if (__item->type == CPITEM_INT) { \
 			(DEST) = __item->as.Int; \
 			if ((typeof(DEST))-1 < 0) { \
-				const long long __lim = \
+				const intmax_t __lim = \
 					((((typeof(DEST))1 << (sizeof(DEST) * 8 - 2)) - 1) << 1) + 1; \
 				__valid = __item->as.Int <= __lim && \
 					__item->as.Int >= (-__lim - 1); \
 			} else { \
-				const long long __lim = sizeof(DEST) < sizeof(long long) \
+				const intmax_t __lim = sizeof(DEST) < sizeof(intmax_t) \
 					? (typeof(DEST))~(typeof(DEST))0 \
-					: LLONG_MAX; \
+					: INTMAX_MAX; \
 				__valid = __item->as.Int <= __lim && __item->as.Int >= 0; \
 			} \
 		} \
@@ -453,7 +453,7 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 		bool __valid = false; \
 		if (__item->type == CPITEM_UINT) { \
 			(DEST) = __item->as.UInt; \
-			const unsigned long long __lim = (typeof(DEST))-1 < 0 \
+			const uintmax_t __lim = (typeof(DEST))-1 < 0 \
 				? ((((typeof(DEST))1 << (sizeof(DEST) * 8 - 2)) - 1) << 1) + 1 \
 				: (typeof(DEST))~(typeof(DEST))0; \
 			__valid = __item->as.UInt <= __lim; \

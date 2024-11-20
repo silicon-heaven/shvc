@@ -4,9 +4,8 @@
 #include "common.h"
 
 
-static size_t chainpack_unpack_uint(
-	FILE *f, unsigned long long *v, enum cperror *err);
-static size_t chainpack_unpack_int(FILE *f, long long *v, enum cperror *err);
+static size_t chainpack_unpack_uint(FILE *f, uintmax_t *v, enum cperror *err);
+static size_t chainpack_unpack_int(FILE *f, intmax_t *v, enum cperror *err);
 static size_t chainpack_unpack_buf(FILE *f, struct cpitem *item, enum cperror *err);
 
 
@@ -71,7 +70,7 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) {
 			item->as.UInt = chainpack_scheme_uint(scheme);
 		}
 	} else {
-		unsigned long long ull;
+		uintmax_t ull;
 		switch (scheme) {
 			case CPS_Null:
 				item->type = CPITEM_NULL;
@@ -105,7 +104,7 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) {
 			case CPS_Decimal:
 				item->type = CPITEM_DECIMAL;
 				CALL(chainpack_unpack_int, &item->as.Decimal.mantisa);
-				long long exp;
+				intmax_t exp;
 				CALL(chainpack_unpack_int, &exp);
 				item->as.Decimal.exponent = exp;
 				break;
@@ -136,7 +135,7 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) {
 				break;
 			case CPS_DateTime:
 				item->type = CPITEM_DATETIME;
-				long long d;
+				intmax_t d;
 				CALL(chainpack_unpack_int, &d);
 				int32_t offset = 0;
 				bool has_tz_offset = d & 1;
@@ -181,7 +180,7 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) {
 #undef CALL
 }
 
-size_t chainpack_unpack_uint(FILE *f, unsigned long long *v, enum cperror *err) {
+size_t chainpack_unpack_uint(FILE *f, uintmax_t *v, enum cperror *err) {
 	ssize_t res = 0;
 
 	int head = getc(f);
@@ -207,8 +206,8 @@ size_t chainpack_unpack_uint(FILE *f, unsigned long long *v, enum cperror *err) 
 	return res;
 }
 
-static size_t chainpack_unpack_int(FILE *f, long long *v, enum cperror *err) {
-	size_t res = chainpack_unpack_uint(f, (unsigned long long *)v, err);
+static size_t chainpack_unpack_int(FILE *f, intmax_t *v, enum cperror *err) {
+	size_t res = chainpack_unpack_uint(f, (uintmax_t *)v, err);
 
 	if (*err == CPERR_NONE) {
 		/* This is kind of magic that requires some explanation.
@@ -285,7 +284,7 @@ static size_t chainpack_unpack_buf(FILE *f, struct cpitem *item, enum cperror *e
 		item->as.Blob.len = toread;
 		item->as.Blob.eoff -= toread;
 		if (item->as.Blob.flags & CPBI_F_STREAM && item->as.Blob.eoff == 0) {
-			unsigned long long ull;
+			uintmax_t ull;
 			res += chainpack_unpack_uint(f, &ull, err);
 			if (*err != CPERR_NONE)
 				break;

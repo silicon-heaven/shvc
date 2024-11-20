@@ -126,7 +126,7 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 		case '-':
 		case '0' ... '9':
 			UNGETC(c);
-			if (SCANF("%lli", &item->as.Int) != 1)
+			if (SCANF("%ji", &item->as.Int) != 1)
 				ERR_IO;
 			item->type = CPITEM_INT;
 			bool has_sign = c == '-';
@@ -141,9 +141,9 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 			} else if (c == '.') {
 				item->type = CPITEM_DECIMAL;
 				item->as.Decimal.mantisa = item->as.Int;
-				unsigned long long dec;
+				uintmax_t dec;
 				ssize_t rres = res;
-				if (SCANF("%llu", &dec) == 1) {
+				if (SCANF("%ju", &dec) == 1) {
 					item->as.Decimal.exponent = rres - res;
 					int64_t mult = 1;
 					for (int i = 0; i < -item->as.Decimal.exponent; i++)

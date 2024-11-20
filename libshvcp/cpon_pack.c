@@ -87,10 +87,10 @@ ssize_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) 
 				PUTS(item->as.Bool ? "true" : "false");
 				break;
 			case CPITEM_INT:
-				PRINTF("%lld", item->as.Int);
+				PRINTF("%jd", item->as.Int);
 				break;
 			case CPITEM_UINT:
-				PRINTF("%lluu", item->as.UInt);
+				PRINTF("%juu", item->as.UInt);
 				break;
 			case CPITEM_DOUBLE:
 				PRINTF("%G", item->as.Double);
@@ -255,7 +255,7 @@ static ssize_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec) {
 			PUTC(str[len - i - 1]);
 	} else
 		/* Pack in XeY notation */
-		PRINTF("%llde%d", dec->mantisa, dec->exponent);
+		PRINTF("%jde%d", dec->mantisa, dec->exponent);
 
 	return res;
 }
