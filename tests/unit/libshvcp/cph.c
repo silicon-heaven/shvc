@@ -51,6 +51,42 @@ static const struct {
 	struct cpitem item;
 	bool valid;
 	uint16_t value;
+} extract_int16u_d[] = {
+	{
+		.item = (struct cpitem){.type = CPITEM_INT, .as.Int = 42},
+		.valid = true,
+		.value = 42,
+	},
+	{
+		.item = (struct cpitem){.type = CPITEM_INT, .as.Int = -42},
+		.valid = false,
+	},
+	{
+		.item = (struct cpitem){.type = CPITEM_INT, .as.Int = 0},
+		.valid = true,
+		.value = 0,
+	},
+	{
+		.item = (struct cpitem){.type = CPITEM_INT, .as.Int = 65535},
+		.valid = true,
+		.value = 65535,
+	},
+	{
+		.item = (struct cpitem){.type = CPITEM_INT, .as.Int = 65536},
+		.valid = false,
+	},
+};
+ARRAY_TEST(all, extract_int16u) {
+	uint16_t val;
+	ck_assert(cpitem_extract_int(&_d.item, val) == _d.valid);
+	if (_d.valid)
+		ck_assert_uint_eq(val, _d.value);
+}
+
+static const struct {
+	struct cpitem item;
+	bool valid;
+	uint16_t value;
 } extract_uint16_d[] = {
 	{
 		.item = (struct cpitem){.type = CPITEM_UINT, .as.UInt = 42},
@@ -79,6 +115,44 @@ ARRAY_TEST(all, extract_uint16) {
 	uint16_t val;
 	ck_assert(cpitem_extract_uint(&_d.item, val) == _d.valid);
 	if (_d.valid)
+		ck_assert_uint_eq(val, _d.value);
+}
+
+
+static const struct {
+	struct cpitem item;
+	bool valid;
+	int16_t value;
+} extract_uint16i_d[] = {
+	{
+		.item = (struct cpitem){.type = CPITEM_UINT, .as.UInt = 42},
+		.valid = true,
+		.value = 42,
+	},
+	{
+		.item = (struct cpitem){.type = CPITEM_UINT, .as.UInt = 0},
+		.valid = true,
+		.value = 0,
+	},
+	{
+		.item = (struct cpitem){.type = CPITEM_UINT, .as.UInt = 0},
+		.valid = true,
+		.value = 0,
+	},
+	{
+		.item = (struct cpitem){.type = CPITEM_UINT, .as.UInt = 32768},
+		.valid = false,
+	},
+	{
+		.item = (struct cpitem){.type = CPITEM_UINT, .as.UInt = 32767},
+		.valid = true,
+		.value = 32767,
+	},
+};
+ARRAY_TEST(all, extract_uint16i) {
+	int16_t val;
+	ck_assert(cpitem_extract_uint(&_d.item, val) == _d.valid);
+	if (_d.valid)
 		ck_assert_int_eq(val, _d.value);
 }
 
@@ -99,7 +173,7 @@ static const struct {
 ARRAY_TEST(all, extract_uint64) {
 	uint64_t val;
 	ck_assert(cpitem_extract_uint(&_d.item, val));
-	ck_assert_int_eq(val, _d.value);
+	ck_assert_uint_eq(val, _d.value);
 }
 
 

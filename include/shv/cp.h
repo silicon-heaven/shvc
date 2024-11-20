@@ -406,7 +406,8 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  *
  * @param ITEM item from which integer is extract.
  * @param DEST destination integer variable (not pointer, the variable
- *   directly).
+ *   directly). It can be unsigned as well as signed and thus it is allowed to
+ *   extract signed SHV integer to unsigned variable.
  * @returns `true` in case value was @ref CPITEM_INT and value fits to the
  *   destination, otherwise `false` is returned. The destination is not modified
  *   when `false` is returned.
@@ -416,12 +417,18 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 		const struct cpitem *__item = ITEM; \
 		bool __valid = false; \
 		if (__item->type == CPITEM_INT) { \
-			if (sizeof(DEST) < sizeof(long long)) { \
-				long long __lim = 1LL << ((sizeof(DEST) * 8) - 1); \
-				__valid = __item->as.Int >= -__lim && __item->as.Int < __lim; \
-			} else \
-				__valid = true; \
 			(DEST) = __item->as.Int; \
+			if ((typeof(DEST))-1 < 0) { \
+				const long long __lim = \
+					((((typeof(DEST))1 << (sizeof(DEST) * 8 - 2)) - 1) << 1) + 1; \
+				__valid = __item->as.Int <= __lim && \
+					__item->as.Int >= (-__lim - 1); \
+			} else { \
+				const long long __lim = sizeof(DEST) < sizeof(long long) \
+					? (typeof(DEST))~(typeof(DEST))0 \
+					: LLONG_MAX; \
+				__valid = __item->as.Int <= __lim && __item->as.Int >= 0; \
+			} \
 		} \
 		__valid; \
 	})
@@ -434,7 +441,8 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  *
  * @param ITEM item from which unsigned integer is extract.
  * @param DEST destination unsigned integer variable (not pointer, the variable
- *   directly).
+ *   directly). It can be signed as well as unsigned and this it is allowed to
+ *   extract unsigned SHV integer to signed variable.
  * @returns `true` in case value was @ref CPITEM_UINT and value fits to the
  *   destination, otherwise `false` is returned. The destination is not modified
  *   when `false` is returned.
@@ -444,11 +452,11 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 		const struct cpitem *__item = ITEM; \
 		bool __valid = false; \
 		if (__item->type == CPITEM_UINT) { \
-			unsigned long long __lim = sizeof(DEST) < sizeof(unsigned long long) \
-				? (1ULL << (sizeof(DEST) * 8)) - 1 \
-				: ULLONG_MAX; \
-			__valid = __item->as.UInt <= __lim; \
 			(DEST) = __item->as.UInt; \
+			const unsigned long long __lim = (typeof(DEST))-1 < 0 \
+				? ((((typeof(DEST))1 << (sizeof(DEST) * 8 - 2)) - 1) << 1) + 1 \
+				: (typeof(DEST))~(typeof(DEST))0; \
+			__valid = __item->as.UInt <= __lim; \
 		} \
 		__valid; \
 	})
