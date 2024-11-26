@@ -234,6 +234,6 @@ release:
       artifacts: true
   before_script:
     - apk update
-    - apk add bash curl yq py3-semver
+    - apk add bash curl yq
   script:
-    - ./.release.sh
+    - ./release.sh
