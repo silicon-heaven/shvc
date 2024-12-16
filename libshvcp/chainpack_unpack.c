@@ -140,12 +140,12 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) {
 				int32_t offset = 0;
 				bool has_tz_offset = d & 1;
 				bool has_not_msec = d & 2;
-				d >>= 2;
+				d /= 4;
 				if (has_tz_offset) {
 					offset = d & 0x7F;
 					offset = (int8_t)(offset << 1);
 					offset >>= 1; /* sign extension */
-					d >>= 7;
+					d /= 128;
 				}
 				if (has_not_msec)
 					d *= 1000;
@@ -216,11 +216,11 @@ static size_t chainpack_unpack_int(FILE *f, intmax_t *v, enum cperror *err) {
 		 * bytes read. With every byte read there was one most significant bit
 		 * used to signal this. That applies for four initial bits.
 		 */
-		uint64_t sign_mask;
+		uintmax_t sign_mask;
 		if (res <= 4)
-			sign_mask = 1L << ((8 * res) - res - 1);
+			sign_mask = (uintmax_t)1 << ((8 * res) - res - 1);
 		else
-			sign_mask = 1L << ((8 * (res - 1)) - 1);
+			sign_mask = (uintmax_t)1 << ((8 * (res - 1)) - 1);
 		if (*v & sign_mask) {
 			*v &= ~sign_mask;
 			*v = -*v;

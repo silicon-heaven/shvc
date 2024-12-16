@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - `cpdatetime` now correctly fills in `offutc` field.
+- Chainpack unpack of more than 32 bit signed negative integers
 
 
 ## [0.2.0] - 2024-10-24
