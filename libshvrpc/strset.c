@@ -69,5 +69,8 @@ bool shv_strset_add_const(struct strset *set, const char *str) {
 }
 
 bool shv_strset_add_dyn(struct strset *set, char *str) {
-	return add(set, str, true);
+	bool result = add(set, str, true);
+	if (!result)
+		free(str);
+	return result;
 }

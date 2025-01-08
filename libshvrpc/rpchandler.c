@@ -467,11 +467,9 @@ void rpchandler_ls_result_vfmt(
 	assert(vasprintf(&str, fmt, args) > 0);
 	if (ctx->name) {
 		lsctx->located = !strcmp(ctx->name, str);
-	} else if (shv_strset_add_dyn(&lsctx->strset, str)) {
+		free(str);
+	} else if (shv_strset_add_dyn(&lsctx->strset, str))
 		pack_ls_result(lsctx, str);
-		return;
-	}
-	free(str);
 }
 
 void rpchandler_ls_exists(struct rpchandler_ls *ctx) {

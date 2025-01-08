@@ -82,8 +82,6 @@ TEST(all, alphabet) {
 			char *str;
 			ck_assert_int_ne(asprintf(&str, "char:%c", c), -1);
 			shv_strset_add_dyn(&set, str);
-			if (i > 0)
-				free(str);
 		}
 
 	ck_assert_int_eq(set.cnt, 'z' - 'a' + 1);
