@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <shv/rpctransport.h>
@@ -31,6 +32,15 @@ static bool unix_client_connect(void *cookie, int fd[2]) {
 
 	if (connect(nfd, (const struct sockaddr *)&addr, sizeof(addr)) != -1) {
 		fd[1] = fd[0] = nfd;
+#ifdef __NuttX__
+		/* NuttX implements unix sockets with pipes which requires nonblocking!
+		 *
+		 * The correct behavior for unix socket on write should be the same as
+		 * for internet socket. But on NuttX write doesn't support short writes
+		 * for unix sockets and thus we need to switch FD to nonblocking.
+		 */
+		fcntl(nfd, F_SETFL, O_NONBLOCK);
+#endif
 	} else
 		close(nfd);
 	return false;
@@ -94,6 +104,10 @@ static rpcclient_t unix_server_accept(struct rpcserver *server) {
 	int fd = accept(s->fd, NULL, NULL);
 	if (fd == -1)
 		return NULL;
+#ifdef __NuttX__
+	/* NuttX implements unix sockets with pipes which requires nonblocking! */
+	fcntl(fd, F_SETFL, O_NONBLOCK);
+#endif
 	return rpcclient_stream_new(&sserver, NULL, s->proto, fd, fd);
 }
 
