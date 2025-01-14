@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <shv/rpctransport.h>
 
 
@@ -17,7 +18,7 @@ static const struct rpcclient_stream_funcs sclient = {
 
 rpcclient_t rpcclient_pipe_new(int pipes[2], enum rpcstream_proto proto) {
 	int rpipe[2];
-	if (pipe2(rpipe, 0) == -1)
+	if (pipe2(rpipe, O_NONBLOCK) == -1)
 		return NULL;
 	int wpipe[2];
 	if (pipe2(wpipe, 0) == -1) {
