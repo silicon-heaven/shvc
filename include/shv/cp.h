@@ -201,6 +201,32 @@ struct tm cpdttotm(struct cpdatetime v);
  */
 struct cpdatetime cptmtodt(struct tm v);
 
+/*! Convert CP date and time representation to the C timespec.
+ *
+ * The timespect doesn't include local timezone offset and thus you have to
+ * specify if you want to apply the offset from UTC to the local time.
+ *
+ * @param v Date and time to be converted.
+ * @param utc If time should be returned in UTC or shifted by offset specified
+ *   in the Cp date and time.
+ * @returns structure timespec with time set.
+ */
+static inline struct timespec cpdttots(struct cpdatetime v, bool utc) {
+	return (struct timespec){
+		.tv_sec = (v.msecs / 1000) + (utc ? 0 : v.offutc * 60),
+		.tv_nsec = (v.msecs % 1000) * 1000000,
+	};
+}
+
+/*! Convert C timespec to CP date and time representation.
+ *
+ * @param v Date and time to be converted.
+ * @returns structure cpdatetime with date and time set.
+ */
+static inline struct cpdatetime cptstodt(struct timespec v) {
+	return (struct cpdatetime){.msecs = (v.tv_sec * 1000) + (v.tv_nsec / 1000000)};
+}
+
 /*! Get the current clock in @ref cpdatetime format.
  *
  * @returns Current date and time.

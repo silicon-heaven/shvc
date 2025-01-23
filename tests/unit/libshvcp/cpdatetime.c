@@ -9,7 +9,7 @@ TEST_CASE(all) {}
 static const struct {
 	struct cpdatetime dt;
 	struct tm tm;
-} _d[] = {
+} _dtm[] = {
 	{(struct cpdatetime){},
 		(struct tm){
 			.tm_mday = 1,
@@ -25,7 +25,7 @@ static const struct {
 		}},
 };
 
-ARRAY_TEST(all, dttotm, _d) {
+ARRAY_TEST(all, dttotm, _dtm) {
 	struct tm tm = cpdttotm(_d.dt);
 	ck_assert_int_eq(tm.tm_sec, _d.tm.tm_sec);
 	ck_assert_int_eq(tm.tm_min, _d.tm.tm_min);
@@ -40,8 +40,42 @@ ARRAY_TEST(all, dttotm, _d) {
 }
 END_TEST
 
-ARRAY_TEST(all, tmtodt, _d) {
+ARRAY_TEST(all, tmtodt, _dtm) {
 	struct cpdatetime dt = cptmtodt(_d.tm);
+	ck_assert_int_eq(dt.msecs, _d.dt.msecs);
+	ck_assert_int_eq(dt.offutc, _d.dt.offutc);
+}
+END_TEST
+
+
+static const struct {
+	struct cpdatetime dt;
+	struct timespec ts;
+	bool utc;
+} dttots_d[] = {
+	{(struct cpdatetime){}, (struct timespec){}, true},
+	{(struct cpdatetime){.msecs = 1024},
+		(struct timespec){.tv_sec = 1, .tv_nsec = 24000000}, true},
+	{(struct cpdatetime){.offutc = 60}, (struct timespec){}, true},
+	{(struct cpdatetime){.offutc = 60}, (struct timespec){.tv_sec = 3600}, false},
+};
+ARRAY_TEST(all, dttots) {
+	struct timespec ts = cpdttots(_d.dt, _d.utc);
+	ck_assert_int_eq(ts.tv_sec, _d.ts.tv_sec);
+	ck_assert_int_eq(ts.tv_nsec, _d.ts.tv_nsec);
+}
+END_TEST
+
+static const struct {
+	struct cpdatetime dt;
+	struct timespec ts;
+} tstodt_d[] = {
+	{(struct cpdatetime){}, (struct timespec){}},
+	{(struct cpdatetime){.msecs = 1024},
+		(struct timespec){.tv_sec = 1, .tv_nsec = 24000000}},
+};
+ARRAY_TEST(all, tstodt) {
+	struct cpdatetime dt = cptstodt(_d.ts);
 	ck_assert_int_eq(dt.msecs, _d.dt.msecs);
 	ck_assert_int_eq(dt.offutc, _d.dt.offutc);
 }
