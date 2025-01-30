@@ -60,18 +60,20 @@ static void sigint_handler(int status) {
 	halt = true;
 }
 
-static bool log_pack_record(
-	void *log, int index, cp_pack_t pack, struct obstack *obstack) {
-	if (index < 2 || index > 6)
-		return false;
-
+static bool log_pack_records(
+	void *log, int start, int num, cp_pack_t pack, struct obstack *obstack) {
 	struct rpchistory_record_head head;
-	memcpy(&head, &heads[index - 2], sizeof(struct rpchistory_record_head));
-	rpchistory_record_pack_begin(pack, &head);
-	if (head.type == RPCHISTORY_RECORD_NORMAL) {
-		cp_pack_int(pack, index);
+	for (int i = start; i < start + num; i++) {
+		if (i < 2 || i > 6)
+			continue;
+
+		memcpy(&head, &heads[i - 2], sizeof(struct rpchistory_record_head));
+		rpchistory_record_pack_begin(pack, &head);
+		if (head.type == RPCHISTORY_RECORD_NORMAL) {
+			cp_pack_int(pack, i);
+		}
+		rpchistory_record_pack_end(pack);
 	}
-	rpchistory_record_pack_end(pack);
 
 	return true;
 }
@@ -139,7 +141,7 @@ int main(int argc, char **argv) {
 		&(struct rpchandler_history_records){.name = "records_log",
 			.cookie = NULL,
 			.get_index_range = log_get_index_range,
-			.pack_record = log_pack_record},
+			.pack_records = log_pack_records},
 		NULL};
 
 	struct rpchandler_history_facilities facilities = {

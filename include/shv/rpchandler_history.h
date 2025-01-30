@@ -48,17 +48,21 @@ struct rpchandler_history_records {
 	 * names.
 	 */
 	const char *name;
-	/*! Read record at given index from the log and pack it with @ref cp_pack_t
-	 *  structure.
+	/*! Read records from start index to start + num index and pack them with
+	 *  @ref cp_pack_t packer.
+	 *
+	 * The implementation may pack less records than specified if these are
+	 * not present in the logging facility.
 	 *
 	 * @param cookie: Logging framework specific cookie, refer to @ref cookie.
-	 * @param index: Index of the record to be packed.
+	 * @param start: Indesx of the first record to be packed.
+	 * @param num: Number of records to be packed.
 	 * @param pack: Packing structure @ref cp_pack_t.
 	 * @param obstack: The pointer to obstack.
 	 * @returns `false` if packing encounters failure and `true` otherwise.
 	 */
-	bool (*pack_record)(
-		void *cookie, int index, cp_pack_t pack, struct obstack *obstack);
+	bool (*pack_records)(void *cookie, int start, int num, cp_pack_t pack,
+		struct obstack *obstack);
 	/*! Obtains the lowest valid ID, the highest valid ID and keep record span.
 	 *
 	 * @param cookie: Logging framework specific cookie, refer to @ref cookie.

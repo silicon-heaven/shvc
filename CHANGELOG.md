@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `cptstodt` and `cpdttots` functions to `cp.h` to work with `struct timespec`.
 
+### Changed
+- `fetch` method in RPCHistory now gives the application starting index
+  and the number of records to be fetched, allowing better optimization
+  from the application.
 
 ## [0.3.0] - 2025-01-16
 ### Added

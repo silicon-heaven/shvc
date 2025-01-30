@@ -114,19 +114,11 @@ static void rpcfetch_result(struct rpchandler_history_records *record,
 	struct rpchandler_msg *ctx, int start, int num) {
 	cp_pack_t pack = rpchandler_msg_new_response(ctx);
 	cp_pack_list_begin(pack);
-	for (int i = start; i < start + num; i++) {
-		/* There might be situation where we will not be able to read
-		 * the record from the log and pack it, for example if the record was
-		 * already erased from the logging facility prior to read operation.
-		 * This is not an error as the standard does not guarantee the
-		 * previously obtained record indexes are still valid. Regardless of
-		 * what happens in the logging framework, we do not want to report error
-		 * here; just pack the record if possible. If no record's pack is
-		 * successful, just send back an empty list.
-		 */
-		record->pack_record(record->cookie, i, pack, rpchandler_obstack(ctx));
-	}
-
+	/* Pack all the records from start to start + num. This function can't fail.
+	 * If there are none records to be packed (for any reason), then we just
+	 * return an empty list.
+	 */
+	record->pack_records(record->cookie, start, num, pack, rpchandler_obstack(ctx));
 	cp_pack_container_end(pack);
 	rpchandler_msg_send_response(ctx, pack);
 }
