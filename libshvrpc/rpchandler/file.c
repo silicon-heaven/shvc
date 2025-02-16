@@ -147,12 +147,12 @@ static void rpc_handle_write(struct rpchandler_msg *ctx, const char *path) {
 	size_t offset;
 
 	/* The message should be packed as [Int, Blob] */
-	if ((cp_unpack_type(ctx->unpack, ctx->item) != CPITEM_LIST) ||
+	if (!rpcmsg_has_value(ctx->item) ||
+		cp_unpack_type(ctx->unpack, ctx->item) != CPITEM_LIST ||
 		!cp_unpack_int(ctx->unpack, ctx->item, offset) ||
 		cp_unpack_type(ctx->unpack, ctx->item) != CPITEM_BLOB) {
 		rpchandler_msg_valid(ctx);
-		rpchandler_msg_send_error(
-			ctx, RPCERR_INVALID_PARAM, "[Int, Blob] expected.");
+		rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM, "[i,b] expected.");
 		return;
 	}
 
@@ -171,7 +171,7 @@ static void rpc_handle_write(struct rpchandler_msg *ctx, const char *path) {
 	int fd = open(path, O_RDWR, S_IRUSR | S_IWUSR);
 	if (fd < 0) {
 		rpchandler_msg_send_error(
-			ctx, RPCERR_INTERNAL_ERR, "Could not open the file.");
+			ctx, RPCERR_METHOD_CALL_EXCEPTION, "Could not open the file.");
 		return;
 	}
 
@@ -179,7 +179,7 @@ static void rpc_handle_write(struct rpchandler_msg *ctx, const char *path) {
 	int ret = write(fd, (void *)buf, ctx->item->as.Blob.len);
 	if (ret != ctx->item->as.Blob.len) {
 		rpchandler_msg_send_error(
-			ctx, RPCERR_INTERNAL_ERR, "Could not write the file.");
+			ctx, RPCERR_METHOD_CALL_EXCEPTION, "Could not write the file.");
 		close(fd);
 		return;
 	}
@@ -191,8 +191,8 @@ static void rpc_handle_write(struct rpchandler_msg *ctx, const char *path) {
 
 static void rpc_handle_append(struct rpchandler_msg *ctx, const char *path) {
 	uint8_t buf[SHVC_FILE_MAXWRITE];
-	cp_unpack(ctx->unpack, ctx->item);
-	if (ctx->item->type != CPITEM_BLOB) {
+	if (!rpcmsg_has_value(ctx->item) ||
+		cp_unpack_type(ctx->unpack, ctx->item) != CPITEM_BLOB) {
 		rpchandler_msg_valid(ctx);
 		rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM, "Blob expected.");
 		return;
@@ -213,14 +213,14 @@ static void rpc_handle_append(struct rpchandler_msg *ctx, const char *path) {
 	int fd = open(path, O_RDWR | O_APPEND, S_IRUSR | S_IWUSR);
 	if (fd < 0) {
 		rpchandler_msg_send_error(
-			ctx, RPCERR_INTERNAL_ERR, "Could not open the file.");
+			ctx, RPCERR_METHOD_CALL_EXCEPTION, "Could not open the file.");
 		return;
 	}
 
 	int ret = write(fd, (void *)buf, ctx->item->as.Blob.len);
 	if (ret != ctx->item->as.Blob.len) {
 		rpchandler_msg_send_error(
-			ctx, RPCERR_INTERNAL_ERR, "Could not write the file.");
+			ctx, RPCERR_METHOD_CALL_EXCEPTION, "Could not write the file.");
 		close(fd);
 		return;
 	}
@@ -231,60 +231,54 @@ static void rpc_handle_append(struct rpchandler_msg *ctx, const char *path) {
 }
 
 static bool rpcfile_unpack_validation(
-	struct rpchandler_msg *ctx, const char *path, size_t *offset, size_t *len) {
-	struct stat st;
+	struct rpchandler_msg *ctx, size_t *offset, ssize_t *len) {
 	*offset = 0;
-	*len = 0;
+	*len = -1;
+	bool valid = false;
 
-	stat(path, &st);
-	cp_unpack(ctx->unpack, ctx->item);
-	if (ctx->item->type == CPITEM_NULL)
-		*len = st.st_size;
-	else if (ctx->item->type == CPITEM_LIST) {
-		if (!cp_unpack_int(ctx->unpack, ctx->item, *offset)) {
-			rpchandler_msg_valid(ctx);
-			rpchandler_msg_send_error(
-				ctx, RPCERR_INTERNAL_ERR, "Null | [Int, Int | Null] expected.");
-			return false;
-		}
-		cp_unpack_type(ctx->unpack, ctx->item);
-		if (ctx->item->type == CPITEM_INT)
-			*len = *offset + ctx->item->as.Int <= st.st_size
-				? ctx->item->as.Int
-				: st.st_size - *offset;
-		else if (ctx->item->type == CPITEM_NULL)
-			*len = st.st_size - *offset;
-		else {
-			rpchandler_msg_valid(ctx);
-			rpchandler_msg_send_error(
-				ctx, RPCERR_INTERNAL_ERR, "Null | [Int, Int | Null] expected.");
-			return false;
-		}
-	} else {
-		rpchandler_msg_valid(ctx);
-		rpchandler_msg_send_error(
-			ctx, RPCERR_INTERNAL_ERR, "Null | [Int, Int | Null] expected.");
+	if (rpcmsg_has_value(ctx->item)) {
+		cp_unpack(ctx->unpack, ctx->item);
+		if (ctx->item->type == CPITEM_LIST) {
+			valid = cp_unpack_int(ctx->unpack, ctx->item, *offset);
+			if (valid) {
+				ssize_t tmplen;
+				if (cp_unpack_int(ctx->unpack, ctx->item, tmplen)) {
+					valid = tmplen >= 0 &&
+						cp_unpack_type(ctx->unpack, ctx->item) ==
+							CPITEM_CONTAINER_END;
+					*len = tmplen;
+				} else
+					valid = ctx->item->type == CPITEM_CONTAINER_END;
+			}
+		} else if (ctx->item->type == CPITEM_NULL)
+			valid = true;
+	} else
+		valid = true;
+
+	if (!rpchandler_msg_valid(ctx))
 		return false;
-	}
-
-	return rpchandler_msg_valid(ctx);
+	if (valid)
+		return true;
+	rpchandler_msg_send_error(
+		ctx, RPCERR_INVALID_PARAM, "'[i(0,),i(0,)|n]|n' expected.");
+	return false;
 }
 
 static void rpc_handle_crc(struct rpchandler_msg *ctx, const char *path) {
-	char buf[SHVC_FILE_MAXWRITE];
-	size_t offset = 0;
-	size_t len = 0;
-	crc32_t crc = crc32_init();
-
-	if (!rpcfile_unpack_validation(ctx, path, &offset, &len))
+	size_t offset;
+	ssize_t len;
+	if (!rpcfile_unpack_validation(ctx, &offset, &len))
 		return;
 
 	int fd = open(path, O_RDWR, S_IRUSR | S_IWUSR);
 	if (fd < 0) {
 		rpchandler_msg_send_error(
-			ctx, RPCERR_INTERNAL_ERR, "Could not open the file.");
+			ctx, RPCERR_METHOD_CALL_EXCEPTION, "Could not open the file.");
 		return;
 	}
+
+	crc32_t crc = crc32_init();
+	char buf[SHVC_FILE_MAXWRITE];
 
 	lseek(fd, offset, SEEK_SET);
 	size_t to_read;
@@ -292,40 +286,41 @@ static void rpc_handle_crc(struct rpchandler_msg *ctx, const char *path) {
 		/* Do not read the entire file at once to avoid large buffering. We
 		 * may use the limitation set by SHVC_FILE_MAXWRITE option here.
 		 */
-		to_read = len < SHVC_FILE_MAXWRITE ? len : SHVC_FILE_MAXWRITE;
+		to_read = len < SHVC_FILE_MAXWRITE && len >= 0 ? len : SHVC_FILE_MAXWRITE;
 		int ret = read(fd, (void *)buf, to_read);
+		if (ret == 0)
+			break;
 		if (ret < 0) {
 			close(fd);
 			rpchandler_msg_send_error(
-				ctx, RPCERR_INTERNAL_ERR, "Failed reading the file.");
+				ctx, RPCERR_METHOD_CALL_EXCEPTION, "Failed reading the file.");
 			return;
 		}
 		crc = crc32_update(crc, (uint8_t *)buf, ret);
-		len -= ret;
-	} while (len > 0);
-
+		len -= len >= 0 ? ret : 0;
+	} while (len > 0 || len == -1);
 	close(fd);
+
 	cp_pack_t pack = rpchandler_msg_new_response(ctx);
 	cp_pack_uint(pack, crc32_finalize(crc));
 	rpchandler_msg_send_response(ctx, pack);
 }
 
 static void rpc_handle_sha1(struct rpchandler_msg *ctx, const char *path) {
-	char buf[SHVC_FILE_MAXWRITE];
-	size_t offset = 0;
-	size_t len = 0;
-	sha1ctx_t sha_ctx = sha1_new();
-	uint8_t sha[SHA1_SIZ];
-
-	if (!rpcfile_unpack_validation(ctx, path, &offset, &len))
+	size_t offset;
+	ssize_t len;
+	if (!rpcfile_unpack_validation(ctx, &offset, &len))
 		return;
 
 	int fd = open(path, O_RDWR, S_IRUSR | S_IWUSR);
 	if (fd < 0) {
 		rpchandler_msg_send_error(
-			ctx, RPCERR_INTERNAL_ERR, "Could not open the file.");
+			ctx, RPCERR_METHOD_CALL_EXCEPTION, "Could not open the file.");
 		return;
 	}
+
+	sha1ctx_t sha_ctx = sha1_new();
+	char buf[SHVC_FILE_MAXWRITE];
 
 	lseek(fd, offset, SEEK_SET);
 	size_t to_read;
@@ -333,22 +328,25 @@ static void rpc_handle_sha1(struct rpchandler_msg *ctx, const char *path) {
 		/* Do not read the entire file at once to avoid large buffering. We
 		 * may use the limitation set by SHVC_FILE_MAXWRITE option here.
 		 */
-		to_read = len < SHVC_FILE_MAXWRITE ? len : SHVC_FILE_MAXWRITE;
+		to_read = len < SHVC_FILE_MAXWRITE && len >= 0 ? len : SHVC_FILE_MAXWRITE;
 		int ret = read(fd, (void *)buf, to_read);
-		if (ret < 0) {
+		if (ret == 0)
+			break;
+		if (ret <= 0) {
 			close(fd);
 			sha1_destroy(sha_ctx);
 			rpchandler_msg_send_error(
-				ctx, RPCERR_INTERNAL_ERR, "Failed reading the file.");
+				ctx, RPCERR_METHOD_CALL_EXCEPTION, "Failed reading the file.");
 			return;
 		}
 		sha1_update(sha_ctx, (uint8_t *)buf, ret);
-		len -= ret;
-	} while (len > 0);
-
-	sha1_digest(sha_ctx, sha);
-
+		len -= len >= 0 ? ret : 0;
+	} while (len > 0 || len == -1);
 	close(fd);
+
+	uint8_t sha[SHA1_SIZ];
+	sha1_digest(sha_ctx, sha);
+	sha1_destroy(sha_ctx);
 	cp_pack_t pack = rpchandler_msg_new_response(ctx);
 	cp_pack_blob(pack, sha, SHA1_SIZ);
 	rpchandler_msg_send_response(ctx, pack);
@@ -360,12 +358,12 @@ static void rpc_handle_read(struct rpchandler_msg *ctx, const char *path) {
 	size_t offset;
 	size_t len;
 
-	if (cp_unpack_type(ctx->unpack, ctx->item) != CPITEM_LIST ||
+	if (!rpcmsg_has_value(ctx->item) ||
+		cp_unpack_type(ctx->unpack, ctx->item) != CPITEM_LIST ||
 		!cp_unpack_int(ctx->unpack, ctx->item, offset) ||
 		!cp_unpack_int(ctx->unpack, ctx->item, len)) {
 		rpchandler_msg_valid(ctx);
-		rpchandler_msg_send_error(
-			ctx, RPCERR_INVALID_PARAM, "[Int, Int] expected.");
+		rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM, "[i,i] expected.");
 		return;
 	}
 
@@ -378,7 +376,7 @@ static void rpc_handle_read(struct rpchandler_msg *ctx, const char *path) {
 	int fd = open(path, O_RDWR, S_IRUSR | S_IWUSR);
 	if (fd < 0) {
 		rpchandler_msg_send_error(
-			ctx, RPCERR_INTERNAL_ERR, "Could not open the file.");
+			ctx, RPCERR_METHOD_CALL_EXCEPTION, "Could not open the file.");
 		return;
 	}
 
@@ -393,7 +391,7 @@ static void rpc_handle_read(struct rpchandler_msg *ctx, const char *path) {
 		if (ret < 0) {
 			close(fd);
 			rpchandler_msg_send_error(
-				ctx, RPCERR_INTERNAL_ERR, "Failed reading the file.");
+				ctx, RPCERR_METHOD_CALL_EXCEPTION, "Failed reading the file.");
 			return;
 		}
 		cp_pack_blob_data(pack, ctx->item, buf, ret);
@@ -416,8 +414,8 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 			if (handler->cb->update_paths(
 					&file->list->file_path, file->list->shv_path) < 0) {
 				rpchandler_msg_valid(ctx);
-				rpchandler_msg_send_error(
-					ctx, RPCERR_INTERNAL_ERR, "Could not obtain file paths.");
+				rpchandler_msg_send_error(ctx, RPCERR_METHOD_CALL_EXCEPTION,
+					"Could not obtain file paths.");
 				return RPCHANDLER_MSG_DONE;
 			}
 		}
@@ -468,7 +466,8 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 						if (valid) {
 							if (truncate(file->list->file_path, length) < 0)
 								rpchandler_msg_send_error(ctx,
-									RPCERR_INTERNAL_ERR, "truncate failed.");
+									RPCERR_METHOD_CALL_EXCEPTION,
+									"truncate failed.");
 							else
 								rpchandler_msg_send_response_void(ctx);
 						} else

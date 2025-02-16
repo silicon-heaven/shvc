@@ -13,6 +13,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and the number of records to be fetched, allowing better optimization
   from the application.
 
+### Fixed
+- RPC File's methods `sha1` and `crc` now correctly accept no parameter and
+  single item in the list.
+
+
 ## [0.3.0] - 2025-01-16
 ### Added
 - Support for extracting unsigned SHV integer to the signed one and vice versa.
