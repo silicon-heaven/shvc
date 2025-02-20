@@ -5,18 +5,18 @@
 
 struct rpcdir rpcdir_ls = {
 	.name = "ls",
-	.param = "ils",
-	.result = "ols",
+	.param = "s|n",
+	.result = "[s]|b",
 	.flags = 0,
 	.access = RPCACCESS_BROWSE,
-	.signals = (struct rpcdirsig[]){{.name = "lsmod", .param = "olsmod"}},
+	.signals = (struct rpcdirsig[]){{.name = "lsmod", .param = "{b}"}},
 	.signals_cnt = 1,
 };
 
 struct rpcdir rpcdir_dir = {
 	.name = "dir",
-	.param = "idir",
-	.result = "odir",
+	.param = "n|b|s",
+	.result = "[!dir]|b",
 	.flags = 0,
 	.access = RPCACCESS_BROWSE,
 	.signals_cnt = 0,

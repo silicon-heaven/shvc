@@ -132,6 +132,6 @@ async def fixture_broker(broker_config):
 @pytest.fixture(name="client")
 async def fixture_client(broker, url):
     """SHV RPC Client connected to the Python Broker."""
-    client = await shv.ValueClient.connect(url)
+    client = await shv.SHVValueClient.connect(url)
     yield client
     await client.disconnect()

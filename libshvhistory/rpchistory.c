@@ -6,8 +6,8 @@
 
 const struct rpcdir rpchistory_fetch = {
 	.name = "fetch",
-	.param = "[Int, Int]",
-	.result = "[{...}, ...]",
+	.param = "[i:offset,i(0,):count]",
+	.result = "!historyRecords",
 	.flags = RPCDIR_F_LARGE_RESULT,
 	.access = RPCACCESS_SERVICE,
 	.signals_cnt = 0,
@@ -15,8 +15,7 @@ const struct rpcdir rpchistory_fetch = {
 
 const struct rpcdir rpchistory_span = {
 	.name = "span",
-	.param = "Null",
-	.result = "[Int, Int, Int]",
+	.result = "[i:smallest,i:biggest,i(1,):span]",
 	.flags = RPCDIR_F_GETTER,
 	.access = RPCACCESS_SERVICE,
 	.signals_cnt = 0,
@@ -24,8 +23,8 @@ const struct rpcdir rpchistory_span = {
 
 const struct rpcdir rpchistory_getlog = {
 	.name = "getLog",
-	.param = "{...}",
-	.result = "[i{...}, ...]",
+	.param = "!getLogP",
+	.result = "!getLogR",
 	.flags = RPCDIR_F_LARGE_RESULT,
 	.access = RPCACCESS_BROWSE,
 	.signals_cnt = 0,
@@ -33,8 +32,6 @@ const struct rpcdir rpchistory_getlog = {
 
 const struct rpcdir rpchistory_sync = {
 	.name = "sync",
-	.param = "Null",
-	.result = "Null",
 	.flags = 0,
 	.access = RPCACCESS_SUPER_SERVICE,
 	.signals_cnt = 0,
@@ -42,8 +39,7 @@ const struct rpcdir rpchistory_sync = {
 
 const struct rpcdir rpchistory_lastsync = {
 	.name = "lastSync",
-	.param = "Null",
-	.result = "DateTime | Null",
+	.result = "t|n",
 	.flags = RPCDIR_F_GETTER,
 	.access = RPCACCESS_SERVICE,
 	.signals_cnt = 0,

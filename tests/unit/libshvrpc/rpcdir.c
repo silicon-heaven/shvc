@@ -40,12 +40,12 @@ ARRAY_TEST(pack, packer, pairs_d) {
 TEST(pack, pack_ls) {
 	rpcdir_pack(packstream_pack, &rpcdir_ls);
 	ck_assert_packstr(
-		"i{1:\"ls\",3:\"ils\",4:\"ols\",5:1,6:{\"lsmod\":\"olsmod\"}}");
+		"i{1:\"ls\",3:\"s|n\",4:\"[s]|b\",5:1,6:{\"lsmod\":\"{b}\"}}");
 }
 
 TEST(pack, pack_dir) {
 	rpcdir_pack(packstream_pack, &rpcdir_dir);
-	ck_assert_packstr("i{1:\"dir\",3:\"idir\",4:\"odir\",5:1}");
+	ck_assert_packstr("i{1:\"dir\",3:\"n|b|s\",4:\"[!dir]|b\",5:1}");
 }
 
 

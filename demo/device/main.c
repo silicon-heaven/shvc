@@ -19,7 +19,7 @@
 
 #define obstack_chunk_alloc malloc
 #define obstack_chunk_free free
-#define DEMO_FILE_PATH "demo/device/shv_file"
+#define DEMO_FILE_PATH "demo_device_shv_file"
 
 static size_t logsiz = BUFSIZ > 128 ? BUFSIZ : 128;
 

@@ -44,7 +44,7 @@ enum chainpack_scheme {
  *
  * This is offset used to encode the DateTime.
  */
-#define CHAINPACK_EPOCH_MSEC (1517529600000);
+#define CHAINPACK_EPOCH_MSEC (1517529600000)
 
 /*! Check if integer packed in scheme is signed or unsigned.
  *

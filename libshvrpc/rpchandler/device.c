@@ -50,28 +50,28 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "name",
-				.result = "String",
+				.result = "s",
 				.flags = RPCDIR_F_GETTER,
 				.access = RPCACCESS_BROWSE,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "version",
-				.result = "String",
+				.result = "s",
 				.flags = RPCDIR_F_GETTER,
 				.access = RPCACCESS_BROWSE,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "serialNumber",
-				.result = "String",
+				.result = "s",
 				.flags = RPCDIR_F_GETTER,
 				.access = RPCACCESS_BROWSE,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "uptime",
-				.result = "UInt",
+				.result = "u|n",
 				.flags = RPCDIR_F_GETTER,
 				.access = RPCACCESS_READ,
 			});
@@ -84,7 +84,8 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "get",
-				.result = "[i{...},...]",
+				.param = "i|n",
+				.result = "[!alert]",
 				.flags = RPCDIR_F_GETTER,
 				.access = RPCACCESS_READ,
 				.signals = (const struct rpcdirsig[]){{.name = "chng"}},

@@ -1,2 +1,5 @@
 # Meson
 /subprojects/*/
+
+# Our demo file
+demo_device_shv_file

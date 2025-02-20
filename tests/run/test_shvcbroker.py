@@ -53,7 +53,7 @@ async def fixture_shvcbroker(shvcbroker_exec, tmp_path, url):
 @pytest.fixture(name="client")
 async def fixture_client(shvcbroker, url):
     """SHV RPC Client connected to the Python Broker."""
-    client = await shv.ValueClient.connect(url)
+    client = await shv.SHVValueClient.connect(url)
     yield client
     await client.disconnect()
 
@@ -61,7 +61,7 @@ async def fixture_client(shvcbroker, url):
 @pytest.fixture(name="admin_client")
 async def fixture_admin_client(shvcbroker, admin_url):
     """SHV RPC Client with admin rights connected to the Python Broker."""
-    client = await shv.ValueClient.connect(admin_url)
+    client = await shv.SHVValueClient.connect(admin_url)
     yield client
     await client.disconnect()
 
@@ -110,38 +110,37 @@ async def test_ls(client, device, path, result):
                 shv.RpcMethodDesc.stdls(),
                 shv.RpcMethodDesc.getter(
                     name="name",
-                    param="Null",
-                    result="String",
+                    param="n",
+                    result="s",
                     access=shv.RpcMethodAccess.BROWSE,
                 ),
                 shv.RpcMethodDesc(
                     name="clientInfo",
-                    param="Int",
-                    result="ClientInfo",
+                    param="i",
+                    result="!clientInfo|n",
                     access=shv.RpcMethodAccess.SUPER_SERVICE,
                 ),
                 shv.RpcMethodDesc(
                     name="mountedClientInfo",
-                    param="String",
-                    result="ClientInfo",
+                    param="s",
+                    result="!clientInfo|n",
                     access=shv.RpcMethodAccess.SUPER_SERVICE,
                 ),
                 shv.RpcMethodDesc(
                     name="clients",
-                    param="Null",
-                    result="List[Int]",
+                    param="n",
+                    result="[i]",
                     access=shv.RpcMethodAccess.SUPER_SERVICE,
                 ),
                 shv.RpcMethodDesc(
                     name="mounts",
-                    param="Null",
-                    result="List[String]",
+                    param="n",
+                    result="[s]",
                     access=shv.RpcMethodAccess.SUPER_SERVICE,
                 ),
                 shv.RpcMethodDesc(
                     name="disconnectClient",
-                    param="Int",
-                    result="Null",
+                    param="i",
                     access=shv.RpcMethodAccess.SUPER_SERVICE,
                 ),
             ],
@@ -160,26 +159,25 @@ async def test_ls(client, device, path, result):
                 shv.RpcMethodDesc.stdls(),
                 shv.RpcMethodDesc.getter(
                     name="info",
-                    param="Null",
-                    result="ClientInfo",
+                    param="n",
+                    result="!clientInfo",
                     access=shv.RpcMethodAccess.BROWSE,
                 ),
                 shv.RpcMethodDesc(
                     name="subscribe",
-                    param="String",
-                    result="Bool",
+                    param="s|[s:RPCRI,i:TTL]",
+                    result="b",
                     access=shv.RpcMethodAccess.BROWSE,
                 ),
                 shv.RpcMethodDesc(
                     name="unsubscribe",
-                    param="String",
-                    result="Bool",
+                    param="s",
+                    result="b",
                     access=shv.RpcMethodAccess.BROWSE,
                 ),
                 shv.RpcMethodDesc(
                     name="subscriptions",
-                    param="Null",
-                    result="List[String]",
+                    result="{i|n}",
                     access=shv.RpcMethodAccess.BROWSE,
                 ),
             ],
@@ -307,7 +305,7 @@ async def test_invalid_login(shvcbroker, url):
         url, login=dataclasses.replace(url.login, password="invalid")
     )
     with pytest.raises(shv.RpcMethodCallExceptionError, match=r"Invalid login"):
-        await shv.SimpleClient.connect(nurl)
+        await shv.SHVClient.connect(nurl)
 
 
 @pytest.mark.parametrize(
@@ -330,7 +328,7 @@ async def test_invalid_mount(shvcbroker, admin_url, path):
     with pytest.raises(
         shv.RpcMethodCallExceptionError, match=r"Mount point not allowed"
     ):
-        await shv.SimpleClient.connect(nurl)
+        await shv.SHVClient.connect(nurl)
 
 
 async def test_not_allowed_mount(shvcbroker, url):
@@ -343,7 +341,7 @@ async def test_not_allowed_mount(shvcbroker, url):
     with pytest.raises(
         shv.RpcMethodCallExceptionError, match=r"Mount point not allowed"
     ):
-        await shv.SimpleClient.connect(nurl)
+        await shv.SHVClient.connect(nurl)
 
 
 @pytest.mark.parametrize(
@@ -364,7 +362,7 @@ async def test_mount_exists(shvcbroker, device, admin_url, path):
     with pytest.raises(
         shv.RpcMethodCallExceptionError, match=r"Mount point already exists"
     ):
-        await shv.SimpleClient.connect(nurl)
+        await shv.SHVClient.connect(nurl)
 
 
 async def test_client_id(client, device):

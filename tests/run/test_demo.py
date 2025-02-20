@@ -41,8 +41,8 @@ async def fixture_demo_device(demo_device_exec, broker, url):
             "test/device",
             "dir",
             [
-                {1: "dir", 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
+                {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
             ],
         ),
         ("test/device", "ls", [".app", "file", "track"]),
@@ -50,14 +50,14 @@ async def fixture_demo_device(demo_device_exec, broker, url):
             "test/device/.app",
             "dir",
             [
-                {1: "dir", 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
-                {1: "shvVersionMajor", 2: 2, 4: "Int", 5: 1},
-                {1: "shvVersionMinor", 2: 2, 4: "Int", 5: 1},
-                {1: "name", 2: 2, 4: "String", 5: 1},
-                {1: "version", 2: 2, 4: "String", 5: 1},
+                {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
+                {1: "shvVersionMajor", 2: 2, 4: "i", 5: 1},
+                {1: "shvVersionMinor", 2: 2, 4: "i", 5: 1},
+                {1: "name", 2: 2, 4: "s", 5: 1},
+                {1: "version", 2: 2, 4: "s", 5: 1},
                 {1: "ping", 5: 1},
-                {1: "date", 2: 2, 4: "DateTime", 5: 1},
+                {1: "date", 2: 2, 4: "t", 5: 1},
             ],
         ),
         ("test/device/.app", "ls", []),
@@ -70,8 +70,8 @@ async def fixture_demo_device(demo_device_exec, broker, url):
             "test/device/track",
             "dir",
             [
-                {1: "dir", 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
+                {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
             ],
         ),
         ("test/device/track", "ls", [str(i) for i in range(1, 10)]),
@@ -81,10 +81,10 @@ async def fixture_demo_device(demo_device_exec, broker, url):
                 f"test/device/track/{i}",
                 "dir",
                 [
-                    {1: "dir", 3: "idir", 4: "odir", 5: 1},
-                    {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
-                    {1: "get", 2: 2, 4: "[Int]", 5: 8, 6: {"chng": None}},
-                    {1: "set", 2: 4, 3: "[Int]", 5: 16},
+                    {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                    {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
+                    {1: "get", 2: 2, 3: "i(0,)|n", 4: "[i]", 5: 8, 6: {"chng": None}},
+                    {1: "set", 2: 4, 3: "[i]", 5: 16},
                 ],
             )
             for i in range(1, 10)
@@ -202,9 +202,9 @@ async def fixture_demo_history(demo_history_exec, broker, url):
             "dir",
             None,
             [
-                {1: "dir", 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
-                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+                {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
+                {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -212,9 +212,9 @@ async def fixture_demo_history(demo_history_exec, broker, url):
             "dir",
             None,
             [
-                {1: "dir", 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
-                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+                {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
+                {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -222,9 +222,9 @@ async def fixture_demo_history(demo_history_exec, broker, url):
             "dir",
             None,
             [
-                {1: "dir", 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
-                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+                {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
+                {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -232,9 +232,9 @@ async def fixture_demo_history(demo_history_exec, broker, url):
             "dir",
             None,
             [
-                {1: "dir", 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
-                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+                {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
+                {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -242,9 +242,9 @@ async def fixture_demo_history(demo_history_exec, broker, url):
             "dir",
             None,
             [
-                {1: "dir", 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
-                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+                {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
+                {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -252,9 +252,9 @@ async def fixture_demo_history(demo_history_exec, broker, url):
             "dir",
             None,
             [
-                {1: "dir", 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
-                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+                {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
+                {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -262,9 +262,9 @@ async def fixture_demo_history(demo_history_exec, broker, url):
             "dir",
             None,
             [
-                {1: "dir", 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
-                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+                {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
+                {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -272,31 +272,29 @@ async def fixture_demo_history(demo_history_exec, broker, url):
             "dir",
             None,
             [
-                {1: "dir", 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
-                {1: "getLog", 2: 8, 3: "{...}", 4: "[i{...}, ...]", 5: 1},
+                {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
+                {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
             "test/.history/node0/subnode",
             "getLog",
             {
-                "since": datetime.datetime(6421, 6, 11, 15, 2, 1, tzinfo=datetime.UTC),
-                "until": datetime.datetime(
-                    6421, 6, 11, 14, 51, 11, tzinfo=datetime.UTC
-                ),
+                "since": datetime.datetime(1970, 1, 1, tzinfo=datetime.UTC),
+                "until": datetime.datetime(1970, 1, 2, tzinfo=datetime.UTC),
                 "count": 5,
                 "snapshot": False,
                 "ri": "**:*",
             },
             [
                 {
-                    1: datetime.datetime(6421, 6, 11, 15, 2, 1, tzinfo=datetime.UTC),
+                    1: datetime.datetime(1970, 1, 1, 0, 2, 30, tzinfo=datetime.UTC),
                     3: "node0/subnode/2",
                     6: None,
                 },
                 {
-                    1: datetime.datetime(6421, 6, 11, 14, 51, 11, tzinfo=datetime.UTC),
+                    1: datetime.datetime(1970, 1, 1, 0, 13, 20, tzinfo=datetime.UTC),
                     3: "node0/subnode/1",
                     6: None,
                     7: "elluser_local",
@@ -308,8 +306,8 @@ async def fixture_demo_history(demo_history_exec, broker, url):
             "dir",
             None,
             [
-                {1: "dir", 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
+                {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
             ],
         ),
         ("test/.history/.records", "ls", None, ["records_log"]),
@@ -318,10 +316,16 @@ async def fixture_demo_history(demo_history_exec, broker, url):
             "dir",
             None,
             [
-                {1: "dir", 3: "idir", 4: "odir", 5: 1},
-                {1: "ls", 3: "ils", 4: "ols", 5: 1, 6: {"lsmod": "olsmod"}},
-                {1: "fetch", 2: 8, 3: "[Int, Int]", 4: "[{...}, ...]", 5: 40},
-                {1: "span", 2: 2, 3: "Null", 4: "[Int, Int, Int]", 5: 40},
+                {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
+                {
+                    1: "fetch",
+                    2: 8,
+                    3: "[i:offset,i(0,):count]",
+                    4: "!historyRecords",
+                    5: 40,
+                },
+                {1: "span", 2: 2, 4: "[i:smallest,i:biggest,i(1,):span]", 5: 40},
             ],
         ),
         ("test/.history/.records/records_log", "span", None, [1, 6, 6]),
@@ -332,13 +336,13 @@ async def fixture_demo_history(demo_history_exec, broker, url):
             [
                 {
                     0: 1,
-                    1: datetime.datetime(6421, 6, 11, 15, 2, 1, tzinfo=datetime.UTC),
+                    1: datetime.datetime(1970, 1, 1, 0, 2, 30, tzinfo=datetime.UTC),
                     2: "node0/subnode/2",
                     5: 2,
                 },
                 {
                     0: 1,
-                    1: datetime.datetime(6421, 6, 11, 14, 56, 11, tzinfo=datetime.UTC),
+                    1: datetime.datetime(1970, 1, 1, 0, 8, 20, tzinfo=datetime.UTC),
                     2: "node2",
                     3: "fchng",
                     4: "src",
@@ -348,12 +352,12 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                 },
                 {
                     0: 3,
-                    1: datetime.datetime(6421, 6, 11, 14, 56, 11, tzinfo=datetime.UTC),
+                    1: datetime.datetime(1970, 1, 1, 0, 8, 20, tzinfo=datetime.UTC),
                     60: 18000000,
                 },
                 {
                     0: 1,
-                    1: datetime.datetime(6421, 6, 11, 14, 54, 31, tzinfo=datetime.UTC),
+                    1: datetime.datetime(1970, 1, 1, 0, 10, tzinfo=datetime.UTC),
                     2: "node1/subnode",
                     5: 5,
                     6: 16,
@@ -361,7 +365,7 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                 },
                 {
                     0: 1,
-                    1: datetime.datetime(6421, 6, 11, 14, 51, 11, tzinfo=datetime.UTC),
+                    1: datetime.datetime(1970, 1, 1, 0, 13, 20, tzinfo=datetime.UTC),
                     2: "node0/subnode/1",
                     5: 6,
                     6: 40,

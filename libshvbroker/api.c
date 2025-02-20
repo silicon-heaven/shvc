@@ -46,40 +46,40 @@ bool rpcbroker_api_dir(struct rpchandler_dir *ctx) {
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "name",
-				.result = "String",
+				.result = "s",
 				.flags = RPCDIR_F_GETTER,
 				.access = RPCACCESS_BROWSE,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "clientInfo",
-				.param = "Int",
-				.result = "ClientInfo",
+				.param = "i",
+				.result = "!clientInfo|n",
 				.access = RPCACCESS_SUPER_SERVICE,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "mountedClientInfo",
-				.param = "String",
-				.result = "ClientInfo",
+				.param = "s",
+				.result = "!clientInfo|n",
 				.access = RPCACCESS_SUPER_SERVICE,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "clients",
-				.result = "List[Int]",
+				.result = "[i]",
 				.access = RPCACCESS_SUPER_SERVICE,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "mounts",
-				.result = "List[String]",
+				.result = "[s]",
 				.access = RPCACCESS_SUPER_SERVICE,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "disconnectClient",
-				.param = "Int",
+				.param = "i",
 				.access = RPCACCESS_SUPER_SERVICE,
 			});
 	} else if (!strcmp(ctx->path, ".broker/currentClient")) {
@@ -91,28 +91,28 @@ bool rpcbroker_api_dir(struct rpchandler_dir *ctx) {
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "info",
-				.result = "ClientInfo",
+				.result = "!clientInfo",
 				.flags = RPCDIR_F_GETTER,
 				.access = RPCACCESS_BROWSE,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "subscribe",
-				.param = "String",
-				.result = "Bool",
+				.param = "s|[s:RPCRI,i:TTL]",
+				.result = "b",
 				.access = RPCACCESS_BROWSE,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "unsubscribe",
-				.param = "String",
-				.result = "Bool",
+				.param = "s",
+				.result = "b",
 				.access = RPCACCESS_BROWSE,
 			});
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "subscriptions",
-				.result = "List[String]",
+				.result = "{i|n}",
 				.access = RPCACCESS_BROWSE,
 			});
 	}

@@ -3,8 +3,7 @@
 
 struct rpcdir rpcfile_stat = {
 	.name = "stat",
-	.param = "NULL",
-	.result = "i{...}",
+	.result = "!stat",
 	.flags = RPCDIR_F_GETTER,
 	.access = RPCACCESS_READ,
 	.signals_cnt = 0,
@@ -12,8 +11,7 @@ struct rpcdir rpcfile_stat = {
 
 struct rpcdir rpcfile_size = {
 	.name = "size",
-	.param = "NULL",
-	.result = "Int",
+	.result = "i(0,)",
 	.flags = RPCDIR_F_GETTER,
 	.access = RPCACCESS_READ,
 	.signals_cnt = 0,
@@ -21,8 +19,8 @@ struct rpcdir rpcfile_size = {
 
 struct rpcdir rpcfile_crc = {
 	.name = "crc",
-	.param = "NULL | [Int, Int]",
-	.result = "UInt",
+	.param = "[i(0,):offset,i(0,)|n:size]|n",
+	.result = "u(>32)",
 	.flags = 0,
 	.access = RPCACCESS_READ,
 	.signals_cnt = 0,
@@ -30,8 +28,8 @@ struct rpcdir rpcfile_crc = {
 
 struct rpcdir rpcfile_sha1 = {
 	.name = "sha1",
-	.param = "NULL | [Int, Int]",
-	.result = "Bytes",
+	.param = "[i(0,):offset,i(0,)|n:size]|n",
+	.result = "b(20)",
 	.flags = 0,
 	.access = RPCACCESS_READ,
 	.signals_cnt = 0,
@@ -39,8 +37,8 @@ struct rpcdir rpcfile_sha1 = {
 
 struct rpcdir rpcfile_read = {
 	.name = "read",
-	.param = "[Int, Int]",
-	.result = "Bytes",
+	.param = "[i(0,):offset,i(0,)size]",
+	.result = "b",
 	.flags = RPCDIR_F_LARGE_RESULT,
 	.access = RPCACCESS_READ,
 	.signals_cnt = 0,
@@ -48,8 +46,7 @@ struct rpcdir rpcfile_read = {
 
 struct rpcdir rpcfile_write = {
 	.name = "write",
-	.param = "[Int, Bytes]",
-	.result = "NULL",
+	.param = "[i(0,):offset,b:data]",
 	.flags = 0,
 	.access = RPCACCESS_WRITE,
 	.signals_cnt = 0,
@@ -57,8 +54,7 @@ struct rpcdir rpcfile_write = {
 
 struct rpcdir rpcfile_truncate = {
 	.name = "truncate",
-	.param = "Int",
-	.result = "NULL",
+	.param = "i(0,)",
 	.flags = 0,
 	.access = RPCACCESS_WRITE,
 	.signals_cnt = 0,
@@ -66,8 +62,7 @@ struct rpcdir rpcfile_truncate = {
 
 struct rpcdir rpcfile_append = {
 	.name = "append",
-	.param = "Bytes",
-	.result = "NULL",
+	.param = "b",
 	.flags = 0,
 	.access = RPCACCESS_WRITE,
 	.signals_cnt = 0,

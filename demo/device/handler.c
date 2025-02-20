@@ -33,7 +33,8 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "get",
-				.result = "[Int]",
+				.param = "i(0,)|n",
+				.result = "[i]",
 				.flags = RPCDIR_F_GETTER,
 				.access = RPCACCESS_READ,
 				.signals = (const struct rpcdirsig[]){{.name = "chng"}},
@@ -42,7 +43,7 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "set",
-				.param = "[Int]",
+				.param = "[i]",
 				.flags = RPCDIR_F_SETTER,
 				.access = RPCACCESS_WRITE,
 			});

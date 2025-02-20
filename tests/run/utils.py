@@ -9,7 +9,7 @@ import subprocess
 
 logger = logging.getLogger(__name__)
 
-__valgrind_line = re.compile(b"(==|--)[0-9]+(==|--) ")
+__valgrind_line = re.compile(rb"(==|--)[0-9]+(==|--) ")
 
 
 def filter_stderr_iter(
