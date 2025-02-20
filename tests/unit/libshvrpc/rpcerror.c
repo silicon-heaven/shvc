@@ -45,8 +45,8 @@ ARRAY_TEST(unpack, unpacker, pairs_d) {
 	unpacker_test(_d);
 }
 static struct cponerr unpacker_comp_d[] = {
-	{RPCERR_PARSE_ERR, NULL, "i{1:5u,63:[]}"},
-	{RPCERR_PARSE_ERR, "Ups", "i{2:\"Ups\",1:5}"},
+	{RPCERR_USR1, NULL, "i{1:6u,63:[]}"},
+	{RPCERR_USR2, "Ups", "i{2:\"Ups\",1:7}"},
 };
 ARRAY_TEST(unpack, unpacker_comp) {
 	unpacker_test(_d);

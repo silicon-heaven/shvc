@@ -176,7 +176,7 @@ static void rpcgetlog_result(struct rpchandler_history_facilities *facilities,
 		rpchandler_msg_send_response(ctx, pack);
 	} else {
 		rpchandler_msg_drop(ctx);
-		rpchandler_msg_send_error(ctx, RPCERR_INTERNAL_ERR,
+		rpchandler_msg_send_error(ctx, RPCERR_METHOD_CALL_EXCEPTION,
 			"Time in the logs is not valid, not possible to provide records.");
 	}
 }

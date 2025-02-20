@@ -13,27 +13,37 @@
  * prefixed with `RPCERR_`. */
 typedef unsigned rpcerrno_t;
 
-/*! No error that is mostly internally used to identify no errors. */
+/*! No error that is mostly internally used to identify no errors.
+ *
+ * This error assignment is implementation specific thus used only in SHVC for
+ * no error interpretation.
+ */
 #define RPCERR_NO_ERROR (0)
-/*! Sent request is invalid in its format. */
-#define RPCERR_INVALID_REQUEST (1)
 /*! Method is can't be found or you do not have access to it. */
 #define RPCERR_METHOD_NOT_FOUND (2)
 /*! Request received but with invalid parameter. */
 #define RPCERR_INVALID_PARAM (3)
-/*! Request can't be processes due to the internal error. */
-#define RPCERR_INTERNAL_ERR (4)
-/*! Message content can't be parsed correctly. */
-#define RPCERR_PARSE_ERR (5)
-/*! Request timed out without response. */
-#define RPCERR_METHOD_CALL_TIMEOUT (6)
-/*! Request got canceled. */
-#define RPCERR_METHOD_CALL_CANCELLED (7)
+/*! Implementation specific user code 1.
+ *
+ * This is commonly used to signal issues in the implementation itself. This
+ * code is not used by SHVC and thus is available to the application.
+ */
+#define RPCERR_USR1 (6)
+/*! Implementation specific user code 2.
+ *
+ * This is commonly used to signal issues in the implementation itself. This
+ * code is not used by SHVC and thus is available to the application.
+ */
+#define RPCERR_USR2 (7)
 /*! Request was received successfully but issue was encountered when it was
  * being acted upon it.
  */
 #define RPCERR_METHOD_CALL_EXCEPTION (8)
-/*! Generic unknown error assigned when we are not aware what happened. */
+/*! Generic unknown error assigned when we are not aware of what happened.
+ *
+ * This error assignment is implementation specific thus used only in SHVC for
+ * error interpretation.
+ */
 #define RPCERR_UNKNOWN (9)
 /*! Method call without previous successful login. */
 #define RPCERR_LOGIN_REQUIRED (10)
@@ -41,10 +51,10 @@ typedef unsigned rpcerrno_t;
 #define RPCERR_USER_ID_REQUIRED (11)
 /*! Can be used if method is valid but not implemented for whatever reason. */
 #define RPCERR_NOT_IMPLEMENTED (12)
-/*! The first user defined error code. The lower values are reserved for the
- * SHV defined errors.
+/*! The first method specific defined error code. The lower values are reserved
+ * for the SHV defined errors.
  */
-#define RPCERR_USER_CODE (32)
+#define RPCERR_METHOD_CALL_EXCEPTION_BASE (32)
 
 /*! Keys used in RPC error *IMap*. */
 enum rpcerror_keys {

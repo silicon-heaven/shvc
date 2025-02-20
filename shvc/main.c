@@ -12,9 +12,8 @@
 #define obstack_chunk_alloc malloc
 #define obstack_chunk_free free
 
-#define ERR_COM (RPCERR_USER_CODE + 1)
-#define ERR_TIM (RPCERR_USER_CODE + 2)
-#define ERR_PARAM (RPCERR_USER_CODE + 3)
+#define ERR_TIM (RPCERR_USR1)
+#define ERR_PARAM (RPCERR_USR2)
 
 static size_t logsiz = BUFSIZ > 128 ? BUFSIZ : 128;
 
@@ -62,7 +61,7 @@ int response_callback(enum rpccall_stage stage, struct rpccall_ctx *ctx) {
 				c->output = strdup(ctx->errmsg);
 			return ctx->errnum;
 		case CALL_S_COMERR:
-			return ERR_COM;
+			return RPCERR_UNKNOWN;
 		case CALL_S_TIMERR:
 			return ERR_TIM;
 	}
@@ -157,13 +156,13 @@ int main(int argc, char **argv) {
 			fprintf(stderr, "Invalid CPON provided as parameter\n");
 			ec = -2;
 			break;
-		case ERR_COM:
-			fprintf(stderr, "Communication error\n");
-			ec = -3;
-			break;
 		case ERR_TIM:
 			fprintf(stderr, "Communication timeout\n");
 			ec = -4;
+			break;
+		case RPCERR_UNKNOWN:
+			fprintf(stderr, "Communication error\n");
+			ec = -3;
 			break;
 		default:
 			fprintf(stderr, "SHV Error: %s\n", ctx.output);
