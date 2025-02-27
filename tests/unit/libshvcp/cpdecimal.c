@@ -31,6 +31,7 @@ static const struct {
 	{1., (struct cpdecimal){.mantisa = 1}},
 	{-1., (struct cpdecimal){.mantisa = -1}},
 	{42.124, (struct cpdecimal){.mantisa = 42124, .exponent = -3}},
+	{400., (struct cpdecimal){.mantisa = 4, .exponent = 2}},
 };
 
 ARRAY_TEST(all, dectod, dec_d) {
@@ -38,11 +39,59 @@ ARRAY_TEST(all, dectod, dec_d) {
 }
 END_TEST
 
-#if 0
-ARRAY_TEST(all, dtodec, _d) {
-	struct cpdecimal d = cpdtodec(_d.f);
-	ck_assert_int_eq(d.mantisa, _d.d.mantisa);
-	ck_assert_int_eq(d.exponent, _d.d.exponent);
+static const struct {
+	struct cpdecimal in, out;
+	int exponent;
+} decexp_d[] = {
+	{{42, 3}, {42, 3}, 3},
+	{{42, 3}, {42000, 0}, 0},
+	{{42, 3}, {420, 2}, 2},
+	{{42, 3}, {4200000, -2}, -2},
+	{{42, 3}, {4, 4}, 4},
+	{{42, 3}, {0, 5}, 5},
+	{{42, 3}, {0, 5}, 6},
+};
+ARRAY_TEST(all, decexp) {
+	struct cpdecimal d = _d.in;
+	ck_assert(cpdecexp(&d, _d.exponent));
+	ck_assert_int_eq(d.mantisa, _d.out.mantisa);
+	ck_assert_int_eq(d.exponent, _d.out.exponent);
 }
-END_TEST
-#endif
+
+static const struct {
+	struct cpdecimal dec;
+	int exponent;
+} decexp_overflow_d[] = {
+	{{42, 3}, -18},
+};
+ARRAY_TEST(all, decexp_overflow) {
+	struct cpdecimal d = _d.dec;
+	ck_assert(!cpdecexp(&d, _d.exponent));
+}
+
+static const struct {
+	struct cpdecimal dec;
+	int exp, val;
+} cpdtoi_d[] = {
+	{{42, 0}, -3, 42000},
+	{{42, -2}, -3, 420},
+	{{42, -4}, -3, 4},
+};
+ARRAY_TEST(all, cpdtoi) {
+	int val;
+	ck_assert(cpdtoi(_d.dec, _d.exp, val));
+	ck_assert_int_eq(val, _d.val);
+}
+
+static const struct {
+	int mantisa, exponent;
+	struct cpdecimal dec;
+} cpitod_d[] = {
+	{42, -3, {42, -3}},
+	{4200, -3, {42, -1}},
+};
+ARRAY_TEST(all, cpitod) {
+	struct cpdecimal d = cpitod(_d.mantisa, _d.exponent);
+	ck_assert_int_eq(d.mantisa, _d.dec.mantisa);
+	ck_assert_int_eq(d.exponent, _d.dec.exponent);
+}

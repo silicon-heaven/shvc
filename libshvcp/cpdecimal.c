@@ -1,4 +1,3 @@
-#include <math.h>
 #include <shv/cp.h>
 
 void cpdecnorm(struct cpdecimal *v) {
@@ -12,6 +11,21 @@ void cpdecnorm(struct cpdecimal *v) {
 	}
 }
 
+bool cpdecexp(struct cpdecimal *v, int exponent) {
+	int neg = v->exponent < exponent ? 1 : -1;
+	while (v->exponent != exponent && v->mantisa) {
+		long long int mantisa;
+		if (neg < 0) {
+			if (__builtin_smulll_overflow(v->mantisa, 10, &mantisa))
+				return false;
+		} else
+			mantisa = v->mantisa / 10;
+		v->mantisa = mantisa;
+		v->exponent += neg;
+	}
+	return true;
+}
+
 double cpdectod(const struct cpdecimal v) {
 	double res = v.mantisa;
 	if (v.exponent >= 0) {
@@ -23,16 +37,3 @@ double cpdectod(const struct cpdecimal v) {
 	}
 	return res;
 }
-
-#if 0
-struct cpdecimal cpdtodec(double v) {
-	// TODO
-	double i;
-	double d = modf(v, &i);
-	printf("That would be %f and %f\n", i, d);
-	int exp;
-	double s = frexp(v, &exp);
-	printf("frexp %d for %lf\n", exp, s);
-	return (struct cpdecimal) {.mantisa = i, .exponent = d};
-}
-#endif

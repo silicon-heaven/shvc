@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - `cptstodt` and `cpdttots` functions to `cp.h` to work with `struct timespec`.
+- `cpdecexp` function and `cpitod` macro to `cp.h` for `struct cpdecimal`.
 
 ### Changed
 - `fetch` method in RPCHistory now gives the application starting index
@@ -15,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - No longer valid RPC error codes (they were removed from standard).
+- `cpdecimal` and `cpdeccmp` as having invalid or no implementation.
 
 ### Fixed
 - RPC File's methods `sha1` and `crc` now correctly accept no parameter and

@@ -3,8 +3,8 @@ V0.0 {
 		# shv/cp.h
 		cpitem_type_str;
 		cpdecnorm;
+		cpdecexp;
 		cpdectod;
-		cpdtodec;
 		cpdttotm;
 		cptmtodt;
 		clock_cpdatetime;

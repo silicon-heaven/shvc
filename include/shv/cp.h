@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include <sys/types.h>
+#include <assert.h>
 #include <time.h>
 
 
@@ -147,22 +148,20 @@ struct cpdecimal {
  */
 void cpdecnorm(struct cpdecimal *v) __attribute__((nonnull));
 
-/*! Compare two decimal numbers.
+/*! Modify decimal number to be at given exponent.
  *
- * The input must be normalized, otherwise assert is tripped.
+ * The lost precision is never reported and value is cropped instead of
+ * rounded!
  *
- * @returns a positive number if ``A`` is greater than ``B``, a negative number
- *   ``A`` is less than ``B`` and zero if ``A`` is equal to ``B``.
+ * The decimal is modified even if `false` is returned. It only stops at
+ * exponent that still not cause `intmax_t` overflow.
+ *
+ * @param v Decimal number to be modified.
+ * @param exponent The desired exponent number.
+ * @returns `true` if set correctly and `false` if exponent can't be reached due
+ * to mantisa overflow.
  */
-#define cpdeccmp(A, B) \
-	({ \
-		assert(A->mantisa % 10 || A->mantisa == 0); \
-		assert(B->mantisa % 10 || B->mantisa == 0); \
-		intmax_t res = A->exponent - B->exponment; \
-		if (res == 0) \
-			res = A->mantisa - B->mantisa; \
-		res; \
-	})
+bool cpdecexp(struct cpdecimal *v, int exponent) __attribute__((nonnull));
 
 /*! Convert decimal number to double precision floating point number.
  *
@@ -171,12 +170,41 @@ void cpdecnorm(struct cpdecimal *v) __attribute__((nonnull));
  */
 double cpdectod(const struct cpdecimal v);
 
-/*! Convert double precision floating point number to decimal number.
+/*! Convert decimal number to integer with given multiplication.
  *
- * @param v Floating point number to be converted.
- * @returns Approximate decimal representation.
+ * This is commonly used if your application works with integers but values sent
+ * in SHV are in fractional units (for example you have milliseconds while SHV
+ * sends decimal seconds).
+ *
+ * @param DEC The decimal to be converted (variable not pointer to it).
+ * @param EXP The exponent of the destination integer.
  */
-struct cpdecimal cpdtodec(double v);
+#define cpdtoi(DEC, EXP, DEST) \
+	({ \
+		bool __dec_valid = false; \
+		struct cpdecimal __dec = (DEC); \
+		if (cpdecexp(&__dec, (EXP))) { \
+			(DEST) = __dec.mantisa; \
+			__dec_valid = __dec.mantisa == (DEST); \
+		} \
+		__dec_valid; \
+	})
+
+/*! Convert given mantisa and exponent to decimal.
+ *
+ * This automatically normalizes the newly created decimal. Otherwise there is
+ * no advantage in using this over direct structure initialization.
+ *
+ * @param MANTISA The mantisa to be used.
+ * @param EXPONENT The exponent (current multiplication of mantisa).
+ * @returns The normalized decimal number.
+ */
+#define cpitod(MANTISA, EXPONENT) \
+	({ \
+		struct cpdecimal __dec_res = {.mantisa = MANTISA, .exponent = EXPONENT}; \
+		cpdecnorm(&__dec_res); \
+		__dec_res; \
+	})
 
 
 /*! Representation of date and time including the time zone offset. */
@@ -444,17 +472,7 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 		bool __valid = false; \
 		if (__item->type == CPITEM_INT) { \
 			(DEST) = __item->as.Int; \
-			if ((typeof(DEST))-1 < 0) { \
-				const intmax_t __lim = \
-					((((typeof(DEST))1 << (sizeof(DEST) * 8 - 2)) - 1) << 1) + 1; \
-				__valid = __item->as.Int <= __lim && \
-					__item->as.Int >= (-__lim - 1); \
-			} else { \
-				const intmax_t __lim = sizeof(DEST) < sizeof(intmax_t) \
-					? (typeof(DEST))~(typeof(DEST))0 \
-					: INTMAX_MAX; \
-				__valid = __item->as.Int <= __lim && __item->as.Int >= 0; \
-			} \
+			__valid = __item->as.Int == (DEST); \
 		} \
 		__valid; \
 	})
@@ -479,10 +497,7 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 		bool __valid = false; \
 		if (__item->type == CPITEM_UINT) { \
 			(DEST) = __item->as.UInt; \
-			const uintmax_t __lim = (typeof(DEST))-1 < 0 \
-				? ((((typeof(DEST))1 << (sizeof(DEST) * 8 - 2)) - 1) << 1) + 1 \
-				: (typeof(DEST))~(typeof(DEST))0; \
-			__valid = __item->as.UInt <= __lim; \
+			__valid = __item->as.UInt == (DEST); \
 		} \
 		__valid; \
 	})
