@@ -2,8 +2,10 @@
 #
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
+import os
 import pathlib
 import sys
+import docutils
 
 sys.path.insert(0, str(pathlib.Path("..").absolute()))
 
@@ -20,7 +22,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx_book_theme",
     "myst_parser",
-    "breathe",
+    "hawkmoth",
 ]
 
 templates_path = ["_templates"]
@@ -32,17 +34,15 @@ html_copy_source = True
 html_show_sourcelink = True
 html_show_copyright = False
 html_theme = "sphinx_book_theme"
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 
 myst_enable_extensions = [
     "colon_fence",
 ]
 
-includedir = pathlib.Path("../include")
-files = [file.relative_to(includedir) for file in includedir.glob("**/*.h")]
-breathe_projects_source = {"public_api": ("../include", files)}
-breathe_default_project = "public_api"
+hawkmoth_root = os.path.abspath("../include")
+hawkmoth_source_uri = "https://gitlab.elektroline.cz/emb/template/c/-/blob/master/include/{source}#L{line}"
 
 
 def build_finished_gitignore(app, exception):
@@ -52,5 +52,20 @@ def build_finished_gitignore(app, exception):
         (outpath / ".gitignore").write_text("**\n")
 
 
+stdc_types = [
+    "FILE",
+]
+
+
+def resolve_type_aliases(app, env, node, contnode):  # type: ignore
+    """Resolve stdlibc references to man7.org."""
+    if node["refdomain"] == "c" and node["reftarget"] in stdc_types:
+        url = f"https://man7.org/linux/man-pages/man3/{node['reftarget']}.3type.html"
+        return docutils.nodes.reference(
+            "", node["reftarget"], refuri=url, **({"classes": ["external"]})
+        )
+
+
 def setup(app):
     app.connect("build-finished", build_finished_gitignore)
+    app.connect("missing-reference", resolve_type_aliases)

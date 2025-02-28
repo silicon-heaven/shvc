@@ -27,7 +27,6 @@
       meson,
       ninja,
       pkg-config,
-      doxygen,
       sphinxHook,
       python3Packages,
       check,
@@ -40,7 +39,6 @@
         inherit version src;
         GIT_REV = self.shortRev or self.dirtyShortRev;
         outputs = ["out" "doc"];
-        buildInputs = [];
         nativeBuildInputs = [
           (callPackage ./subprojects/.fetch.nix {
             inherit src;
@@ -51,12 +49,11 @@
           meson
           ninja
           pkg-config
-          doxygen
           (sphinxHook.overrideAttrs {
             propagatedBuildInputs = with python3Packages; [
               sphinx-book-theme
               myst-parser
-              breathe
+              hawkmoth
             ];
           })
         ];
@@ -76,8 +73,14 @@
   in
     {
       overlays = {
-        pkgs = final: _: {
+        pkgs = final: prev: {
           template-c = final.callPackage template-c {};
+          pythonPackagesExtensions =
+            prev.pythonPackagesExtensions
+            ++ [self.overlays.pythonPackagesExtension];
+        };
+        pythonPackagesExtension = final: _: {
+          hawkmoth = final.callPackage ./hawkmoth.nix {};
         };
         default = composeManyExtensions [
           check-suite.overlays.default
