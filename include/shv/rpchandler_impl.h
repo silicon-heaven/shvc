@@ -23,7 +23,8 @@
  * @param ctx Handle context passed to @ref rpchandler_funcs.msg.
  * @returns `true` if message is valid and `false` otherwise.
  */
-bool rpchandler_msg_valid(struct rpchandler_msg *ctx) __attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpchandler_msg_valid(struct rpchandler_msg *ctx);
 
 /*! Add result of `ls`.
  *
@@ -38,8 +39,8 @@ bool rpchandler_msg_valid(struct rpchandler_msg *ctx) __attribute__((nonnull));
  * @param ctx Context passed to the @ref rpchandler_funcs.ls.
  * @param name Name of the node.
  */
-void rpchandler_ls_result(struct rpchandler_ls *ctx, const char *name)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+void rpchandler_ls_result(struct rpchandler_ls *ctx, const char *name);
 
 /*! The variant of the @ref rpchandler_ls_result with constant string.
  *
@@ -52,8 +53,8 @@ void rpchandler_ls_result(struct rpchandler_ls *ctx, const char *name)
  * @param name Name of the node (must be pointer to memory that is kept valid
  *   for the duration of ls method handler).
  */
-void rpchandler_ls_result_const(struct rpchandler_ls *ctx, const char *name)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+void rpchandler_ls_result_const(struct rpchandler_ls *ctx, const char *name);
 
 /*! The variant of the @ref rpchandler_ls_result with name generated from
  * format string.
@@ -61,8 +62,8 @@ void rpchandler_ls_result_const(struct rpchandler_ls *ctx, const char *name)
  * @param ctx Context passed to the @ref rpchandler_funcs.ls.
  * @param fmt Format string used to generate node name.
  */
-void rpchandler_ls_result_fmt(struct rpchandler_ls *ctx, const char *fmt, ...)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+void rpchandler_ls_result_fmt(struct rpchandler_ls *ctx, const char *fmt, ...);
 
 /*! The variant of the @ref rpchandler_ls_result with name generated from
  * format string.
@@ -71,8 +72,9 @@ void rpchandler_ls_result_fmt(struct rpchandler_ls *ctx, const char *fmt, ...)
  * @param fmt Format string used to generate node name.
  * @param args List of variable arguments used in format string.
  */
-void rpchandler_ls_result_vfmt(struct rpchandler_ls *ctx, const char *fmt,
-	va_list args) __attribute__((nonnull));
+[[gnu::nonnull]]
+void rpchandler_ls_result_vfmt(
+	struct rpchandler_ls *ctx, const char *fmt, va_list args);
 
 /*! Mark the node @ref rpchandler_ls.name as existing.
  *
@@ -82,7 +84,8 @@ void rpchandler_ls_result_vfmt(struct rpchandler_ls *ctx, const char *fmt,
  *
  * @param ctx Context passed to the @ref rpchandler_funcs.ls.
  */
-void rpchandler_ls_exists(struct rpchandler_ls *ctx) __attribute__((nonnull));
+[[gnu::nonnull]]
+void rpchandler_ls_exists(struct rpchandler_ls *ctx);
 
 
 /*! Add result of `dir`.
@@ -97,8 +100,8 @@ void rpchandler_ls_exists(struct rpchandler_ls *ctx) __attribute__((nonnull));
  * @param ctx Context passed to the @ref rpchandler_funcs.dir.
  * @param method The method description.
  */
-void rpchandler_dir_result(struct rpchandler_dir *ctx,
-	const struct rpcdir *method) __attribute__((nonnull));
+[[gnu::nonnull]]
+void rpchandler_dir_result(struct rpchandler_dir *ctx, const struct rpcdir *method);
 
 /*! Mark the method @ref rpchandler_dir.name as existing.
  *
@@ -108,14 +111,15 @@ void rpchandler_dir_result(struct rpchandler_dir *ctx,
  *
  * @param ctx Context passed to the @ref rpchandler_funcs.dir.
  */
-void rpchandler_dir_exists(struct rpchandler_dir *ctx) __attribute__((nonnull));
+[[gnu::nonnull]]
+void rpchandler_dir_exists(struct rpchandler_dir *ctx);
 
 
 /// @cond
-struct obstack *_rpchandler_msg_obstack(struct rpchandler_msg *ctx)
-	__attribute__((nonnull));
-struct obstack *_rpchandler_idle_obstack(struct rpchandler_idle *ctx)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+struct obstack *_rpchandler_msg_obstack(struct rpchandler_msg *ctx);
+[[gnu::nonnull]]
+struct obstack *_rpchandler_idle_obstack(struct rpchandler_idle *ctx);
 /// @endcond
 /*! Provides access to the obstack in RPC Handler object.
  *
@@ -140,8 +144,8 @@ struct obstack *_rpchandler_idle_obstack(struct rpchandler_idle *ctx)
  * @param ctx Context passed to @ref rpchandler_funcs.msg
  * @returns Packer object or `NULL` in case resposne can't be sent.
  */
-__attribute__((nonnull)) static inline cp_pack_t rpchandler_msg_new_response(
-	struct rpchandler_msg *ctx) {
+[[gnu::nonnull]]
+static inline cp_pack_t rpchandler_msg_new_response(struct rpchandler_msg *ctx) {
 	cp_pack_t res = rpchandler_msg_new(ctx);
 	if (res)
 		rpcmsg_pack_response(res, &ctx->meta);
@@ -155,7 +159,8 @@ __attribute__((nonnull)) static inline cp_pack_t rpchandler_msg_new_response(
  * @param pack Packer returned from @ref rpchandler_msg_new_response.
  * @returns Packer object or `NULL` in case resposne can't be sent.
  */
-__attribute__((nonnull(1))) static inline bool rpchandler_msg_send_response(
+[[gnu::nonnull(1)]]
+static inline bool rpchandler_msg_send_response(
 	struct rpchandler_msg *ctx, cp_pack_t pack) {
 	if (pack == NULL)
 		return false;
@@ -169,8 +174,8 @@ __attribute__((nonnull(1))) static inline bool rpchandler_msg_send_response(
  * @param ctx Context passed to @ref rpchandler_funcs.msg
  * @returns Value returned from @ref rpchandler_msg_send.
  */
-__attribute__((nonnull)) static inline bool rpchandler_msg_send_response_void(
-	struct rpchandler_msg *ctx) {
+[[gnu::nonnull]]
+static inline bool rpchandler_msg_send_response_void(struct rpchandler_msg *ctx) {
 	cp_pack_t pack = rpchandler_msg_new(ctx);
 	if (pack == NULL)
 		return false;
@@ -186,7 +191,8 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_send_response_void(
  * @param msg Optional message describing the error details.
  * @returns Value returned from @ref rpchandler_msg_send.
  */
-__attribute__((nonnull(1))) static inline bool rpchandler_msg_send_error(
+[[gnu::nonnull(1)]]
+static inline bool rpchandler_msg_send_error(
 	struct rpchandler_msg *ctx, rpcerrno_t error, const char *msg) {
 	cp_pack_t pack = rpchandler_msg_new(ctx);
 	if (pack == NULL)
@@ -204,8 +210,9 @@ __attribute__((nonnull(1))) static inline bool rpchandler_msg_send_error(
  * @param args Variable list of arguments to be used with **fmt**.
  * @returns Value returned from @ref rpchandler_msg_send.
  */
-__attribute__((nonnull)) static inline bool rpchandler_msg_send_vferror(
-	struct rpchandler_msg *ctx, rpcerrno_t error, const char *fmt, va_list args) {
+[[gnu::nonnull]]
+static inline bool rpchandler_msg_send_vferror(struct rpchandler_msg *ctx,
+	rpcerrno_t error, const char *fmt, va_list args) {
 	cp_pack_t pack = rpchandler_msg_new(ctx);
 	if (pack == NULL)
 		return false;
@@ -221,7 +228,8 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_send_vferror(
  * @param fmt Format string used to generate the error message.
  * @returns Value returned from @ref rpchandler_msg_send.
  */
-__attribute__((nonnull)) static inline bool rpchandler_msg_send_ferror(
+[[gnu::nonnull]]
+static inline bool rpchandler_msg_send_ferror(
 	struct rpchandler_msg *ctx, rpcerrno_t error, const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
@@ -237,8 +245,8 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_send_ferror(
  * @param ctx Context passed to @ref rpchandler_funcs.msg
  * @returns Value returned from @ref rpchandler_msg_send.
  */
-bool rpchandler_msg_send_method_not_found(struct rpchandler_msg *ctx)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpchandler_msg_send_method_not_found(struct rpchandler_msg *ctx);
 
 /*! Combined call to the @ref rpchandler_msg_new and @ref rpcmsg_pack_signal.
  *
@@ -259,9 +267,9 @@ bool rpchandler_msg_send_method_not_found(struct rpchandler_msg *ctx)
  *   value didn't change right now but some time in the past.
  * @returns Packer object or `NULL` in case signal can't be sent.
  */
-__attribute__((nonnull)) static inline cp_pack_t rpchandler_msg_new_signal(
-	struct rpchandler_msg *ctx, const char *source, const char *signal,
-	rpcaccess_t access, bool repeat) {
+[[gnu::nonnull]]
+static inline cp_pack_t rpchandler_msg_new_signal(struct rpchandler_msg *ctx,
+	const char *source, const char *signal, rpcaccess_t access, bool repeat) {
 	cp_pack_t pack = rpchandler_msg_new(ctx);
 	if (pack)
 		rpcmsg_pack_signal(pack, ctx->meta.path, source, signal,
@@ -278,7 +286,8 @@ __attribute__((nonnull)) static inline cp_pack_t rpchandler_msg_new_signal(
  * @param pack Packer returned from @ref rpchandler_msg_new_response.
  * @returns Packer object or `NULL` in case resposne can't be sent.
  */
-__attribute__((nonnull(1))) static inline bool rpchandler_msg_send_signal(
+[[gnu::nonnull(1)]]
+static inline bool rpchandler_msg_send_signal(
 	struct rpchandler_msg *ctx, cp_pack_t pack) {
 	if (pack == NULL)
 		return false;
@@ -302,9 +311,9 @@ __attribute__((nonnull(1))) static inline bool rpchandler_msg_send_signal(
  *   value didn't change right now but some time in the past.
  * @returns Value returned from @ref rpchandler_msg_send.
  */
-__attribute__((nonnull)) static inline bool rpchandler_msg_new_signal_void(
-	struct rpchandler_msg *ctx, const char *source, const char *signal,
-	rpcaccess_t access, bool repeat) {
+[[gnu::nonnull]]
+static inline bool rpchandler_msg_new_signal_void(struct rpchandler_msg *ctx,
+	const char *source, const char *signal, rpcaccess_t access, bool repeat) {
 	cp_pack_t pack = rpchandler_msg_new(ctx);
 	if (pack == NULL)
 		return false;
@@ -321,8 +330,8 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_new_signal_void(
  * @param ctx Handle context passed to @ref rpchandler_funcs.msg.
  * @returns `true` if request should be handled and `false` otherwise.
  */
-__attribute__((nonnull)) static inline bool rpchandler_msg_valid_nullparam(
-	struct rpchandler_msg *ctx) {
+[[gnu::nonnull]]
+static inline bool rpchandler_msg_valid_nullparam(struct rpchandler_msg *ctx) {
 	bool is_null = !rpcmsg_has_value(ctx->item) ||
 		cp_unpack_type(ctx->unpack, ctx->item) == CPITEM_NULL;
 	if (rpchandler_msg_valid(ctx)) {
@@ -345,7 +354,8 @@ __attribute__((nonnull)) static inline bool rpchandler_msg_valid_nullparam(
  *   if `true` is returned.
  * @returns `true` if request should be handled and `false` otherwise.
  */
-__attribute__((nonnull(1))) static inline bool rpchandler_msg_valid_getparam(
+[[gnu::nonnull(1)]]
+static inline bool rpchandler_msg_valid_getparam(
 	struct rpchandler_msg *ctx, long long *oldness) {
 	bool valid = true;
 	if (rpcmsg_has_value(ctx->item)) {

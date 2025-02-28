@@ -61,13 +61,15 @@ struct rpcbroker {
 	pthread_mutex_t lock;
 };
 
-__attribute__((nonnull)) static inline void broker_lock(struct rpcbroker *broker) {
+[[gnu::nonnull]]
+static inline void broker_lock(struct rpcbroker *broker) {
 	// TODO possibly could be RW lock
 	if (!(broker->flags & RPCBROKER_F_NOLOCK))
 		pthread_mutex_lock(&broker->lock);
 }
 
-__attribute__((nonnull)) static inline void broker_unlock(struct rpcbroker *broker) {
+[[gnu::nonnull]]
+static inline void broker_unlock(struct rpcbroker *broker) {
 	if (!(broker->flags & RPCBROKER_F_NOLOCK))
 		pthread_mutex_unlock(&broker->lock);
 }
@@ -84,8 +86,8 @@ __attribute__((nonnull)) static inline void broker_unlock(struct rpcbroker *brok
  *
  * Make sure to call this while holding lock.
  */
-__attribute__((nonnull)) static inline bool cid_valid(
-	struct rpcbroker *broker, int cid) {
+[[gnu::nonnull]]
+static inline bool cid_valid(struct rpcbroker *broker, int cid) {
 	return cid >= 0 && cid < broker->clients_siz && broker->clients[cid];
 }
 
@@ -94,22 +96,24 @@ __attribute__((nonnull)) static inline bool cid_valid(
  *
  * Make sure to call this while holding lock.
  */
-__attribute__((nonnull)) static inline bool cid_active(
-	struct rpcbroker *broker, int cid) {
+[[gnu::nonnull]]
+static inline bool cid_active(struct rpcbroker *broker, int cid) {
 	return cid_valid(broker, cid) && broker->clients[cid]->role;
 }
 
+[[gnu::nonnull]]
 enum role_res {
 	ROLE_RES_OK,
 	ROLE_RES_MNT_INVALID,
 	ROLE_RES_MNT_EXISTS,
-} role_assign(struct clientctx *clientctx, const struct rpcbroker_role *role)
-	__attribute__((nonnull));
+} role_assign(struct clientctx *clientctx, const struct rpcbroker_role *role);
 
-void role_unassign(struct clientctx *c) __attribute__((nonnull));
+[[gnu::nonnull]]
+void role_unassign(struct clientctx *c);
 
-struct clientctx *mounted_client(struct rpcbroker *broker, const char *path,
-	const char **rpath) __attribute__((nonnull(1, 2)));
+[[gnu::nonnull(1, 2)]]
+struct clientctx *mounted_client(
+	struct rpcbroker *broker, const char *path, const char **rpath);
 
 static inline bool is_path_prefix(const char *path, const char *prefix) {
 	size_t len = strlen(prefix);
@@ -118,15 +122,16 @@ static inline bool is_path_prefix(const char *path, const char *prefix) {
 	return !strncmp(path, prefix, len) && (path[len] == '/' || path[len] == '\0');
 }
 
-const char *subscription_ri(struct rpcbroker *broker, const char *ri)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+const char *subscription_ri(struct rpcbroker *broker, const char *ri);
 
-bool subscribe(struct rpcbroker *broker, const char *ri, int cid)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool subscribe(struct rpcbroker *broker, const char *ri, int cid);
 
-bool unsubscribe(struct rpcbroker *broker, const char *ri, int cid)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool unsubscribe(struct rpcbroker *broker, const char *ri, int cid);
 
-void unsubscribe_all(struct rpcbroker *broker, int cid) __attribute__((nonnull));
+[[gnu::nonnull]]
+void unsubscribe_all(struct rpcbroker *broker, int cid);
 
 #endif

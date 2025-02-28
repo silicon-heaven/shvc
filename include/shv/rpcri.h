@@ -24,8 +24,9 @@
  *   signal matching (`PATH:METHOD:SIGNAL`).
  * @returns `true` if RI matches, `false` otherwise.
  */
-bool rpcri_match(const char *ri, const char *path, const char *method,
-	const char *signal) __attribute__((nonnull(1, 2, 3)));
+[[gnu::nonnull(1, 2, 3)]]
+bool rpcri_match(
+	const char *ri, const char *path, const char *method, const char *signal);
 
 /*! Check if given path matches given pattern.
  *
@@ -36,7 +37,8 @@ bool rpcri_match(const char *ri, const char *path, const char *method,
  * @param path: The patch to be compared against the pattern.
  * @returns `true` if path matches the pattern and `false` otherwise.
  */
-bool rpcpath_match(const char *pattern, const char *path) __attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpcpath_match(const char *pattern, const char *path);
 
 /*! Check if given string matches given pattern.
  *
@@ -48,7 +50,7 @@ bool rpcpath_match(const char *pattern, const char *path) __attribute__((nonnull
  * @param string: The string to be compared against the pattern.
  * @returns `true` if string matches the pattern and `false` otherwise.
  */
-bool rpcstr_match(const char *pattern, const char *string)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpcstr_match(const char *pattern, const char *string);
 
 #endif /* SHV_RPCRI_H */

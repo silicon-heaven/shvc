@@ -45,9 +45,10 @@ typedef struct rpchandler_device *rpchandler_device_t;
  *   pass `NULL` if this is not supported.
  * @returns A new RPC Device Handler object.
  */
+[[gnu::malloc, gnu::nonnull(1, 2)]]
 rpchandler_device_t rpchandler_device_new(const char *name, const char *version,
 	const char *serial_number, void (*alerts)(rpchandler_device_alerts_t),
-	void (*reset)(void)) __attribute__((malloc, nonnull(1, 2)));
+	void (*reset)(void));
 
 /*! Free all resources occupied by @ref rpchandler_device_t object.
  *
@@ -65,8 +66,9 @@ void rpchandler_device_destroy(rpchandler_device_t rpchandler_device);
  * @param rpchandler_device RPC Device Handler object.
  * @returns Stage to be used in array of stages for RPC Handler.
  */
+[[gnu::nonnull]]
 struct rpchandler_stage rpchandler_device_stage(
-	rpchandler_device_t rpchandler_device) __attribute__((nonnull));
+	rpchandler_device_t rpchandler_device);
 
 /*! Get the RPC Handler stage for this Device Handler.
  *
@@ -76,8 +78,9 @@ struct rpchandler_stage rpchandler_device_stage(
  * @param rpchandler_device RPC Device Handler object.
  * @param handler RPC Handler object.
  */
-void rpchandler_device_signal_alerts(rpchandler_device_t rpchandler_device,
-	rpchandler_t handler) __attribute__((nonnull));
+[[gnu::nonnull]]
+void rpchandler_device_signal_alerts(
+	rpchandler_device_t rpchandler_device, rpchandler_t handler);
 
 /*! Adds one device's alert to the packing scheme.
  *
@@ -88,7 +91,8 @@ void rpchandler_device_signal_alerts(rpchandler_device_t rpchandler_device,
  * @param alert Pointer to @ref rpcalerts structure.
  * @returns True on success, false otherwise.
  */
-bool rpchandler_device_alert(rpchandler_device_alerts_t ctx,
-	struct rpcalerts *alert) __attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpchandler_device_alert(
+	rpchandler_device_alerts_t ctx, struct rpcalerts *alert);
 
 #endif

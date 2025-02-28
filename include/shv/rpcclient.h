@@ -257,8 +257,8 @@ enum rpcclient_msg_type {
  *   buffer is too small then it returns number bytes it would wrote. This can
  *   be used to detect truncated output due to small buffer.
  */
-__attribute__((nonnull(1))) static inline size_t rpcclient_peername(
-	rpcclient_t client, char *buf, size_t size) {
+[[gnu::nonnull(1)]]
+static inline size_t rpcclient_peername(rpcclient_t client, char *buf, size_t size) {
 	if (client->peername)
 		return client->peername(client, buf, size);
 	if (buf && size > 0)

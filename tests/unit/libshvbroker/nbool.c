@@ -32,7 +32,8 @@ TEST(nbool, generic) {
 	ck_assert_ptr_nonnull(v);
 	ck_assert_int_eq(v->cnt, 1);
 	nbool_clear(&v, 0);
-	ck_assert_ptr_null(v);
+	ck_assert_ptr_null(v); // NOLINT(clang-analyzer-unix.Malloc)
+						   // Seems to miss that v must be null to pass
 }
 
 TEST(nbool, or) {

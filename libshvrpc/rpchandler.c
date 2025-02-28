@@ -226,27 +226,29 @@ static bool handle_dir(struct msg_ctx *ctx) {
 	}
 
 	cp_pack_t pack = rpchandler_msg_new_response(&ctx->ctx);
-	struct dir_ctx dirctx = (struct dir_ctx){
-		.ctx.name = name,
-		.ctx.path = ctx->ctx.meta.path,
-		.mctx = ctx,
-		.pack = pack,
-		.located = false,
-	};
-	if (dirctx.ctx.name == NULL)
-		cp_pack_list_begin(dirctx.pack);
-	rpchandler_dir_result(&dirctx.ctx, &rpcdir_dir);
-	rpchandler_dir_result(&dirctx.ctx, &rpcdir_ls);
-	for (const struct rpchandler_stage *s = ctx->handler->stages;
-		 s->funcs && !dirctx.located; s++)
-		if (s->funcs->dir)
-			s->funcs->dir(s->cookie, &dirctx.ctx);
-	if (dirctx.ctx.name == NULL)
+	if (pack) {
+		struct dir_ctx dirctx = (struct dir_ctx){
+			.ctx.name = name,
+			.ctx.path = ctx->ctx.meta.path,
+			.mctx = ctx,
+			.pack = pack,
+			.located = false,
+		};
+		if (dirctx.ctx.name == NULL)
+			cp_pack_list_begin(dirctx.pack);
+		rpchandler_dir_result(&dirctx.ctx, &rpcdir_dir);
+		rpchandler_dir_result(&dirctx.ctx, &rpcdir_ls);
+		for (const struct rpchandler_stage *s = ctx->handler->stages;
+			 s->funcs && !dirctx.located; s++)
+			if (s->funcs->dir)
+				s->funcs->dir(s->cookie, &dirctx.ctx);
+		if (dirctx.ctx.name == NULL)
+			cp_pack_container_end(dirctx.pack);
+		else
+			cp_pack_bool(dirctx.pack, dirctx.located);
 		cp_pack_container_end(dirctx.pack);
-	else
-		cp_pack_bool(dirctx.pack, dirctx.located);
-	cp_pack_container_end(dirctx.pack);
-	rpchandler_msg_send(&ctx->ctx);
+		rpchandler_msg_send(&ctx->ctx);
+	}
 	return true;
 }
 

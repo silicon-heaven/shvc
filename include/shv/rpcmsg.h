@@ -251,9 +251,10 @@ extern const struct rpcmsg_meta_limits rpcmsg_meta_limits_default;
  *   for request messages and if it is possible to parameters, response or error
  *   for other message types.
  */
+[[gnu::nonnull(1, 2, 3, 5)]]
 bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 	struct rpcmsg_meta *meta, const struct rpcmsg_meta_limits *limits,
-	struct obstack *obstack) __attribute__((nonnull(1, 2, 3, 5)));
+	struct obstack *obstack);
 
 /*! Query if message has parameter or response value to unpack.
  *
@@ -268,7 +269,8 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
  * @param item Item used for the @ref rpcmsg_head_unpack call.
  * @returns `true` if there is a value to unpack and `false` if there is not.
  */
-__attribute__((nonnull)) static inline bool rpcmsg_has_value(struct cpitem *item) {
+[[gnu::nonnull]]
+static inline bool rpcmsg_has_value(struct cpitem *item) {
 	return item->type != CPITEM_CONTAINER_END;
 }
 
@@ -297,8 +299,9 @@ int rpcmsg_request_id(void);
  *   response with requests.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull(1, 2, 3)]]
 bool rpcmsg_pack_request(cp_pack_t pack, const char *path, const char *method,
-	const char *uid, int rid) __attribute__((nonnull(1, 2, 3)));
+	const char *uid, int rid);
 
 /*! Pack request message with no parameters.
  *
@@ -319,8 +322,9 @@ bool rpcmsg_pack_request(cp_pack_t pack, const char *path, const char *method,
  * response with requests.
  * @returns Boolean signaling the pack success or failure.
  */
-bool rpcmsg_pack_request_void(cp_pack_t pack, const char *path, const char *method,
-	const char *uid, int rid) __attribute__((nonnull(1, 2, 3)));
+[[gnu::nonnull(1, 2, 3)]]
+bool rpcmsg_pack_request_void(cp_pack_t pack, const char *path,
+	const char *method, const char *uid, int rid);
 
 /*! Pack signal message meta and open IMap. The followup packed data are
  * signaled values. The message needs to be terminated with container end
@@ -339,9 +343,9 @@ bool rpcmsg_pack_request_void(cp_pack_t pack, const char *path, const char *meth
  *   value didn't change right now but some time in the past.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull(1, 2, 3, 4)]]
 bool rpcmsg_pack_signal(cp_pack_t pack, const char *path, const char *source,
-	const char *signal, const char *uid, rpcaccess_t access, bool repeat)
-	__attribute__((nonnull(1, 2, 3, 4)));
+	const char *signal, const char *uid, rpcaccess_t access, bool repeat);
 
 /*! Pack signal message with no value.
  *
@@ -365,9 +369,9 @@ bool rpcmsg_pack_signal(cp_pack_t pack, const char *path, const char *source,
  *   value didn't change right now but some time in the past.
  * @returns Boolean signaling the pack success or failure.
  */
-bool rpcmsg_pack_signal_void(cp_pack_t pack, const char *path,
-	const char *source, const char *signal, const char *uid, rpcaccess_t access,
-	bool repeat) __attribute__((nonnull(1, 2, 3, 4)));
+[[gnu::nonnull(1, 2, 3, 4)]]
+bool rpcmsg_pack_signal_void(cp_pack_t pack, const char *path, const char *source,
+	const char *signal, const char *uid, rpcaccess_t access, bool repeat);
 
 /*! Pack response message meta based on the provided meta.
  *
@@ -375,8 +379,8 @@ bool rpcmsg_pack_signal_void(cp_pack_t pack, const char *path,
  * @param meta Meta with info for the received request.
  * @returns Boolean signaling the pack success or failure.
  */
-bool rpcmsg_pack_response(cp_pack_t pack, const struct rpcmsg_meta *meta)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpcmsg_pack_response(cp_pack_t pack, const struct rpcmsg_meta *meta);
 
 /*! Pack response message based on the provided meta without any value.
  *
@@ -388,8 +392,8 @@ bool rpcmsg_pack_response(cp_pack_t pack, const struct rpcmsg_meta *meta)
  * @param meta Meta with info for the received request.
  * @returns Boolean signaling the pack success or failure.
  */
-bool rpcmsg_pack_response_void(cp_pack_t pack, const struct rpcmsg_meta *meta)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpcmsg_pack_response_void(cp_pack_t pack, const struct rpcmsg_meta *meta);
 
 /*! Pack error response message based on the provided meta.
  *
@@ -402,8 +406,9 @@ bool rpcmsg_pack_response_void(cp_pack_t pack, const struct rpcmsg_meta *meta)
  * @param msg Optional message describing the error details.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull(1, 2)]]
 bool rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	rpcerrno_t errnum, const char *msg) __attribute__((nonnull(1, 2)));
+	rpcerrno_t errnum, const char *msg);
 
 /*! Pack error response message based on the provided meta.
  *
@@ -417,8 +422,9 @@ bool rpcmsg_pack_error(cp_pack_t pack, const struct rpcmsg_meta *meta,
  * @param fmt Format string used to generate the error message.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull(1, 2, 4)]]
 bool rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	rpcerrno_t errnum, const char *fmt, ...) __attribute__((nonnull(1, 2, 4)));
+	rpcerrno_t errnum, const char *fmt, ...);
 
 /*! Pack error response message based on the provided meta.
  *
@@ -433,9 +439,9 @@ bool rpcmsg_pack_ferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
  * @param args Variable list of arguments to be used with **fmt**.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull(1, 2, 4)]]
 bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
-	rpcerrno_t errnum, const char *fmt, va_list args)
-	__attribute__((nonnull(1, 2, 4)));
+	rpcerrno_t errnum, const char *fmt, va_list args);
 
 /*! Pack message based on the provided meta.
  *
@@ -446,8 +452,8 @@ bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
  * @param meta Meta with info for message to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
-bool rpcmsg_pack_meta(cp_pack_t pack, const struct rpcmsg_meta *meta)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpcmsg_pack_meta(cp_pack_t pack, const struct rpcmsg_meta *meta);
 
 /*! Pack message based on the provided meta without parameter or result.
  *
@@ -455,7 +461,7 @@ bool rpcmsg_pack_meta(cp_pack_t pack, const struct rpcmsg_meta *meta)
  * @param meta Meta with info for message to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
-bool rpcmsg_pack_meta_void(cp_pack_t pack, const struct rpcmsg_meta *meta)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpcmsg_pack_meta_void(cp_pack_t pack, const struct rpcmsg_meta *meta);
 
 #endif

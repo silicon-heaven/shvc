@@ -56,8 +56,8 @@ struct cp_unpack_chainpack {
  * @param f File used to read ChainPack bytes.
  * @returns Generic unpacker.
  */
-cp_unpack_t cp_unpack_chainpack_init(struct cp_unpack_chainpack *unpack, FILE *f)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+cp_unpack_t cp_unpack_chainpack_init(struct cp_unpack_chainpack *unpack, FILE *f);
 
 /*! Handle for the CPON generic unpacker. */
 struct cp_unpack_cpon {
@@ -88,8 +88,8 @@ struct cp_unpack_cpon {
  * @param f File used to read CPON bytes.
  * @returns Generic unpacker.
  */
-cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *unpack, FILE *f)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *unpack, FILE *f);
 
 
 /*! Unpack item with generic unpacker.
@@ -103,8 +103,8 @@ cp_unpack_t cp_unpack_cpon_init(struct cp_unpack_cpon *unpack, FILE *f)
  * @returns Boolean signaling if unpack was successful (non-invalid item was
  *   unpacked).
  */
-__attribute__((nonnull)) static inline bool cp_unpack(
-	cp_unpack_t unpack, struct cpitem *item) {
+[[gnu::nonnull]]
+static inline bool cp_unpack(cp_unpack_t unpack, struct cpitem *item) {
 	(*unpack)(unpack, item);
 	return item->type != CPITEM_INVALID;
 }
@@ -119,7 +119,8 @@ __attribute__((nonnull)) static inline bool cp_unpack(
  *   to.
  * @returns Type of the unpacked item.
  */
-__attribute__((nonnull)) static inline enum cpitem_type cp_unpack_type(
+[[gnu::nonnull]]
+static inline enum cpitem_type cp_unpack_type(
 	cp_unpack_t unpack, struct cpitem *item) {
 	(*unpack)(unpack, item);
 	return item->type;
@@ -136,8 +137,8 @@ __attribute__((nonnull)) static inline enum cpitem_type cp_unpack_type(
  * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
  */
-void cp_unpack_drop1(cp_unpack_t unpack, struct cpitem *item)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+void cp_unpack_drop1(cp_unpack_t unpack, struct cpitem *item);
 
 /*! Drop currently unpacked item. The effect is that the next unpack will
  * unpack new item after container end. This uses @ref cp_unpack_drop1 for
@@ -150,8 +151,8 @@ void cp_unpack_drop1(cp_unpack_t unpack, struct cpitem *item)
  * @param item Item used for the `cp_unpack` calls and was used in the last
  * one.
  */
-void cp_unpack_drop(cp_unpack_t unpack, struct cpitem *item)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+void cp_unpack_drop(cp_unpack_t unpack, struct cpitem *item);
 
 /*! Instead of getting next item this skips it.
  *
@@ -166,8 +167,8 @@ void cp_unpack_drop(cp_unpack_t unpack, struct cpitem *item)
  * @param item Item used for the last `cp_unpack` call. This is required
  * because there might be unfinished string or blob we need to know about.
  */
-void cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+void cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item);
 
 /*! Read until the currently opened container is finished.
  *
@@ -182,8 +183,8 @@ void cp_unpack_skip(cp_unpack_t unpack, struct cpitem *item)
  * To close two containers pass `2` and so on. The `0` provides the same
  * functionality as `cp_unpack_skip`.
  */
-void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth);
 
 
 /*! Unpack integer and place it to the destination.
@@ -269,8 +270,8 @@ void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth)
  * one.
  * @returns Unpacked byte or `-1` in case of an unpack error.
  */
-__attribute__((nonnull)) static inline int cp_unpack_getc(
-	cp_unpack_t unpack, struct cpitem *item) {
+[[gnu::nonnull]]
+static inline int cp_unpack_getc(cp_unpack_t unpack, struct cpitem *item) {
 	uint8_t res = 0;
 	item->buf = &res;
 	item->bufsiz = 1;
@@ -295,8 +296,9 @@ __attribute__((nonnull)) static inline int cp_unpack_getc(
  * @param n Maximum number of bytes to be used in `dest`.
  * @returns number of bytes written to `dest` or `-1` in case of unpack error.
  */
-ssize_t cp_unpack_strncpy(cp_unpack_t unpack, struct cpitem *item, char *dest,
-	size_t n) __attribute__((nonnull(1, 2)));
+[[gnu::nonnull(1, 2)]]
+ssize_t cp_unpack_strncpy(
+	cp_unpack_t unpack, struct cpitem *item, char *dest, size_t n);
 
 /*! Copy string to malloc allocated buffer and return it.
  *
@@ -309,8 +311,8 @@ ssize_t cp_unpack_strncpy(cp_unpack_t unpack, struct cpitem *item, char *dest,
  * one.
  * @returns malloc allocated null terminated string.
  */
-char *cp_unpack_strdup(cp_unpack_t unpack, struct cpitem *item)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+char *cp_unpack_strdup(cp_unpack_t unpack, struct cpitem *item);
 
 /*! Copy string of at most given length to malloc allocated buffer and return
  * it.
@@ -326,8 +328,8 @@ char *cp_unpack_strdup(cp_unpack_t unpack, struct cpitem *item)
  * @param len Maximum number of bytes to be copied.
  * @returns malloc allocated null terminated string.
  */
-char *cp_unpack_strndup(cp_unpack_t unpack, struct cpitem *item, size_t len)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+char *cp_unpack_strndup(cp_unpack_t unpack, struct cpitem *item, size_t len);
 
 /*! Copy string to obstack allocated buffer and return it.
  *
@@ -341,8 +343,9 @@ char *cp_unpack_strndup(cp_unpack_t unpack, struct cpitem *item, size_t len)
  * object.
  * @returns pointer to the allocated string object.
  */
-char *cp_unpack_strdupo(cp_unpack_t unpack, struct cpitem *item,
-	struct obstack *obstack) __attribute__((nonnull));
+[[gnu::nonnull]]
+char *cp_unpack_strdupo(
+	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack);
 
 /*! Grow obstack object with unpacked string.
  *
@@ -360,8 +363,9 @@ char *cp_unpack_strdupo(cp_unpack_t unpack, struct cpitem *item,
  *   possible that there is something pushed to the obstack even when `false` is
  *   returned.
  */
-bool cp_unpack_strdupog(cp_unpack_t unpack, struct cpitem *item,
-	struct obstack *obstack) __attribute__((nonnull));
+[[gnu::nonnull]]
+bool cp_unpack_strdupog(
+	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack);
 
 /*! Copy string up to given length to obstack allocated buffer and return it.
  *
@@ -376,8 +380,9 @@ bool cp_unpack_strdupog(cp_unpack_t unpack, struct cpitem *item,
  * object.
  * @returns pointer to the allocated string object.
  */
+[[gnu::nonnull]]
 char *cp_unpack_strndupo(cp_unpack_t unpack, struct cpitem *item, size_t len,
-	struct obstack *obstack) __attribute__((nonnull));
+	struct obstack *obstack);
 
 /*! Grow obstack object with unpacked string with up to the given number of
  * bytes.
@@ -395,8 +400,9 @@ char *cp_unpack_strndupo(cp_unpack_t unpack, struct cpitem *item, size_t len,
  * is possible that there is something pushed to the obstack even when
  * `false` is returned.
  */
+[[gnu::nonnull]]
 bool cp_unpack_strndupog(cp_unpack_t unpack, struct cpitem *item, size_t len,
-	struct obstack *obstack) __attribute__((nonnull));
+	struct obstack *obstack);
 
 /*! Copy blob to the provided buffer.
  *
@@ -410,8 +416,9 @@ bool cp_unpack_strndupog(cp_unpack_t unpack, struct cpitem *item, size_t len,
  * @returns number of bytes written to `dest` or `-1` in case of unpack
  * error.
  */
-ssize_t cp_unpack_memcpy(cp_unpack_t unpack, struct cpitem *item, uint8_t *dest,
-	size_t siz) __attribute__((nonnull(1, 2)));
+[[gnu::nonnull(1, 2)]]
+ssize_t cp_unpack_memcpy(
+	cp_unpack_t unpack, struct cpitem *item, uint8_t *dest, size_t siz);
 
 /*! Copy blob to malloc allocated buffer and provide it.
  *
@@ -425,8 +432,9 @@ ssize_t cp_unpack_memcpy(cp_unpack_t unpack, struct cpitem *item, uint8_t *dest,
  * @param data Pointer where pointer to the data would be placed.
  * @param siz Pointer where number of valid data bytes were unpacked.
  */
-void cp_unpack_memdup(cp_unpack_t unpack, struct cpitem *item, uint8_t **data,
-	size_t *siz) __attribute__((nonnull));
+[[gnu::nonnull]]
+void cp_unpack_memdup(
+	cp_unpack_t unpack, struct cpitem *item, uint8_t **data, size_t *siz);
 
 /*! Copy blob up to given number of bytes to malloc allocated buffer and
  * provide it.
@@ -442,8 +450,9 @@ void cp_unpack_memdup(cp_unpack_t unpack, struct cpitem *item, uint8_t **data,
  * @param siz Pointer to maximum number of bytes to be copied that is
  * updated with number of valid bytes actually copied over.
  */
-void cp_unpack_memndup(cp_unpack_t unpack, struct cpitem *item, uint8_t **data,
-	size_t *siz) __attribute__((nonnull));
+[[gnu::nonnull]]
+void cp_unpack_memndup(
+	cp_unpack_t unpack, struct cpitem *item, uint8_t **data, size_t *siz);
 
 /*! Copy blob to obstack allocated buffer and return it.
  *
@@ -458,8 +467,9 @@ void cp_unpack_memndup(cp_unpack_t unpack, struct cpitem *item, uint8_t **data,
  * @param obstack Obstack used to allocate the space needed for the blob
  * object.
  */
+[[gnu::nonnull]]
 void cp_unpack_memdupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
-	size_t *siz, struct obstack *obstack) __attribute__((nonnull));
+	size_t *siz, struct obstack *obstack);
 
 /*! Grow obstack object with unpacked bytes.
  *
@@ -475,8 +485,9 @@ void cp_unpack_memdupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
  *   possible that there is something pushed to the obstack even when `false` is
  *   returned.
  */
-bool cp_unpack_memdupog(cp_unpack_t unpack, struct cpitem *item,
-	struct obstack *obstack) __attribute__((nonnull));
+[[gnu::nonnull]]
+bool cp_unpack_memdupog(
+	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack);
 
 /*! Copy blob up to given number of bytes to obstack allocated buffer and
  * return it.
@@ -493,8 +504,9 @@ bool cp_unpack_memdupog(cp_unpack_t unpack, struct cpitem *item,
  * @param obstack Obstack used to allocate the space needed for the blob
  * object.
  */
+[[gnu::nonnull]]
 void cp_unpack_memndupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
-	size_t *siz, struct obstack *obstack) __attribute__((nonnull));
+	size_t *siz, struct obstack *obstack);
 
 /*! Grow obstack object with unpacked bytes of up to given number.
  *
@@ -511,8 +523,9 @@ void cp_unpack_memndupo(cp_unpack_t unpack, struct cpitem *item, uint8_t **buf,
  *   possible that there is something pushed to the obstack even when `false` is
  *   returned.
  */
+[[gnu::nonnull]]
 bool cp_unpack_memndupog(cp_unpack_t unpack, struct cpitem *item, size_t siz,
-	struct obstack *obstack) __attribute__((nonnull));
+	struct obstack *obstack);
 
 /*! Helper macro that iterates over complete items.
  *
@@ -657,8 +670,8 @@ bool cp_unpack_memndupog(cp_unpack_t unpack, struct cpitem *item, size_t siz,
  * one.
  * @returns File object or `NULL` in case of unpack error.
  */
-FILE *cp_unpack_fopen(cp_unpack_t unpack, struct cpitem *item)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+FILE *cp_unpack_fopen(cp_unpack_t unpack, struct cpitem *item);
 
 
 #endif

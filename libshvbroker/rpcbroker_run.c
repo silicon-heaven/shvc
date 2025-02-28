@@ -25,9 +25,9 @@ struct evpeer {
 };
 
 
-__attribute__((nonnull)) static inline void evpeer_add(
-	const struct rpcbroker_state *state, int epfd, rpcserver_t server,
-	struct evpeer **last) {
+[[gnu::nonnull]]
+static inline void evpeer_add(const struct rpcbroker_state *state, int epfd,
+	rpcserver_t server, struct evpeer **last) {
 	rpcclient_t client = rpcserver_accept(server);
 	if (!client)
 		return;
@@ -52,20 +52,21 @@ __attribute__((nonnull)) static inline void evpeer_add(
 		epfd, EPOLL_CTL_ADD, rpcclient_pollfd(client), &eev);
 }
 
-__attribute__((nonnull)) static inline struct evpeer *evpeer_del(
-	const struct rpcbroker_state *state, int epfd, struct evpeer *ev,
-	struct evpeer **last) {
+[[gnu::nonnull]]
+static inline struct evpeer *evpeer_del(const struct rpcbroker_state *state,
+	int epfd, struct evpeer *ev, struct evpeer **last) {
 	epoll_ctl(epfd, EPOLL_CTL_DEL,
 		rpcclient_pollfd(
 			rpchandler_client(rpcbroker_client_handler(state->broker, ev->cid))),
 		NULL);
 	state->del_client(state->cookie, state->broker, ev->cid);
 	if (ev->prev)
-		ev->prev->next = ev->next;
-	if (ev->next)
-		ev->next->prev = ev->prev;
-	else
+		ev->prev->next = ev->next; // NOLINT(clang-analyzer-unix.Malloc)
+								   // clang-tidy doesn't understand sequence
+	if (ev == *last)
 		*last = ev->prev;
+	else
+		ev->next->prev = ev->prev;
 	struct evpeer *res = ev->prev;
 	free(ev);
 	return res;

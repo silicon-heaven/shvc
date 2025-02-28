@@ -76,8 +76,9 @@ enum rpcerror_keys {
  *   error message.
  * @returns `true` if error was unpacked correctly, `false` otherwise.
  */
-bool rpcerror_unpack(cp_unpack_t unpack, struct cpitem *item,
-	rpcerrno_t *errnum, char **errmsg) __attribute__((nonnull(1, 2, 3)));
+[[gnu::nonnull(1, 2, 3)]]
+bool rpcerror_unpack(
+	cp_unpack_t unpack, struct cpitem *item, rpcerrno_t *errnum, char **errmsg);
 
 /*! Pack RPC error.
  *
@@ -86,21 +87,23 @@ bool rpcerror_unpack(cp_unpack_t unpack, struct cpitem *item,
  * @param errmsg Message to be packed as description of the error.
  * @result `true` if packing was successful and `false` otherwise.
  */
-bool rpcerror_pack(cp_pack_t pack, rpcerrno_t errnum, const char *errmsg)
-	__attribute__((nonnull(1)));
+[[gnu::nonnull(1)]]
+bool rpcerror_pack(cp_pack_t pack, rpcerrno_t errnum, const char *errmsg);
 
 /*! Provides string representation of the error as defined in SHV standard.
  *
  * @param errnum The error number the name will be provided for.
  * @returns Statically allocated string with error's name.
  */
-const char *rpcerror_str(rpcerrno_t errnum) __attribute__((returns_nonnull));
+[[gnu::returns_nonnull]]
+const char *rpcerror_str(rpcerrno_t errnum);
 
 /*! Provides description of the error as defined in SHV standard.
  *
  * @param errnum The error number the description will be provided for.
  * @returns Statically allocated string with error's description.
  */
-const char *rpcerror_desc(rpcerrno_t errnum) __attribute__((returns_nonnull));
+[[gnu::returns_nonnull]]
+const char *rpcerror_desc(rpcerrno_t errnum);
 
 #endif

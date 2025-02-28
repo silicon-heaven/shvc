@@ -89,14 +89,16 @@ static bool parse_query(const UriUriA *uri, struct rpcurl *res,
 	int querycnt;
 	if (uriDissectQueryMallocA(&querylist, &querycnt, uri->query.first,
 			uri->query.afterLast) != URI_SUCCESS) {
-		*error_pos = uri->query.first;
+		if (error_pos)
+			*error_pos = uri->query.first;
 		return false;
 	}
 
 #define PARSE_ERR(LOC) \
 	do { \
 		uriFreeQueryListA(querylist); \
-		*error_pos = LOC; \
+		if (error_pos) \
+			*error_pos = LOC; \
 		return false; \
 	} while (false)
 
@@ -230,7 +232,7 @@ struct rpcurl *rpcurl_parse(
 
 	if (is_uri_segment_present(&uri.portText)) {
 		if (!protocol_contains_authority(res))
-			ERROR(uri.pathHead->text.first);
+			ERROR(uri.portText.first);
 		int base = 1;
 		res->port = 0;
 		// TODO is there really no function to convert not null terminated

@@ -173,9 +173,9 @@ struct rpccall_ctx {
 typedef int (*rpccall_func_t)(enum rpccall_stage stage, struct rpccall_ctx *ctx);
 
 /// @cond
+[[gnu::nonnull(1, 2, 3)]]
 int _rpccall(rpchandler_t handler, rpchandler_responses_t responses,
-	rpccall_func_t func, void *ctx, int attempts, int timeout)
-	__attribute__((nonnull(1, 2, 3)));
+	rpccall_func_t func, void *ctx, int attempts, int timeout);
 #define __rpccall_deft(...) _rpccall(__VA_ARGS__, RPCCALL_TIMEOUT)
 #define __rpccall_def(...) __rpccall_deft(__VA_ARGS__, RPCCALL_ATTEMPTS)
 #define __rpccall_noctx(...) __rpccall_def(__VA_ARGS__, NULL)

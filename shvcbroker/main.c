@@ -87,7 +87,7 @@ static struct rpcbroker_login_res login(
 			mount_point = strdup(autosetup->mount_point);
 	}
 
-	struct rpcbroker_role *res = malloc(sizeof *role);
+	struct rpcbroker_role *res = malloc(sizeof *res);
 	*res = (struct rpcbroker_role){
 		.name = role->name,
 		.access = rpcaccess,
@@ -158,7 +158,7 @@ int main(int argc, char **argv) {
 	ctx.app_handler = rpchandler_app_new("shvcbroker", PROJECT_VERSION);
 	bstate.broker = rpcbroker_new(ctx.conf->name, login, &ctx, RPCBROKER_F_NOLOCK);
 
-	bstate.servers = malloc(ctx.conf->listen_cnt * sizeof *bstate.servers);
+	bstate.servers = calloc(ctx.conf->listen_cnt, sizeof *bstate.servers);
 	bstate.servers_cnt = ctx.conf->listen_cnt;
 	for (size_t i = 0; i < ctx.conf->listen_cnt; i++) {
 		size_t siz = rpcurl_str(ctx.conf->listen[i], NULL, 0);

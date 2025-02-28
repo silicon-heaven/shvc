@@ -253,9 +253,10 @@ struct rpchandler_stage {
  *   object existence.
  * @returns New RPC handler instance.
  */
+[[gnu::nonnull(1, 2), gnu::malloc]]
 rpchandler_t rpchandler_new(rpcclient_t client,
-	const struct rpchandler_stage *stages, const struct rpcmsg_meta_limits *limits)
-	__attribute__((nonnull(1, 2), malloc));
+	const struct rpchandler_stage *stages,
+	const struct rpcmsg_meta_limits *limits);
 
 /*! Free all resources occupied by @ref rpchandler_t object.
  *
@@ -272,8 +273,8 @@ void rpchandler_destroy(rpchandler_t rpchandler);
  * @param handler RPC Handler instance.
  * @returns Pointer to the array of states.
  */
-const struct rpchandler_stage *rpchandler_stages(rpchandler_t handler)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+const struct rpchandler_stage *rpchandler_stages(rpchandler_t handler);
 
 /*! This allows you to change the current array of stages.
  *
@@ -285,8 +286,9 @@ const struct rpchandler_stage *rpchandler_stages(rpchandler_t handler)
  * @param handler RPC Handler instance.
  * @param stages Stages array to be used for now on with this handler.
  */
-void rpchandler_change_stages(rpchandler_t handler,
-	const struct rpchandler_stage *stages) __attribute__((nonnull));
+[[gnu::nonnull]]
+void rpchandler_change_stages(
+	rpchandler_t handler, const struct rpchandler_stage *stages);
 
 /*! Provides access to the wrapped RPC client.
  *
@@ -296,7 +298,8 @@ void rpchandler_change_stages(rpchandler_t handler,
  *
  * @param handler RPC handler instance.
  */
-rpcclient_t rpchandler_client(rpchandler_t handler) __attribute__((nonnull));
+[[gnu::nonnull]]
+rpcclient_t rpchandler_client(rpchandler_t handler);
 
 /*! Handle next message.
  *
@@ -310,7 +313,8 @@ rpcclient_t rpchandler_client(rpchandler_t handler) __attribute__((nonnull));
  *   error was encountered by RPC Client. `false` pretty much means that loop
  *   calling repeatedly this function should be terminated.
  */
-bool rpchandler_next(rpchandler_t rpchandler) __attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpchandler_next(rpchandler_t rpchandler);
 
 /*! Call idle callbacks and determine maximal timeout.
  *
@@ -325,7 +329,8 @@ bool rpchandler_next(rpchandler_t rpchandler) __attribute__((nonnull));
  *   returned that signals error and should be handled same as @ref
  *   RPCHANDLER_MSG_STOP with @ref rpchandler_next.
  */
-int rpchandler_idling(rpchandler_t rpchandler) __attribute__((nonnull));
+[[gnu::nonnull]]
+int rpchandler_idling(rpchandler_t rpchandler);
 
 /*! Run the RPC Handler loop.
  *
@@ -339,8 +344,8 @@ int rpchandler_idling(rpchandler_t rpchandler) __attribute__((nonnull));
  *   not plan on terminating loop this way. Note that this works only if signal
  *   is delivered to this function's calling thread.
  */
-void rpchandler_run(rpchandler_t rpchandler, volatile sig_atomic_t *halt)
-	__attribute__((nonnull(1)));
+[[gnu::nonnull(1)]]
+void rpchandler_run(rpchandler_t rpchandler, volatile sig_atomic_t *halt);
 
 /*! Spawn thread that runs @ref rpchandler_run.
  *
@@ -357,16 +362,18 @@ void rpchandler_run(rpchandler_t rpchandler, volatile sig_atomic_t *halt)
  *   defaults.
  * @returns Integer value returned from `pthread_create`.
  */
+[[gnu::nonnull(1, 2)]]
 int rpchandler_spawn_thread(rpchandler_t rpchandler, pthread_t *restrict thread,
-	const pthread_attr_t *restrict attr) __attribute__((nonnull(1, 2)));
+	const pthread_attr_t *restrict attr);
 
 
 /// @cond
-cp_pack_t _rpchandler_msg_new(rpchandler_t rpchandler) __attribute__((nonnull));
-cp_pack_t _rpchandler_impl_msg_new(struct rpchandler_msg *ctx)
-	__attribute__((nonnull));
-cp_pack_t _rpchandler_idle_msg_new(struct rpchandler_idle *ctx)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+cp_pack_t _rpchandler_msg_new(rpchandler_t rpchandler);
+[[gnu::nonnull]]
+cp_pack_t _rpchandler_impl_msg_new(struct rpchandler_msg *ctx);
+[[gnu::nonnull]]
+cp_pack_t _rpchandler_idle_msg_new(struct rpchandler_idle *ctx);
 /// @endcond
 /*! Start sending new message.
  *
@@ -400,11 +407,12 @@ cp_pack_t _rpchandler_idle_msg_new(struct rpchandler_idle *ctx)
 		struct rpchandler_idle *: _rpchandler_idle_msg_new)(HANDLER)
 
 /// @cond
-bool _rpchandler_msg_send(rpchandler_t rpchandler) __attribute__((nonnull));
-bool _rpchandler_impl_msg_send(struct rpchandler_msg *ctx)
-	__attribute__((nonnull));
-bool _rpchandler_idle_msg_send(struct rpchandler_idle *ctx)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool _rpchandler_msg_send(rpchandler_t rpchandler);
+[[gnu::nonnull]]
+bool _rpchandler_impl_msg_send(struct rpchandler_msg *ctx);
+[[gnu::nonnull]]
+bool _rpchandler_idle_msg_send(struct rpchandler_idle *ctx);
 /// @endcond
 /*! Send the packed message.
  *
@@ -421,11 +429,12 @@ bool _rpchandler_idle_msg_send(struct rpchandler_idle *ctx)
 		struct rpchandler_idle *: _rpchandler_idle_msg_send)(HANDLER)
 
 /// @cond
-bool _rpchandler_msg_drop(rpchandler_t rpchandler) __attribute__((nonnull));
-bool _rpchandler_impl_msg_drop(struct rpchandler_msg *ctx)
-	__attribute__((nonnull));
-bool _rpchandler_idle_msg_drop(struct rpchandler_idle *ctx)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool _rpchandler_msg_drop(rpchandler_t rpchandler);
+[[gnu::nonnull]]
+bool _rpchandler_impl_msg_drop(struct rpchandler_msg *ctx);
+[[gnu::nonnull]]
+bool _rpchandler_idle_msg_drop(struct rpchandler_idle *ctx);
 /// @endcond
 /*! Drop the packed message.
  *

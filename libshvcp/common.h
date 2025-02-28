@@ -7,14 +7,14 @@
  *
  * This covers initial sanity checks.
  */
-bool common_unpack(size_t *res, FILE *f, struct cpitem *item)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool common_unpack(size_t *res, FILE *f, struct cpitem *item);
 
 /* Common handling of the item for pack functions.
  *
  * This covers invalid item and error on file stream.
  */
-bool common_pack(ssize_t *res, FILE *f, const struct cpitem *item)
-	__attribute__((nonnull(1, 3)));
+[[gnu::nonnull(1, 3)]]
+bool common_pack(ssize_t *res, FILE *f, const struct cpitem *item);
 
 #endif

@@ -54,6 +54,7 @@ int rpcbroker_client_register(rpcbroker_t broker, rpchandler_t handler,
 			 broker->clients_lastuse[cid] >= now.tv_sec - REUSE_TIMEOUT);
 		 cid++) {}
 	if (cid == broker->clients_siz) {
+		assert(broker->clients_siz);
 		broker->clients_siz *= 2;
 		struct clientctx **nclients =
 			realloc(broker->clients, broker->clients_siz * sizeof *nclients);

@@ -9,22 +9,22 @@
 static void cleanup_free(void *ptr) {
 	free(*(void **)ptr);
 }
-#define CLEANUP_FREE __attribute__((cleanup(cleanup_free)))
+#define CLEANUP_FREE [[gnu::cleanup(cleanup_free)]]
 
 static void cleanup_fclose(void *ptr) {
 	FILE **f = ptr;
 	if (*f != NULL)
 		fclose(*f);
 }
-#define CLEANUP_FCLOSE __attribute__((cleanup(cleanup_fclose)))
+#define CLEANUP_FCLOSE [[gnu::cleanup(cleanup_fclose)]]
 
 static void cleanup_cpon_free(void *ptr) {
 	struct cp_unpack_cpon *unpack_cpon = ptr;
 	free(unpack_cpon->state.ctx);
 }
-#define CLEANUP_CPON_FREE __attribute__((cleanup(cleanup_cpon_free)))
+#define CLEANUP_CPON_FREE [[gnu::cleanup(cleanup_cpon_free)]]
 
-static void _unpack_args(va_list arg) {
+static void _unpack_args(va_list *arg) {
 	enum {
 		NEXT_STR,
 		NEXT_INT,
@@ -33,7 +33,8 @@ static void _unpack_args(va_list arg) {
 	while (true) {
 		switch (next) {
 			case NEXT_STR:
-				char *key = va_arg(arg, char *);
+				// NOLINTNEXTLINE(clang-analyzer-valist.Uninitialized)
+				char *key = va_arg(*arg, char *);
 				if (key == NULL)
 					return;
 				if (!strcmp(key, "[]"))
@@ -44,13 +45,13 @@ static void _unpack_args(va_list arg) {
 					fprintf(stderr, ".%s", key);
 				break;
 			case NEXT_INT:
-				int ikey = va_arg(arg, int);
+				int ikey = va_arg(*arg, int);
 				fprintf(stderr, "[%d]", ikey);
 				next = NEXT_STR;
 				break;
 			case NEXT_ARGS: {
-				va_list *sarg = va_arg(arg, va_list *);
-				_unpack_args(*sarg);
+				va_list *sarg = va_arg(*arg, va_list *);
+				_unpack_args(sarg);
 				next = NEXT_STR;
 				break;
 			}
@@ -61,7 +62,7 @@ static void unpack_error(struct cpitem *item, const char *cause, ...) {
 	fputs("Config", stderr);
 	va_list arg;
 	va_start(arg, cause);
-	_unpack_args(arg);
+	_unpack_args(&arg);
 	va_end(arg);
 
 	if (item->type == CPITEM_INVALID && item->as.Error != CPERR_NONE) {
@@ -97,6 +98,7 @@ int cmp_role(const void *a, const void *b) {
 		va_list args; \
 		va_start(args, LAST); \
 		unpack_error(item, CAUSE, "{}", &args, __VA_ARGS__ __VA_OPT__(, ) NULL); \
+		va_end(args); \
 		return NULL; \
 	} while (false)
 
@@ -109,19 +111,25 @@ static char **unpack_str_list(
 		res[1] = NULL;
 		return res;
 	}
-	if (tp == CPITEM_LIST) {
-		size_t cnt = 0;
-		CLEANUP_FREE char **list = NULL;
-		for_cp_unpack_ilist(unpack, item, i) {
-			if (item->type != CPITEM_STRING)
-				UNPACK_VERROR(obstack, "Must be String", "[]", i);
-			list = realloc(list, (cnt + 2) * sizeof *list);
-			list[cnt++] = cp_unpack_strdupo(unpack, item, obstack);
-		}
+	if (tp != CPITEM_LIST)
+		UNPACK_VERROR(obstack, "Must be String or List of strings");
+
+	size_t cnt = 0;
+	// https://github.com/llvm/llvm-project/issues/4260
+	// NOLINTBEGIN(clang-analyzer-unix.Malloc)
+	CLEANUP_FREE char **list = NULL;
+	for_cp_unpack_ilist(unpack, item, i) {
+		if (item->type != CPITEM_STRING)
+			UNPACK_VERROR(obstack, "Must be String", "[]", i);
+		list = realloc(list, (cnt + 2) * sizeof *list);
+		list[cnt++] = cp_unpack_strdupo(unpack, item, obstack);
+	}
+	if (list) {
 		list[cnt++] = NULL;
 		return obstack_copy(obstack, list, cnt * sizeof *list);
 	}
-	UNPACK_VERROR(obstack, "Must be String or List of strings");
+	return NULL;
+	// NOLINTEND(clang-analyzer-unix.Malloc)
 }
 
 struct config *config_load(const char *path, struct obstack *obstack) {
@@ -138,6 +146,8 @@ struct config *config_load(const char *path, struct obstack *obstack) {
 	struct config *conf = obstack_alloc(obstack, sizeof *conf);
 	*conf = (struct config){};
 
+	// https://github.com/llvm/llvm-project/issues/4260
+	// NOLINTBEGIN(clang-analyzer-unix.Malloc)
 	if (cp_unpack_type(unpack, &item) != CPITEM_MAP)
 		UNPACK_ERROR("Must be Map");
 	for_cp_unpack_map(unpack, &item, key, 10) {
@@ -150,21 +160,22 @@ struct config *config_load(const char *path, struct obstack *obstack) {
 			if (cp_unpack_type(unpack, &item) != CPITEM_LIST)
 				UNPACK_ERROR("Must be List", key);
 			size_t arrsiz = 4;
-			CLEANUP_FREE struct rpcurl **arr = malloc(arrsiz * sizeof *arr);
+			CLEANUP_FREE struct rpcurl **listen = malloc(arrsiz * sizeof *listen);
 			for_cp_unpack_ilist(unpack, &item, i) {
 				if (item.type != CPITEM_STRING)
 					UNPACK_ERROR("Must be String", key, "[]", i);
 				if (arrsiz >= i)
-					arr = realloc(arr, (arrsiz *= 2) * sizeof *arr);
+					listen = realloc(listen, (arrsiz *= 2) * sizeof *listen);
 				char *url = cp_unpack_strdup(unpack, &item);
-				arr[i] = rpcurl_parse(url, NULL, obstack);
+				listen[i] = rpcurl_parse(url, NULL, obstack);
 				free(url);
-				if (arr[i] == NULL)
+				if (listen[i] == NULL)
 					UNPACK_ERROR("Invalid RPC URL format", key, "[]", i);
 				conf->listen_cnt = i + 1;
 			}
-			conf->listen =
-				obstack_copy(obstack, arr, conf->listen_cnt * sizeof *arr);
+			if (listen)
+				conf->listen = obstack_copy(
+					obstack, listen, conf->listen_cnt * sizeof *listen);
 
 		} else if (!strcmp(key, "users")) {
 			if (cp_unpack_type(unpack, &item) != CPITEM_MAP)
@@ -199,9 +210,11 @@ struct config *config_load(const char *path, struct obstack *obstack) {
 						UNPACK_ERROR("Not expected", key, user->name, ukey);
 				}
 			}
-			conf->users = obstack_copy(obstack, users, arrpos * sizeof *users);
+			if (users) {
+				qsort(users, conf->users_cnt, sizeof *users, cmp_user);
+				conf->users = obstack_copy(obstack, users, arrpos * sizeof *users);
+			}
 			conf->users_cnt = arrpos;
-			qsort(conf->users, conf->users_cnt, sizeof *conf->users, cmp_user);
 
 		} else if (!strcmp(key, "roles")) {
 			if (cp_unpack_type(unpack, &item) != CPITEM_MAP)
@@ -240,9 +253,11 @@ struct config *config_load(const char *path, struct obstack *obstack) {
 						UNPACK_ERROR("Not expected", key, role->name, ukey);
 				}
 			}
-			conf->roles = obstack_copy(obstack, roles, arrpos * sizeof *roles);
+			if (roles) {
+				qsort(roles, conf->roles_cnt, sizeof *roles, cmp_role);
+				conf->roles = obstack_copy(obstack, roles, arrpos * sizeof *roles);
+			}
 			conf->roles_cnt = arrpos;
-			qsort(conf->roles, conf->roles_cnt, sizeof *conf->roles, cmp_role);
 
 		} else if (!strcmp(key, "autosetups")) {
 			if (cp_unpack_type(unpack, &item) != CPITEM_LIST)
@@ -277,8 +292,9 @@ struct config *config_load(const char *path, struct obstack *obstack) {
 						UNPACK_ERROR("Not expected", key, "[]", i, akey);
 				}
 			}
-			conf->autosetups =
-				obstack_copy(obstack, autosetups, arrpos * sizeof *autosetups);
+			if (autosetups)
+				conf->autosetups = obstack_copy(
+					obstack, autosetups, arrpos * sizeof *autosetups);
 			conf->autosetups_cnt = arrpos;
 
 		} else
@@ -296,6 +312,7 @@ struct config *config_load(const char *path, struct obstack *obstack) {
 	}
 
 	return conf;
+	// NOLINTEND(clang-analyzer-unix.Malloc)
 }
 
 

@@ -3,7 +3,7 @@
 
 #include "broker.h"
 
-void rpcbroker_api_login_msg(struct clientctx *c, struct rpchandler_msg *ctx)
-	__attribute__((nonnull(2)));
+[[gnu::nonnull(2)]]
+void rpcbroker_api_login_msg(struct clientctx *c, struct rpchandler_msg *ctx);
 
 #endif

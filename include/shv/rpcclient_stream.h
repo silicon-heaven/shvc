@@ -76,8 +76,8 @@ struct rpcclient_stream_funcs {
  * @param wfd Write socket. It can be same as read socket (for example for TCP)
  *   and even if it is not the same the same behaviour applyes.
  */
+[[gnu::nonnull(1)]]
 rpcclient_t rpcclient_stream_new(const struct rpcclient_stream_funcs *sclient,
-	void *sclient_cookie, enum rpcstream_proto proto, int rfd, int wfd)
-	__attribute__((nonnull(1)));
+	void *sclient_cookie, enum rpcstream_proto proto, int rfd, int wfd);
 
 #endif

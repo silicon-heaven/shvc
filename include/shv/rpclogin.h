@@ -63,8 +63,9 @@ struct rpclogin {
  *   increase security on unencrypted transport layers.
  * @returns `fasle` if packing encounters failure and `false` otherwise.
  */
+[[gnu::nonnull]]
 bool rpclogin_pack(cp_pack_t pack, const struct rpclogin *login,
-	const char *nonce, bool trusted) __attribute__((nonnull));
+	const char *nonce, bool trusted);
 
 /*! Unpack login parameter.
  *
@@ -79,8 +80,9 @@ bool rpclogin_pack(cp_pack_t pack, const struct rpclogin *login,
  * @returns Pointer to the unpacked login parameter or `NULL` in case of an
  *   unpack error. You can investigate `item` to identify the failure cause.
  */
-struct rpclogin *rpclogin_unpack(cp_unpack_t unpack, struct cpitem *item,
-	struct obstack *obstack) __attribute__((nonnull));
+[[gnu::nonnull]]
+struct rpclogin *rpclogin_unpack(
+	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack);
 
 /*! Validate password of the login against provided reference.
  *
@@ -94,7 +96,8 @@ struct rpclogin *rpclogin_unpack(cp_unpack_t unpack, struct cpitem *item,
  * @returns `true` in case login matches the authoritation password and `false`
  *   otherwise.
  */
-bool rpclogin_validate_password(const struct rpclogin *login, const char *password,
-	const char *nonce, enum rpclogin_type type) __attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpclogin_validate_password(const struct rpclogin *login,
+	const char *password, const char *nonce, enum rpclogin_type type);
 
 #endif

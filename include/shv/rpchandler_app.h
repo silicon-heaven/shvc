@@ -32,8 +32,8 @@ typedef struct rpchandler_app *rpchandler_app_t;
  *   confusion.
  * @returns A new RPC Application Handler object.
  */
-rpchandler_app_t rpchandler_app_new(const char *name, const char *version)
-	__attribute__((malloc));
+[[gnu::nonnull]]
+rpchandler_app_t rpchandler_app_new(const char *name, const char *version);
 
 /*! Free all resources occupied by @ref rpchandler_app_t object.
  *
@@ -53,8 +53,8 @@ void rpchandler_app_destroy(rpchandler_app_t rpchandler_app);
  * @param rpchandler_app RPC Application Handler object.
  * @returns Stage to be used in array of stages for RPC Handler.
  */
-struct rpchandler_stage rpchandler_app_stage(rpchandler_app_t rpchandler_app)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+struct rpchandler_stage rpchandler_app_stage(rpchandler_app_t rpchandler_app);
 
 
 #endif

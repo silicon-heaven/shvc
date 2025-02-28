@@ -33,8 +33,9 @@ typedef void (*rpclogger_func_t)(const char *line);
  *   enough info about the message so you can recognize it.
  * @returns New logger handle or `NULL` in case `0` was passed to `maxdepth`.
  */
+[[gnu::nonnull(1), gnu::malloc]]
 rpclogger_t rpclogger_new(rpclogger_func_t callback, const char *prefix,
-	size_t bufsiz, unsigned maxdepth) __attribute__((nonnull(1), malloc));
+	size_t bufsiz, unsigned maxdepth);
 
 /*! Destroy the existing logger handle.
  *
@@ -57,13 +58,13 @@ void rpclogger_destroy(rpclogger_t logger);
  * @param logger Logger handle.
  * @param item RPC item to be logged*str != '\0'
  */
-void rpclogger_log_item(rpclogger_t logger, const struct cpitem *item)
-	__attribute__((nonnull(2)));
+[[gnu::nonnull(2)]]
+void rpclogger_log_item(rpclogger_t logger, const struct cpitem *item);
 
 /*! Log received reset.
  *
- * This is API intended to be called by RPC Client implementations. It is not
- * desirable to call this outside of that context.
+ * This is API intended to be called by RPC Client implementations. It is
+ * not desirable to call this outside of that context.
  *
  * It is handled the same way as @ref rpclogger_log_item item is and it is
  * expected that @ref rpclogger_log_end will be called afterwards.

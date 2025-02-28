@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 #include <obstack.h>
 #include <shv/rpcmsg.h>
 
@@ -67,7 +66,7 @@ static inline char *unpack_user_id_compat(cp_unpack_t unpack,
 		obstack_grow(obstack, shvUser, strlen(shvUser));
 		free(shvUser);
 	}
-	obstack_1grow(obstack, '\0');
+	obstack_1grow(obstack, '\0'); // NOLINT(clang-analyzer-core.NullDereference)
 	return obstack_finish(obstack);
 }
 

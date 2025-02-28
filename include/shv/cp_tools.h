@@ -20,7 +20,7 @@
  * @returns Signals if copy of item was successful. The reason for the failure
  *   is store in `item` or is pack failure.
  */
-bool cp_repack(cp_unpack_t unpack, struct cpitem *item, cp_pack_t pack)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool cp_repack(cp_unpack_t unpack, struct cpitem *item, cp_pack_t pack);
 
 #endif

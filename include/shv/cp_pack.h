@@ -61,8 +61,9 @@ struct cp_pack_chainpack {
  * @param f File used to write ChainPack bytes.
  * @returns Generic packer.
  */
-cp_pack_t cp_pack_chainpack_init(struct cp_pack_chainpack *pack, FILE *f)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+cp_pack_t cp_pack_chainpack_init(struct cp_pack_chainpack *pack, FILE *f);
+
 
 /*! Handle for the CPON generic packer. */
 struct cp_pack_cpon {
@@ -96,8 +97,8 @@ struct cp_pack_cpon {
  *   CPON on a single line.
  * @returns Generic packer.
  */
-cp_pack_t cp_pack_cpon_init(struct cp_pack_cpon *pack, FILE *f,
-	const char *indent) __attribute__((nonnull(1, 2)));
+[[gnu::nonnull(1, 2)]]
+cp_pack_t cp_pack_cpon_init(struct cp_pack_cpon *pack, FILE *f, const char *indent);
 
 
 /*! Pack item with generic packer.
@@ -129,6 +130,7 @@ cp_pack_t cp_pack_cpon_init(struct cp_pack_cpon *pack, FILE *f,
  * @param pack Generic packer.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_success(cp_pack_t pack) {
 	struct cpitem i;
 	i.type = CPITEM_INVALID;
@@ -141,6 +143,7 @@ static inline bool cp_pack_success(cp_pack_t pack) {
  * @param pack Generic packer.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_null(cp_pack_t pack) {
 	struct cpitem i;
 	i.type = CPITEM_NULL;
@@ -153,6 +156,7 @@ static inline bool cp_pack_null(cp_pack_t pack) {
  * @param v Boolean value to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_bool(cp_pack_t pack, bool v) {
 	struct cpitem i;
 	i.type = CPITEM_BOOL;
@@ -166,6 +170,7 @@ static inline bool cp_pack_bool(cp_pack_t pack, bool v) {
  * @param v Integer value to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_int(cp_pack_t pack, long long v) {
 	struct cpitem i;
 	i.type = CPITEM_INT;
@@ -179,6 +184,7 @@ static inline bool cp_pack_int(cp_pack_t pack, long long v) {
  * @param v Uinsigned integer value to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_uint(cp_pack_t pack, unsigned long long v) {
 	struct cpitem i;
 	i.type = CPITEM_UINT;
@@ -192,6 +198,7 @@ static inline bool cp_pack_uint(cp_pack_t pack, unsigned long long v) {
  * @param v Float point number value to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_double(cp_pack_t pack, double v) {
 	struct cpitem i;
 	i.type = CPITEM_DOUBLE;
@@ -205,6 +212,7 @@ static inline bool cp_pack_double(cp_pack_t pack, double v) {
  * @param v Decimal number value to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_decimal(cp_pack_t pack, struct cpdecimal v) {
 	struct cpitem i;
 	i.type = CPITEM_DECIMAL;
@@ -218,6 +226,7 @@ static inline bool cp_pack_decimal(cp_pack_t pack, struct cpdecimal v) {
  * @param v Date and time value to be packed.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_datetime(cp_pack_t pack, struct cpdatetime v) {
 	struct cpitem i;
 	i.type = CPITEM_DATETIME;
@@ -232,6 +241,7 @@ static inline bool cp_pack_datetime(cp_pack_t pack, struct cpdatetime v) {
  * @param len Size of the **buf** (valid number of bytes to be packed).
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_blob(cp_pack_t pack, const uint8_t *buf, size_t len) {
 	struct cpitem i;
 	i.type = CPITEM_BLOB;
@@ -256,6 +266,7 @@ static inline bool cp_pack_blob(cp_pack_t pack, const uint8_t *buf, size_t len) 
  * @param siz Number of bytes to be packed in total.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_blob_size(
 	cp_pack_t pack, struct cpitem *item, size_t siz) {
 	item->type = CPITEM_BLOB;
@@ -280,6 +291,7 @@ static inline bool cp_pack_blob_size(
  * @param siz Size of the **buf** (valid number of bytes to be packed).
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_blob_data(
 	cp_pack_t pack, struct cpitem *item, const uint8_t *buf, size_t siz) {
 	assert(item->type == CPITEM_BLOB);
@@ -302,8 +314,8 @@ static inline bool cp_pack_blob_data(
  * @param len Size of the **buf** (valid number of characters to be packed).
  * @returns Boolean signaling the pack success or failure.
  */
-__attribute__((nonnull)) static inline bool cp_pack_string(
-	cp_pack_t pack, const char *buf, size_t len) {
+[[gnu::nonnull]]
+static inline bool cp_pack_string(cp_pack_t pack, const char *buf, size_t len) {
 	struct cpitem i;
 	i.type = CPITEM_STRING;
 	i.rchr = buf;
@@ -322,6 +334,7 @@ __attribute__((nonnull)) static inline bool cp_pack_string(
  *   and in such case Null is packed instead.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull(1)]]
 static inline bool cp_pack_str(cp_pack_t pack, const char *str) {
 	return str ? cp_pack_string(pack, str, strlen(str)) : cp_pack_null(pack);
 }
@@ -333,6 +346,7 @@ static inline bool cp_pack_str(cp_pack_t pack, const char *str) {
  * @param args list of variadic arguments to be passed to the printf.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_vfstr(cp_pack_t pack, const char *fmt, va_list args) {
 	va_list cargs;
 	va_copy(cargs, args);
@@ -349,6 +363,7 @@ static inline bool cp_pack_vfstr(cp_pack_t pack, const char *fmt, va_list args) 
  * @param fmt printf format string.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_fstr(cp_pack_t pack, const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
@@ -369,6 +384,7 @@ static inline bool cp_pack_fstr(cp_pack_t pack, const char *fmt, ...) {
  * @param siz Number of bytes to be packed in total.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_string_size(
 	cp_pack_t pack, struct cpitem *item, size_t siz) {
 	item->type = CPITEM_STRING;
@@ -393,6 +409,7 @@ static inline bool cp_pack_string_size(
  * @param siz Size of the **buf** (valid number of bytes to be packed).
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_string_data(
 	cp_pack_t pack, struct cpitem *item, const char *buf, size_t siz) {
 	assert(item->type == CPITEM_STRING);
@@ -416,6 +433,7 @@ static inline bool cp_pack_string_data(
  * @param pack Generic packer.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_list_begin(cp_pack_t pack) {
 	struct cpitem i;
 	i.type = CPITEM_LIST;
@@ -431,6 +449,7 @@ static inline bool cp_pack_list_begin(cp_pack_t pack) {
  * @param pack Generic packer.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_map_begin(cp_pack_t pack) {
 	struct cpitem i;
 	i.type = CPITEM_MAP;
@@ -446,6 +465,7 @@ static inline bool cp_pack_map_begin(cp_pack_t pack) {
  * @param pack Generic packer.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_imap_begin(cp_pack_t pack) {
 	struct cpitem i;
 	i.type = CPITEM_IMAP;
@@ -461,6 +481,7 @@ static inline bool cp_pack_imap_begin(cp_pack_t pack) {
  * @param pack Generic packer.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_meta_begin(cp_pack_t pack) {
 	struct cpitem i;
 	i.type = CPITEM_META;
@@ -475,6 +496,7 @@ static inline bool cp_pack_meta_begin(cp_pack_t pack) {
  * @param pack Generic packer.
  * @returns Boolean signaling the pack success or failure.
  */
+[[gnu::nonnull]]
 static inline bool cp_pack_container_end(cp_pack_t pack) {
 	struct cpitem i;
 	i.type = CPITEM_CONTAINER_END;
@@ -494,7 +516,8 @@ static inline bool cp_pack_container_end(cp_pack_t pack) {
  * @returns Instance of `FILE`. It can return `NULL` when creation of `FILE`
  *   stream fails.
  */
-FILE *cp_pack_fopen(cp_pack_t pack, bool str) __attribute__((nonnull));
+[[gnu::nonnull]]
+FILE *cp_pack_fopen(cp_pack_t pack, bool str);
 
 // clang-format off
 /// @cond

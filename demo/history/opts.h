@@ -8,6 +8,7 @@ struct conf {
 };
 
 /* Parse arguments. */
-void parse_opts(int argc, char **argv, struct conf *conf) __attribute__((nonnull));
+[[gnu::nonnull]]
+void parse_opts(int argc, char **argv, struct conf *conf);
 
 #endif

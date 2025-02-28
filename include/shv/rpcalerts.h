@@ -46,8 +46,8 @@ struct rpcalerts {
  * @param alert The pointer to @ref rpcalerts structure.
  * @returns `false` if packing encounters failure and `true` otherwise.
  */
-bool rpcalerts_pack(cp_pack_t pack, const struct rpcalerts *alert)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpcalerts_pack(cp_pack_t pack, const struct rpcalerts *alert);
 
 /*! Unpack one alert.
  *
@@ -58,7 +58,8 @@ bool rpcalerts_pack(cp_pack_t pack, const struct rpcalerts *alert)
  * @returns Pointer to the @ref rpcalerts structure or `NULL` in case of
  * an unpack error. You can investigate `item` to identify the failure cause.
  */
-struct rpcalerts *rpcalerts_unpack(cp_unpack_t unpack, struct cpitem *item,
-	struct obstack *obstack) __attribute__((nonnull));
+[[gnu::nonnull]]
+struct rpcalerts *rpcalerts_unpack(
+	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack);
 
 #endif /* SHV_RPCALERTS_H */

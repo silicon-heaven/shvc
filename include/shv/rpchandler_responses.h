@@ -16,7 +16,8 @@ typedef struct rpchandler_responses *rpchandler_responses_t;
  *
  * @returns RPC Responses Handler object.
  */
-rpchandler_responses_t rpchandler_responses_new(void) __attribute__((malloc));
+[[gnu::malloc]]
+rpchandler_responses_t rpchandler_responses_new(void);
 
 /*! Free all resources occupied by @ref rpchandler_responses_t.
  *
@@ -34,8 +35,9 @@ void rpchandler_responses_destroy(rpchandler_responses_t responses);
  * @param responses RPC Responses Handler object.
  * @returns Stage to be used in array of stages for RPC Handler.
  */
+[[gnu::nonnull]]
 struct rpchandler_stage rpchandler_responses_stage(
-	rpchandler_responses_t responses) __attribute__((nonnull));
+	rpchandler_responses_t responses);
 
 /*! Object representing a single response in RPC Responses Handler. */
 typedef struct rpcresponse *rpcresponse_t;
@@ -76,15 +78,17 @@ typedef bool (*rpcresponse_callback_t)(struct rpchandler_msg *ctx, void *cookie)
  * @param cookie Pointer passed as an extra argument to the callback function.
  * @returns Object you need to use to reference to this response.
  */
-rpcresponse_t rpcresponse_expect(rpchandler_responses_t responses, int request_id,
-	rpcresponse_callback_t func, void *cookie) __attribute__((nonnull));
+[[gnu::nonnull]]
+rpcresponse_t rpcresponse_expect(rpchandler_responses_t responses,
+	int request_id, rpcresponse_callback_t func, void *cookie);
 
 /*! Provide request ID of the given response.
  *
  * @param response Response object the request ID should be provided for.
  * @returns The request ID.
  */
-int rpcresponse_request_id(rpcresponse_t response) __attribute__((nonnull));
+[[gnu::nonnull]]
+int rpcresponse_request_id(rpcresponse_t response);
 
 /*! Discard the expectation of the response.
  *
@@ -108,8 +112,8 @@ void rpcresponse_discard(rpcresponse_t response);
  * @returns `true` if response received or `false` otherwise (timeout
  *   encountered).
  */
-bool rpcresponse_waitfor(rpcresponse_t response, int timeout)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpcresponse_waitfor(rpcresponse_t response, int timeout);
 
 /*! Validate the response message.
  *
@@ -118,7 +122,8 @@ bool rpcresponse_waitfor(rpcresponse_t response, int timeout)
  * @param response Respond object to wait for.
  * @returns `true` if message is valid and `false` otherwise.
  */
-bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpcresponse_validmsg(rpcresponse_t response);
 
 
 // clang-format off
@@ -202,10 +207,10 @@ bool rpcresponse_validmsg(rpcresponse_t response) __attribute__((nonnull));
  * @returns Object referencing response to this request or `NULL` in case
  *   request sending failed.
  */
+[[gnu::nonnull]]
 rpcresponse_t rpcresponse_send_request_void(rpchandler_t handler,
 	rpchandler_responses_t responses, const char *path, const char *method,
-	const char *uid, rpcresponse_callback_t func, void *ctx)
-	__attribute__((nonnull));
+	const char *uid, rpcresponse_callback_t func, void *ctx);
 
 
 #endif

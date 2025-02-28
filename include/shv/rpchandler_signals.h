@@ -26,8 +26,9 @@ typedef struct rpchandler_signals *rpchandler_signals_t;
  * the real subscribed RIs! It will be called for all signals reaching the
  * assigned handler's stage.
  */
+[[gnu::nonnull(2)]]
 typedef void (*rpchandler_signal_func_t)(
-	void *cookie, struct rpchandler_msg *msgctx) __attribute__((nonnull(2)));
+	void *cookie, struct rpchandler_msg *msgctx);
 
 /*! Create new RPC Signals Handle.
  *
@@ -35,8 +36,9 @@ typedef void (*rpchandler_signal_func_t)(
  * @param cookie The cookie passed to the `func`.
  * @returns A new RPC Signals Handler object.
  */
+[[gnu::malloc]]
 rpchandler_signals_t rpchandler_signals_new(
-	rpchandler_signal_func_t func, void *cookie) __attribute__((malloc));
+	rpchandler_signal_func_t func, void *cookie);
 
 /*! Free all resources occupied by @ref rpchandler_signals_t object.
  *
@@ -58,8 +60,9 @@ void rpchandler_signals_destroy(rpchandler_signals_t rpchandler_signals);
  * @param rpchandler_signals RPC Signals Handler object.
  * @returns Stage to be used in array of stages for RPC Handler.
  */
+[[gnu::nonnull]]
 struct rpchandler_stage rpchandler_signals_stage(
-	rpchandler_signals_t rpchandler_signals) __attribute__((nonnull));
+	rpchandler_signals_t rpchandler_signals);
 
 /*! Add RI to be subscribed for.
  *
@@ -71,8 +74,9 @@ struct rpchandler_stage rpchandler_signals_stage(
  * @param ri String containing RPC RI. It doesn't have to stay valid after
  *   function return.
  */
-void rpchandler_signals_subscribe(rpchandler_signals_t rpchandler_signals,
-	const char *ri) __attribute__((nonnull));
+[[gnu::nonnull]]
+void rpchandler_signals_subscribe(
+	rpchandler_signals_t rpchandler_signals, const char *ri);
 
 /*! Remove previously subscribed RI.
  *
@@ -83,8 +87,9 @@ void rpchandler_signals_subscribe(rpchandler_signals_t rpchandler_signals,
  * @param ri String containing RPC RI. It doesn't have to stay valid after
  *   function return.
  */
-void rpchandler_signals_unsubscribe(rpchandler_signals_t rpchandler_signals,
-	const char *ri) __attribute__((nonnull));
+[[gnu::nonnull]]
+void rpchandler_signals_unsubscribe(
+	rpchandler_signals_t rpchandler_signals, const char *ri);
 
 /*! Query if all subscribe and unsubscribe operations were performed.
  *
@@ -92,8 +97,8 @@ void rpchandler_signals_unsubscribe(rpchandler_signals_t rpchandler_signals,
  * @returns `true` if all subscribes and unsubscribes so far were propagated to
  * the server and `false` otherwise.
  */
-bool rpchandler_signals_status(rpchandler_signals_t rpchandler_signals)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpchandler_signals_status(rpchandler_signals_t rpchandler_signals);
 
 /*! Wait until all subscribe and unsubscribe operations are performed.
  *
@@ -102,7 +107,8 @@ bool rpchandler_signals_status(rpchandler_signals_t rpchandler_signals)
  *   can be `NULL` if it should never timeout.
  * @returns `false` on timeout and `true` on success.
  */
-bool rpchandler_signals_wait(rpchandler_signals_t rpchandler_signals,
-	struct timespec *abstime) __attribute__((nonnull(1)));
+[[gnu::nonnull(1)]]
+bool rpchandler_signals_wait(
+	rpchandler_signals_t rpchandler_signals, struct timespec *abstime);
 
 #endif

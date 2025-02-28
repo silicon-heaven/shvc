@@ -134,9 +134,9 @@ typedef struct rpchandler_history *rpchandler_history_t;
  * ./history node and contains getLog method.
  * @returns RPC Records Handler object.
  */
+[[gnu::malloc, gnu::nonnull]]
 rpchandler_history_t rpchandler_history_new(
-	struct rpchandler_history_facilities *facilities, const char **signals)
-	__attribute__((malloc, nonnull));
+	struct rpchandler_history_facilities *facilities, const char **signals);
 
 /*! Get RPC Handler stage for this History Handler.
  *
@@ -146,8 +146,8 @@ rpchandler_history_t rpchandler_history_new(
  * @param history: RPC History Handler object.
  * @returns Stage to be used in array of stages for RPC Handler.
  */
-struct rpchandler_stage rpchandler_history_stage(rpchandler_history_t history)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+struct rpchandler_stage rpchandler_history_stage(rpchandler_history_t history);
 
 /*! Free all resources occupied by @ref rpchandler_history_t.
  *

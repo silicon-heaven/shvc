@@ -80,7 +80,8 @@ const char *rpcaccess_granted_str(rpcaccess_t access);
  * @returns Access level (in case of an invalid string it returns @ref
  *   RPCACCESS_NONE).
  */
-rpcaccess_t rpcaccess_granted_access(const char *str) __attribute__((nonnull));
+[[gnu::nonnull]]
+rpcaccess_t rpcaccess_granted_access(const char *str);
 
 /*! Extract access level from access granted string.
  *
@@ -93,6 +94,7 @@ rpcaccess_t rpcaccess_granted_access(const char *str) __attribute__((nonnull));
  * @param str String with access specifier.
  * @returns Access level.
  */
-rpcaccess_t rpcaccess_granted_extract(char *str) __attribute__((nonnull));
+[[gnu::nonnull]]
+rpcaccess_t rpcaccess_granted_extract(char *str);
 
 #endif

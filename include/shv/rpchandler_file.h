@@ -74,8 +74,8 @@ typedef struct rpchandler_file *rpchandler_file_t;
  * @param cb: The pointer to @ref rpchandler_file_cb structure..
  * @returns RPC File Handler object.
  */
-rpchandler_file_t rpchandler_file_new(struct rpchandler_file_cb *cb)
-	__attribute__((malloc));
+[[gnu::malloc]]
+rpchandler_file_t rpchandler_file_new(struct rpchandler_file_cb *cb);
 
 /*! Get RPC Handler stage for this Records Handler.
  *

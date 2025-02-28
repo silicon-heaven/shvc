@@ -4,7 +4,7 @@
 :maxdepth: 3
 
 libshvcp
-libshvhistory
 libshvrpc
+libshvhistory
 libshvbroker
 ```

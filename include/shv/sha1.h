@@ -40,8 +40,8 @@ void sha1_destroy(sha1ctx_t ctx);
  * @param siz Number of bytes to be used.
  * @returns Boolean signaling if digest update was successful.
  */
-bool sha1_update(sha1ctx_t ctx, const uint8_t *buf, size_t siz)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool sha1_update(sha1ctx_t ctx, const uint8_t *buf, size_t siz);
 
 /*! Receive SHA1 binary digest.
  *
@@ -49,7 +49,8 @@ bool sha1_update(sha1ctx_t ctx, const uint8_t *buf, size_t siz)
  * @param digest The array where digest bytes will be stored.
  * @returns Boolean signaling if digest was generated successfully.
  */
-bool sha1_digest(sha1ctx_t ctx, uint8_t digest[SHA1_SIZ]) __attribute__((nonnull));
+[[gnu::nonnull]]
+bool sha1_digest(sha1ctx_t ctx, uint8_t digest[SHA1_SIZ]);
 
 /*! Receive SHA1 HEX digest.
  *

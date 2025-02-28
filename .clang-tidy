@@ -2,7 +2,9 @@
 Checks:
   - clang-analyzer-*
   - -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling
+  - -clang-analyzer-optin.portability.UnixAPI
 HeaderFileExtensions: [h]
 ImplementationFileExtensions: [c]
-SystemHeaders:   false
+SystemHeaders: false
+WarningsAsErrors: '*'
 ...

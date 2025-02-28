@@ -146,7 +146,8 @@ struct cpdecimal {
  *
  * @param v Decimal number to be normalized.
  */
-void cpdecnorm(struct cpdecimal *v) __attribute__((nonnull));
+[[gnu::nonnull]]
+void cpdecnorm(struct cpdecimal *v);
 
 /*! Modify decimal number to be at given exponent.
  *
@@ -161,7 +162,8 @@ void cpdecnorm(struct cpdecimal *v) __attribute__((nonnull));
  * @returns `true` if set correctly and `false` if exponent can't be reached due
  * to mantisa overflow.
  */
-bool cpdecexp(struct cpdecimal *v, int exponent) __attribute__((nonnull));
+[[gnu::nonnull]]
+bool cpdecexp(struct cpdecimal *v, int exponent);
 
 /*! Convert decimal number to double precision floating point number.
  *
@@ -549,7 +551,8 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  *   to.
  * @returns Number of bytes read from **f**.
  */
-size_t chainpack_unpack(FILE *f, struct cpitem *item) __attribute__((nonnull));
+[[gnu::nonnull]]
+size_t chainpack_unpack(FILE *f, struct cpitem *item);
 
 /*! Pack next item to ChainPack data format.
  *
@@ -562,8 +565,8 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) __attribute__((nonnull));
  *   detected. Number of written bytes in case of an error is irrelevant because
  *   packed data is invalid anyway.
  */
-ssize_t chainpack_pack(FILE *f, const struct cpitem *item)
-	__attribute__((nonnull(2)));
+[[gnu::nonnull(2)]]
+ssize_t chainpack_pack(FILE *f, const struct cpitem *item);
 
 
 /*! State for the CPON packer and unpacker.
@@ -641,8 +644,8 @@ struct cpon_state {
  *   to.
  * @returns Number of bytes read from **f**.
  */
-size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item);
 
 /*! Unpack next item from CPON data format.
  *
@@ -663,8 +666,8 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item)
  *   detected. Number of written bytes in case of an error is irrelevant because
  *   packed data is invalid anyway.
  */
-ssize_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item)
-	__attribute__((nonnull(2, 3)));
+[[gnu::nonnull(2, 3)]]
+ssize_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item);
 
 
 #endif

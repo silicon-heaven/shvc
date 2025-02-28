@@ -121,7 +121,8 @@ static void *tty_server_loop(void *ctx) {
 	 * failure because otherwise we would be caught in the infinite loop here of
 	 * trying to send reset again and again.
 	 */
-	__attribute__((unused)) bool _ = rpcclient_reset(c);
+	[[gnu::unused]]
+	bool _ = rpcclient_reset(c);
 	eventfd_write(s->evfd, 42);
 	return c;
 }

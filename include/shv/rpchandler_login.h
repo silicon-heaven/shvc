@@ -28,8 +28,8 @@ typedef struct rpchandler_login *rpchandler_login_t;
  *   object existence.
  * @returns A new RPC Login Handler object.
  */
-rpchandler_login_t rpchandler_login_new(const struct rpclogin *login)
-	__attribute__((nonnull, malloc));
+[[gnu::nonnull, gnu::malloc]]
+rpchandler_login_t rpchandler_login_new(const struct rpclogin *login);
 
 /*! Free all resources occupied by @ref rpchandler_login_t object.
  *
@@ -50,8 +50,8 @@ void rpchandler_login_destroy(rpchandler_login_t rpchandler_login);
  * @param rpchandler_login RPC Login Handler object.
  * @returns Stage to be used in array of stages for RPC Handler.
  */
-struct rpchandler_stage rpchandler_login_stage(
-	rpchandler_login_t rpchandler_login) __attribute__((nonnull));
+[[gnu::nonnull]]
+struct rpchandler_stage rpchandler_login_stage(rpchandler_login_t rpchandler_login);
 
 /*! Query the current login process status.
  *
@@ -68,8 +68,9 @@ struct rpchandler_stage rpchandler_login_stage(
  * @returns `true` if login was performed and `false` otherwise. On `true` you
  *   must investigate `errnum` parameter to find out if login was successful.
  */
+[[gnu::nonnull(1)]]
 bool rpchandler_login_status(rpchandler_login_t rpchandler_login,
-	rpcerrno_t *errnum, const char **errmsg) __attribute__((nonnull(1)));
+	rpcerrno_t *errnum, const char **errmsg);
 
 /*! Wait until login is performed.
  *
@@ -88,7 +89,8 @@ bool rpchandler_login_status(rpchandler_login_t rpchandler_login,
  * @returns `true` if login was performed and `false` if wait timed out or
  *   failed. You can inspect `errnum` to identify why.
  */
-bool rpchandler_login_wait(rpchandler_login_t rpchandler_login, rpcerrno_t *errnum,
-	const char **errmsg, struct timespec *abstime) __attribute__((nonnull(1)));
+[[gnu::nonnull(1)]]
+bool rpchandler_login_wait(rpchandler_login_t rpchandler_login,
+	rpcerrno_t *errnum, const char **errmsg, struct timespec *abstime);
 
 #endif

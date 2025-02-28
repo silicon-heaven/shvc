@@ -12,7 +12,7 @@ nbool_t signal_destinations(struct rpcbroker *broker, const char *path,
 		broker->clients[cid]->role->access(
 			broker->clients[cid]->role->access_cookie, path, source) < access)
 		nbool_clear(&res, cid);
-	return res;
+	return res; // NOLINT(clang-analyzer-unix.Malloc)
 }
 
 

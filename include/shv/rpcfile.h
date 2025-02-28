@@ -97,8 +97,8 @@ extern struct rpcdir rpcfile_append;
  * @param stats: The pointer to rpcfile_stat_s containing file statistics.
  * @returns `false` if packing encounters failure and `true` otherwise.
  */
-bool rpcfile_stat_pack(cp_pack_t pack, struct rpcfile_stat_s *stats)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpcfile_stat_pack(cp_pack_t pack, struct rpcfile_stat_s *stats);
 
 /*! Unpack stat's method response.
  *
@@ -109,7 +109,8 @@ bool rpcfile_stat_pack(cp_pack_t pack, struct rpcfile_stat_s *stats)
  * @returns Pointer to the file statistics or `NULL` in case of an unpack
  *   error. You can investigate `item` to identify the failure cause.
  */
-struct rpcfile_stat_s *rpcfile_stat_unpack(cp_unpack_t unpack,
-	struct cpitem *item, struct obstack *obstack) __attribute__((nonnull));
+[[gnu::nonnull]]
+struct rpcfile_stat_s *rpcfile_stat_unpack(
+	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack);
 
 #endif /* SHV_RCPFILE_H */

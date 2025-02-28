@@ -125,8 +125,9 @@ typedef struct rpcbroker_login_res (*rpcbroker_login_t)(
  * @param flags The combination of `RPCBROKER_F_*` flags.
  * @returns Broker object.
  */
-rpcbroker_t rpcbroker_new(const char *name, rpcbroker_login_t login,
-	void *login_cookie, int flags) __attribute__((malloc, nonnull(2)));
+[[gnu::malloc, gnu::nonnull(2)]]
+rpcbroker_t rpcbroker_new(
+	const char *name, rpcbroker_login_t login, void *login_cookie, int flags);
 
 /*! Destroy the SHV RPC Broker object. */
 void rpcbroker_destroy(rpcbroker_t broker);
@@ -157,9 +158,10 @@ void rpcbroker_destroy(rpcbroker_t broker);
  *   client stays registered. You must pass `NULL` if role is assigned by login.
  * @returns ID assigned to the newly registered client.
  */
+[[gnu::nonnull(1, 2, 3, 4)]]
 int rpcbroker_client_register(rpcbroker_t broker, rpchandler_t handler,
 	struct rpchandler_stage *access_stage, struct rpchandler_stage *rpc_stage,
-	const struct rpcbroker_role *role) __attribute__((nonnull(1, 2, 3, 4)));
+	const struct rpcbroker_role *role);
 
 /*! Remove client registration from the broker.
  *
@@ -168,8 +170,8 @@ int rpcbroker_client_register(rpcbroker_t broker, rpchandler_t handler,
  *   integer previously returned either by @ref rpcbroker_client_register and
  *   not unregistered yet.
  */
-void rpcbroker_client_unregister(rpcbroker_t broker, int client_id)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+void rpcbroker_client_unregister(rpcbroker_t broker, int client_id);
 
 /*! Provide RPC Handler object for registered client.
  *
@@ -179,8 +181,8 @@ void rpcbroker_client_unregister(rpcbroker_t broker, int client_id)
  *   unregistered yet.
  * @returns The @ref rpchandler_t or `NULL` in case of invalid client ID.
  */
-rpchandler_t rpcbroker_client_handler(rpcbroker_t broker, int client_id)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+rpchandler_t rpcbroker_client_handler(rpcbroker_t broker, int client_id);
 
 
 /*! Context used for sending signals through broker. */
@@ -210,23 +212,26 @@ struct rpcbroker_sigctx {
  *   this signal would not be propagated to any peer and thus should not be
  *   packed at all.
  */
+[[gnu::nonnull(1, 2, 3, 4)]]
 struct rpcbroker_sigctx *rpcbroker_new_signal(rpcbroker_t broker,
 	const char *path, const char *source, const char *signal, const char *uid,
-	rpcaccess_t access, bool repeat) __attribute__((nonnull(1, 2, 3, 4)));
+	rpcaccess_t access, bool repeat);
 
 /*! Send signal message.
  *
  * @param ctx Context provided by @ref rpcbroker_new_signal.
  * @returns Boolean signaling if sending was successful.
  */
-bool rpcbroker_send_signal(struct rpcbroker_sigctx *ctx) __attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpcbroker_send_signal(struct rpcbroker_sigctx *ctx);
 
 /*! Drop signal message.
  *
  * @param ctx Context provided by @ref rpcbroker_new_signal.
  * @returns Boolean signaling if dropping was successful.
  */
-bool rpcbroker_drop_signal(struct rpcbroker_sigctx *ctx) __attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpcbroker_drop_signal(struct rpcbroker_sigctx *ctx);
 
 /*! Send signal propagated through the whole broker.
  *
@@ -243,9 +248,10 @@ bool rpcbroker_drop_signal(struct rpcbroker_sigctx *ctx) __attribute__((nonnull)
  *   value didn't change right now but some time in the past.
  * @returns Boolean signaling if sending was successful.
  */
+[[gnu::nonnull(1, 2, 3, 4)]]
 bool rpcbroker_send_signal_void(rpcbroker_t broker, const char *path,
 	const char *source, const char *signal, const char *uid, rpcaccess_t access,
-	bool repeat) __attribute__((nonnull(1, 2, 3, 4)));
+	bool repeat);
 
 
 /*! The state used in @ref rpcbroker_run. */
@@ -294,7 +300,8 @@ struct rpcbroker_state {
  *   not plan on terminating loop this way. Note that this works only if signal
  *   is delivered to this function's calling thread.
  */
-void rpcbroker_run(const struct rpcbroker_state *state,
-	volatile sig_atomic_t *halt) __attribute__((nonnull(1)));
+[[gnu::nonnull(1)]]
+void rpcbroker_run(
+	const struct rpcbroker_state *state, volatile sig_atomic_t *halt);
 
 #endif

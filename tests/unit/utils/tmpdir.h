@@ -8,8 +8,10 @@ void setup_tmpdir(void);
 
 void teardown_tmpdir(void);
 
-char *tmpdir_path(const char *name) __attribute__((nonnull));
+[[gnu::nonnull, gnu::returns_nonnull]]
+char *tmpdir_path(const char *name);
 
-char *tmpdir_file(const char *name, const char *content) __attribute__((nonnull));
+[[gnu::nonnull, gnu::returns_nonnull]]
+char *tmpdir_file(const char *name, const char *content);
 
 #endif

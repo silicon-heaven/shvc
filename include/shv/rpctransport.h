@@ -17,8 +17,9 @@
  * @param proto Stream protocol to be used (commonly @ref RPCSTREAM_P_BLOCK)
  * @returns SHV RPC client handle.
  */
-rpcclient_t rpcclient_tcp_new(const char *location, int port,
-	enum rpcstream_proto proto) __attribute__((nonnull, malloc));
+[[gnu::nonnull, gnu::malloc]]
+rpcclient_t rpcclient_tcp_new(
+	const char *location, int port, enum rpcstream_proto proto);
 
 /*! Create a new TCP/IP server.
  *
@@ -27,8 +28,9 @@ rpcclient_t rpcclient_tcp_new(const char *location, int port,
  * @param proto Stream protocol to be used (commonly @ref RPCSTREAM_P_BLOCK)
  * @returns SHV RPC server handle.
  */
-rpcserver_t rpcserver_tcp_new(const char *location, int port,
-	enum rpcstream_proto proto) __attribute__((nonnull, malloc));
+[[gnu::nonnull, gnu::malloc]]
+rpcserver_t rpcserver_tcp_new(
+	const char *location, int port, enum rpcstream_proto proto);
 
 /*! Create a new Unix client.
  *
@@ -37,8 +39,8 @@ rpcserver_t rpcserver_tcp_new(const char *location, int port,
  * @param proto Stream protocol to be used (commonly @ref RPCSTREAM_P_SERIAL)
  * @returns SHV RPC client handle.
  */
-rpcclient_t rpcclient_unix_new(const char *location, enum rpcstream_proto proto)
-	__attribute__((nonnull, malloc));
+[[gnu::nonnull, gnu::malloc]]
+rpcclient_t rpcclient_unix_new(const char *location, enum rpcstream_proto proto);
 
 /*! Create a new Unix server.
  *
@@ -46,8 +48,8 @@ rpcclient_t rpcclient_unix_new(const char *location, enum rpcstream_proto proto)
  * @param proto Stream protocol to be used (commonly @ref RPCSTREAM_P_SERIAL)
  * @returns SHV RPC server handle.
  */
-rpcserver_t rpcserver_unix_new(const char *location, enum rpcstream_proto proto)
-	__attribute__((nonnull, malloc));
+[[gnu::nonnull, gnu::malloc]]
+rpcserver_t rpcserver_unix_new(const char *location, enum rpcstream_proto proto);
 
 /*! Create a new TTY client.
  *
@@ -58,8 +60,9 @@ rpcserver_t rpcserver_unix_new(const char *location, enum rpcstream_proto proto)
  * RPCSTREAM_P_SERIAL_CRC)
  * @returns SHV RPC client handle.
  */
-rpcclient_t rpcclient_tty_new(const char *location, unsigned baudrate,
-	enum rpcstream_proto proto) __attribute__((nonnull));
+[[gnu::nonnull]]
+rpcclient_t rpcclient_tty_new(
+	const char *location, unsigned baudrate, enum rpcstream_proto proto);
 
 /*! Create a new TTY server.
  *
@@ -73,8 +76,9 @@ rpcclient_t rpcclient_tty_new(const char *location, unsigned baudrate,
  * RPCSTREAM_P_SERIAL_CRC)
  * @returns SHV RPC server handle.
  */
-rpcserver_t rpcserver_tty_new(const char *location, unsigned baudrate,
-	enum rpcstream_proto proto) __attribute__((nonnull, malloc));
+[[gnu::nonnull, gnu::malloc]]
+rpcserver_t rpcserver_tty_new(
+	const char *location, unsigned baudrate, enum rpcstream_proto proto);
 
 /*! Create a new client on top of Unix pipes.
  *
@@ -89,7 +93,7 @@ rpcserver_t rpcserver_tty_new(const char *location, unsigned baudrate,
  * @param proto Stream protocol to be used (commonly @ref RPCSTREAM_P_SERIAL)
  * @returns SHV RPC client handle.
  */
-rpcclient_t rpcclient_pipe_new(int pipes[2], enum rpcstream_proto proto)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+rpcclient_t rpcclient_pipe_new(int pipes[2], enum rpcstream_proto proto);
 
 #endif

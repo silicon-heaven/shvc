@@ -100,8 +100,8 @@ extern struct rpcdir rpcdir_ls, rpcdir_dir;
  * @param method The method description to be packed.
  * @returns `false` if packing encounters failure and `true` otherwise.
  */
-bool rpcdir_pack(cp_pack_t pack, const struct rpcdir *method)
-	__attribute__((nonnull));
+[[gnu::nonnull]]
+bool rpcdir_pack(cp_pack_t pack, const struct rpcdir *method);
 
 /*! Unpack dir's method description.
  *
@@ -116,8 +116,9 @@ bool rpcdir_pack(cp_pack_t pack, const struct rpcdir *method)
  * @returns Pointer to the method description or `NULL` in case of an unpack
  *   error. You can investigate `item` to identify the failure cause.
  */
-struct rpcdir *rpcdir_unpack(cp_unpack_t unpack, struct cpitem *item,
-	struct obstack *obstack) __attribute__((nonnull));
+[[gnu::nonnull]]
+struct rpcdir *rpcdir_unpack(
+	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack);
 
 
 #endif

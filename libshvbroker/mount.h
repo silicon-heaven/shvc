@@ -3,8 +3,10 @@
 
 #include "broker.h"
 
-bool mount_register(struct clientctx *clientctx) __attribute__((nonnull));
+[[gnu::nonnull]]
+bool mount_register(struct clientctx *clientctx);
 
-void mount_unregister(struct clientctx *clientctx) __attribute__((nonnull));
+[[gnu::nonnull]]
+void mount_unregister(struct clientctx *clientctx);
 
 #endif

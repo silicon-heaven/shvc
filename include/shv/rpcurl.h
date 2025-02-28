@@ -97,8 +97,9 @@ struct rpcurl {
  * @param obstack obstack used for allocation.
  * @returns Pointer to the @ref rpcurl or `NULL` in case of URL parse error.
  */
-struct rpcurl *rpcurl_parse(const char *url, const char **errpos,
-	struct obstack *obstack) __attribute__((nonnull(1, 3)));
+[[gnu::nonnull(1, 3)]]
+struct rpcurl *rpcurl_parse(
+	const char *url, const char **errpos, struct obstack *obstack);
 
 /*! Convert RPC URL to string.
  *
@@ -111,8 +112,8 @@ struct rpcurl *rpcurl_parse(const char *url, const char **errpos,
  *   buffer is too small then it returns number bytes it would wrote. This can
  *   be used to detect truncated output due to small buffer.
  */
-size_t rpcurl_str(const struct rpcurl *rpcurl, char *buf, size_t size)
-	__attribute__((nonnull(1)));
+[[gnu::nonnull(1)]]
+size_t rpcurl_str(const struct rpcurl *rpcurl, char *buf, size_t size);
 
 /*! Create RPC client based on the provided URL.
  *
@@ -121,6 +122,7 @@ size_t rpcurl_str(const struct rpcurl *rpcurl, char *buf, size_t size)
  *   directly by created client object.
  * @returns SHV RPC client handle.
  */
+[[gnu::nonnull]]
 rpcclient_t rpcurl_new_client(const struct rpcurl *url);
 
 /*! Establish a new connection based on the provided URL.
@@ -132,6 +134,7 @@ rpcclient_t rpcurl_new_client(const struct rpcurl *url);
  * @returns SHV RPC client handle or `NULL` in case connection failed; you can
  *   investigate the `errno` to identify why that might have been the case.
  */
+[[gnu::nonnull]]
 static inline rpcclient_t rpcurl_connect_client(const struct rpcurl *url) {
 	rpcclient_t res = rpcurl_new_client(url);
 	if (!res)
@@ -149,6 +152,7 @@ static inline rpcclient_t rpcurl_connect_client(const struct rpcurl *url) {
  *   directly by created server object.
  * @returns SHV RPC server handle.
  */
+[[gnu::nonnull]]
 rpcserver_t rpcurl_new_server(const struct rpcurl *url);
 
 #endif

@@ -66,28 +66,13 @@ static bool list_files(rpchandler_file_t handler) {
 
 static void rpc_ls(void *cookie, struct rpchandler_ls *ctx) {
 	struct rpchandler_file *handler = cookie;
-	char *l;
-	char *path;
-	const char *name;
-	bool free_path = false;
-
 	for (int i = 0; i < handler->num; i++) {
-		struct rpchandler_file_repr *file = handler->file + i;
-		l = strrchr(file->list->shv_path, '/');
-		if (!l) {
-			name = file->list->shv_path;
-			path = "";
-		} else {
-			free_path = true;
-			name = l + 1;
-			path = malloc(strlen(file->list->shv_path) - strlen(l));
-			strncpy(path, file->list->shv_path,
-				strlen(file->list->shv_path) - strlen(l));
-		}
-		if (ctx->path && !strcmp(ctx->path, path))
-			rpchandler_ls_result(ctx, name);
-		if (free_path)
-			free(path);
+		const struct rpchandler_file_repr *file = handler->file + i;
+		char *l = strrchr(file->list->shv_path, '/');
+		size_t pathlen = l ? file->list->shv_path - l - 1 : 0;
+		if (ctx->path && strlen(ctx->path) == pathlen &&
+			!strncmp(ctx->path, file->list->shv_path, pathlen))
+			rpchandler_ls_result(ctx, l ? l + 1 : file->list->shv_path);
 	}
 }
 

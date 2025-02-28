@@ -9,8 +9,9 @@ static inline bool meta_begin(cp_pack_t pack) {
 	return cp_pack_int(pack, 1);
 }
 
-__attribute__((nonnull(1, 2, 3))) static bool _rpcmsg_pack_request(cp_pack_t pack,
-	const char *path, const char *method, const char *uid, int rid) {
+[[gnu::nonnull(1, 2, 3)]]
+static bool _rpcmsg_pack_request(cp_pack_t pack, const char *path,
+	const char *method, const char *uid, int rid) {
 	meta_begin(pack);
 	cp_pack_int(pack, RPCMSG_TAG_REQUEST_ID);
 	cp_pack_int(pack, rid);
@@ -147,8 +148,8 @@ bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
 	return cp_pack_container_end(pack);
 }
 
-__attribute__((nonnull)) static bool _rpcmsg_pack_meta(
-	cp_pack_t pack, const struct rpcmsg_meta *meta) {
+[[gnu::nonnull]]
+static bool _rpcmsg_pack_meta(cp_pack_t pack, const struct rpcmsg_meta *meta) {
 	meta_begin(pack);
 	bool is_rre = meta->type == RPCMSG_T_REQUEST ||
 		meta->type == RPCMSG_T_RESPONSE || meta->type == RPCMSG_T_ERROR;

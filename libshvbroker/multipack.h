@@ -10,14 +10,16 @@ struct multipack {
 	size_t cnt;
 };
 
+[[gnu::nonnull]]
 nbool_t signal_destinations(struct rpcbroker *broker, const char *path,
-	const char *source, const char *signal, rpcaccess_t access)
-	__attribute__((nonnull));
+	const char *source, const char *signal, rpcaccess_t access);
 
+[[gnu::nonnull(1, 2)]]
 cp_pack_t multipack_init(struct rpcbroker *broker, struct multipack *multipack,
-	nbool_t destinations) __attribute__((nonnull(1, 2)));
+	nbool_t destinations);
 
+[[gnu::nonnull(1, 2)]]
 void multipack_done(struct rpcbroker *broker, struct multipack *multipack,
-	nbool_t destinations, bool send) __attribute__((nonnull(1, 2)));
+	nbool_t destinations, bool send);
 
 #endif

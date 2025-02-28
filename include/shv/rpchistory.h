@@ -15,21 +15,21 @@ enum rpchistory_record_types {
 	RPCHISTORY_RECORD_NORMAL = 1,
 	/*! Keep record.
 	 *
-	 *  These are normal records repeated with newer date and time if there is
-	 *  no update of them in past number of records.
+	 * These are normal records repeated with newer date and time if there is
+	 * no update of them in past number of records.
 	 */
 	RPCHISTORY_RECORD_KEEP,
 	/*! Timejump record.
 	 *
-	 *  This is information that all previous recorded times should actually be
-	 *  considered to be with time modification. The time offset is specified in
-	 *  timestamp field of @ref rpchistory_record_head structure.
+	 * This is information that all previous recorded times should actually be
+	 * considered to be with time modification. The time offset is specified in
+	 * timestamp field of @ref rpchistory_record_head structure.
 	 */
 	RPCHISTORY_RECORD_TIMEJUMP,
 	/*! Time ambiguity record.
 	 *
-	 *  This is information that date and time of the new logs has no relevance
-	 *  compared to the previous ones.
+	 * This is information that date and time of the new logs has no relevance
+	 * compared to the previous ones.
 	 */
 	RPCHISTORY_RECORD_TIMEABIG,
 };
@@ -62,14 +62,14 @@ enum rpchistory_getlog_keys {
 
 /*! Structure defining record' head for SHV communication.
  *
- *  This is a represenation of record's head. This includes all record's
- *  information except for data/value. This can be used together with
- *  @ref rpchistory_record_pack_begin function to pack the head.
+ * This is a represenation of record's head. This includes all record's
+ * information except for data/value. This can be used together with
+ * @ref rpchistory_record_pack_begin function to pack the head.
  */
 struct rpchistory_record_head {
 	/*! Record type.
 	 *
-	 *  Refer to @ref rpchistory_record_types for possible types.
+	 * Refer to @ref rpchistory_record_types for possible types.
 	 */
 	int type;
 	/*! Access Level. */
