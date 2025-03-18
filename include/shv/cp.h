@@ -184,10 +184,11 @@ double cpdectod(const struct cpdecimal v);
 #define cpdtoi(DEC, EXP, DEST) \
 	({ \
 		bool __dec_valid = false; \
+		typeof(DEST) *__dest = &(DEST); \
 		struct cpdecimal __dec = (DEC); \
 		if (cpdecexp(&__dec, (EXP))) { \
-			(DEST) = __dec.mantisa; \
-			__dec_valid = __dec.mantisa == (DEST); \
+			*__dest = __dec.mantisa; \
+			__dec_valid = __dec.mantisa == *__dest; \
 		} \
 		__dec_valid; \
 	})
@@ -474,7 +475,7 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 		bool __valid = false; \
 		if (__item->type == CPITEM_INT) { \
 			(DEST) = __item->as.Int; \
-			__valid = __item->as.Int == (DEST); \
+			__valid = __item->as.Int == (typeof(DEST))__item->as.Int; \
 		} \
 		__valid; \
 	})
@@ -499,7 +500,7 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 		bool __valid = false; \
 		if (__item->type == CPITEM_UINT) { \
 			(DEST) = __item->as.UInt; \
-			__valid = __item->as.UInt == (DEST); \
+			__valid = __item->as.UInt == (typeof(DEST))__item->as.UInt; \
 		} \
 		__valid; \
 	})
