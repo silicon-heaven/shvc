@@ -51,7 +51,11 @@ struct ctx {
 		} block;
 		struct rpcclient_ctx_serial {
 			// TODO possibly buffer serial for higher read performance
-			bool wmsg;
+			enum {
+				WMSG_NO,   /* Not writing any message */
+				WMSG_ST,   /* Started writting message */
+				WMSG_DATA, /* Writing message data */
+			} wmsg;
 			enum {
 				RMSG_NO,   /* Not reading any message */
 				RMSG_STX,  /* Read STX but nothing more */
@@ -275,7 +279,7 @@ static ssize_t cookie_write_serial(void *cookie, const char *data, size_t size) 
 	while (cnt < size) {
 		size_t i;
 		for (i = 0; i < BUFSIZ && cnt < size; i++) {
-			if (c->serial.wmsg) {
+			if (c->serial.wmsg == WMSG_DATA) {
 				if (esc) {
 					buf[i] = ESCX(*data++);
 					cnt++;
@@ -292,7 +296,7 @@ static ssize_t cookie_write_serial(void *cookie, const char *data, size_t size) 
 				c->serial.wcrc = crc32_cupdate(c->serial.wcrc, buf[i]);
 			} else {
 				buf[i] = STX;
-				c->serial.wmsg = true;
+				c->serial.wmsg = WMSG_DATA;
 				c->serial.wcrc = crc32_init();
 			}
 		}
@@ -303,9 +307,9 @@ static ssize_t cookie_write_serial(void *cookie, const char *data, size_t size) 
 }
 
 static bool rpcclient_stream_serial_send(struct ctx *c) {
-	if (!c->serial.wmsg)
+	if (c->serial.wmsg != WMSG_DATA)
 		return false;
-	c->serial.wmsg = false;
+	c->serial.wmsg = WMSG_NO;
 	uint8_t buf[9]; /* ETX plus every crc byte can be escaped */
 	size_t i = 1;
 	buf[0] = ETX;
@@ -326,9 +330,9 @@ static bool rpcclient_stream_serial_send(struct ctx *c) {
 }
 
 static bool rpcclient_stream_serial_drop(struct ctx *c) {
-	if (!c->serial.wmsg)
+	if (c->serial.wmsg == WMSG_NO)
 		return true;
-	c->serial.wmsg = false;
+	c->serial.wmsg = WMSG_NO;
 	uint8_t v = ATX;
 	if (!xwrite(c, &v, 1))
 		return false;
@@ -377,8 +381,11 @@ static bool stream_pack(void *ptr, const struct cpitem *item) {
 	struct ctx *c = (struct ctx *)((char *)ptr - offsetof(struct ctx, pub.pack));
 	rpclogger_log_item(c->pub.logger_out, item);
 	if ((c->proto == RPCSTREAM_P_BLOCK && c->block.wbuflen == 0) ||
-		(c->proto != RPCSTREAM_P_BLOCK && !c->serial.wmsg))
+		(c->proto != RPCSTREAM_P_BLOCK && c->serial.wmsg == WMSG_NO)) {
 		putc(1, c->fw); /* Chainpack identifier */
+		if (c->proto != RPCSTREAM_P_BLOCK)
+			c->serial.wmsg = WMSG_ST;
+	}
 	return chainpack_pack(c->fw, item) > 0;
 }
 
@@ -477,9 +484,13 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 			return res;
 		}
 		case RPCC_CTRLOP_SENDMSG: {
-			bool res = c->proto == RPCSTREAM_P_BLOCK
-				? rpcclient_stream_block_send(c)
-				: rpcclient_stream_serial_send(c);
+			bool res;
+			if (c->proto == RPCSTREAM_P_BLOCK) {
+				res = rpcclient_stream_block_send(c);
+			} else {
+				fflush(c->fw);
+				res = rpcclient_stream_serial_send(c);
+			}
 			if (c->sclient->flush)
 				c->sclient->flush(c->sclient_cookie, c->wfd);
 			rpclogger_log_end(c->pub.logger_out, RPCLOGGER_ET_VALID);
@@ -491,15 +502,21 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 			return res;
 		}
 		case RPCC_CTRLOP_DROPMSG: {
-			bool res = c->proto == RPCSTREAM_P_BLOCK
-				? rpcclient_stream_block_drop(c)
-				: rpcclient_stream_serial_drop(c);
+			bool res;
+			if (c->proto == RPCSTREAM_P_BLOCK) {
+				res = rpcclient_stream_block_drop(c);
+			} else {
+				fflush(c->fw);
+				res = rpcclient_stream_serial_drop(c);
+			}
+
 			// TODO this is pretty much same as send (merge the code)
 			if (c->sclient->flush)
 				c->sclient->flush(c->sclient_cookie, c->wfd);
 			rpclogger_log_end(c->pub.logger_out, RPCLOGGER_ET_INVALID);
 			if (c->errnum == EWOULDBLOCK)
 				c->errnum = EAGAIN;
+
 			return res;
 		}
 		case RPCC_CTRLOP_CONTRACK:
@@ -549,6 +566,7 @@ rpcclient_t rpcclient_stream_new(const struct rpcclient_stream_funcs *sclient,
 			}),
 	};
 	setbuf(res->fr, NULL);
-	setbuf(res->fw, NULL);
+	if (proto == RPCSTREAM_P_BLOCK)
+		setbuf(res->fw, NULL);
 	return &res->pub;
 }
