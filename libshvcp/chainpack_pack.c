@@ -11,7 +11,7 @@
 #define PUTC(V) \
 	do { \
 		uint8_t __v = (V); \
-		if (f && fputc(__v, f) != __v) \
+		if (f && fputc_unlocked(__v, f) != __v) \
 			return -1; \
 		res++; \
 	} while (false)
@@ -19,7 +19,7 @@
 	do { \
 		size_t __siz = SIZ; \
 		if (f) { \
-			if (fwrite((V), 1, __siz, f) != __siz) \
+			if (fwrite_unlocked((V), 1, __siz, f) != __siz) \
 				return -1; \
 		} \
 		res += __siz; \

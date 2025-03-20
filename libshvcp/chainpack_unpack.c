@@ -15,7 +15,7 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) {
 		return res;
 #define GETC \
 	({ \
-		int __v = getc(f); \
+		int __v = getc_unlocked(f); \
 		if (__v == EOF) { \
 			item->type = CPITEM_INVALID; \
 			item->as.Error = feof(f) ? CPERR_EOF : CPERR_IO; \
@@ -27,7 +27,7 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) {
 #define READ(PTR, SIZ) \
 	do { \
 		size_t __siz = SIZ; \
-		ssize_t __v = fread((PTR), __siz, 1, f); \
+		ssize_t __v = fread_unlocked((PTR), __siz, 1, f); \
 		if (__v != 1) { \
 			item->type = CPITEM_INVALID; \
 			item->as.Error = feof(f) ? CPERR_EOF : CPERR_IO; \
@@ -183,7 +183,7 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) {
 size_t chainpack_unpack_uint(FILE *f, uintmax_t *v, enum cperror *err) {
 	ssize_t res = 0;
 
-	int head = getc(f);
+	int head = getc_unlocked(f);
 	if (head == EOF) {
 		*err = CPERR_EOF;
 		return res;
@@ -194,7 +194,7 @@ size_t chainpack_unpack_uint(FILE *f, uintmax_t *v, enum cperror *err) {
 
 	*v = chainpack_uint_value1(head, bytes);
 	for (unsigned i = 1; i < bytes; i++) {
-		int r = getc(f);
+		int r = getc_unlocked(f);
 		if (r == EOF) {
 			*err = CPERR_EOF;
 			return res;
@@ -265,7 +265,7 @@ static size_t chainpack_unpack_buf(FILE *f, struct cpitem *item, enum cperror *e
 		size_t toread = MIN(item->as.Blob.eoff, item->bufsiz - item->as.Blob.len);
 		if (item->buf) {
 			if (toread > 0 &&
-				fread(item->buf + item->as.Blob.len, toread, 1, f) != 1) {
+				fread_unlocked(item->buf + item->as.Blob.len, toread, 1, f) != 1) {
 				*err = CPERR_EOF;
 				break;
 			}
@@ -273,7 +273,7 @@ static size_t chainpack_unpack_buf(FILE *f, struct cpitem *item, enum cperror *e
 			for (size_t siz = toread; siz > 0;) {
 				size_t bufsiz = MIN(siz, BUFSIZ);
 				uint8_t buf[bufsiz];
-				if (fread(buf, bufsiz, 1, f) != 1) {
+				if (fread_unlocked(buf, bufsiz, 1, f) != 1) {
 					*err = CPERR_EOF;
 					break;
 				}

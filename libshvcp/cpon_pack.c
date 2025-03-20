@@ -8,7 +8,7 @@
 
 #define PUTC(V) \
 	do { \
-		if (f && fputc((V), f) != (V)) \
+		if (f && fputc_unlocked((V), f) != (V)) \
 			return -1; \
 		res++; \
 	} while (false)
@@ -16,7 +16,7 @@
 	do { \
 		const char *__v = (V); \
 		size_t __strlen = strlen(__v); \
-		if (f && fwrite(__v, 1, __strlen, f) != __strlen) \
+		if (f && fwrite_unlocked(__v, 1, __strlen, f) != __strlen) \
 			return -1; \
 		res += __strlen; \
 	} while (false)

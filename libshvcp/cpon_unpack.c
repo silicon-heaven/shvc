@@ -8,7 +8,7 @@
 
 #define GETC \
 	({ \
-		int __v = getc(f); \
+		int __v = getc_unlocked(f); \
 		res++; \
 		__v; \
 	})
@@ -242,7 +242,7 @@ static size_t cpon_unpack_buf(FILE *f, struct cpitem *item, enum cperror *err) {
 	size_t res = 0;
 	bool escape = false;
 	while (i < item->bufsiz) {
-		int c = getc(f);
+		int c = getc_unlocked(f);
 		if (c == EOF) {
 			*err = CPERR_EOF;
 			return i;

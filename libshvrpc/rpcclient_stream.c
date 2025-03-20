@@ -398,7 +398,7 @@ static void stream_unpack(void *ptr, struct cpitem *item) {
 static void flushmsg(struct ctx *c) {
 	/* Flush the rest of the message. Read up to the EOF. */
 	char buf[BUFSIZ];
-	while (fread(buf, 1, BUFSIZ, c->fr) > 0) {}
+	while (fread_unlocked(buf, 1, BUFSIZ, c->fr) > 0) {}
 }
 
 static void default_disconnect(int fd[2]) {
@@ -461,7 +461,7 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 					return ret;
 				clearerr(c->fr);
 				/* Read identifier byte */
-				switch (getc(c->fr)) {
+				switch (getc_unlocked(c->fr)) {
 					case 1: /* Chainpack message */
 						return ret;
 					case 0: /* Reset requested */
