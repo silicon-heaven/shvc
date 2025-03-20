@@ -84,7 +84,7 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "get",
-				.param = "i|n",
+				.param = "i(0,)|n",
 				.result = "[!alert]",
 				.flags = RPCDIR_F_GETTER,
 				.access = RPCACCESS_READ,
@@ -158,7 +158,7 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 		if (!strcmp(ctx->meta.method, "get")) {
 			if (ctx->meta.access < RPCACCESS_READ)
 				return RPCHANDLER_MSG_DONE;
-			if (rpchandler_msg_valid_nullparam(ctx)) {
+			if (rpchandler_msg_valid_getparam(ctx, NULL)) {
 				struct rpchandler_device_alerts alerts;
 				alerts.pack = rpchandler_msg_new_response(ctx);
 				cp_pack_list_begin(alerts.pack);
