@@ -84,8 +84,8 @@ struct cp_pack_cpon {
 
 /*! Initialize @ref cp_pack_cpon.
  *
- * The initialization fills in @ref cp_pack_chainpack.func, sets @ref
- * cp_pack_chainpack.f to the **f** passed to it, initializes @ref cpon_state
+ * The initialization fills in @ref cp_pack_cpon.func, sets @ref
+ * cp_pack_cpon.f to the **f** passed to it, initializes @ref cpon_state
  * to zeroes and sets @ref cpon_state.realloc to unconstrained allocator and
  * @ref cpon_state.indent to the **indent** passed to it.
  *
