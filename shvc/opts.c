@@ -4,10 +4,11 @@
 #include <unistd.h>
 #include <limits.h>
 #include <string.h>
+#include <getopt.h>
 #include "shvc_config.h"
 
 static const int default_timeout = 300;
-
+static int add_userid = 0;
 
 static void print_usage(const char *argv0) {
 	fprintf(stderr, "%s [-ivqdVh] [-u URL] [-t SEC] [PATH:METHOD] [PARAM]\n",
@@ -39,13 +40,24 @@ void parse_opts(int argc, char **argv, struct conf *conf) {
 		.method = "ping",
 		.param = NULL,
 		.stdin_param = false,
+		.userid = false,
 		.verbose = 0,
 		.timeout = default_timeout,
 	};
 
-	int c;
-	while ((c = getopt(argc, argv, "u:t:ivqdVh")) != -1) {
+	while (true) {
+		static struct option options[] = {
+			{"userid", no_argument, &add_userid, 1},
+			{0, 0, 0, 0},
+		};
+		int idx = 0;
+		int c = getopt_long(argc, argv, "u:t:ivqdVh", options, &idx);
+		if (c == -1)
+			break;
+
 		switch (c) {
+			case 0:
+				break;
 			case 'u':
 				conf->url = optarg;
 				break;
@@ -84,6 +96,10 @@ void parse_opts(int argc, char **argv, struct conf *conf) {
 				exit(-1);
 		}
 	}
+
+	if (add_userid == 1)
+		conf->userid = true;
+
 	if (optind < argc) {
 		conf->path = argv[optind];
 		char *colon = strchr(argv[optind], ':');

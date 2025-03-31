@@ -8,6 +8,7 @@ struct conf {
 	const char *method;
 	const char *param;
 	bool stdin_param;
+	bool userid;
 	unsigned verbose;
 	unsigned timeout;
 };
