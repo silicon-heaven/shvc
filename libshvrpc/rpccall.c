@@ -50,11 +50,9 @@ int _rpccall(rpchandler_t handler, rpchandler_responses_t responses,
 		result = func(CALL_S_REQUEST, &ctx.pub);
 		if (result) {
 			rpchandler_msg_drop(handler);
-			rpcresponse_discard(response);
 			goto term;
 		}
 		if (!rpchandler_msg_send(handler)) {
-			rpcresponse_discard(response);
 			result = func(CALL_S_COMERR, &ctx.pub);
 			goto term;
 		}
