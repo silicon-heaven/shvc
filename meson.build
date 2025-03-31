@@ -2,7 +2,7 @@ project(
   'shvc',
   'c',
   version: run_command(find_program('bash'), './.version.sh', check: true).stdout().strip(),
-  license: 'GPL-3.0-or-later',
+  license: 'MIT',
   default_options: 'c_std=gnu2x',
   meson_version: '>=0.63.0',
 )
