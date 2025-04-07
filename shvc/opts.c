@@ -8,7 +8,6 @@
 #include "shvc_config.h"
 
 static const int default_timeout = 300;
-static int add_userid = 0;
 
 static void print_usage(const char *argv0) {
 	fprintf(stderr, "%s [-ivqdVh] [-u URL] [-t SEC] [PATH:METHOD] [PARAM]\n",
@@ -26,6 +25,8 @@ static void print_help(const char *argv0) {
 		"  -t SEC   Number of seconds before call is abandoned (default %d)\n",
 		default_timeout);
 	fprintf(stderr, "  -i       Read parameter from STDIN instead of argument\n");
+	fprintf(stderr,
+		"  -s UID   User ID to be passed to the request (default is no user ID)\n");
 	fprintf(stderr, "  -v       Increase logging level of the communication\n");
 	fprintf(stderr, "  -q       Decrease logging level of the communication\n");
 	fprintf(stderr, "  -d       Set maximal logging level of the communication\n");
@@ -39,22 +40,14 @@ void parse_opts(int argc, char **argv, struct conf *conf) {
 		.path = ".app",
 		.method = "ping",
 		.param = NULL,
+		.userid = NULL,
 		.stdin_param = false,
-		.userid = false,
 		.verbose = 0,
 		.timeout = default_timeout,
 	};
 
-	while (true) {
-		static struct option options[] = {
-			{"userid", no_argument, &add_userid, 1},
-			{0, 0, 0, 0},
-		};
-		int idx = 0;
-		int c = getopt_long(argc, argv, "u:t:ivqdVh", options, &idx);
-		if (c == -1)
-			break;
-
+	int c;
+	while ((c = getopt(argc, argv, "u:t:s:ivqdVh")) != -1) {
 		switch (c) {
 			case 0:
 				break;
@@ -70,6 +63,9 @@ void parse_opts(int argc, char **argv, struct conf *conf) {
 				}
 				break;
 			}
+			case 's':
+				conf->userid = optarg;
+				break;
 			case 'i':
 				conf->stdin_param = true;
 				break;
@@ -96,9 +92,6 @@ void parse_opts(int argc, char **argv, struct conf *conf) {
 				exit(-1);
 		}
 	}
-
-	if (add_userid == 1)
-		conf->userid = true;
 
 	if (optind < argc) {
 		conf->path = argv[optind];

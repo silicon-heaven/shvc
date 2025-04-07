@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `cptstodt` and `cpdttots` functions to `cp.h` to work with `struct timespec`.
 - `cpdecexp` function and `cpitod` macro to `cp.h` for `struct cpdecimal`.
+- `-s` argument to the `shvc` application to allow user ID to be initialized
 
 ### Changed
 - `fetch` method in RPCHistory now gives the application starting index

@@ -25,12 +25,11 @@ struct ctx {
 
 int response_callback(enum rpccall_stage stage, struct rpccall_ctx *ctx) {
 	struct ctx *c = ctx->cookie;
-	const char *userid = c->conf->userid ? "" : NULL;
 	switch (stage) {
 		case CALL_S_REQUEST:
 			if (c->fparam) {
 				rpcmsg_pack_request(ctx->pack, c->conf->path, c->conf->method,
-					userid, ctx->request_id);
+					c->conf->userid, ctx->request_id);
 				fseek(c->fparam, 0, SEEK_SET);
 				struct cp_unpack_cpon cp_unpack_cpon;
 				cp_unpack_t cpon_unpack =
@@ -43,7 +42,7 @@ int response_callback(enum rpccall_stage stage, struct rpccall_ctx *ctx) {
 				cp_pack_container_end(ctx->pack);
 			} else
 				rpcmsg_pack_request_void(ctx->pack, c->conf->path,
-					c->conf->method, userid, ctx->request_id);
+					c->conf->method, c->conf->userid, ctx->request_id);
 			free(c->output);
 			c->output = NULL;
 			break;

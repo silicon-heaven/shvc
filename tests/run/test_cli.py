@@ -15,6 +15,7 @@ async def test_shvc_help(shvc_exec):
         b"  -u URL   Where to connect to (default tcp://test@localhost?password=test)",
         b"  -t SEC   Number of seconds before call is abandoned (default 300)",
         b"  -i       Read parameter from STDIN instead of argument",
+        b"  -s UID   User ID to be passed to the request (default is no user ID)",
         b"  -v       Increase logging level of the communication",
         b"  -q       Decrease logging level of the communication",
         b"  -d       Set maximal logging level of the communication",
