@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.4.0] - 2025-04-08
 ### Added
 - `cptstodt` and `cpdttots` functions to `cp.h` to work with `struct timespec`.
 - `cpdecexp` function and `cpitod` macro to `cp.h` for `struct cpdecimal`.
@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `fetch` method in RPCHistory now gives the application starting index
   and the number of records to be fetched, allowing better optimization
   from the application.
+- Parameter and result type hints of the builtin method descriptions now follow
+  RPC type hints defined in SHV standard.
+- RPC client now uses standard `FILE` buffer for writing message with serial
+  protocol and thus improving the performace.
+- CPON and ChainPack packing and unpacking now uses unlocked read/write
+  functions variants. This improves performace.
 
 ### Removed
 - No longer valid RPC error codes (they were removed from standard).
@@ -24,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   single item in the list.
 - Method `get` on `.device/alerts` path now correctly handles integer
   parameter.
+- Double memory free error in rpccall.
 
 
 ## [0.3.0] - 2025-01-16
