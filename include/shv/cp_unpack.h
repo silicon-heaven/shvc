@@ -253,14 +253,33 @@ void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth);
  *   to. You can use it to identify the real type or error in case of failure.
  * @param DEST: destination @ref cpdatetime variable (not pointer, the variable
  *   directly).
- * @returns Boolean signaling if both unpack was successful and value fit the
- *   destination. The real issue can be deduced from **ITEM**.
+ * @returns Boolean signaling if both unpack was successful. The real issue can
+ * be deduced from **ITEM**.
  */
 #define cp_unpack_datetime(UNPACK, ITEM, DEST) \
 	({ \
 		struct cpitem *___item = ITEM; \
 		cp_unpack(UNPACK, ___item); \
 		cpitem_extract_datetime(___item, DEST); \
+	})
+
+/*! Unpack @ref cpdecimal and place it to the destination.
+ *
+ * This combines @ref cp_unpack with @ref cpitem_extract_decimal.
+ *
+ * @param UNPACK: Generic unpacker to be used for unpacking.
+ * @param ITEM: Item where info about the unpacked item and its value is placed
+ *   to. You can use it to identify the real type or error in case of failure.
+ * @param DEST: destination @ref cpdecimal variable (not pointer, the variable
+ *   directly).
+ * @returns Boolean signaling if both unpack was successful and value fit the
+ *   destination. The real issue can be deduced from **ITEM**.
+ */
+#define cp_unpack_decimal(UNPACK, ITEM, DEST) \
+	({ \
+		struct cpitem *___item = ITEM; \
+		cp_unpack(UNPACK, ___item); \
+		cpitem_extract_decimal(___item, DEST); \
 	})
 
 /*! Unpack a single byte from string.

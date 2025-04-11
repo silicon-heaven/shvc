@@ -228,3 +228,27 @@ ARRAY_TEST(all, extract_datetime) {
 		ck_assert_int_eq(val.offutc, _d.value.offutc);
 	}
 }
+
+static const struct {
+	struct cpitem item;
+	bool valid;
+	struct cpdecimal value;
+} extract_decimal_d[] = {
+	{
+		.item = (struct cpitem){.type = CPITEM_DECIMAL, .as.Decimal = {7, 2}},
+		.valid = true,
+		.value = {7, 2},
+	},
+	{
+		.item = (struct cpitem){.type = CPITEM_INT, .as.Int = 42},
+		.valid = false,
+	},
+};
+ARRAY_TEST(all, extract_decimal) {
+	struct cpdecimal val;
+	ck_assert(cpitem_extract_decimal(&_d.item, val) == _d.valid);
+	if (_d.valid) {
+		ck_assert_int_eq(val.mantisa, _d.value.mantisa);
+		ck_assert_int_eq(val.exponent, _d.value.exponent);
+	}
+}

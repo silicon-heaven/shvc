@@ -530,9 +530,8 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  * @param ITEM: item from which @ref cpdatetime is extract.
  * @param DEST: destination @ref cpdatetime variable (not pointer, the variable
  *   directly).
- * @returns `true` in case value was @ref CPITEM_DATETIME and value fits to the
- *   destination, otherwise `false` is returned. The destination is not modified
- *   when `false` is returned.
+ * @returns `true` in case value was @ref CPITEM_DATETIME, otherwise `false` is
+ * returned. The destination is not modified when `false` is returned.
  */
 #define cpitem_extract_datetime(ITEM, DEST) \
 	({ \
@@ -540,6 +539,25 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 		bool __valid = false; \
 		if (__item->type == CPITEM_DATETIME) { \
 			(DEST) = __item->as.Datetime; \
+			__valid = true; \
+		} \
+		__valid; \
+	})
+
+/*! Extract @ref cpdecimal from the item.
+ *
+ * @param ITEM: item from which @ref cpdecimal is extract.
+ * @param DEST: destination @ref cpdecimal variable (not pointer, the variable
+ *   directly).
+ * @returns `true` in case value was @ref CPITEM_DECIMAL and, otherwise `false`
+ * is returned. The destination is not modified when `false` is returned.
+ */
+#define cpitem_extract_decimal(ITEM, DEST) \
+	({ \
+		const struct cpitem *__item = ITEM; \
+		bool __valid = false; \
+		if (__item->type == CPITEM_DECIMAL) { \
+			(DEST) = __item->as.Decimal; \
 			__valid = true; \
 		} \
 		__valid; \
