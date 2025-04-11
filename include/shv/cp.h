@@ -126,23 +126,23 @@ const char *cpitem_type_str(enum cpitem_type tp);
 
 /*! Representation of decimal number.
  *
- * The size of mantisa is chosen to cover the biggest numbers the platform can
+ * The size of mantissa is chosen to cover the biggest numbers the platform can
  * handle automatically (`intmax_t`). The exponent is chosen smaller (`int`)
  * because by supporting at least 16 bits is enough range (consider exponent
  * 10^32767 and estimation of number of atoms in the observable universe 10^82).
  */
 struct cpdecimal {
-	/*! Mantisa in `mantisa * 10^exponent`. */
-	intmax_t mantisa;
-	/*! Exponent in `mantisa * 10^exponent`. */
+	/*! Mantissa in `mantissa * 10^exponent`. */
+	intmax_t mantissa;
+	/*! Exponent in `mantissa * 10^exponent`. */
 	int exponent;
 };
 
 /*! Normalize decimal number.
  *
- * The normal format for decimal number is where mantisa is as small as possible
- * without loosing precission. In other words unless mantisa is a zero the
- * residue after division 10 must be non-zero.
+ * The normal format for decimal number is where mantissa is as small as
+ * possible without loosing precission. In other words unless mantissa is a zero
+ * the residue after division 10 must be non-zero.
  *
  * @param v Decimal number to be normalized.
  */
@@ -160,7 +160,7 @@ void cpdecnorm(struct cpdecimal *v);
  * @param v Decimal number to be modified.
  * @param exponent The desired exponent number.
  * @returns `true` if set correctly and `false` if exponent can't be reached due
- * to mantisa overflow.
+ * to mantissa overflow.
  */
 [[gnu::nonnull]]
 bool cpdecexp(struct cpdecimal *v, int exponent);
@@ -187,24 +187,24 @@ double cpdectod(const struct cpdecimal v);
 		typeof(DEST) *__dest = &(DEST); \
 		struct cpdecimal __dec = (DEC); \
 		if (cpdecexp(&__dec, (EXP))) { \
-			*__dest = __dec.mantisa; \
-			__dec_valid = __dec.mantisa == *__dest; \
+			*__dest = __dec.mantissa; \
+			__dec_valid = __dec.mantissa == *__dest; \
 		} \
 		__dec_valid; \
 	})
 
-/*! Convert given mantisa and exponent to decimal.
+/*! Convert given mantissa and exponent to decimal.
  *
  * This automatically normalizes the newly created decimal. Otherwise there is
  * no advantage in using this over direct structure initialization.
  *
- * @param MANTISA The mantisa to be used.
- * @param EXPONENT The exponent (current multiplication of mantisa).
+ * @param MANTISA The mantissa to be used.
+ * @param EXPONENT The exponent (current multiplication of mantissa).
  * @returns The normalized decimal number.
  */
 #define cpitod(MANTISA, EXPONENT) \
 	({ \
-		struct cpdecimal __dec_res = {.mantisa = MANTISA, .exponent = EXPONENT}; \
+		struct cpdecimal __dec_res = {.mantissa = MANTISA, .exponent = EXPONENT}; \
 		cpdecnorm(&__dec_res); \
 		__dec_res; \
 	})

@@ -77,7 +77,7 @@ ssize_t chainpack_pack(FILE *f, const struct cpitem *item) {
 			break;
 		case CPITEM_DECIMAL:
 			PUTC(CPS_Decimal);
-			CALL(chainpack_pack_int, item->as.Decimal.mantisa);
+			CALL(chainpack_pack_int, item->as.Decimal.mantissa);
 			CALL(chainpack_pack_int, item->as.Decimal.exponent);
 			break;
 		case CPITEM_BLOB:

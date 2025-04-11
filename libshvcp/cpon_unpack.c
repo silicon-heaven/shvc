@@ -135,12 +135,12 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 				item->type = CPITEM_UINT;
 			} else if (c == 'e') {
 				item->type = CPITEM_DECIMAL;
-				item->as.Decimal.mantisa = item->as.Int;
+				item->as.Decimal.mantissa = item->as.Int;
 				item->as.Decimal.exponent = 0;
 				SCANF("%i", &item->as.Decimal.exponent);
 			} else if (c == '.') {
 				item->type = CPITEM_DECIMAL;
-				item->as.Decimal.mantisa = item->as.Int;
+				item->as.Decimal.mantissa = item->as.Int;
 				uintmax_t dec;
 				ssize_t rres = res;
 				if (SCANF("%ju", &dec) == 1) {
@@ -151,14 +151,14 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 					// TODO this is not ideal because we might hit limit. We
 					// should add only up to the dec being zero and keep the
 					// rest of the exponent as it is.
-					item->as.Decimal.mantisa =
-						((item->as.Decimal.mantisa < 0 ? -1 : 1) * dec) +
-						(item->as.Decimal.mantisa * mult);
+					item->as.Decimal.mantissa =
+						((item->as.Decimal.mantissa < 0 ? -1 : 1) * dec) +
+						(item->as.Decimal.mantissa * mult);
 				}
-				if (item->as.Decimal.mantisa == 0)
+				if (item->as.Decimal.mantissa == 0)
 					break;
-				while (item->as.Decimal.mantisa % 10 == 0) {
-					item->as.Decimal.mantisa /= 10;
+				while (item->as.Decimal.mantissa % 10 == 0) {
+					item->as.Decimal.mantissa /= 10;
 					item->as.Decimal.exponent++;
 				}
 			} else

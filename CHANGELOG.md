@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `cp_unpack_decimal` to simplify `cpdecimal` unpacking.
 
+### Changed
+- Renamed `mantisa` field to correct `mantissa` in `cpdecimal` structure.
+
 
 ## [0.4.0] - 2025-04-08
 ### Added

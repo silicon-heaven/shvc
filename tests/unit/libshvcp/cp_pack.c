@@ -116,7 +116,7 @@ TEST(cpon, cpon_double) {
 END_TEST
 
 static void pack_decimal(void) {
-	struct cpdecimal v = (struct cpdecimal){.mantisa = 422, .exponent = -1};
+	struct cpdecimal v = (struct cpdecimal){.mantissa = 422, .exponent = -1};
 	cp_pack_value(pack, v);
 }
 TEST(chainpack, chainpack_decimal) {

@@ -230,13 +230,13 @@ static ssize_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec) {
 
 	if (dec->exponent <= 6 && dec->exponent >= -9) {
 		/* Pack in X.Y notation */
-		bool neg = dec->mantisa < 0;
-		uint64_t mantisa = neg ? -dec->mantisa : dec->mantisa;
+		bool neg = dec->mantissa < 0;
+		uint64_t mantissa = neg ? -dec->mantissa : dec->mantissa;
 
 		/* The 64-bit number can ocuppy at most 20 characters plus zero byte */
 		static const size_t strsiz = 21;
 		char str[strsiz];
-		ssize_t len = snprintf(str, strsiz, "%" PRIu64, mantisa);
+		ssize_t len = snprintf(str, strsiz, "%" PRIu64, mantissa);
 		assert(len < strsiz);
 
 		if (neg)
@@ -255,7 +255,7 @@ static ssize_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec) {
 			PUTC(str[len - i - 1]);
 	} else
 		/* Pack in XeY notation */
-		PRINTF("%jde%d", dec->mantisa, dec->exponent);
+		PRINTF("%jde%d", dec->mantissa, dec->exponent);
 
 	return res;
 }

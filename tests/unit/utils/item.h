@@ -31,7 +31,7 @@
 				ck_assert_double_eq(a.as.Double, b.as.Double); \
 				break; \
 			case CPITEM_DECIMAL: \
-				ck_assert_int_eq(a.as.Decimal.mantisa, b.as.Decimal.mantisa); \
+				ck_assert_int_eq(a.as.Decimal.mantissa, b.as.Decimal.mantissa); \
 				ck_assert_int_eq(a.as.Decimal.exponent, b.as.Decimal.exponent); \
 				break; \
 			case CPITEM_BLOB: \
@@ -85,7 +85,7 @@
 #define ck_assert_item_decimal(i, v) \
 	do { \
 		ck_assert_int_eq(i.type, CPITEM_DECIMAL); \
-		ck_assert_int_eq(i.as.Decimal.mantisa, v.mantisa); \
+		ck_assert_int_eq(i.as.Decimal.mantissa, v.mantissa); \
 		ck_assert_int_eq(i.as.Decimal.exponent, v.exponent); \
 	} while (false)
 

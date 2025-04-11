@@ -103,7 +103,7 @@ size_t chainpack_unpack(FILE *f, struct cpitem *item) {
 				break;
 			case CPS_Decimal:
 				item->type = CPITEM_DECIMAL;
-				CALL(chainpack_unpack_int, &item->as.Decimal.mantisa);
+				CALL(chainpack_unpack_int, &item->as.Decimal.mantissa);
 				intmax_t exp;
 				CALL(chainpack_unpack_int, &exp);
 				item->as.Decimal.exponent = exp;

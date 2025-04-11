@@ -1,33 +1,33 @@
 #include <shv/cp.h>
 
 void cpdecnorm(struct cpdecimal *v) {
-	if (v->mantisa == 0) {
+	if (v->mantissa == 0) {
 		v->exponent = 0;
 		return;
 	}
-	while (v->mantisa % 10 == 0) {
-		v->mantisa /= 10;
+	while (v->mantissa % 10 == 0) {
+		v->mantissa /= 10;
 		v->exponent++;
 	}
 }
 
 bool cpdecexp(struct cpdecimal *v, int exponent) {
 	int neg = v->exponent < exponent ? 1 : -1;
-	while (v->exponent != exponent && v->mantisa) {
-		long long int mantisa;
+	while (v->exponent != exponent && v->mantissa) {
+		long long int mantissa;
 		if (neg < 0) {
-			if (__builtin_smulll_overflow(v->mantisa, 10, &mantisa))
+			if (__builtin_smulll_overflow(v->mantissa, 10, &mantissa))
 				return false;
 		} else
-			mantisa = v->mantisa / 10;
-		v->mantisa = mantisa;
+			mantissa = v->mantissa / 10;
+		v->mantissa = mantissa;
 		v->exponent += neg;
 	}
 	return true;
 }
 
 double cpdectod(const struct cpdecimal v) {
-	double res = v.mantisa;
+	double res = v.mantissa;
 	if (v.exponent >= 0) {
 		for (long i = 0; i < v.exponent; i++)
 			res *= 10;

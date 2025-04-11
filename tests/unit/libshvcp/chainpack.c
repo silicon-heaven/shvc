@@ -43,7 +43,7 @@ static const struct {
 		B(0x81, 0xf0, 0xff, 0xff, 0xff, 0xff)},
 	{{.type = CPITEM_DOUBLE, .as.Double = 223.0},
 		B(0x83, 0x00, 0x00, 0x00, 0x00, 0x00, 0xe0, 0x6b, 0x40)},
-	{{.type = CPITEM_DECIMAL, .as.Decimal = {.mantisa = 23, .exponent = -1}},
+	{{.type = CPITEM_DECIMAL, .as.Decimal = {.mantissa = 23, .exponent = -1}},
 		B(0x8c, 0x17, 0x41)},
 	{{.type = CPITEM_DATETIME, .as.Datetime = {.msecs = 1517529600001, .offutc = 0}},
 		B(0x8d, 0x04)},

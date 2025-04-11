@@ -248,7 +248,7 @@ ARRAY_TEST(all, extract_decimal) {
 	struct cpdecimal val;
 	ck_assert(cpitem_extract_decimal(&_d.item, val) == _d.valid);
 	if (_d.valid) {
-		ck_assert_int_eq(val.mantisa, _d.value.mantisa);
+		ck_assert_int_eq(val.mantissa, _d.value.mantissa);
 		ck_assert_int_eq(val.exponent, _d.value.exponent);
 	}
 }
