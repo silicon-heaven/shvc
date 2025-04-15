@@ -2,7 +2,7 @@
   description = "Project template for C";
 
   inputs = {
-    semver.url = "github:cynerd/nixsemver";
+    semver.url = "gitlab:Cynerd/nixsemver";
     check-suite.url = "github:cynerd/check-suite";
   };
 
@@ -13,15 +13,12 @@
     semver,
     check-suite,
   }: let
-    inherit (nixpkgs.lib) hasSuffix composeManyExtensions platforms;
-    inherit (flake-utils.lib) eachDefaultSystem filterPackages mkApp;
+    inherit (nixpkgs.lib) composeManyExtensions platforms;
+    inherit (flake-utils.lib) eachDefaultSystem;
     inherit (semver.lib) changelog;
 
     version = changelog.currentRelease ./CHANGELOG.md self.sourceInfo;
-    src = builtins.path {
-      path = ./.;
-      filter = path: _: ! hasSuffix ".nix" path;
-    };
+    src = ./.;
 
     template-c = {
       stdenv,
@@ -47,8 +44,8 @@
         nativeBuildInputs = [
           (callPackage ./subprojects/.fetch.nix {
             inherit src;
-            rev = self.rev or null;
-            hash = "sha256-iaBGxR8lnGjN++0BaZHKXkMzZHjnu4odUVCOw7qqrao=";
+            rev = self.rev or self.dirtyRev or null;
+            hash = "sha256-OMlQ2CC1GNE/ZIJgNLu294X3mccCsLrwRRRUd26SDuI=";
           })
           gperf
           meson
@@ -74,6 +71,7 @@
         ];
         doCheck = true;
         sphinxRoot = "../docs";
+        meta.mainProgram = "foo";
       };
   in
     {
@@ -93,32 +91,25 @@
       packages.default = pkgs.template-c;
       legacyPackages = pkgs;
 
-      apps.default = mkApp {
-        drv = self.packages.${system}.default;
-        name = "foo";
-      };
-
-      devShells = filterPackages system {
-        default = pkgs.mkShell {
-          packages = with pkgs; [
-            # Linters and formatters
-            clang-tools_18
-            editorconfig-checker
-            muon
-            shellcheck
-            shfmt
-            statix
-            deadnix
-            gitlint
-            # Testing and code coverage
-            valgrind
-            gcovr
-            # Documentation
-            sphinx-autobuild
-          ];
-          inputsFrom = [self.packages.${system}.default];
-          meta.platforms = platforms.linux;
-        };
+      devShells.default = pkgs.mkShell {
+        packages = with pkgs; [
+          # Linters and formatters
+          clang-tools_18
+          editorconfig-checker
+          muon
+          shellcheck
+          shfmt
+          statix
+          deadnix
+          gitlint
+          # Testing and code coverage
+          valgrind
+          gcovr
+          # Documentation
+          sphinx-autobuild
+        ];
+        inputsFrom = [self.packages.${system}.default];
+        meta.platforms = platforms.linux;
       };
 
       checks.default = self.packages.${system}.default;
