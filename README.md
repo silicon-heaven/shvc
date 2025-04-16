@@ -84,7 +84,8 @@ default for meson) or explicitly enable them using `meson configure
 $ meson test -C builddir
 ```
 
-You can also run tests with Valgrind tools `memcheck`, `helgrind`, and `drd`:
+You can also run tests with [Valgrind](http://www.valgrind.org) tools
+`memcheck`, `helgrind`, and `drd`:
 
 ```console
 $ meson test -C builddir --setup memcheck
@@ -93,7 +94,7 @@ $ meson test -C builddir --setup memcheck
 ### Code coverage report
 
 There is also possibility to generate code coverage report from test cases. To
-do so you can run:
+do so you need [gcovr](https://gcovr.com/) and then you can run:
 
 ```console
 $ meson setup -Db_coverage=true builddir
@@ -104,20 +105,34 @@ $ ninja -C builddir coverage-html
 The coverage report is generated in directory:
 `builddir/meson-logs/coveragereport`.
 
-## Linting and formatting the code
+## Linting the code
 
-The code can also be linted and formatted if clang tools are installed.
+The code can also be linted if
+[clang-tidy](https://clang.llvm.org/extra/clang-tidy/) is installed. To run
+it you can do:
+
+```console
+$ meson setup builddir
+$ ninja -C builddir clang-tidy
+```
+
+The other linters are also used for other files in this project; please inspect
+the `.gitlab-ci.yml` file for `.linter` jobs.
+
+## Formating the code
+
+The code should be automatically formatted with
+[clang-format](https://clang.llvm.org/docs/ClangFormat.html). The Meson build
+files with [muon](https://muon.build/).
 
 ```console
 $ meson setup builddir
 $ ninja -C builddir clang-format
+$ git ls-files '**/meson.build' meson_options.txt | xargs muon fmt -c .muon_fmt.ini -i
 ```
 
-```console
-$ meson setup builddir
-$ meson compile -C builddir
-$ ninja -C builddir clang-tidy
-```
+The other formatters are also used for other files in this project; please
+inspect the `.gitlab-ci.yml` file for `.style` jobs.
 
 ## Using Nix development environment
 

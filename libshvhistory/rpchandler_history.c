@@ -36,11 +36,11 @@ static void rpc_ls(void *cookie, struct rpchandler_ls *ctx) {
 	} else if (!strcmp(ctx->path, ".records")) {
 		for (struct rpchandler_history_records **record =
 				 history->facilities->records;
-			 record && *record; record++)
+			record && *record; record++)
 			rpchandler_ls_result(ctx, (*record)->name);
 	} else if (!strcmp(ctx->path, ".files")) {
 		for (struct rpchandler_history_files **file = history->facilities->files;
-			 file && *file; file++)
+			file && *file; file++)
 			rpchandler_ls_result(ctx, (*file)->name);
 	} else if (history->has_getlog) {
 		/* Handle getLog virtual tree for all subnodes. This requires parsing
@@ -72,7 +72,7 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 	if (!strncmp(RECORDS_PREFIX, ctx->path, strlen(RECORDS_PREFIX))) {
 		for (struct rpchandler_history_records **record =
 				 history->facilities->records;
-			 record && *record; record++) {
+			record && *record; record++) {
 			if (!strcmp((*record)->name, ctx->path + strlen(RECORDS_PREFIX))) {
 				rpchandler_dir_result(ctx, &rpchistory_fetch);
 				rpchandler_dir_result(ctx, &rpchistory_span);
@@ -80,7 +80,7 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 		}
 	} else if (!strncmp(FILES_PREFIX, ctx->path, strlen(FILES_PREFIX))) {
 		for (struct rpchandler_history_files **file = history->facilities->files;
-			 file && *file; file++) {
+			file && *file; file++) {
 			// TODO: files based logging
 		}
 	} else if (history->has_getlog) {
@@ -190,14 +190,14 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 		!strncmp(ctx->meta.path, RECORDS_PREFIX, strlen(RECORDS_PREFIX))) {
 		for (struct rpchandler_history_records **record =
 				 history->facilities->records;
-			 record && *record; record++) {
+			record && *record; record++) {
 			if (!strcmp(ctx->meta.path + strlen(RECORDS_PREFIX), (*record)->name))
 				return handle_records_history(ctx, *record);
 		}
 	} else if (history->has_files &&
 		!strncmp(ctx->meta.path, FILES_PREFIX, strlen(FILES_PREFIX))) {
 		for (struct rpchandler_history_files **file = history->facilities->files;
-			 file && *file; file++) {
+			file && *file; file++) {
 			if (!strcmp(ctx->meta.path + strlen(FILES_PREFIX), (*file)->name))
 				return handle_files_history();
 		}

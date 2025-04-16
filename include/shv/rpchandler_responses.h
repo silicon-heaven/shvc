@@ -175,17 +175,16 @@ bool rpcresponse_validmsg(rpcresponse_t response);
 		 })) \
 		for (cp_pack_t packer = rpchandler_msg_new_request( \
 				 (handler), (path), (method), (uid), request_id); \
-			 packer; ({ \
-				 cp_pack_container_end(packer); \
-				 packer = NULL; \
-				 response = \
-					 rpcresponse_expect((responses), request_id, func, ctx); \
-				 __ = 0; \
-				 if (!rpchandler_msg_send(handler)) { \
-					 rpcresponse_discard(responses, response); \
-					 response = NULL; \
-				 } \
-			 }))
+			packer; ({ \
+				cp_pack_container_end(packer); \
+				packer = NULL; \
+				response = rpcresponse_expect((responses), request_id, func, ctx); \
+				__ = 0; \
+				if (!rpchandler_msg_send(handler)) { \
+					rpcresponse_discard(responses, response); \
+					response = NULL; \
+				} \
+			}))
 
 /*! Send request without any parameter and provide response object for it.
  *

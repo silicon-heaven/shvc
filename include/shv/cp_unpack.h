@@ -565,34 +565,34 @@ bool cp_unpack_memndupog(cp_unpack_t unpack, struct cpitem *item, size_t siz,
 			 cp_unpack((UNPACK), (ITEM)); \
 			 DEPTH; \
 		 }); \
-		 __depth >= 0 && (ITEM)->type != CPITEM_INVALID; ({ \
-			 switch ((ITEM)->type) { \
-				 case CPITEM_BLOB: \
-				 case CPITEM_STRING: \
-					 if (item->as.Blob.flags & CPBI_F_FIRST) \
-						 __depth++; \
-					 if (item->as.Blob.flags & CPBI_F_LAST) \
-						 __depth--; \
-					 break; \
-				 case CPITEM_LIST: \
-				 case CPITEM_MAP: \
-				 case CPITEM_IMAP: \
-				 case CPITEM_META: \
-					 __depth++; \
-					 break; \
-				 case CPITEM_CONTAINER_END: \
-					 __depth--; \
-					 break; \
-				 case CPITEM_INVALID: \
-					 __depth = -1; \
-				 default: \
-					 break; \
-			 } \
-			 if (__depth > 0) \
-				 cp_unpack((UNPACK), (ITEM)); \
-			 else \
-				 __depth = -1; \
-		 }))
+		__depth >= 0 && (ITEM)->type != CPITEM_INVALID; ({ \
+			switch ((ITEM)->type) { \
+				case CPITEM_BLOB: \
+				case CPITEM_STRING: \
+					if (item->as.Blob.flags & CPBI_F_FIRST) \
+						__depth++; \
+					if (item->as.Blob.flags & CPBI_F_LAST) \
+						__depth--; \
+					break; \
+				case CPITEM_LIST: \
+				case CPITEM_MAP: \
+				case CPITEM_IMAP: \
+				case CPITEM_META: \
+					__depth++; \
+					break; \
+				case CPITEM_CONTAINER_END: \
+					__depth--; \
+					break; \
+				case CPITEM_INVALID: \
+					__depth = -1; \
+				default: \
+					break; \
+			} \
+			if (__depth > 0) \
+				cp_unpack((UNPACK), (ITEM)); \
+			else \
+				__depth = -1; \
+		}))
 
 /*! Helper macro for unpacking lists.
  *
@@ -630,7 +630,7 @@ bool cp_unpack_memndupog(cp_unpack_t unpack, struct cpitem *item, size_t siz,
 			 ___item->type != CPITEM_INVALID && \
 				 ___item->type != CPITEM_CONTAINER_END; \
 		 }); \
-		 (CNT)++)
+		(CNT)++)
 
 /*! Helper macro for unpacking maps.
  *

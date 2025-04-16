@@ -238,7 +238,7 @@ struct rpcurl *rpcurl_parse(
 		// TODO is there really no function to convert not null terminated
 		// string to number?
 		for (const char *c = uri.portText.afterLast - 1;
-			 c >= uri.portText.first; c--) {
+			c >= uri.portText.first; c--) {
 			if ((*c < '0') || (*c > '9'))
 				ERROR(c);
 			res->port += (*c - '0') * base;

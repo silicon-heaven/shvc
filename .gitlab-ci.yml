@@ -209,7 +209,7 @@ shell-format:
 nixfmt:
   extends: .style
   script:
-    - nix fmt
+    - nix fmt .
     - git diff --exit-code
 
 deadnix:
@@ -262,9 +262,9 @@ release:
       artifacts: true
   before_script:
     - apk update
-    - apk add bash curl yq py3-semver
+    - apk add bash curl yq
   script:
-    - ./.release.sh
+    - ./release.sh
 
 pages:
   stage: release

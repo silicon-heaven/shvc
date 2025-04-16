@@ -8,7 +8,7 @@ import sys
 sys.path.insert(0, str(pathlib.Path("..").absolute()))
 
 project = "Silicon Heaven in C"
-copyright = "2023, Elektroline a.s."
+copyright = "SPDX-License-Identifier: MIT"
 author = "Elektroline a.s."
 primary_domain = "c"
 highlight_language = "c"
@@ -24,6 +24,7 @@ extensions = [
     "sphinx_book_theme",
     "myst_parser",
     "breathe",
+    "sphinx_multiversion",
 ]
 
 templates_path = ["_templates"]
@@ -36,6 +37,25 @@ html_show_sourcelink = True
 html_show_copyright = False
 html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
+html_sidebars = {
+    "**": [
+        "navbar-logo.html",
+        "icon-links.html",
+        "search-button-field.html",
+        "sbt-sidebar-nav.html",
+        "versioning.html",
+    ]
+}
+html_theme_options = {
+    "show_toc_level": 3,
+    "repository_url": "https://gitlab.com/silicon-heaven/shvc",
+    "repository_branch": "master",
+    "path_to_docs": "docs",
+    "use_source_button": True,
+    "use_repository_button": True,
+    "use_edit_page_button": True,
+    "use_issues_button": True,
+}
 
 
 myst_enable_extensions = [

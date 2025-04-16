@@ -75,6 +75,7 @@ shift $((OPTIND - 1))
 
 if [[ -v VALGRIND ]]; then
 	if [[ "$no_wrap" == "y" ]]; then
+		# TODO possibly use VALGRIND_OPTS instead
 		export VALGRIND="$valgrind ${default_valgrind_args[*]} ${valgrind_args[*]} --tool=$VALGRIND"
 		exec "$@"
 	else

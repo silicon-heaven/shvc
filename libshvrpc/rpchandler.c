@@ -167,7 +167,7 @@ static bool valid_path(rpchandler_t handler, char *path) {
 		.located = false,
 	};
 	for (const struct rpchandler_stage *s = handler->stages;
-		 s->funcs && !lsctx.located; s++)
+		s->funcs && !lsctx.located; s++)
 		if (s->funcs->ls)
 			s->funcs->ls(s->cookie, &lsctx.ctx);
 	if (slash)
@@ -189,7 +189,7 @@ static bool handle_ls(struct msg_ctx *ctx) {
 		.located = false,
 	};
 	for (const struct rpchandler_stage *s = ctx->handler->stages;
-		 s->funcs && !lsctx.located; s++)
+		s->funcs && !lsctx.located; s++)
 		if (s->funcs->ls)
 			s->funcs->ls(s->cookie, &lsctx.ctx);
 
@@ -239,7 +239,7 @@ static bool handle_dir(struct msg_ctx *ctx) {
 		rpchandler_dir_result(&dirctx.ctx, &rpcdir_dir);
 		rpchandler_dir_result(&dirctx.ctx, &rpcdir_ls);
 		for (const struct rpchandler_stage *s = ctx->handler->stages;
-			 s->funcs && !dirctx.located; s++)
+			s->funcs && !dirctx.located; s++)
 			if (s->funcs->dir)
 				s->funcs->dir(s->cookie, &dirctx.ctx);
 		if (dirctx.ctx.name == NULL)
@@ -312,7 +312,7 @@ int rpchandler_idling(rpchandler_t handler) {
 	};
 	int res = RPCHANDLER_IDLE_SKIP;
 	for (const struct rpchandler_stage *s = handler->stages;
-		 s->funcs && res > 0; s++) {
+		s->funcs && res > 0; s++) {
 		if (s->funcs->idle) {
 			int t = s->funcs->idle(s->cookie, &ctx.ctx);
 			if (res > t)

@@ -301,9 +301,9 @@
         "type": "github"
       },
       "original": {
-        "owner": "cynerd",
+        "owner": "Cynerd",
         "repo": "nixsemver",
-        "type": "github"
+        "type": "gitlab"
       }
     },
     "systems": {

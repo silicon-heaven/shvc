@@ -40,10 +40,9 @@ BreakBeforeTernaryOperators: true
 BreakStringLiterals: false
 ColumnLimit: 80
 ContinuationIndentWidth: 4
-#DisableFormat: false
 IncludeBlocks: Preserve
 IndentCaseLabels: true
-IndentExternBlock: true
+IndentExternBlock: false
 IndentGotoLabels: true
 IndentPPDirectives: None
 IndentWidth: 4

@@ -50,9 +50,9 @@ int rpcbroker_client_register(rpcbroker_t broker, rpchandler_t handler,
 	clock_gettime(CLOCK_MONOTONIC, &now);
 	int cid;
 	for (cid = 0; cid < broker->clients_siz &&
-		 (broker->clients[cid] ||
-			 broker->clients_lastuse[cid] >= now.tv_sec - REUSE_TIMEOUT);
-		 cid++) {}
+		(broker->clients[cid] ||
+			broker->clients_lastuse[cid] >= now.tv_sec - REUSE_TIMEOUT);
+		cid++) {}
 	if (cid == broker->clients_siz) {
 		assert(broker->clients_siz);
 		broker->clients_siz *= 2;

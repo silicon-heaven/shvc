@@ -2,7 +2,7 @@
   description = "Silicon Heaven in C";
 
   inputs = {
-    semver.url = "github:cynerd/nixsemver";
+    semver.url = "gitlab:Cynerd/nixsemver";
     check-suite.url = "github:cynerd/check-suite";
     pyshv.url = "gitlab:silicon-heaven/pyshv";
   };
@@ -15,15 +15,12 @@
     check-suite,
     pyshv,
   }: let
-    inherit (nixpkgs.lib) hasSuffix composeManyExtensions platforms;
-    inherit (flake-utils.lib) eachDefaultSystem filterPackages mkApp;
+    inherit (nixpkgs.lib) composeManyExtensions platforms;
+    inherit (flake-utils.lib) eachDefaultSystem mkApp;
     inherit (semver.lib) changelog;
 
     version = changelog.currentRelease ./CHANGELOG.md self.sourceInfo;
-    src = builtins.path {
-      path = ./.;
-      filter = path: _: ! hasSuffix ".nix" path;
-    };
+    src = ./.;
 
     shvc = {
       stdenv,
@@ -54,8 +51,8 @@
         nativeBuildInputs = [
           (callPackage ./subprojects/.fetch.nix {
             inherit src;
-            rev = self.rev or null;
-            hash = "sha256-OQ069Ye4GxrmCF5qpzH80/AdMabIL58617JBi+6BuYI=";
+            rev = self.rev or self.dirtyRev or null;
+            hash = "sha256-QVxQpPqYAyOJiGDWLVsYTxYwOdwXOTbJxe05Tg8sJYo=";
           })
           gperf
           meson
@@ -66,6 +63,7 @@
           (sphinxHook.overrideAttrs {
             propagatedBuildInputs = with python3Packages; [
               sphinx-book-theme
+              sphinx-multiversion
               myst-parser
               breathe
             ];
@@ -87,33 +85,12 @@
         ];
         doCheck = true;
         sphinxRoot = "../docs";
-      };
-
-    pypkg-multiversion = {
-      buildPythonPackage,
-      fetchFromGitHub,
-      sphinx,
-    }:
-      buildPythonPackage {
-        pname = "sphinx-multiversion";
-        version = "0.2.4";
-        src = fetchFromGitHub {
-          owner = "Holzhaus";
-          repo = "sphinx-multiversion";
-          rev = "v0.2.4";
-          hash = "sha256-ZFEELAeZ/m1pap1DmS4PogL3eZ3VuhTdmwDOg5rKOPA=";
-        };
-        propagatedBuildInputs = [sphinx];
-        doCheck = false;
+        meta.mainProgram = "foo";
       };
   in
     {
       overlays = {
-        pythonPackagesExtension = final: _: {
-          sphinx-multiversion = final.callPackage pypkg-multiversion {};
-        };
-        pkgs = final: prev: {
-          pythonPackagesExtensions = prev.pythonPackagesExtensions ++ [self.overlays.pythonPackagesExtension];
+        pkgs = final: _: {
           shvc = final.callPackage shvc {};
         };
         default = composeManyExtensions [
@@ -139,31 +116,27 @@
         };
       };
 
-      devShells = filterPackages system {
-        default = pkgs.mkShell {
-          packages = with pkgs; [
-            # Linters and formatters
-            clang-tools_18
-            editorconfig-checker
-            muon
-            shellcheck
-            ruff
-            mypy
-            shfmt
-            statix
-            deadnix
-            gitlint
-            # Testing and code coverage
-            valgrind
-            gcovr
-            gcc11 # Hotfix for https://github.com/NixOS/nixpkgs/pull/279455
-            # Documentation
-            sphinx-autobuild
-            python3Packages.sphinx-multiversion
-          ];
-          inputsFrom = [self.packages.${system}.default];
-          meta.platforms = platforms.linux;
-        };
+      devShells.default = pkgs.mkShell {
+        packages = with pkgs; [
+          # Linters and formatters
+          clang-tools
+          deadnix
+          editorconfig-checker
+          gitlint
+          muon
+          mypy
+          ruff
+          shellcheck
+          shfmt
+          statix
+          # Testing and code coverage
+          valgrind
+          gcovr
+          # Documentation
+          sphinx-autobuild
+        ];
+        inputsFrom = [self.packages.${system}.default];
+        meta.platforms = platforms.linux;
       };
 
       checks.default = self.packages.${system}.default;
