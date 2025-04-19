@@ -1,12 +1,12 @@
 /* SPDX-License-Identifier: MIT */
-#ifndef SHV_CHAINPACK_H
-#define SHV_CHAINPACK_H
-/*! @file
+/**
  * The basic utilities for working with Chainpack data. This provides
  * definitions and simple operations you need to unpack and pack data in
  * Chainpack format. This is not a most user friendly way to work with
  * Chainpack. It is suggester rather to use generic packer and unpacker instead.
  */
+#ifndef SHV_CHAINPACK_H
+#define SHV_CHAINPACK_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -15,7 +15,7 @@
 _Static_assert(sizeof(unsigned long long) <= 17, "Limitation of the ChainPack");
 
 
-/*! Scheme bytes used in ChainPack. */
+/** Scheme bytes used in ChainPack. */
 enum chainpack_scheme {
 	CPS_Null = 128,
 	CPS_UInt,

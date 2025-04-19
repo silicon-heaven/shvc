@@ -94,7 +94,7 @@ $ meson test -C builddir --setup memcheck
 ### Code coverage report
 
 There is also possibility to generate code coverage report from test cases. To
-do so you need [gcovr](https://gcovr.com/) and then you can run:
+do so you need gcovr and then you can run:
 
 ```console
 $ meson setup -Db_coverage=true builddir

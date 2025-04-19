@@ -1,7 +1,10 @@
 /* SPDX-License-Identifier: MIT */
 #ifndef SHV_RPCLOGGER_H
 #define SHV_RPCLOGGER_H
-/*! @file
+#include <stdbool.h>
+#include <shv/cp.h>
+
+/**
  * Logger used with RPC Client to trace the communication.
  *
  * Logger is implemented as a buffer that stores part of the message and outputs
@@ -9,42 +12,40 @@
  * hookup to this your own logging solution.
  */
 
-#include <stdbool.h>
-#include <shv/cp.h>
-
-/*! RPC Client logger handle. */
+/** RPC Client logger handle. */
 typedef struct rpclogger *rpclogger_t;
 
-/*! Callback definition for RPC client logger.
+/** Callback definition for RPC client logger.
  *
- * @param line The line to be outputted to the logs.
+ * :param line: The line to be outputted to the logs.
  */
 typedef void (*rpclogger_func_t)(const char *line);
 
-/*! Create a new RPC Client logger handle.
+/** Create a new RPC Client logger handle.
  *
- * @param callback Function called when line should be outputed.
- * @param prefix The prefix to be added before every line. The provided pointer
+ * :param callback: Function called when line should be outputed.
+ * :param prefix: The prefix to be added before every line. The provided pointer
  *   doesn't have be valid after this call finishes because content is copied.
- * @param bufsiz Size of the buffer for this logger.
- * @param maxdepth The output is in CPON format and this allows you to limit
+ * :param bufsiz: Size of the buffer for this logger.
+ * :param maxdepth: The output is in CPON format and this allows you to limit
  *   the maximum depth of containers you want to see in the logs. By specifying
  *   low enough number the logger can skip unnecessary data and still show you
  *   enough info about the message so you can recognize it.
- * @returns New logger handle or `NULL` in case `0` was passed to `maxdepth`.
+ * :return: New logger handle or ``NULL`` in case ``0`` was passed to
+ *   ``maxdepth``.
  */
 [[gnu::nonnull(1), gnu::malloc]]
 rpclogger_t rpclogger_new(rpclogger_func_t callback, const char *prefix,
 	size_t bufsiz, unsigned maxdepth);
 
-/*! Destroy the existing logger handle.
+/** Destroy the existing logger handle.
  *
- * @param logger Logger handle.
+ * :param logger: Logger handle.
  */
 void rpclogger_destroy(rpclogger_t logger);
 
 
-/*! Log single item into the logger.
+/** Log single item into the logger.
  *
  * This is API intended to be called by RPC Client implementations. It is not
  * desirable to call this outside of that context.
@@ -52,37 +53,37 @@ void rpclogger_destroy(rpclogger_t logger);
  * For consistency you need to log every single item you unpack otherwise log
  * might be invalid.
  *
- * You most likely want to call this from @ref rpcclient.pack and @ref
- * rpcclient.unpack implementation.
+ * You most likely want to call this from :c:var:`rpcclient.pack` and
+ * :c:var:`rpcclient.unpack` implementation.
  *
- * @param logger Logger handle.
- * @param item RPC item to be logged*str != '\0'
+ * :param logger: Logger handle.
+ * :param item: RPC item to be logged.
  */
 [[gnu::nonnull(2)]]
 void rpclogger_log_item(rpclogger_t logger, const struct cpitem *item);
 
-/*! Log received reset.
+/** Log received reset.
  *
  * This is API intended to be called by RPC Client implementations. It is
  * not desirable to call this outside of that context.
  *
- * It is handled the same way as @ref rpclogger_log_item item is and it is
- * expected that @ref rpclogger_log_end will be called afterwards.
+ * It is handled the same way as :c:func:`rpclogger_log_item` item is and it is
+ * expected that :c:func:`rpclogger_log_end` will be called afterwards.
  *
- * @param logger Logger handle.
+ * :param logger: Logger handle.
  */
 void rpclogger_log_reset(rpclogger_t logger);
 
-/*! Identification of the message end type.
+/** Identification of the message end type.
  *
  * This controls hinting at the end of the line to identify if this message.
  */
 enum rpclogger_end_type {
-	/*! This is standard message end. The message was correctly received or
+	/** This is standard message end. The message was correctly received or
 	 * sent.
 	 */
 	RPCLOGGER_ET_VALID,
-	/*! This informs logger that messages was identified as invalid. This can be
+	/** This informs logger that messages was identified as invalid. This can be
 	 * due to transmission error (only for receive) or because message sending
 	 * was aborted.
 	 *
@@ -91,61 +92,63 @@ enum rpclogger_end_type {
 	 * logged as invalid message.
 	 */
 	RPCLOGGER_ET_INVALID,
-	/*! This is used in case the message state is unknown. We just don't know if
+	/** This is used in case the message state is unknown. We just don't know if
 	 * the message was valid or not.
 	 */
 	RPCLOGGER_ET_UNKNOWN,
 };
 
-/*! Log the end of the message.
+/** Log the end of the message.
  *
  * This is API intended to be called by RPC Client implementations. It is not
  * desirable to call this outside of that context.
  *
  * This signals logger end of a message that consist of previous logged items.
- * This calls @ref rpclogger_log_flush. This flushes items buffered so far to
- * the configured output.
+ * This calls :c:func:`rpclogger_log_flush`. This flushes items buffered so far
+ * to the configured output.
  *
  * In case of message sending you most likely want to call this from
- * implementations of @ref rpcclient_sendmsg with @ref RPCLOGGER_ET_VALID and
- * from @ref rpcclient_dropmsg with @ref RPCLOGGER_ET_INVALID.
+ * implementations of :c:macro:`rpcclient_sendmsg` with
+ * :c:enumerator:`RPCLOGGER_ET_VALID` and from :c:func:`rpcclient_dropmsg` with
+ * :c:enumerator:`RPCLOGGER_ET_INVALID`.
  *
  * In case of message retrieval you most likely want to call this from
- * implementations of @ref rpcclient_validmsg where based on the result you
- * use either @ref RPCLOGGER_ET_VALID or @ref RPCLOGGER_ET_INVALID. You should
- * also call this from @ref rpcclient_nextmsg implementation with @ref
- * RPCLOGGER_ET_UNKNOWN to ensure that any previous invalidate message is
- * correctly terminated in the logging.
+ * implementations of :c:macro:`rpcclient_validmsg` where based on the result
+ * you use either :c:enumerator:`RPCLOGGER_ET_VALID` or
+ * :c:enumerator:`RPCLOGGER_ET_INVALID`. You should also call this from
+ * :c:macro:`rpcclient_nextmsg` implementation with
+ * :c:enumerator:`RPCLOGGER_ET_UNKNOWN` to ensure that any previous invalidate
+ * message is correctly terminated in the logging.
  *
  * @param logger Logger handle.
  * @param tp If the items logged so far were valid message or not.
  */
 void rpclogger_log_end(rpclogger_t logger, enum rpclogger_end_type tp);
 
-/*! Flush the buffered output.
+/** Flush the buffered output.
  *
  * This is API intended to be called by RPC Client implementations. It is not
  * desirable to call this outside of that context.
  *
  * This flushes items buffered so far to the configured output.
  *
- * @param logger Logger handle.
+ * :param logger: Logger handle.
  */
 void rpclogger_log_flush(rpclogger_t logger);
 
-/*! Predefined callback that outputs line to the stderr.
+/** Predefined callback that outputs line to the stderr.
  *
  * This is provided because it is one of the common ways to do logging.
  *
- * @param line See @ref rpclogger_func_t.
+ * :param line: See :c:type:`rpclogger_func_t`.
  */
 void rpclogger_func_stderr(const char *line);
 
-/*! Predefined callback that outputs line to the syslog with debug priority.
+/** Predefined callback that outputs line to the syslog with debug priority.
  *
  * This is provided because it is one of the common ways to do logging.
  *
- * @param line See @ref rpclogger_func_t.
+ * :param line: See :c:type:`rpclogger_func_t`.
  */
 void rpclogger_func_syslog_debug(const char *line);
 

@@ -29,10 +29,7 @@
       meson,
       ninja,
       pkg-config,
-      doxygen,
       graphviz-nox,
-      sphinxHook,
-      python3Packages,
       uriparser,
       openssl,
       check,
@@ -43,7 +40,6 @@
         pname = "shvc";
         inherit version src;
         GIT_REV = self.shortRev or self.dirtyShortRev;
-        outputs = ["out" "doc"];
         buildInputs = [
           uriparser
           openssl
@@ -58,16 +54,7 @@
           meson
           ninja
           pkg-config
-          doxygen
           graphviz-nox
-          (sphinxHook.overrideAttrs {
-            propagatedBuildInputs = with python3Packages; [
-              sphinx-book-theme
-              sphinx-multiversion
-              myst-parser
-              breathe
-            ];
-          })
         ];
         postUnpack = "patchShebangs --build $sourceRoot";
         checkInputs = [
@@ -84,14 +71,24 @@
             ]))
         ];
         doCheck = true;
-        sphinxRoot = "../docs";
-        meta.mainProgram = "foo";
+        meta.mainProgram = "shvc";
       };
   in
     {
       overlays = {
-        pkgs = final: _: {
+        pkgs = final: prev: {
           shvc = final.callPackage shvc {};
+          pythonPackagesExtensions =
+            prev.pythonPackagesExtensions
+            ++ [self.overlays.pythonPackages];
+        };
+        pythonPackages = final: _: {
+          hawkmoth = final.callPackage ./hawkmoth.nix {};
+        };
+        patchedSphinx = _: prev: {
+          sphinx = prev.sphinx.overrideAttrs (old: {
+            patches = (old.patches or []) ++ [./sphinx.patch];
+          });
         };
         default = composeManyExtensions [
           check-suite.overlays.default
@@ -133,7 +130,18 @@
           valgrind
           gcovr
           # Documentation
-          sphinx-autobuild
+          clang
+          ((python3.override {
+              packageOverrides = self.overlays.patchedSphinx;
+            }).withPackages (pypkgs:
+              with pypkgs; [
+                sphinx
+                sphinx-autobuild
+                sphinx-book-theme
+                sphinx-mdinclude
+                sphinx-multiversion
+                hawkmoth
+              ]))
         ];
         inputsFrom = [self.packages.${system}.default];
         meta.platforms = platforms.linux;
