@@ -111,7 +111,7 @@ TEST(chainpack, chainpack_double) {
 END_TEST
 TEST(cpon, cpon_double) {
 	pack_double();
-	ck_assert_packstr("42.2");
+	ck_assert_packstr("0x1.519999999999Ap+5");
 }
 END_TEST
 

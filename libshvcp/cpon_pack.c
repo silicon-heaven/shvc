@@ -2,13 +2,15 @@
 #include <string.h>
 #include <assert.h>
 #include <inttypes.h>
+#include <math.h>
 #include <time.h>
 #include <shv/cp.h>
 #include "common.h"
 
 #define PUTC(V) \
 	do { \
-		if (f && fputc_unlocked((V), f) != (V)) \
+		int __c = (V); \
+		if (f && fputc_unlocked(__c, f) != __c) \
 			return -1; \
 		res++; \
 	} while (false)
@@ -38,9 +40,43 @@
 			return -1; \
 		res += __cnt; \
 	} while (false)
+#define PUTHEX(V) \
+	do { \
+		int __v = (V) & 0xf; \
+		PUTC(__v + (__v >= 10 ? 'A' - 10 : '0')); \
+	} while (false)
+#define PUTUINT(V) \
+	do { \
+		uintmax_t __u = (V); \
+		if (__u < 10) \
+			PUTC((int)__u + '0'); \
+		else { \
+			char buf[40]; \
+			buf[39] = '\0'; \
+			int __i; \
+			for (__i = 1; __i <= 39; __i++) { \
+				int __d = __u % 10; \
+				__u /= 10; \
+				buf[39 - __i] = __d + '0'; \
+				if (__u == 0) \
+					break; \
+			} \
+			PUTS(buf + (39 - __i)); \
+		} \
+	} while (false)
+static_assert(sizeof(uintmax_t) <= 16,
+	"The implementation expects uintmax_t to be at most 128bits");
+#define PUTINT(V) \
+	do { \
+		intmax_t __v = (V); \
+		if (__v < 0) \
+			PUTC('-'); \
+		PUTUINT(imaxabs(__v)); \
+	} while (false)
 
 
 static ssize_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec);
+static ssize_t cpon_pack_double(FILE *f, const double val);
 static ssize_t cpon_pack_buf(FILE *f, const struct cpitem *item);
 static ssize_t ctxpush(
 	FILE *f, struct cpon_state *state, enum cpitem_type tp, const char *str);
@@ -87,13 +123,14 @@ ssize_t cpon_pack(FILE *f, struct cpon_state *state, const struct cpitem *item) 
 				PUTS(item->as.Bool ? "true" : "false");
 				break;
 			case CPITEM_INT:
-				PRINTF("%jd", item->as.Int);
+				PUTINT(item->as.Int);
 				break;
 			case CPITEM_UINT:
-				PRINTF("%juu", item->as.UInt);
+				PUTUINT(item->as.UInt);
+				PUTC('u');
 				break;
 			case CPITEM_DOUBLE:
-				PRINTF("%G", item->as.Double);
+				CALL(cpon_pack_double, item->as.Double);
 				break;
 			case CPITEM_DECIMAL:
 				CALL(cpon_pack_decimal, &item->as.Decimal);
@@ -174,9 +211,10 @@ static ssize_t cpon_pack_buf(FILE *f, const struct cpitem *item) {
 
 	for (size_t i = 0; i < item->as.Blob.len; i++) {
 		uint8_t b = item->rbuf[i];
-		if (item->type == CPITEM_BLOB && item->as.Blob.flags & CPBI_F_HEX)
-			PRINTF("%.2X", b);
-		else {
+		if (item->type == CPITEM_BLOB && item->as.Blob.flags & CPBI_F_HEX) {
+			PUTHEX(b >> 4);
+			PUTHEX(b);
+		} else {
 #define ESCAPE(V) \
 	do { \
 		PUTC('\\'); \
@@ -215,9 +253,11 @@ static ssize_t cpon_pack_buf(FILE *f, const struct cpitem *item) {
 					break;
 			}
 #undef ESCAPE
-			if (item->type == CPITEM_BLOB && (b < 32 || b >= 127))
-				PRINTF("\\%.2X", b);
-			else
+			if (item->type == CPITEM_BLOB && (b < 32 || b >= 127)) {
+				PUTC('\\');
+				PUTHEX(b >> 4);
+				PUTHEX(b);
+			} else
 				PUTC(b);
 		}
 	}
@@ -253,10 +293,63 @@ static ssize_t cpon_pack_decimal(FILE *f, const struct cpdecimal *dec) {
 			PUTC('0');
 		for (; i >= 0; i--)
 			PUTC(str[len - i - 1]);
-	} else
+	} else {
 		/* Pack in XeY notation */
-		PRINTF("%jde%d", dec->mantissa, dec->exponent);
+		PUTINT(dec->mantissa);
+		PUTC('e');
+		PUTINT(dec->exponent);
+	}
 
+	return res;
+}
+
+static ssize_t cpon_pack_double(FILE *f, double val) {
+	ssize_t res = 0;
+	if (val == 0) {
+		/* The simplest case if val is zero. */
+		PUTS("0x0.0p+1");
+		return res;
+	}
+
+	/* Ensure the correct conversion to hex integer */
+	union di {
+		uint64_t _int;
+		double _double;
+	};
+
+	/* Buffer (-)0x1. at the begining and p+ at the end. */
+	char buf[20] = {'0', 'x', '1', '.', '0'};
+
+	int e;
+	union di di;
+	di._double = frexp(val, &e) * 2;
+	e--;
+
+	bool leading_zeros = true;
+	int idx = 4;
+	int last = 4;
+	for (int i = 48; i >= 0; i -= 4) {
+		char c = ((di._int & ((1LL << 52) - 1)) >> (i)) & 0xf;
+		/* Avoid leading zeros */
+		if (c == 0 && leading_zeros)
+			continue;
+		leading_zeros = false;
+		/* Save last valid number index. This is to cut zeros at the end. */
+		if (c != 0)
+			last = idx;
+		c += c >= 10 ? ('A' - 10) : '0';
+		buf[idx++] = c;
+	}
+	/* Finish the buffer and write the required format. */
+	buf[++last] = 'p';
+	if (e > 0)
+		buf[++last] = '+';
+	buf[++last] = '\0';
+	if (val < 0)
+		PUTC('-');
+	PUTS(buf);
+	/* PUTINT automatically inserts '-' if value is negative. */
+	PUTINT(e);
 	return res;
 }
 

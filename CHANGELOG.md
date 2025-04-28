@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Renamed `mantisa` field to correct `mantissa` in `cpdecimal` structure.
+- `cpon_pack` packer now uses faster `fputc`/`fwrite` instead of `printf`.
+- `CPON` packs `double` in a scientific notation with `p`.
 
 
 ## [0.4.0] - 2025-04-08
