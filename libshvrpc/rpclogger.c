@@ -11,7 +11,7 @@
 static const size_t boundary = 6; /* RESET\0 and ...\n\0 */
 
 struct rpclogger {
-	rpclogger_func_t callback;
+	struct rpclogger_funcs funcs;
 	FILE *f;
 	char *buf;
 	size_t buflen, bufsiz, prefixlen;
@@ -20,6 +20,19 @@ struct rpclogger {
 	unsigned maxdepth;
 };
 
+static void rpclogger_func_stderr(const char *line);
+static void rpclogger_func_syslog_debug(const char *line);
+static bool rpclogger_would_log_syslog_debug(void);
+
+struct rpclogger_funcs rpclogger_syslog_funcs = {
+	.log = rpclogger_func_syslog_debug,
+	.would_log = rpclogger_would_log_syslog_debug,
+};
+
+struct rpclogger_funcs rpclogger_stderr_funcs = {
+	.log = rpclogger_func_stderr,
+	.would_log = NULL,
+};
 
 static ssize_t logwrite(void *cookie, const char *buf, size_t size) {
 	struct rpclogger *logger = cookie;
@@ -52,9 +65,9 @@ static void cpon_state_realloc(struct cpon_state *state) {
 	}
 }
 
-rpclogger_t rpclogger_new(rpclogger_func_t callback, const char *prefix,
-	size_t bufsiz, unsigned maxdepth) {
-	if (maxdepth == 0)
+rpclogger_t rpclogger_new(const struct rpclogger_funcs *funcs,
+	const char *prefix, size_t bufsiz, unsigned maxdepth) {
+	if (maxdepth == 0 || !funcs->log)
 		return NULL;
 	size_t prefixlen = strlen(prefix);
 	/* We have here additional space for boundary, plus one token */
@@ -62,7 +75,7 @@ rpclogger_t rpclogger_new(rpclogger_func_t callback, const char *prefix,
 		return NULL; /* Prefix can't fit to buffer so just drop */
 	struct rpclogger *res = malloc(sizeof *res);
 	*res = (struct rpclogger){
-		.callback = callback,
+		.funcs = *(struct rpclogger_funcs *)funcs,
 		.f = fopencookie(res, "w", (cookie_io_functions_t){.write = logwrite}),
 		.buf = malloc(bufsiz),
 		.buflen = prefixlen,
@@ -94,7 +107,7 @@ static void ellipsis(rpclogger_t logger) {
 }
 
 void rpclogger_log_item(rpclogger_t logger, const struct cpitem *item) {
-	if (logger == NULL)
+	if (logger == NULL || (logger->funcs.would_log && !logger->funcs.would_log()))
 		return;
 	if (logger->buflen == logger->prefixlen && logger->cpon_state.depth > 0)
 		ellipsis(logger);
@@ -114,13 +127,13 @@ void rpclogger_log_item(rpclogger_t logger, const struct cpitem *item) {
 }
 
 void rpclogger_log_reset(rpclogger_t logger) {
-	if (logger == NULL)
+	if (logger == NULL || (logger->funcs.would_log && !logger->funcs.would_log()))
 		return;
 	fputs("RESET", logger->f);
 }
 
 void rpclogger_log_end(rpclogger_t logger, enum rpclogger_end_type tp) {
-	if (logger == NULL)
+	if (logger == NULL || (logger->funcs.would_log && !logger->funcs.would_log()))
 		return;
 	if (logger->cpon_state.depth == 0 && tp == RPCLOGGER_ET_UNKNOWN)
 		return;
@@ -137,7 +150,7 @@ void rpclogger_log_end(rpclogger_t logger, enum rpclogger_end_type tp) {
 }
 
 void rpclogger_log_flush(rpclogger_t logger) {
-	if (logger == NULL)
+	if (logger == NULL || (logger->funcs.would_log && !logger->funcs.would_log()))
 		return;
 	if (logger->buflen == logger->prefixlen)
 		return;
@@ -145,14 +158,18 @@ void rpclogger_log_flush(rpclogger_t logger) {
 		ellipsis(logger);
 	logger->buf[logger->buflen++] = '\n';
 	logger->buf[logger->buflen] = '\0';
-	logger->callback(logger->buf);
+	logger->funcs.log(logger->buf);
 	logger->buflen = logger->prefixlen;
 }
 
-void rpclogger_func_stderr(const char *line) {
+static void rpclogger_func_stderr(const char *line) {
 	fputs(line, stderr);
 }
 
-void rpclogger_func_syslog_debug(const char *line) {
+static void rpclogger_func_syslog_debug(const char *line) {
 	syslog(LOG_DEBUG, "%s", line);
+}
+
+static bool rpclogger_would_log_syslog_debug(void) {
+	return (setlogmask(0) & LOG_MASK(LOG_DEBUG)) != 0;
 }

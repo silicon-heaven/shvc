@@ -7,11 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - `cp_unpack_decimal` to simplify `cpdecimal` unpacking.
+- `rpclogger` callback `rpclogger_allowed_t` that determines if logging
+  should be performed and thus optimizes unnecessary `CPON` packing.
 
 ### Changed
 - Renamed `mantisa` field to correct `mantissa` in `cpdecimal` structure.
 - `cpon_pack` packer now uses faster `fputc`/`fwrite` instead of `printf`.
 - `CPON` packs `double` in a scientific notation with `p`.
+- `rpclogger_new` now takes `rpclogger_funcs` structure as an argument
+  instead of just `rpclogger_func_t`.
 
 
 ## [0.4.0] - 2025-04-08

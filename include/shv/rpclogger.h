@@ -15,35 +15,52 @@
 /** RPC Client logger handle. */
 typedef struct rpclogger *rpclogger_t;
 
-/** Callback definition for RPC client logger.
+/** Definition of functions for RPC logger.
  *
- * :param line: The line to be outputted to the logs.
+ * The pointer to this structure is passed to :c:func:`rpclogger_new` function.
+ * It defines the functions necessary to perform the logging.
  */
-typedef void (*rpclogger_func_t)(const char *line);
+struct rpclogger_funcs {
+	/** Logging callback that performs the actual logging.
+	 *
+	 * :param line: The line to be outputted to the logs.
+	 */
+	void (*log)(const char *line);
+	/**	Informs the logger whether it should log or not.
+	 *
+	 * Logging is performed based on :c:func:`rpclogger_func_t` callback. It is
+	 * possible the current level of logging is not enabled by the system
+	 * and we can optimize the code by skipping CPON packing at all. This
+	 * function is called before every logging is performed.
+	 *
+	 * :return: ``true`` if logging should be performed, ``false`` otherwise.
+	 */
+	bool (*would_log)(void);
+};
 
 /** Create a new RPC Client logger handle.
  *
- * :param callback: Function called when line should be outputed.
+ * :param callbacks: Pointer to :c:struct:`rpclogger_funcs` defining
+ * 	callbacks for the RPC logger.
  * :param prefix: The prefix to be added before every line. The provided pointer
- *   doesn't have be valid after this call finishes because content is copied.
+ * 	doesn't have be valid after this call finishes because content is copied.
  * :param bufsiz: Size of the buffer for this logger.
  * :param maxdepth: The output is in CPON format and this allows you to limit
- *   the maximum depth of containers you want to see in the logs. By specifying
- *   low enough number the logger can skip unnecessary data and still show you
- *   enough info about the message so you can recognize it.
+ * 	the maximum depth of containers you want to see in the logs. By specifying
+ *	low enough number the logger can skip unnecessary data and still show you
+ * 	enough info about the message so you can recognize it.
  * :return: New logger handle or ``NULL`` in case ``0`` was passed to
- *   ``maxdepth``.
+ * 	``maxdepth``.
  */
 [[gnu::nonnull(1), gnu::malloc]]
-rpclogger_t rpclogger_new(rpclogger_func_t callback, const char *prefix,
-	size_t bufsiz, unsigned maxdepth);
+rpclogger_t rpclogger_new(const struct rpclogger_funcs *funcs,
+	const char *prefix, size_t bufsiz, unsigned maxdepth);
 
 /** Destroy the existing logger handle.
  *
  * :param logger: Logger handle.
  */
 void rpclogger_destroy(rpclogger_t logger);
-
 
 /** Log single item into the logger.
  *
@@ -104,8 +121,7 @@ enum rpclogger_end_type {
  * desirable to call this outside of that context.
  *
  * This signals logger end of a message that consist of previous logged items.
- * This calls :c:func:`rpclogger_log_flush`. This flushes items buffered so far
- * to the configured output.
+ * This flushes items buffered so far to the configured output.
  *
  * In case of message sending you most likely want to call this from
  * implementations of :c:macro:`rpcclient_sendmsg` with
@@ -136,20 +152,9 @@ void rpclogger_log_end(rpclogger_t logger, enum rpclogger_end_type tp);
  */
 void rpclogger_log_flush(rpclogger_t logger);
 
-/** Predefined callback that outputs line to the stderr.
- *
- * This is provided because it is one of the common ways to do logging.
- *
- * :param line: See :c:type:`rpclogger_func_t`.
- */
-void rpclogger_func_stderr(const char *line);
-
-/** Predefined callback that outputs line to the syslog with debug priority.
- *
- * This is provided because it is one of the common ways to do logging.
- *
- * :param line: See :c:type:`rpclogger_func_t`.
- */
-void rpclogger_func_syslog_debug(const char *line);
+/** Default RPC logger functions for syslog logging. */
+extern struct rpclogger_funcs rpclogger_syslog_funcs;
+/** Default RPC logger functions for stderr logging. */
+extern struct rpclogger_funcs rpclogger_stderr_funcs;
 
 #endif

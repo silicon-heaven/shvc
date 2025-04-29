@@ -67,9 +67,9 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 	client->logger_in =
-		rpclogger_new(rpclogger_func_stderr, "<= ", logsiz, conf.verbose);
+		rpclogger_new(&rpclogger_stderr_funcs, "<= ", logsiz, conf.verbose);
 	client->logger_out =
-		rpclogger_new(rpclogger_func_stderr, "=> ", logsiz, conf.verbose);
+		rpclogger_new(&rpclogger_stderr_funcs, "=> ", logsiz, conf.verbose);
 
 	struct device_state *state = device_state_new();
 

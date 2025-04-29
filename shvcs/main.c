@@ -61,9 +61,9 @@ int main(int argc, char **argv) {
 		return 3;
 	}
 	client->logger_in =
-		rpclogger_new(rpclogger_func_stderr, "<= ", logsiz, conf.verbose);
+		rpclogger_new(&rpclogger_stderr_funcs, "<= ", logsiz, conf.verbose);
 	client->logger_out =
-		rpclogger_new(rpclogger_func_stderr, "=> ", logsiz, conf.verbose);
+		rpclogger_new(&rpclogger_stderr_funcs, "=> ", logsiz, conf.verbose);
 
 	rpchandler_login_t login = rpchandler_login_new(&rpcurl->login);
 	rpchandler_app_t app = rpchandler_app_new("shvcsub", PROJECT_VERSION);

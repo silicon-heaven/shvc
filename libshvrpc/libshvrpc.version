@@ -68,8 +68,8 @@ V0.0 {
 		rpclogger_log_reset;
 		rpclogger_log_end;
 		rpclogger_log_flush;
-		rpclogger_func_stderr;
-		rpclogger_func_syslog_debug;
+		rpclogger_stderr_funcs;
+		rpclogger_syslog_funcs;
 
 		# shv/rpclogin.h
 		rpclogin_pack;

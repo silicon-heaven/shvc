@@ -108,10 +108,10 @@ static int new_client(
 	if (ctx->opts.verbose > 0) {
 		char *lin = aprintf("%s<= ", peername);
 		char *lout = aprintf("%s=> ", peername);
-		client->logger_in =
-			rpclogger_new(rpclogger_func_stderr, lin, logsiz, ctx->opts.verbose);
+		client->logger_in = rpclogger_new(
+			&rpclogger_stderr_funcs, lin, logsiz, ctx->opts.verbose);
 		client->logger_out = rpclogger_new(
-			rpclogger_func_stderr, lout, logsiz, ctx->opts.verbose);
+			&rpclogger_stderr_funcs, lout, logsiz, ctx->opts.verbose);
 	}
 	struct rpchandler_stage *stages = malloc(4 * sizeof *stages);
 	stages[1] = rpchandler_app_stage(ctx->app_handler);

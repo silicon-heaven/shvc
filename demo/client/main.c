@@ -157,9 +157,9 @@ int main(int argc, char **argv) {
 		return exit_code;
 	}
 	client->logger_in =
-		rpclogger_new(rpclogger_func_stderr, "<= ", logsiz, conf.verbose);
+		rpclogger_new(&rpclogger_stderr_funcs, "<= ", logsiz, conf.verbose);
 	client->logger_out =
-		rpclogger_new(rpclogger_func_stderr, "=> ", logsiz, conf.verbose);
+		rpclogger_new(&rpclogger_stderr_funcs, "=> ", logsiz, conf.verbose);
 
 	/* Define a stages for RPC Handler using App and Responses Handler */
 	rpchandler_login_t login = rpchandler_login_new(&url->login);
