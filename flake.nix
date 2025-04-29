@@ -29,9 +29,11 @@
       meson,
       ninja,
       pkg-config,
-      graphviz-nox,
       uriparser,
       openssl,
+      sphinxHook,
+      python3Packages,
+      graphviz-nox,
       check,
       check-suite,
       python3,
@@ -40,6 +42,7 @@
         pname = "shvc";
         inherit version src;
         GIT_REV = self.shortRev or self.dirtyShortRev;
+        outputs = ["out" "doc"];
         buildInputs = [
           uriparser
           openssl
@@ -54,9 +57,18 @@
           meson
           ninja
           pkg-config
+          (sphinxHook.overrideAttrs {
+            propagatedBuildInputs = with python3Packages; [
+              sphinx-book-theme
+              sphinx-mdinclude
+              sphinx-multiversion
+              hawkmoth
+            ];
+          })
           graphviz-nox
         ];
         postUnpack = "patchShebangs --build $sourceRoot";
+        sphinxRoot = "../docs";
         checkInputs = [
           check
           check-suite
@@ -84,11 +96,6 @@
         };
         pythonPackages = final: _: {
           hawkmoth = final.callPackage ./hawkmoth.nix {};
-        };
-        patchedSphinx = _: prev: {
-          sphinx = prev.sphinx.overrideAttrs (old: {
-            patches = (old.patches or []) ++ [./sphinx.patch];
-          });
         };
         default = composeManyExtensions [
           check-suite.overlays.default
@@ -130,18 +137,7 @@
           valgrind
           gcovr
           # Documentation
-          clang
-          ((python3.override {
-              packageOverrides = self.overlays.patchedSphinx;
-            }).withPackages (pypkgs:
-              with pypkgs; [
-                sphinx
-                sphinx-autobuild
-                sphinx-book-theme
-                sphinx-mdinclude
-                sphinx-multiversion
-                hawkmoth
-              ]))
+          sphinx-autobuild
         ];
         inputsFrom = [self.packages.${system}.default];
         meta.platforms = platforms.linux;
