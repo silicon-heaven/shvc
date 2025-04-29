@@ -4,7 +4,6 @@ shvcbroker_sources = files(
 )
 shvcbroker_dependencies = [libshvbroker_dep]
 
-
 shvcbroker = executable(
   'shvcbroker',
   shvcbroker_sources + ['main.c'],

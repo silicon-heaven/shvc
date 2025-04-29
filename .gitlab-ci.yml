@@ -160,7 +160,7 @@ mypy:
   extends: .lint
   script:
     - mkdir .mypy-cache
-    - nix develop --quiet -c mypy --cache-dir .mypy-cache .
+    - nix develop --quiet -c mypy --cache-dir .mypy-cache --exclude 'docs' .
 
 shellcheck:
   extends: .lint

@@ -51,7 +51,8 @@ libshvrpc = library(
   version: '0.0.0',
   dependencies: libshvrpc_dependencies,
   include_directories: includes,
-  link_args: '-Wl,--version-script=' + join_paths(
+  link_args: '-Wl,--version-script='
+  + join_paths(
     meson.current_source_dir(),
     'libshvrpc.version',
   ),
@@ -64,7 +65,6 @@ libshvrpc_dep = declare_dependency(
   include_directories: includes,
   link_with: libshvrpc,
 )
-
 
 pkg_mod.generate(
   libshvrpc,

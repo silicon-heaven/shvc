@@ -1,8 +1,6 @@
 check_suite = dependency('check-suite')
 obstack = (
-  cc.has_function('obstack_free') ? declare_dependency() : cc.find_library(
-    'obstack'
-  )
+  cc.has_function('obstack_free') ? declare_dependency() : cc.find_library('obstack')
 )
 
 unittests_env = [

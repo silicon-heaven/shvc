@@ -20,7 +20,8 @@ libshvcp = library(
   version: '0.0.0',
   dependencies: libshvcp_dependencies,
   include_directories: includes,
-  link_args: '-Wl,--version-script=' + join_paths(
+  link_args: '-Wl,--version-script='
+  + join_paths(
     meson.current_source_dir(),
     'libshvcp.version',
   ),
@@ -33,7 +34,6 @@ libshvcp_dep = declare_dependency(
   include_directories: includes,
   link_with: libshvcp,
 )
-
 
 pkg_mod.generate(
   libshvcp,

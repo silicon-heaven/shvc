@@ -24,7 +24,8 @@ libshvbroker = library(
   version: '0.0.0',
   dependencies: libshvbroker_dependencies,
   include_directories: includes,
-  link_args: '-Wl,--version-script=' + join_paths(
+  link_args: '-Wl,--version-script='
+  + join_paths(
     meson.current_source_dir(),
     'libshvbroker.version',
   ),
@@ -37,7 +38,6 @@ libshvbroker_dep = declare_dependency(
   include_directories: includes,
   link_with: libshvbroker,
 )
-
 
 pkg_mod.generate(
   libshvbroker,
