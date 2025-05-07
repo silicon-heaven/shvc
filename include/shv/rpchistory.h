@@ -48,6 +48,14 @@ enum rpchistory_fetch_keys {
 	RPCHISTORY_FETCH_KEY_TIMEJUMP = 60,
 };
 
+/** Keys for the getLog's method request description IMap. */
+enum rpchistory_getlog_request_keys {
+	RPCHISTORY_GETLOG_REQ_KEY_SINCE = 1,
+	RPCHISTORY_GETLOG_REQ_KEY_UNTIL = 2,
+	RPCHISTORY_GETLOG_REQ_KEY_COUNT = 3,
+	RPCHISTORY_GETLOG_REQ_KEY_RI = 4,
+};
+
 /** Keys for the getLog's method response description IMap. */
 enum rpchistory_getlog_keys {
 	RPCHISTORY_GETLOG_KEY_TIMESTAMP = 1,
@@ -86,7 +94,12 @@ struct rpchistory_record_head {
 	const char *source;
 	/** UserID carried by signal message. */
 	const char *userid;
-	/** DateTime of system when record was created. */
+	/** DateTime of system time when record was created.
+	 *
+	 * .. NOTE::
+	 * 	 Passing ``INT64_MAX`` in :c:member:`cpdatetime.msecs` means the record
+	 * 	 is a snapshot record and the datetime field is not packed.
+	 */
 	struct cpdatetime datetime;
 };
 
@@ -98,7 +111,14 @@ struct rpchistory_record_head {
 struct rpchistory_getlog_request {
 	/** This is a :c:struct:`cpdatetime` since logs should be provided. */
 	struct cpdatetime since;
-	/** This is a :c:struct:`cpdatetime` until logs should be provided. */
+	/** This is a :c:struct:`cpdatetime` until logs should be provided.
+	 *
+	 * .. NOTE::
+	 * 	A special case is if :c:member:`rpchistory_getlog_request.since`
+	 * 	and :c:member:`rpchistory_getlog_request.until` are equal. In that
+	 * 	case only snapshot records should be provided and field
+	 * 	:c:member:`rpchistory_getlog_request.count` has no effect.
+	 */
 	struct cpdatetime until;
 	/** Optional Int as a limitation for the number of records to be at most
 	 * returned.
@@ -107,12 +127,6 @@ struct rpchistory_getlog_request {
 	 *   ``UINT_MAX`` is used as a default when no limit is specified.
 	 */
 	unsigned count;
-	/** This controls if virtual records should be inserted at the start that
-	 * copy state of the signals. This provides fixed point to start when you
-	 * for example plotting data. These records are virtual and are not actually
-	 * captured signals.
-	 */
-	bool snapshot;
 	/** RPC RI that should be used to match ``path:method:signal``. */
 	const char *ri;
 };

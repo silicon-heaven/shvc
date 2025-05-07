@@ -1,10 +1,5 @@
-libshvhistory_sources = [
-  files(
-    'rpchandler_history.c',
-    'rpchistory.c',
-  ),
-  gperf.process('getlog_param_keys.gperf'),
-]
+libshvhistory_sources = files('rpchandler_history.c', 'rpchistory.c')
+
 libshvhistory_dependencies = [libshvrpc_dep]
 
 libshvhistory = library(

@@ -216,7 +216,7 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 				return RPCHANDLER_MSG_DONE;
 			if (!request)
 				rpchandler_msg_send_error(
-					ctx, RPCERR_INVALID_PARAM, "{...} expected.");
+					ctx, RPCERR_INVALID_PARAM, "!getLogP expected.");
 			else
 				rpcgetlog_result(history->facilities, request, ctx, ctx->meta.path);
 

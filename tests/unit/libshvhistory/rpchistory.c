@@ -85,7 +85,8 @@ static struct cpongetlog {
 	struct rpchistory_record_head head_unpack;
 	const char *cpon;
 } getlog_response_pairs_d[] = {
-	{-1,
+	{
+		-1,
 		(struct rpchistory_record_head){.datetime = {.msecs = 150000, .offutc = 60},
 			.path = NULL,
 			.signal = NULL,
@@ -98,8 +99,10 @@ static struct cpongetlog {
 			.source = "get",
 			.userid = NULL,
 			.repeat = false},
-		"i{1:d\"1970-01-01T00:02:30.000+01:00\",6:1u}"},
-	{-1,
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",6:1u}",
+	},
+	{
+		-1,
 		(struct rpchistory_record_head){.datetime = {.msecs = 150000, .offutc = 60},
 			.path = "t_path",
 			.signal = "t_sig",
@@ -112,10 +115,22 @@ static struct cpongetlog {
 			.source = "t_src",
 			.userid = "0123",
 			.repeat = true},
-		"i{1:d\"1970-01-01T00:02:30.000+01:00\",3:\"t_path\",4:\"t_sig\",5:\"t_src\",7:\"0123\",8:true,6:1u}"},
-	{0, (struct rpchistory_record_head){.datetime = {.msecs = 150000, .offutc = 60}},
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",3:\"t_path\",4:\"t_sig\",5:\"t_src\",7:\"0123\",8:true,6:1u}",
+	},
+	{
+		0,
 		(struct rpchistory_record_head){.datetime = {.msecs = 150000, .offutc = 60}},
-		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:0,6:1u}"},
+		(struct rpchistory_record_head){.datetime = {.msecs = 150000, .offutc = 60}},
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:0,6:1u}",
+	},
+	{
+		-1,
+		(struct rpchistory_record_head){
+			.datetime = {.msecs = INT64_MAX, .offutc = 60}},
+		(struct rpchistory_record_head){
+			.datetime = {.msecs = INT64_MAX, .offutc = 60}},
+		"i{6:1u}",
+	},
 };
 
 static struct cpongetlog_request {
@@ -125,65 +140,56 @@ static struct cpongetlog_request {
 	{(struct rpchistory_getlog_request){.since = {.msecs = 150000, .offutc = 60},
 		 .until = {.msecs = 300000, .offutc = 60},
 		 .count = 10,
-		 .snapshot = false,
 		 .ri = "path:method"},
-		"{\"since\":d\"1970-01-01T00:02:30.000+01:00\",\"until\":d\"1970-01-01T00:05:00.000+01:00\",\"count\":10,\"snapshot\":false,\"ri\":\"path:method\"}"},
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:d\"1970-01-01T00:05:00.000+01:00\",3:10,4:\"path:method\"}"},
 	{(struct rpchistory_getlog_request){.since = {.msecs = 150000, .offutc = 60},
 		 .until = {.msecs = 300000, .offutc = 60},
 		 .count = SHVC_GETLOG_LIMIT,
-		 .snapshot = false,
 		 .ri = "**:*"},
-		"{\"since\":d\"1970-01-01T00:02:30.000+01:00\",\"until\":d\"1970-01-01T00:05:00.000+01:00\",\"count\":null,\"snapshot\":false,\"ri\":null,\"invalid\":null}"},
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:d\"1970-01-01T00:05:00.000+01:00\",3:null,4:null}"},
 	{(struct rpchistory_getlog_request){.since = {.msecs = 150000, .offutc = 60},
 		 .until = {.msecs = 300000, .offutc = 60},
 		 .count = SHVC_GETLOG_LIMIT,
-		 .snapshot = false,
 		 .ri = "**:*"},
-		"{\"since\":d\"1970-01-01T00:02:30.000+01:00\",\"until\":d\"1970-01-01T00:05:00.000+01:00\",\"count\":10000,\"snapshot\":false,\"ri\":null,\"invalid\":null}"},
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:d\"1970-01-01T00:05:00.000+01:00\",3:10000,4:null}"},
 	{(struct rpchistory_getlog_request){.since = {.msecs = 150000, .offutc = 60},
 		 .until = {.msecs = 300000, .offutc = 60},
-		 .count = 0,
-		 .snapshot = true,
+		 .count = SHVC_GETLOG_LIMIT,
 		 .ri = "**:*"},
-		"{\"since\":d\"1970-01-01T00:02:30.000+01:00\",\"until\":d\"1970-01-01T00:05:00.000+01:00\",\"count\":null,\"snapshot\":true,\"ri\":null,\"invalid\":null}"},
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:d\"1970-01-01T00:05:00.000+01:00\",3:null,4:null}"},
 	{(struct rpchistory_getlog_request){.since = {.msecs = 150000, .offutc = 60},
 		 .until = {.msecs = 300000, .offutc = 60},
 		 .count = 15,
-		 .snapshot = true,
 		 .ri = "**:*"},
-		"{\"since\":d\"1970-01-01T00:02:30.000+01:00\",\"until\":d\"1970-01-01T00:05:00.000+01:00\",\"count\":15,\"snapshot\":true,\"ri\":null,\"invalid\":null}"},
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:d\"1970-01-01T00:05:00.000+01:00\",3:15,4:null}"},
 	{(struct rpchistory_getlog_request){
 		 .since = {.msecs = 157766550000, .offutc = 60},
 		 .until = {.msecs = 300000, .offutc = 60},
 		 .count = 15,
-		 .snapshot = false,
 		 .ri = "**:*"},
-		"{\"since\":d\"1975-01-01T00:02:30.000+01:00\",\"until\":d\"1970-01-01T00:05:00.000+01:00\",\"count\":15,\"snapshot\":true,\"ri\":null,\"invalid\":null}"},
+		"i{1:d\"1975-01-01T00:02:30.000+01:00\",2:d\"1970-01-01T00:05:00.000+01:00\",3:15,4:null}"},
 	{(struct rpchistory_getlog_request){.since = {.msecs = 150000, .offutc = 60},
 		 .until = {.msecs = 300000, .offutc = 60},
 		 .count = -2,
-		 .snapshot = false,
 		 .ri = "**:*"},
-		"{\"since\":d\"1970-01-01T00:02:30.000+01:00\",\"until\":d\"1970-01-01T00:05:00.000+01:00\",\"count\":\"invalid\",\"snapshot\":false,\"ri\":null,\"invalid\":null}"},
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:d\"1970-01-01T00:05:00.000+01:00\",3:\"invalid\",4:null}"},
 	{(struct rpchistory_getlog_request){.since = {.msecs = 150000, .offutc = 60},
 		 .until = {.msecs = 300000, .offutc = 60},
 		 .count = -2,
-		 .snapshot = false,
 		 .ri = "**:*"},
-		"{\"since\":d\"invalid\",\"until\":d\"1970-01-01T00:05:00.000+01:00\",\"count\":10,\"snapshot\":false,\"ri\":null,\"invalid\":null}"},
+		"i{1:d\"invalid\",2:d\"1970-01-01T00:05:00.000+01:00\",3:10,4:null}"},
 	{(struct rpchistory_getlog_request){.since = {.msecs = 150000, .offutc = 60},
 		 .until = {.msecs = 300000, .offutc = 60},
 		 .count = -2,
-		 .snapshot = false,
 		 .ri = "**:*"},
-		"{\"since\":d\"1970-01-01T00:02:30.000+01:00\",\"until\":d\"invalid\",\"count\":\"invalid\",\"snapshot\":false,\"ri\":null,\"invalid\":null}"},
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:d\"invalid\",3:\"invalid\",4:null}"},
 	{(struct rpchistory_getlog_request){.since = {.msecs = 150000, .offutc = 60},
-		 .until = {.msecs = 300000, .offutc = 60},
-		 .count = -2,
-		 .snapshot = false,
+		 .until = {.msecs = 150000, .offutc = 60},
+		 .count = 0,
 		 .ri = "**:*"},
-		"{\"since\":d\"1970-01-01T00:02:30.000+01:00\",\"until\":d\"1970-01-01T00:05:00.000+01:00\",\"count\":10,\"snapshot\":\"invalid\",\"ri\":null,\"invalid\":null}"},
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:d\"1970-01-01T00:02:30.000+01:00\",3:42}"},
 	{(struct rpchistory_getlog_request){.count = -2}, "154u"},
+	{(struct rpchistory_getlog_request){.count = -2}, "i{99:2}"},
 };
 
 
@@ -228,7 +234,6 @@ static void getlog_request_unpack(struct cpongetlog_request _d) {
 	ck_assert_int_eq(getlog->until.msecs, _d.getlog.until.msecs);
 	ck_assert_int_eq(getlog->until.offutc, _d.getlog.until.offutc);
 	ck_assert_int_eq(getlog->count, _d.getlog.count);
-	ck_assert_int_eq(getlog->snapshot, _d.getlog.snapshot);
 	ck_assert_str_eq(getlog->ri, _d.getlog.ri);
 
 test_end:

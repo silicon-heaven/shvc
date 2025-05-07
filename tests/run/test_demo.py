@@ -281,11 +281,10 @@ async def fixture_demo_history(demo_history_exec, broker, url):
             "test/.history/node0/subnode",
             "getLog",
             {
-                "since": datetime.datetime(1970, 1, 1, tzinfo=datetime.UTC),
-                "until": datetime.datetime(1970, 1, 2, tzinfo=datetime.UTC),
-                "count": 5,
-                "snapshot": False,
-                "ri": "**:*",
+                1: datetime.datetime(1970, 1, 1, tzinfo=datetime.UTC),
+                2: datetime.datetime(1970, 1, 2, tzinfo=datetime.UTC),
+                3: 5,
+                4: "**:*",
             },
             [
                 {

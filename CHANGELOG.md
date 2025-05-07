@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CPON` packs `double` in a scientific notation with `p`.
 - `rpclogger_new` now takes `rpclogger_funcs` structure as an argument
   instead of just `rpclogger_func_t`.
+- Removed `snapshot` field from `getLog` request and converted `Map` to
+  `iMap` per updated specification.
 
 
 ## [0.4.0] - 2025-04-08
