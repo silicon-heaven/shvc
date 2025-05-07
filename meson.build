@@ -43,9 +43,8 @@ if (
   not isnuttx
   and not meson.is_subproject()
   and (
-    tests_opt.enabled()
-    or (tests_opt.auto()
-    and get_option('buildtype') in test_buildtypes)
+    tests_opt == 'enabled'
+    or (tests_opt == 'auto' and get_option('buildtype') in test_buildtypes)
   )
 )
   subdir('tests')
