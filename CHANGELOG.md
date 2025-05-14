@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.0] - 2025-05-14
 ### Added
 - `cp_unpack_decimal` to simplify `cpdecimal` unpacking.
 - `rpclogger` callback `rpclogger_allowed_t` that determines if logging
