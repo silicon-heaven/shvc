@@ -1,15 +1,12 @@
 check_suite = dependency('check-suite')
 obstack = (
-  cc.has_function('obstack_free') ? declare_dependency() : cc.find_library(
-    'obstack'
-  )
+  cc.has_function('obstack_free') ? declare_dependency() : cc.find_library('obstack')
 )
 
 unittests_env = [
   'CK_TAP_LOG_FILE_NAME=/dev/stdout',
   'CK_VERBOSITY=silent',
 ]
-
 
 unittest_libfoo = executable(
   'unittest-libfoo',
@@ -27,7 +24,6 @@ test(
   protocol: 'tap',
   depends: unittest_libfoo,
 )
-
 
 unittest_foo = executable(
   'unittest-foo',

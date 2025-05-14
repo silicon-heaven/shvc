@@ -162,7 +162,7 @@ muon:
   script:
     - |
       git ls-files '**/meson.build' meson_options.txt |
-        nix develop --quiet -c xargs muon fmt -c .muon_fmt.ini -i
+        nix develop --quiet -c xargs muon fmt -e -i
     - git diff --exit-code
 
 clang-format:

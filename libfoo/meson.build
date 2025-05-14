@@ -10,7 +10,8 @@ libfoo = library(
   version: '0.0.0',
   dependencies: libfoo_dependencies,
   include_directories: includes,
-  link_args: '-Wl,--version-script=' + join_paths(
+  link_args: '-Wl,--version-script='
+  + join_paths(
     meson.current_source_dir(),
     'libfoo.version',
   ),
@@ -23,6 +24,5 @@ libfoo_dep = declare_dependency(
   include_directories: includes,
   link_with: libfoo,
 )
-
 
 pkg_mod.generate(libfoo, description: 'Library counting foos..')
