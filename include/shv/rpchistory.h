@@ -68,21 +68,45 @@ enum rpchistory_getlog_keys {
 	RPCHISTORY_GETLOG_KEY_REPEAT = 8,
 };
 
+/** Keys for file based logs. These are the keys for fields of the record
+ * written in log3 file.
+ */
+enum rpchistory_file_keys {
+	RPCHISTORY_FILE_KEY_DATETIME = 1,
+	RPCHISTORY_FILE_KEY_PATH = 2,
+	RPCHISTORY_FILE_KEY_SIGNAL = 3,
+	RPCHISTORY_FILE_KEY_SOURCE = 4,
+	RPCHISTORY_FILE_KEY_VALUE = 5,
+	RPCHISTORY_FILE_KEY_ACCESS = 6,
+	RPCHISTORY_FILE_KEY_USERID = 7,
+	RPCHISTORY_FILE_KEY_REPEAT = 8,
+};
+
 /** Structure defining record' head for SHV communication.
  *
  * This is a represenation of record's head. This includes all record's
  * information except for data/value. This can be used together with
- * :c:func:`rpchistory_record_pack_begin` function to pack the head.
+ * :c:func:`rpchistory_record_pack_begin` or
+ * :c:func:`rpchistory_file_record_pack_begin` function to pack the head
+ * of the record.
  */
 struct rpchistory_record_head {
-	/** Record type.
+	/** Record type. Refer to :c:enum:`rpchistory_record_types` for possible
+	 *	types.
 	 *
-	 * Refer to :c:enum:`rpchistory_record_types` for possible types.
+	 *	.. NOTE::
+	 * 		This field is ignored if :c:func:`rpchistory_file_record_pack_begin`
+	 *		is called.
 	 */
 	int type;
 	/** Access Level. */
 	rpcaccess_t access;
-	/** Number of seconds of time skip. */
+	/** Number of seconds of time skip.
+	 *
+	 *	.. NOTE::
+	 * 		This field is ignored if :c:func:`rpchistory_file_record_pack_begin`
+	 *		is called.
+	 */
 	int timejump;
 	/** Repeat carried by signal message. */
 	bool repeat;
@@ -97,8 +121,13 @@ struct rpchistory_record_head {
 	/** DateTime of system time when record was created.
 	 *
 	 * .. NOTE::
-	 * 	 Passing ``INT64_MAX`` in :c:member:`cpdatetime.msecs` means the record
-	 * 	 is a snapshot record and the datetime field is not packed.
+	 * 	 For :c:func:`rpchistory_record_pack_begin`, passing ``INT64_MAX`` in
+	 * 	 :c:member:`cpdatetime.msecs` means the record is a snapshot record and
+	 * 	 the datetime field is not packed.
+	 *
+	 * 	 For :c:func:`rpchistory_file_record_pack_begin`, passing ``INT64_MAX``
+	 * 	 in :c:member:`cpdatetime.msecs` means the record is an anchor record
+	 * 	 and ``null`` is packed instead of ``cpdatetime``.
 	 */
 	struct cpdatetime datetime;
 };
@@ -200,5 +229,24 @@ bool rpchistory_record_pack_begin(
  * :return: ``false`` if packing encounters failure and ``true`` otherwise.
  */
 bool rpchistory_record_pack_end(cp_pack_t pack);
+
+/** Begin iMap packing of the file record.
+ *
+ * This packs all file record's values except for data's key and data itself.
+ * The values are úassed with :c:struct:`rpchistory_record_head` structure and
+ * are packed as iMap. The user should pack the data after this call.
+ *
+ * :param pack: The generic packer where it is about to be packed.
+ * :return: ``false`` if packing encouters failure, ``true`` otherwise.
+ */
+bool rpchistory_file_record_pack_begin(
+	cp_pack_t pack, struct rpchistory_record_head *head);
+
+/** Finish iMap packing of the file record.
+ *
+ * :param pack: The generic packer where it is about to be packed.
+ * :return: ``false`` if packing encounters failure, ``true`` otherwise.
+ */
+bool rpchistory_file_record_pack_end(cp_pack_t pack);
 
 #endif /* _RPCHISTORY_H */

@@ -192,6 +192,35 @@ static struct cpongetlog_request {
 	{(struct rpchistory_getlog_request){.count = -2}, "i{99:2}"},
 };
 
+static struct cponfile_record {
+	struct rpchistory_record_head head;
+	const char *cpon;
+} file_record_pairs_d[] = {
+	{(struct rpchistory_record_head){.datetime = {.msecs = 150000, .offutc = 60},
+		 .path = NULL,
+		 .signal = NULL,
+		 .source = NULL,
+		 .access = 0,
+		 .userid = NULL,
+		 .repeat = false},
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",5:null}"},
+	{(struct rpchistory_record_head){.datetime = {.msecs = 150000, .offutc = 60},
+		 .path = "t_path",
+		 .signal = "t_sig",
+		 .source = "t_src",
+		 .access = RPCACCESS_WRITE,
+		 .userid = "0123",
+		 .repeat = true},
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:\"t_path\",3:\"t_sig\",4:\"t_src\",6:16,7:\"0123\",8:true,5:null}"},
+	{(struct rpchistory_record_head){.datetime = {.msecs = INT64_MAX},
+		 .path = NULL,
+		 .signal = NULL,
+		 .source = NULL,
+		 .access = 0,
+		 .userid = NULL,
+		 .repeat = false},
+		"i{1:null,5:null}"},
+};
 
 TEST_CASE(pack, setup_packstream_pack_cpon, teardown_packstream_pack) {}
 
@@ -243,4 +272,11 @@ test_end:
 
 ARRAY_TEST(unpack, unpacker, getlog_request_pairs_d) {
 	getlog_request_unpack(_d);
+}
+
+ARRAY_TEST(pack, file_record_packer, file_record_pairs_d) {
+	rpchistory_file_record_pack_begin(packstream_pack, &_d.head);
+	cp_pack_null(packstream_pack);
+	rpchistory_file_record_pack_end(packstream_pack);
+	ck_assert_packstr(_d.cpon);
 }

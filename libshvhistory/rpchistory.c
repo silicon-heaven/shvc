@@ -83,13 +83,11 @@ bool rpchistory_getlog_response_pack_begin(
 		cp_pack_bool(pack, head->repeat);
 	}
 
-	cp_pack_int(pack, RPCHISTORY_GETLOG_KEY_VALUE);
-	return true;
+	return cp_pack_int(pack, RPCHISTORY_GETLOG_KEY_VALUE);
 }
 
 bool rpchistory_getlog_response_pack_end(cp_pack_t pack) {
-	cp_pack_container_end(pack);
-	return true;
+	return cp_pack_container_end(pack);
 }
 
 static bool unpack_value(cp_unpack_t unpack, struct cpitem *item,
@@ -157,7 +155,7 @@ bool rpchistory_record_pack_begin(
 	cp_pack_int(pack, head->type);
 
 	cp_pack_int(pack, RPCHISTORY_FETCH_KEY_TIMESTAMP);
-	cp_pack_datetime(pack, head->datetime);
+	bool res = cp_pack_datetime(pack, head->datetime);
 
 	if (head->type == RPCHISTORY_RECORD_NORMAL ||
 		head->type == RPCHISTORY_RECORD_KEEP) {
@@ -191,18 +189,61 @@ bool rpchistory_record_pack_begin(
 			cp_pack_bool(pack, head->repeat);
 		}
 
-		cp_pack_int(pack, RPCHISTORY_FETCH_KEY_VALUE);
-	}
-
-	if (head->type == RPCHISTORY_RECORD_TIMEJUMP) {
+		res = cp_pack_int(pack, RPCHISTORY_FETCH_KEY_VALUE);
+	} else if (head->type == RPCHISTORY_RECORD_TIMEJUMP) {
 		cp_pack_int(pack, RPCHISTORY_FETCH_KEY_TIMEJUMP);
-		cp_pack_int(pack, head->timejump);
+		res = cp_pack_int(pack, head->timejump);
 	}
 
-	return true;
+	return res;
 }
 
 bool rpchistory_record_pack_end(cp_pack_t pack) {
-	cp_pack_container_end(pack);
-	return true;
+	return cp_pack_container_end(pack);
+}
+
+bool rpchistory_file_record_pack_begin(
+	cp_pack_t pack, struct rpchistory_record_head *head) {
+	cp_pack_imap_begin(pack);
+	cp_pack_int(pack, RPCHISTORY_FILE_KEY_DATETIME);
+	if (head->datetime.msecs == INT64_MAX)
+		cp_pack_null(pack);
+	else
+		cp_pack_datetime(pack, head->datetime);
+
+	if (head->path && *head->path != '\0') {
+		cp_pack_int(pack, RPCHISTORY_FILE_KEY_PATH);
+		cp_pack_str(pack, head->path);
+	}
+
+	if (head->signal && *head->signal != '\0') {
+		cp_pack_int(pack, RPCHISTORY_FILE_KEY_SIGNAL);
+		cp_pack_str(pack, head->signal);
+	}
+
+	if (head->source && *head->source != '\0') {
+		cp_pack_int(pack, RPCHISTORY_FILE_KEY_SOURCE);
+		cp_pack_str(pack, head->source);
+	}
+
+	if (head->access != RPCACCESS_READ && head->access != RPCACCESS_NONE) {
+		cp_pack_int(pack, RPCHISTORY_FILE_KEY_ACCESS);
+		cp_pack_int(pack, head->access);
+	}
+
+	if (head->userid) {
+		cp_pack_int(pack, RPCHISTORY_FILE_KEY_USERID);
+		cp_pack_str(pack, head->userid);
+	}
+
+	if (head->repeat) {
+		cp_pack_int(pack, RPCHISTORY_FILE_KEY_REPEAT);
+		cp_pack_bool(pack, head->repeat);
+	}
+
+	return cp_pack_int(pack, RPCHISTORY_FILE_KEY_VALUE);
+}
+
+bool rpchistory_file_record_pack_end(cp_pack_t pack) {
+	return cp_pack_container_end(pack);
 }
