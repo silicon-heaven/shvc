@@ -18,8 +18,7 @@ unittest_libfoo = executable(
 )
 test(
   'unittest-libfoo',
-  bash,
-  args: [test_driver, unittest_libfoo.full_path()],
+  unittest_libfoo,
   env: unittests_env,
   protocol: 'tap',
   depends: unittest_libfoo,
@@ -33,8 +32,7 @@ unittest_foo = executable(
 )
 test(
   'unittest-foo',
-  bash,
-  args: [test_driver, unittest_foo.full_path()],
+  unittest_foo,
   env: unittests_env,
   protocol: 'tap',
   depends: unittest_foo,

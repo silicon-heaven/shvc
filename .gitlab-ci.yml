@@ -88,7 +88,7 @@ tests:
   script:
     - ulimit -n 1024 # workaround for Valgrind
     - nix develop --quiet -c meson setup build -Doptimization=plain -Db_coverage=true
-    - nix develop --quiet -c meson test -C build --print-errorlogs
+    - nix develop --quiet -c meson test -C build --print-errorlogs $TESTARG
   artifacts:
     when: always
     paths:
@@ -99,17 +99,17 @@ tests:
 valgrind:memcheck:
   extends: tests
   variables:
-    VALGRIND: memcheck
+    TESTARG: --setup=memcheck
 
 valgrind:helgrind:
   extends: tests
   variables:
-    VALGRIND: helgrind
+    TESTARG: --setup=helgrind
 
 valgrind:drd:
   extends: tests
   variables:
-    VALGRIND: drd
+    TESTARG: --setup=drd
 
 nix-check:
   extends: .test
