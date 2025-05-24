@@ -205,6 +205,7 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                 {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
                 {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
                 {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
+                {1: "getSnapshot", 2: 8, 3: "!getSnapshotP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -215,6 +216,7 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                 {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
                 {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
                 {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
+                {1: "getSnapshot", 2: 8, 3: "!getSnapshotP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -225,6 +227,7 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                 {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
                 {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
                 {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
+                {1: "getSnapshot", 2: 8, 3: "!getSnapshotP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -235,6 +238,7 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                 {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
                 {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
                 {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
+                {1: "getSnapshot", 2: 8, 3: "!getSnapshotP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -245,6 +249,7 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                 {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
                 {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
                 {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
+                {1: "getSnapshot", 2: 8, 3: "!getSnapshotP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -255,6 +260,7 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                 {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
                 {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
                 {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
+                {1: "getSnapshot", 2: 8, 3: "!getSnapshotP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -265,6 +271,7 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                 {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
                 {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
                 {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
+                {1: "getSnapshot", 2: 8, 3: "!getSnapshotP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -275,6 +282,7 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                 {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
                 {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
                 {1: "getLog", 2: 8, 3: "!getLogP", 4: "!getLogR", 5: 1},
+                {1: "getSnapshot", 2: 8, 3: "!getSnapshotP", 4: "!getLogR", 5: 1},
             ],
         ),
         (
@@ -285,6 +293,27 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                 2: datetime.datetime(1970, 1, 2, tzinfo=datetime.UTC),
                 3: 5,
                 4: "**:*",
+            },
+            [
+                {
+                    1: datetime.datetime(1970, 1, 1, 0, 2, 30, tzinfo=datetime.UTC),
+                    3: "node0/subnode/2",
+                    6: None,
+                },
+                {
+                    1: datetime.datetime(1970, 1, 1, 0, 13, 20, tzinfo=datetime.UTC),
+                    3: "node0/subnode/1",
+                    6: None,
+                    7: "elluser_local",
+                },
+            ],
+        ),
+        (
+            "test/.history/node0/subnode",
+            "getSnapshot",
+            {
+                1: datetime.datetime(1970, 1, 2, tzinfo=datetime.UTC),
+                2: "**:*",
             },
             [
                 {

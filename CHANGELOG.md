@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `cp_unpack_decimal_int` to simplify working with decimals represented in the
   code as plain integers with fixed multiplication.
 
+### Changed
+- Snapshot is removed from `getLog` call and provided in a separate
+  `getSnapshot` method.
+
 ### Fixed
 - Invalid memory access in Broker caused by wrong bits count calculation.
 

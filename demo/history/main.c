@@ -112,6 +112,19 @@ static bool log_pack_getlog(struct rpchandler_history_facilities *facilities,
 	return true;
 }
 
+static bool log_pack_getsnapshot(struct rpchandler_history_facilities *facilities,
+	struct rpchistory_getsnapshot_request *request, cp_pack_t pack,
+	struct obstack *obstack, const char *path) {
+	/* WARNING: This is not a proper getSnaphot implementation, it just
+	 * returns a snapshot for node0/submode path if the path matches. We
+	 * can reuse the getLog code here as it returns the same records as
+	 * getSnapshot in this case. The only purpose of this is to test RPC
+	 * History Handler.
+	 */
+	log_pack_getlog(facilities, NULL, pack, obstack, path);
+	return true;
+}
+
 int main(int argc, char **argv) {
 	struct conf conf;
 	parse_opts(argc, argv, &conf);
@@ -145,9 +158,14 @@ int main(int argc, char **argv) {
 		NULL};
 
 	struct rpchandler_history_facilities facilities = {
-		.records = records, .files = NULL, .pack_getlog = log_pack_getlog};
-
-
+		.records = records,
+		.files = NULL,
+		.funcs =
+			&(struct rpchandler_history_funcs){
+				.pack_getlog = log_pack_getlog,
+				.pack_getsnapshot = log_pack_getsnapshot,
+			},
+	};
 
 	rpchandler_login_t login = rpchandler_login_new(&rpcurl->login);
 	rpchandler_app_t app = rpchandler_app_new("shvc-demo-history", PROJECT_VERSION);

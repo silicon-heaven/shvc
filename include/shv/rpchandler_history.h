@@ -80,22 +80,14 @@ struct rpchandler_history_records {
 		void *cookie, uint64_t *min, uint64_t *max, uint64_t *span);
 };
 
-/** This structure provides the pointers to the arrays of records and
- * file based logging facilities.
+struct rpchandler_history_facilities;
+
+/** Definitions of function for RPC History handler
  *
- * This is passed as an argument to :c:func:`rpchandler_history_new` function.
- * This way the user application may fill the handler with required log
- * facilities.
+ * This defines necessary interface to support getLog and getSnapshot
+ * method packing in RPC History Handler.
  */
-struct rpchandler_history_facilities {
-	/** The array of pointers to :c:struct:`rpchandler_history_records`
-	 * structure. The array has to be ``NULL`` terminated!
-	 */
-	struct rpchandler_history_records **records;
-	/** The array of pointers to :c:struct:`rpchandler_history_files` structure.
-	 * The array has to be ``NULL`` terminated!
-	 */
-	struct rpchandler_history_files **files;
+struct rpchandler_history_funcs {
 	/** Callback to user defined implementation of getLog method response pack.
 	 *
 	 * This is a callback to the user/application defined function that
@@ -125,6 +117,48 @@ struct rpchandler_history_facilities {
 	bool (*pack_getlog)(struct rpchandler_history_facilities *facilities,
 		struct rpchistory_getlog_request *request, cp_pack_t pack,
 		struct obstack *obstack, const char *path);
+	/** Callback to user defined implementation of getSnapshot method response
+	 *
+	 * The function should fail only if it is not possible to obtain records
+	 * from the log due to some internal error (for example the log is not
+	 * able to correctly represent time). Asking for time span or path
+	 * not present should just return without packing any records and thus
+	 * the response will be an empty list.
+	 *
+	 * :param facilities: The pointer to
+	 *   :c:struct:`rpchandler_history_facilities` structure. This provides an
+	 *   access to the logging facilities.
+	 * :param request: The pointer to unpacked getSnapshot request parameters.
+	 * :param pack: Packing structure :c:type:`cp_pack_t`.
+	 * :param obstack: The pointer to RPC Handler obstack.
+	 * :param path: RPC path where the method was called.
+	 * :return: True on success, false on failure.
+	 */
+	bool (*pack_getsnapshot)(struct rpchandler_history_facilities *facilities,
+		struct rpchistory_getsnapshot_request *request, cp_pack_t pack,
+		struct obstack *obstack, const char *path);
+};
+
+/** This structure provides the pointers to the arrays of records and
+ * file based logging facilities.
+ *
+ * This is passed as an argument to :c:func:`rpchandler_history_new` function.
+ * This way the user application may fill the handler with required log
+ * facilities.
+ */
+struct rpchandler_history_facilities {
+	/** The array of pointers to :c:struct:`rpchandler_history_records`
+	 * structure. The array has to be ``NULL`` terminated!
+	 */
+	struct rpchandler_history_records **records;
+	/** The array of pointers to :c:struct:`rpchandler_history_files` structure.
+	 * The array has to be ``NULL`` terminated!
+	 */
+	struct rpchandler_history_files **files;
+	/** Pointer to :c:struct:`rpchandler_history_funcs` defining ``getLog`` and
+	 * ``getSnapshot`` packing functions.
+	 */
+	struct rpchandler_history_funcs *funcs;
 };
 
 /** Object representing RPC Records Handler. */

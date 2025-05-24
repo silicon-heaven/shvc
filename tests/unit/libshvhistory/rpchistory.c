@@ -185,7 +185,7 @@ static struct cpongetlog_request {
 		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:d\"invalid\",3:\"invalid\",4:null}"},
 	{(struct rpchistory_getlog_request){.since = {.msecs = 150000, .offutc = 60},
 		 .until = {.msecs = 150000, .offutc = 60},
-		 .count = 0,
+		 .count = 42,
 		 .ri = "**:*"},
 		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:d\"1970-01-01T00:02:30.000+01:00\",3:42}"},
 	{(struct rpchistory_getlog_request){.count = -2}, "154u"},
@@ -220,6 +220,22 @@ static struct cponfile_record {
 		 .userid = NULL,
 		 .repeat = false},
 		"i{1:null,5:null}"},
+};
+
+static struct cpongetsnapshot_request {
+	struct rpchistory_getsnapshot_request getsnapshot;
+	const char *cpon;
+	int error;
+} getsnapshot_request_pairs_d[] = {
+	{(struct rpchistory_getsnapshot_request){
+		 .time = {.msecs = 150000, .offutc = 60}, .ri = "path:method"},
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:\"path:method\"}", 0},
+	{(struct rpchistory_getsnapshot_request){
+		 .time = {.msecs = 150000, .offutc = 60}, .ri = "**:*"},
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\"}", 0},
+	{(struct rpchistory_getsnapshot_request){}, "i{1:\"error\"}", 1},
+	{(struct rpchistory_getsnapshot_request){}, "i{5:152u}", 1},
+	{(struct rpchistory_getsnapshot_request){}, "152u", 1},
 };
 
 TEST_CASE(pack, setup_packstream_pack_cpon, teardown_packstream_pack) {}
@@ -270,7 +286,7 @@ test_end:
 	unpack_free(unpack);
 }
 
-ARRAY_TEST(unpack, unpacker, getlog_request_pairs_d) {
+ARRAY_TEST(unpack, getlog_unpacker, getlog_request_pairs_d) {
 	getlog_request_unpack(_d);
 }
 
@@ -279,4 +295,32 @@ ARRAY_TEST(pack, file_record_packer, file_record_pairs_d) {
 	cp_pack_null(packstream_pack);
 	rpchistory_file_record_pack_end(packstream_pack);
 	ck_assert_packstr(_d.cpon);
+}
+
+static void getsnapshot_request_unpack(struct cpongetsnapshot_request _d) {
+	struct cpitem item;
+	cpitem_unpack_init(&item);
+	cp_unpack_t unpack = unpack_cpon(_d.cpon);
+	struct obstack obstack;
+	obstack_init(&obstack);
+
+	struct rpchistory_getsnapshot_request *getsnapshot =
+		rpchistory_getsnapshot_request_unpack(unpack, &item, &obstack);
+	if (_d.error) {
+		ck_assert_ptr_null(getsnapshot);
+		goto test_end;
+	}
+
+	ck_assert_ptr_nonnull(getsnapshot);
+
+	ck_assert_int_eq(getsnapshot->time.msecs, _d.getsnapshot.time.msecs);
+	ck_assert_str_eq(getsnapshot->ri, _d.getsnapshot.ri);
+
+test_end:
+	obstack_free(&obstack, NULL);
+	unpack_free(unpack);
+}
+
+ARRAY_TEST(unpack, getsnapshot_unpacker, getsnapshot_request_pairs_d) {
+	getsnapshot_request_unpack(_d);
 }

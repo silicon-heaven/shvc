@@ -8,6 +8,7 @@ V0.0 {
 		rpchistory_fetch;
 		rpchistory_span;
 		rpchistory_getlog;
+		rpchistory_getsnapshot;
 		rpchistory_sync;
 		rpchistory_lastsync;
 		rpchistory_getlog_response_pack_begin;
@@ -15,5 +16,6 @@ V0.0 {
 		rpchistory_getlog_request_unpack;
 		rpchistory_file_record_pack_begin;
 		rpchistory_file_record_pack_end;
+		rpchistory_getsnapshot_request_unpack;
 	local: *;
 };

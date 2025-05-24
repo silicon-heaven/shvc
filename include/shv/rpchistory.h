@@ -82,6 +82,16 @@ enum rpchistory_file_keys {
 	RPCHISTORY_FILE_KEY_REPEAT = 8,
 };
 
+/** Keys for the getSnapshot's method request description iMap
+ *
+ * Keys for the response are not defined ase therse are the same as
+ * :c:enum:`rpchistory_getlog_keys`.
+ */
+enum rpchistory_getsnapshot_req_keys {
+	RPCHISTORY_GETSNAPSHOT_REQ_KEY_TIME = 1,
+	RPCHISTORY_GETSNAPSHOT_REQ_KEY_RI = 2,
+};
+
 /** Structure defining record' head for SHV communication.
  *
  * This is a represenation of record's head. This includes all record's
@@ -140,14 +150,7 @@ struct rpchistory_record_head {
 struct rpchistory_getlog_request {
 	/** This is a :c:struct:`cpdatetime` since logs should be provided. */
 	struct cpdatetime since;
-	/** This is a :c:struct:`cpdatetime` until logs should be provided.
-	 *
-	 * .. NOTE::
-	 * 	A special case is if :c:member:`rpchistory_getlog_request.since`
-	 * 	and :c:member:`rpchistory_getlog_request.until` are equal. In that
-	 * 	case only snapshot records should be provided and field
-	 * 	:c:member:`rpchistory_getlog_request.count` has no effect.
-	 */
+	/** This is a :c:struct:`cpdatetime` until logs should be provided. */
 	struct cpdatetime until;
 	/** Optional Int as a limitation for the number of records to be at most
 	 * returned.
@@ -160,12 +163,28 @@ struct rpchistory_getlog_request {
 	const char *ri;
 };
 
+/** This structure provides fields for getSnapshot method request.
+ *
+ * This structure is returned as a result of
+ * :c:func:`rpchistory_getsnapshot_request_unpack` call..`
+ */
+struct rpchistory_getsnapshot_request {
+	/** This is a :c:struct:`cpdatetime` that defines point in time for log
+	 * retrieval
+	 */
+	struct cpdatetime time;
+	/** RPC RI that should be used to match ``path:method:signal``. */
+	const char *ri;
+};
+
 /** Description for fetch method. */
 extern const struct rpcdir rpchistory_fetch;
 /** Description for span method. */
 extern const struct rpcdir rpchistory_span;
 /** Description for getLog method. */
 extern const struct rpcdir rpchistory_getlog;
+/** Description for getSnapshot method */
+extern const struct rpcdir rpchistory_getsnapshot;
 /** Description for sync method. */
 extern const struct rpcdir rpchistory_sync;
 /** Description for lastSync method. */
@@ -207,6 +226,19 @@ bool rpchistory_getlog_response_pack_end(cp_pack_t pack);
  *   cause.
  */
 struct rpchistory_getlog_request *rpchistory_getlog_request_unpack(
+	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack);
+
+/** Unpack getSnapshot method request.
+ *
+ * :param unpack: The generic unpacker to be used to unpack items.
+ * :param item: The item instance that was used to unpack the previous item.
+ * :param obstack: Pointer to the obstack instance to be used to allocate
+ *   :c:struct:`rpchistory_getsnapshot_request` structure.
+ * :return: Pointer to :c:struct:`rpchistory_getsnapshot_request` or ``NULL`` in
+ *	 case of an unpack error. You can investigate `item` to identify the failure
+ * 	 cause.
+ */
+struct rpchistory_getsnapshot_request *rpchistory_getsnapshot_request_unpack(
 	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack);
 
 /** Begin iMap packing of the record.

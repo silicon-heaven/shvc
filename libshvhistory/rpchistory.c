@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <shv/rpchistory.h>
 
+#include "shv/cp_unpack.h"
 #include "shvc_config.h"
 
 const struct rpcdir rpchistory_fetch = {
@@ -23,6 +24,15 @@ const struct rpcdir rpchistory_span = {
 const struct rpcdir rpchistory_getlog = {
 	.name = "getLog",
 	.param = "!getLogP",
+	.result = "!getLogR",
+	.flags = RPCDIR_F_LARGE_RESULT,
+	.access = RPCACCESS_BROWSE,
+	.signals_cnt = 0,
+};
+
+const struct rpcdir rpchistory_getsnapshot = {
+	.name = "getSnapshot",
+	.param = "!getSnapshotP",
 	.result = "!getLogR",
 	.flags = RPCDIR_F_LARGE_RESULT,
 	.access = RPCACCESS_BROWSE,
@@ -139,13 +149,47 @@ struct rpchistory_getlog_request *rpchistory_getlog_request_unpack(
 		}
 	}
 
-	if (res->since.msecs == res->until.msecs)
-		res->count = 0;
-
 	if (res->count > SHVC_GETLOG_LIMIT)
 		res->count = SHVC_GETLOG_LIMIT;
 
 	return res;
+}
+
+struct rpchistory_getsnapshot_request *rpchistory_getsnapshot_request_unpack(
+	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack) {
+	if (cp_unpack_type(unpack, item) != CPITEM_IMAP)
+		return NULL;
+
+	struct rpchistory_getsnapshot_request *res =
+		obstack_alloc(obstack, sizeof *res);
+	struct timespec ts;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	*res = (struct rpchistory_getsnapshot_request){
+		.time = {.msecs = (ts.tv_sec * 1000) + (ts.tv_nsec / 1000000)},
+		.ri = "**:*",
+	};
+
+	for_cp_unpack_imap(unpack, item, key) {
+		switch (key) {
+			case RPCHISTORY_GETSNAPSHOT_REQ_KEY_TIME:
+				if (!cp_unpack_datetime(unpack, item, res->time))
+					goto getsnapshot_err;
+				break;
+			case RPCHISTORY_GETSNAPSHOT_REQ_KEY_RI:
+				res->ri = cp_unpack_strdupo(unpack, item, obstack);
+				if (res->ri == NULL)
+					res->ri = "**:*";
+				break;
+			default:
+				goto getsnapshot_err;
+		}
+	}
+
+	return res;
+
+getsnapshot_err:
+	obstack_free(obstack, res);
+	return NULL;
 }
 
 bool rpchistory_record_pack_begin(

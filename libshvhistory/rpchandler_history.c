@@ -93,6 +93,7 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 				 * entire ctx->path or whole path until '/' character.
 				 */
 				rpchandler_dir_result(ctx, &rpchistory_getlog);
+				rpchandler_dir_result(ctx, &rpchistory_getsnapshot);
 				break;
 			}
 		}
@@ -170,7 +171,23 @@ static void rpcgetlog_result(struct rpchandler_history_facilities *facilities,
 	const char *path) {
 	cp_pack_t pack = rpchandler_msg_new_response(ctx);
 	cp_pack_list_begin(pack);
-	if (facilities->pack_getlog(
+	if (facilities->funcs->pack_getlog(
+			facilities, request, pack, rpchandler_obstack(ctx), path)) {
+		cp_pack_container_end(pack);
+		rpchandler_msg_send_response(ctx, pack);
+	} else {
+		rpchandler_msg_drop(ctx);
+		rpchandler_msg_send_error(ctx, RPCERR_METHOD_CALL_EXCEPTION,
+			"Time in the logs is not valid, not possible to provide records.");
+	}
+}
+
+static void rpcgetsnapshot_result(struct rpchandler_history_facilities *facilities,
+	struct rpchistory_getsnapshot_request *request, struct rpchandler_msg *ctx,
+	const char *path) {
+	cp_pack_t pack = rpchandler_msg_new_response(ctx);
+	cp_pack_list_begin(pack);
+	if (facilities->funcs->pack_getsnapshot(
 			facilities, request, pack, rpchandler_obstack(ctx), path)) {
 		cp_pack_container_end(pack);
 		rpchandler_msg_send_response(ctx, pack);
@@ -222,6 +239,28 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 
 			return RPCHANDLER_MSG_DONE;
 		}
+	} else if (!strcmp(ctx->meta.method, "getSnapshot") && history->has_getlog) {
+		for (const char **s = history->signals; s && *s; s++) {
+			if ((ctx->meta.path[0] != '\0') &&
+				(strncmp(*s, ctx->meta.path, strlen(ctx->meta.path)) ||
+					!((*s)[strlen(ctx->meta.path)] == '\0' ||
+						(*s)[strlen(ctx->meta.path)] == '/')))
+				continue;
+
+			struct rpchistory_getsnapshot_request *request =
+				rpchistory_getsnapshot_request_unpack(
+					ctx->unpack, ctx->item, rpchandler_obstack(ctx));
+			if (!rpchandler_msg_valid(ctx))
+				return RPCHANDLER_MSG_DONE;
+			if (!request)
+				rpchandler_msg_send_error(
+					ctx, RPCERR_INVALID_PARAM, "!getSnapshotP expected.");
+			else
+				rpcgetsnapshot_result(
+					history->facilities, request, ctx, ctx->meta.path);
+
+			return RPCHANDLER_MSG_DONE;
+		}
 	}
 
 	return RPCHANDLER_MSG_SKIP;
@@ -243,7 +282,8 @@ rpchandler_history_t rpchandler_history_new(
 	res->signals = signals;
 	res->has_records = facilities->records;
 	res->has_files = facilities->files;
-	res->has_getlog = facilities->pack_getlog;
+	res->has_getlog = facilities->funcs->pack_getlog &&
+		facilities->funcs->pack_getsnapshot;
 
 	return res;
 }
