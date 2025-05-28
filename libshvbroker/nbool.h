@@ -74,9 +74,9 @@ static inline bool nbool(nbool_t v, unsigned i) {
 static inline size_t nbool_nbits(nbool_t v) {
 	size_t res = 0;
 	// TODO use stdbit.h once it is available on NuttX
-#if defined(__has_builtin) && __has_builtin(__builtin_stdc_leading_ones)
+#if defined(__has_builtin) && __has_builtin(__builtin_popcount)
 	for (size_t i = 0; i < v->cnt; i++)
-		res += __builtin_stdc_leading_ones(v->vals[i]);
+		res += __builtin_popcount(v->vals[i]);
 #else
 	for_nbool(v, ni) res++;
 #endif
