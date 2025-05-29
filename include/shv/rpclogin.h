@@ -77,9 +77,9 @@ bool rpclogin_pack(cp_pack_t pack, const struct rpclogin *login,
  * :param unpack: The generic unpacker to be used to unpack items.
  * :param item: The item instance that was used to unpack the previous item.
  * :param obstack: Pointer to the obstack instance to be used to allocate
- *   storage for the unpacked items. :return: Pointer to the unpacked login
- * parameter or ``NULL`` in case of an unpack error. You can investigate
- *   ``item`` to identify the failure cause.
+ *   storage for the unpacked items.
+ * :return: Pointer to the unpacked login  parameter or ``NULL`` in case of an
+ * 	 unpack error. You can investigate ``item`` to identify the failure cause.
  */
 [[gnu::nonnull]]
 struct rpclogin *rpclogin_unpack(
