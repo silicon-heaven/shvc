@@ -107,6 +107,8 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 	for (int i = 0; i < handler->num; i++) {
 		struct rpchandler_file_repr *file = handler->file + i;
 		if (ctx->path && !strcmp(ctx->path, file->list->shv_path)) {
+			rpchandler_dir_result(ctx, &rpcfile_stat);
+			rpchandler_dir_result(ctx, &rpcfile_size);
 			if (file->list->access & RPCFILE_ACCESS_VALIDATION) {
 				rpchandler_dir_result(ctx, &rpcfile_crc);
 				rpchandler_dir_result(ctx, &rpcfile_sha1);
@@ -120,8 +122,6 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 			if (file->list->access & RPCFILE_ACCESS_APPEND)
 				rpchandler_dir_result(ctx, &rpcfile_append);
 
-			rpchandler_dir_result(ctx, &rpcfile_stat);
-			rpchandler_dir_result(ctx, &rpcfile_size);
 			break;
 		}
 	}
