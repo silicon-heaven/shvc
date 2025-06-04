@@ -12,7 +12,7 @@ bool common_unpack(size_t *res, FILE *f, struct cpitem *item) {
 }
 
 bool common_pack(ssize_t *res, FILE *f, const struct cpitem *item) {
-	if (f && ferror(f)) { /* No reason to write to file in error */
+	if (f && ferror_unlocked(f)) { /* No reason to write to file in error */
 		*res = -1;
 		return true;
 	}
