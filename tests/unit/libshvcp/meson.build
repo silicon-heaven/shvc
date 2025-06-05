@@ -18,11 +18,9 @@ unittest_libshvcp = executable(
 )
 test(
   'unittest-libshvcp',
-  bash,
-  args: [test_driver, unittest_libshvcp.full_path()],
+  unittest_libshvcp,
   env: unittests_env,
   protocol: 'tap',
-  depends: unittest_libshvcp,
   timeout: 120,
-  suite: ['libshvcp'],
+  suite: ['unit', 'libshvcp'],
 )

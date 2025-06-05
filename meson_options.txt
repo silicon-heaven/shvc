@@ -1,6 +1,7 @@
 option(
   'tests',
-  type: 'feature',
+  type: 'combo',
+  choices: ['auto', 'enabled', 'disabled'],
   description: 'Expect tests to be build and check for their dependencies',
 )
 

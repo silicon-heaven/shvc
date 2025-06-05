@@ -9,12 +9,10 @@ unittest_libshvbroker = executable(
 )
 test(
   'unittest-libshvbroker',
-  bash,
-  args: [test_driver, unittest_libshvbroker.full_path()],
+  unittest_libshvbroker,
   env: unittests_env,
   protocol: 'tap',
-  depends: unittest_libshvbroker,
-  suite: ['libshvbroker'],
+  suite: ['unit', 'libshvbroker'],
 )
 
 unittest_libshvbroker_internal = executable(
@@ -34,10 +32,8 @@ unittest_libshvbroker_internal = executable(
 )
 test(
   'unittest-libshvbroker-internal',
-  bash,
-  args: [test_driver, unittest_libshvbroker_internal.full_path()],
+  unittest_libshvbroker_internal,
   env: unittests_env,
   protocol: 'tap',
-  depends: unittest_libshvbroker_internal,
-  suite: ['libshvbroker-internal'],
+  suite: ['unit', 'libshvbroker'],
 )

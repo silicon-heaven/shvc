@@ -23,13 +23,11 @@ unittest_libshvrpc = executable(
 )
 test(
   'unittest-libshvrpc',
-  bash,
-  args: [test_driver, unittest_libshvrpc.full_path()],
+  unittest_libshvrpc,
   env: unittests_env,
   protocol: 'tap',
-  depends: unittest_libshvrpc,
   timeout: 120,
-  suite: ['libshvrpc'],
+  suite: ['unit', 'libshvrpc'],
 )
 
 unittest_libshvrpc_internal = executable(
@@ -49,10 +47,8 @@ unittest_libshvrpc_internal = executable(
 )
 test(
   'unittest-libshvrpc-internal',
-  bash,
-  args: [test_driver, unittest_libshvrpc_internal.full_path()],
+  unittest_libshvrpc_internal,
   env: unittests_env,
   protocol: 'tap',
-  depends: unittest_libshvrpc_internal,
-  suite: ['libshvrpc-internal'],
+  suite: ['unit', 'libshvrpc'],
 )

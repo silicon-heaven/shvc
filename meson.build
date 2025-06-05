@@ -10,7 +10,7 @@ cc = meson.get_compiler('c')
 isnuttx = cc.get_define('__NuttX__') != '' # Won't be defined outside NuttX
 pkg_mod = import('pkgconfig')
 cmake = import('cmake')
-python = import('python')
+pymod = import('python')
 
 add_project_arguments('-D_GNU_SOURCE', language: 'c')
 add_project_arguments('-DPROJECT_VERSION="@0@"'.format(meson.project_version()), language: 'c')
@@ -94,9 +94,8 @@ if (
   not isnuttx
   and not meson.is_subproject()
   and (
-    tests_opt.enabled()
-    or (tests_opt.auto()
-    and get_option('buildtype') in test_buildtypes)
+    tests_opt == 'enabled'
+    or (tests_opt == 'auto' and get_option('buildtype') in test_buildtypes)
   )
 )
   subdir('tests')

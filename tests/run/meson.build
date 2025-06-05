@@ -1,13 +1,3 @@
-python_pytest = python.find_installation(
-  'python',
-  modules: [
-    'pytest',
-    'pytest_tap',
-    'pytest_asyncio',
-    'shv',
-  ],
-)
-
 pytest_depends = []
 pytest_env = []
 if not shvc_opt.disabled()
@@ -44,19 +34,17 @@ if not demo_history_opt.disabled()
 endif
 
 test(
-  'run-pytest',
-  bash,
+  'run',
+  python,
   args: [
-    test_driver,
-    '-n', python_pytest.full_path(),
     '-m', 'pytest',
     '--tap-stream',
     '--log-level=DEBUG',
     '-vv', meson.current_source_dir(),
   ],
-  env: pytest_env,
-  protocol: 'tap',
-  timeout: 1000,
+  env: ['NO_VALGRIND_WRAP=y'] + pytest_env,
   depends: pytest_depends,
+  timeout: 1000,
+  protocol: 'tap',
   suite: ['run'],
 )

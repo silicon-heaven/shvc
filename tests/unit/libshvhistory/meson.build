@@ -10,10 +10,9 @@ unittest_libshvhistory = executable(
 )
 test(
   'unittest-libshvhistory',
-  bash,
-  args: [test_driver, unittest_libshvhistory.full_path()],
+  unittest_libshvhistory,
   env: unittests_env,
   protocol: 'tap',
-  depends: unittest_libshvhistory,
   timeout: 120,
+  suite: ['unit', 'libshvhistory'],
 )

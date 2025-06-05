@@ -15,11 +15,9 @@ unittest_shvcbroker = executable(
 )
 test(
   'unittest-shvcbroker',
-  bash,
-  args: [test_driver, unittest_shvcbroker.full_path()],
+  unittest_shvcbroker,
   env: unittests_env,
   protocol: 'tap',
-  depends: unittest_shvcbroker,
   timeout: 120,
-  suite: ['shvcbroker'],
+  suite: ['unit', 'shvcbroker'],
 )
