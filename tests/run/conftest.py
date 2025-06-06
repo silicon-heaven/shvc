@@ -110,9 +110,9 @@ def fixture_broker_config(url):
             "tester",
             {"test/*"},
             {
-                shv.RpcMethodAccess.BROWSE: {"**:ls", "**:dir"},
-                shv.RpcMethodAccess.COMMAND: {"test/**:*"},
-                shv.RpcMethodAccess.SERVICE: {"test/.history/**:*"},
+                shv.RpcAccess.BROWSE: {"**:ls", "**:dir"},
+                shv.RpcAccess.COMMAND: {"test/**:*"},
+                shv.RpcAccess.SERVICE: {"test/.history/**:*"},
             },
         )
     )

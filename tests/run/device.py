@@ -18,23 +18,21 @@ class Device(shv.SHVClient):
             yield "value"
             yield "lock"
 
-    def _dir(self, path: str) -> collections.abc.Iterator[shv.RpcMethodDesc]:
+    def _dir(self, path: str) -> collections.abc.Iterator[shv.RpcDir]:
         yield from super()._dir(path)
         if path == "value":
-            yield shv.RpcMethodDesc.getter(result="Any", signal=True)
-            yield shv.RpcMethodDesc.setter(param="Any", description="Set value")
+            yield shv.RpcDir.getter(result="Any", signal=True)
+            yield shv.RpcDir.setter(param="Any", description="Set value")
         if path == "lock":
-            yield shv.RpcMethodDesc("take", flags=shv.RpcMethodFlags.USER_ID_REQUIRED)
-            yield shv.RpcMethodDesc(
-                "release", flags=shv.RpcMethodFlags.USER_ID_REQUIRED
-            )
-            yield shv.RpcMethodDesc.getter("owner", result="String|Null", signal=True)
+            yield shv.RpcDir("take", flags=shv.RpcDir.Flag.USER_ID_REQUIRED)
+            yield shv.RpcDir("release", flags=shv.RpcDir.Flag.USER_ID_REQUIRED)
+            yield shv.RpcDir.getter("owner", result="String|Null", signal=True)
 
     async def _method_call(self, request: shv.SHVBase.Request) -> shv.SHVType:
         match request.path, request.method:
-            case ["value", "get"] if request.access >= shv.RpcMethodAccess.READ:
+            case ["value", "get"] if request.access >= shv.RpcAccess.READ:
                 return self.value
-            case ["value", "set"] if request.access >= shv.RpcMethodAccess.WRITE:
+            case ["value", "set"] if request.access >= shv.RpcAccess.WRITE:
                 old = self.value
                 self.value = request.param
                 if old != request.param:
@@ -42,7 +40,7 @@ class Device(shv.SHVClient):
                         shv.RpcMessage.signal("value", value=request.param)
                     )
                 return None
-            case ["lock", "take"] if request.access >= shv.RpcMethodAccess.COMMAND:
+            case ["lock", "take"] if request.access >= shv.RpcAccess.COMMAND:
                 if request.user_id is None:
                     raise shv.RpcUserIDRequiredError
                 if self.lock_owner is not None:
@@ -52,7 +50,7 @@ class Device(shv.SHVClient):
                     shv.RpcMessage.signal("lock", "owner", value=request.user_id)
                 )
                 return None
-            case ["lock", "release"] if request.access >= shv.RpcMethodAccess.READ:
+            case ["lock", "release"] if request.access >= shv.RpcAccess.READ:
                 if request.user_id is None:
                     raise shv.RpcUserIDRequiredError
                 if self.lock_owner != request.user_id:
@@ -60,6 +58,6 @@ class Device(shv.SHVClient):
                 self.lock_owner = None
                 await self._send(shv.RpcMessage.signal("lock", "owner", value=None))
                 return None
-            case ["lock", "owner"] if request.access >= shv.RpcMethodAccess.READ:
+            case ["lock", "owner"] if request.access >= shv.RpcAccess.READ:
                 return self.lock_owner
         return await super()._method_call(request)

@@ -106,79 +106,76 @@ async def test_ls(client, device, path, result):
         (
             ".broker",
             [
-                shv.RpcMethodDesc.stddir(),
-                shv.RpcMethodDesc.stdls(),
-                shv.RpcMethodDesc.getter(
-                    name="name",
-                    param="n",
-                    result="s",
-                    access=shv.RpcMethodAccess.BROWSE,
+                shv.RpcDir.stddir(),
+                shv.RpcDir.stdls(),
+                shv.RpcDir.getter(
+                    name="name", param="n", result="s", access=shv.RpcAccess.BROWSE
                 ),
-                shv.RpcMethodDesc(
+                shv.RpcDir(
                     name="clientInfo",
                     param="i",
                     result="!clientInfo|n",
-                    access=shv.RpcMethodAccess.SUPER_SERVICE,
+                    access=shv.RpcAccess.SUPER_SERVICE,
                 ),
-                shv.RpcMethodDesc(
+                shv.RpcDir(
                     name="mountedClientInfo",
                     param="s",
                     result="!clientInfo|n",
-                    access=shv.RpcMethodAccess.SUPER_SERVICE,
+                    access=shv.RpcAccess.SUPER_SERVICE,
                 ),
-                shv.RpcMethodDesc(
+                shv.RpcDir(
                     name="clients",
                     param="n",
                     result="[i]",
-                    access=shv.RpcMethodAccess.SUPER_SERVICE,
+                    access=shv.RpcAccess.SUPER_SERVICE,
                 ),
-                shv.RpcMethodDesc(
+                shv.RpcDir(
                     name="mounts",
                     param="n",
                     result="[s]",
-                    access=shv.RpcMethodAccess.SUPER_SERVICE,
+                    access=shv.RpcAccess.SUPER_SERVICE,
                 ),
-                shv.RpcMethodDesc(
+                shv.RpcDir(
                     name="disconnectClient",
                     param="i",
-                    access=shv.RpcMethodAccess.SUPER_SERVICE,
+                    access=shv.RpcAccess.SUPER_SERVICE,
                 ),
             ],
         ),
         (
             ".broker/client",
             [
-                shv.RpcMethodDesc.stddir(),
-                shv.RpcMethodDesc.stdls(),
+                shv.RpcDir.stddir(),
+                shv.RpcDir.stdls(),
             ],
         ),
         (
             ".broker/currentClient",
             [
-                shv.RpcMethodDesc.stddir(),
-                shv.RpcMethodDesc.stdls(),
-                shv.RpcMethodDesc.getter(
+                shv.RpcDir.stddir(),
+                shv.RpcDir.stdls(),
+                shv.RpcDir.getter(
                     name="info",
                     param="n",
                     result="!clientInfo",
-                    access=shv.RpcMethodAccess.BROWSE,
+                    access=shv.RpcAccess.BROWSE,
                 ),
-                shv.RpcMethodDesc(
+                shv.RpcDir(
                     name="subscribe",
                     param="s|[s:RPCRI,i:TTL]",
                     result="b",
-                    access=shv.RpcMethodAccess.BROWSE,
+                    access=shv.RpcAccess.BROWSE,
                 ),
-                shv.RpcMethodDesc(
+                shv.RpcDir(
                     name="unsubscribe",
                     param="s",
                     result="b",
-                    access=shv.RpcMethodAccess.BROWSE,
+                    access=shv.RpcAccess.BROWSE,
                 ),
-                shv.RpcMethodDesc(
+                shv.RpcDir(
                     name="subscriptions",
                     result="{i|n}",
-                    access=shv.RpcMethodAccess.BROWSE,
+                    access=shv.RpcAccess.BROWSE,
                 ),
             ],
         ),
