@@ -27,8 +27,7 @@ valgrind_args = [
 
 if __name__ == "__main__":
     if os.getenv("NO_VALGRIND_WRAP"):
-        os.environ["VALGRIND"] = valgrind
-        os.environ["VALGRIND_OPTS"] = " ".join(valgrind_args)
-        os.execvp(sys.argv[3], sys.argv[3:])
+        os.environ["VALGRIND"] = f"{valgrind} {' '.join(valgrind_args)} --"
+        os.execvp(sys.argv[3], sys.argv[3:])  # noqa: S606
     else:
-        os.execlp(valgrind, valgrind, *valgrind_args, "--", *sys.argv[3:])
+        os.execlp(valgrind, valgrind, *valgrind_args, "--", *sys.argv[3:])  # noqa: S606
