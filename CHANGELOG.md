@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Pack functions for file based logging
+- `cpitem_extract_decimal_int`, `cp_pack_decimal_int`, and
+  `cp_unpack_decimal_int` to simplify working with decimals represented in the
+  code as plain integers with fixed multiplication.
 
 ### Fixed
 - Invalid memory access in Broker caused by wrong bits count calculation.

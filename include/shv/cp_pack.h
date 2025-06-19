@@ -223,6 +223,19 @@ static inline bool cp_pack_decimal(cp_pack_t pack, struct cpdecimal v) {
 	return cp_pack(pack, &i);
 }
 
+/** Pack *Decimal* stored as integer multiple to the generic packer.
+ *
+ * :param pack: Generic packer.
+ * :param mantissa: The mantissa of the decimal number.
+ * :param exponent: The exponent (current multiplication of mantissa).
+ * :return: Boolean signaling the pack success or failure.
+ */
+[[gnu::nonnull]]
+static inline bool cp_pack_decimal_int(
+	cp_pack_t pack, intmax_t mantissa, int exponent) {
+	return cp_pack_decimal(pack, cpitod(mantissa, exponent));
+}
+
 /** Pack *Datetime* to the generic packer.
  *
  * :param pack: Generic packer.

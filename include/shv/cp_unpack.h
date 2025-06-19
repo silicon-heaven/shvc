@@ -288,6 +288,26 @@ void cp_unpack_finish(cp_unpack_t unpack, struct cpitem *item, unsigned depth);
 		cpitem_extract_decimal(___item, DEST); \
 	})
 
+/** Unpack decimal and place it to the destination integer.
+ *
+ * This combines :c:macro:`cp_unpack` with
+ * :c:macro:`cpitem_extract_decimal_int`.
+ *
+ * :param UNPACK: Generic unpacker to be used for unpacking.
+ * :param ITEM: Item where info about the unpacked item and its value is placed
+ *   to. You can use it to identify the real type or error in case of failure.
+ * :param DEST: destination :c:struct:`cpdecimal` variable (not pointer, the
+ *   variable directly).
+ * :return: Boolean signaling if both unpack was successful and value fit the
+ *   destination. The real issue can be deduced from **ITEM**.
+ */
+#define cp_unpack_decimal_int(UNPACK, ITEM, DEST, EXP) \
+	({ \
+		struct cpitem *___item = ITEM; \
+		cp_unpack(UNPACK, ___item); \
+		cpitem_extract_decimal_int(___item, DEST, EXP); \
+	})
+
 /** Unpack a single byte from string.
  *
  * :param unpack: Unpack handle.

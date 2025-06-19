@@ -191,6 +191,7 @@ double cpdectod(const struct cpdecimal v);
  *
  * :param DEC: The decimal to be converted (variable not pointer to it).
  * :param EXP: The exponent of the destination integer.
+ * :return: ``true`` if value fits :var:`DEST` and ``false`` otherwise.
  */
 #define cpdtoi(DEC, EXP, DEST) \
 	({ \
@@ -209,13 +210,13 @@ double cpdectod(const struct cpdecimal v);
  * This automatically normalizes the newly created decimal. Otherwise there is
  * no advantage in using this over direct structure initialization.
  *
- * :param MANTISA: The mantissa to be used.
+ * :param MANTISSA: The mantissa to be used.
  * :param EXPONENT: The exponent (current multiplication of mantissa).
  * :return: The normalized decimal number.
  */
-#define cpitod(MANTISA, EXPONENT) \
+#define cpitod(MANTISSA, EXPONENT) \
 	({ \
-		struct cpdecimal __dec_res = {.mantissa = MANTISA, .exponent = EXPONENT}; \
+		struct cpdecimal __dec_res = {.mantissa = MANTISSA, .exponent = EXPONENT}; \
 		cpdecnorm(&__dec_res); \
 		__dec_res; \
 	})
@@ -473,8 +474,8 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  *   directly). It can be unsigned as well as signed and thus it is allowed to
  *   extract signed SHV integer to unsigned variable.
  * :return: ``true`` in case value was :c:enumerator:`CPITEM_INT` and value fits
- *   to the destination, otherwise ``false`` is returned. The destination is not
- *   modified when ``false`` is returned.
+ *   to the destination, otherwise ``false`` is returned. The destination could
+ *   be modified when ``false`` is returned.
  */
 #define cpitem_extract_int(ITEM, DEST) \
 	({ \
@@ -500,7 +501,7 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  *   extract unsigned SHV integer to signed variable.
  * :return: ``true`` in case value was :c:enumerator:`CPITEM_UINT` and value
  *   fits to the destination, otherwise ``false`` is returned. The destination
- *   is not modified when ``false`` is returned.
+ *   could be modified when ``false`` is returned.
  */
 #define cpitem_extract_uint(ITEM, DEST) \
 	({ \
@@ -558,7 +559,7 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  * :param ITEM: item from which :c:struct:`cpdecimal` is extract.
  * :param DEST: destination :c:struct:`cpdecimal` variable (not pointer, the
  *   variable directly).
- * :return: ``true`` in case value was :c:enumerator:`CPITEM_DECIMAL` and,
+ * :return: ``true`` in case value was :c:enumerator:`CPITEM_DECIMAL`,
  *   otherwise ``false`` is returned. The destination is not modified when
  *   ``false`` is returned.
  */
@@ -570,6 +571,25 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 			(DEST) = __item->as.Decimal; \
 			__valid = true; \
 		} \
+		__valid; \
+	})
+
+/** Extract integer from decimal item.
+ *
+ * :param ITEM: item from which integer is extract.
+ * :param DEST: destination integer variable (not pointer, the variable
+ *   directly).
+ * :param EXP: The exponent of the destination integer.
+ * :return: ``true`` in case value was :c:enumerator:`CPITEM_DECIMAL` and value
+ *   fits to the destination, otherwise ``false`` is returned. The destination
+ *   could be modified when ``false`` is returned.
+ */
+#define cpitem_extract_decimal_int(ITEM, DEST, EXP) \
+	({ \
+		const struct cpitem *__item = ITEM; \
+		bool __valid = false; \
+		if (__item->type == CPITEM_DECIMAL) \
+			__valid = cpdtoi(__item->as.Decimal, EXP, DEST); \
 		__valid; \
 	})
 
