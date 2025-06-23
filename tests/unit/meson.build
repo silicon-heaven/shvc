@@ -21,7 +21,7 @@ test(
   unittest_libfoo,
   env: unittests_env,
   protocol: 'tap',
-  depends: unittest_libfoo,
+  suite: ['unit', 'libfoo'],
 )
 
 unittest_foo = executable(
@@ -35,6 +35,5 @@ test(
   unittest_foo,
   env: unittests_env,
   protocol: 'tap',
-  depends: unittest_foo,
-  suite: ['unit'],
+  suite: ['unit', 'foo'],
 )
