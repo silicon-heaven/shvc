@@ -162,12 +162,12 @@ mypy:
 shellcheck:
   extends: .lint
   script:
-    - git ls-files '**.sh' | xargs nix develop --quiet -c shellcheck
+    - git ls-files '**.sh' | xargs nix run --quiet .#shellcheck
 
 statix:
   extends: .lint
   script:
-    - nix develop --quiet -c statix check .
+    - nix run --quiet .#statix -- check .
 
 ## Style stage #################################################################
 .style:
@@ -181,13 +181,13 @@ muon:
   script:
     - |
       git ls-files '**/meson.build' meson_options.txt |
-        nix develop --quiet -c xargs muon fmt -e -i
+        xargs nix run --quiet .#muon -- fmt -e -i
     - git diff --exit-code
 
 clang-format:
   extends: .style
+  needs: ["build"]
   script:
-    - nix develop --quiet -c meson setup build
     - nix develop --quiet -c ninja -C build clang-format
     - git diff --exit-code
 
@@ -200,8 +200,7 @@ ruff-format:
 shell-format:
   extends: .style
   script:
-    - git ls-files '**.sh' '**.bats' | xargs nix develop --quiet -c shfmt -w
-    - git diff --exit-code
+    - git ls-files '**.sh' '**.bats' | xargs nix run --quiet .#shfmt -- -d
 
 nixfmt:
   extends: .style
@@ -212,26 +211,24 @@ nixfmt:
 deadnix:
   extends: .style
   script:
-    - nix develop --quiet -c deadnix --fail .
+    - nix run --quiet .#deadnix -- --fail .
 
 editorconfig-checker:
   extends: .style
   script:
-    - nix develop --quiet -c editorconfig-checker -exclude '.nix-cache/.*'
+    - nix run --quiet .#editorconfig-checker -- -exclude '.nix-cache/.*'
 
 gitlint:
   extends: .style
   script:
     - git fetch
-    - nix develop --quiet -c gitlint --commits origin/master..$CI_COMMIT_SHA
+    - nix run --quiet .#gitlint -- --commits origin/master..$CI_COMMIT_SHA
 
 ## Code Coverage stage #########################################################
 coverage:
   stage: coverage
   extends: .nix
-  needs:
-    - job: tests
-      artifacts: true
+  needs: ["tests"]
   script:
     - nix develop --quiet -c ninja -j1 -C build coverage-html coverage-xml
     - mv build/meson-logs/coveragereport ./
