@@ -1,13 +1,48 @@
 import dataclasses
 import os
 import shlex
+import sys
 
 import pytest
+import pytest_tap.plugin  # type: ignore
+from _pytest.terminal import TerminalReporter  # noqa: PLC2701
 from shv.broker import RpcBroker, RpcBrokerConfig
 from shv.rpcapi.valueclient import SHVValueClient
 from shv.rpcdef import RpcAccess
 from shv.rpclogin import RpcLogin, RpcLoginType
 from shv.rpcurl import RpcUrl
+
+
+class MesonTAPPlugin(pytest_tap.plugin.TAPPlugin):
+    def pytest_runtest_logreport(self, report: pytest.TestReport):
+        super().pytest_runtest_logreport(report)
+        if report.failed:
+            print(f"{'_' * 16} {report.head_line} {'_' * 16}", file=sys.stderr)
+            print(report.longreprtext, file=sys.stderr)
+            print(file=sys.stderr)
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--meson",
+        default=False,
+        action="store_true",
+    )
+
+
+@pytest.hookimpl(trylast=True)
+def pytest_configure(config):
+    if config.getoption("--meson") and not config.option.help:
+        config.option.tap_stream = True
+        config.option.tap_log_passing_tests = True
+        config.pluginmanager.register(MesonTAPPlugin(config), "tapplugin")
+        devnull = open("/dev/null", "w", encoding=sys.getdefaultencoding())
+        config.pluginmanager.register(
+            TerminalReporter(config, devnull), "terminalreporter"
+        )
+
+
+################################################################################
 
 
 @pytest.fixture(name="valgrind_exec", scope="session")

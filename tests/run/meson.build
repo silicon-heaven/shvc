@@ -38,7 +38,7 @@ test(
   python,
   args: [
     '-m', 'pytest',
-    '--tap-stream',
+    '--meson',
     '--log-level=DEBUG',
     '-vv', meson.current_source_dir(),
   ],
