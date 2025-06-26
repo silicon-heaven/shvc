@@ -89,6 +89,16 @@ bool rpcfile_stat_pack(cp_pack_t pack, struct rpcfile_stat_s *stats) {
 	cp_pack_int(pack, RPCFILE_STAT_KEY_MAXWRITE);
 	cp_pack_int(pack, stats->max_write);
 
+	if (stats->max_read != 0) {
+		cp_pack_int(pack, RPCFILE_STAT_KEY_MAXREAD);
+		cp_pack_int(pack, stats->max_read);
+	}
+
+	if (stats->erase_size != 0) {
+		cp_pack_int(pack, RPCFILE_STAT_KEY_ERASESIZE);
+		cp_pack_int(pack, stats->erase_size);
+	}
+
 	cp_pack_container_end(pack);
 	return true;
 }
@@ -128,6 +138,12 @@ struct rpcfile_stat_s *rpcfile_stat_unpack(
 				break;
 			case RPCFILE_STAT_KEY_MAXWRITE:
 				cp_unpack_int(unpack, item, res->max_write);
+				break;
+			case RPCFILE_STAT_KEY_MAXREAD:
+				cp_unpack_int(unpack, item, res->max_read);
+				break;
+			case RPCFILE_STAT_KEY_ERASESIZE:
+				cp_unpack_int(unpack, item, res->erase_size);
 				break;
 			default:
 				cp_unpack_skip(unpack, item);

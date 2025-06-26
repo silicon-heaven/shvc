@@ -18,8 +18,10 @@ static struct cpondir {
 		 .access_time = {.msecs = 150000, .offutc = 60},
 		 .mod_time = {.msecs = 0, .offutc = 0},
 		 .max_write = 128,
+		 .max_read = 128,
+		 .erase_size = 4096,
 	 },
-		"i{0:0,1:2048,2:512,3:d\"1970-01-01T00:02:30.000+01:00\",4:d\"1970-01-01T00:00:00.000Z\",5:128}"},
+		"i{0:0,1:2048,2:512,3:d\"1970-01-01T00:02:30.000+01:00\",4:d\"1970-01-01T00:00:00.000Z\",5:128,6:128,7:4096}"},
 };
 
 
@@ -50,6 +52,10 @@ static void stat_unpack_test(struct cpondir _d) {
 
 	ck_assert_int_eq(stats->mod_time.msecs, _d.stats.mod_time.msecs);
 	ck_assert_int_eq(stats->mod_time.offutc, _d.stats.mod_time.offutc);
+
+	ck_assert_int_eq(stats->max_write, _d.stats.max_write);
+	ck_assert_int_eq(stats->max_read, _d.stats.max_read);
+	ck_assert_int_eq(stats->erase_size, _d.stats.erase_size);
 
 	obstack_free(&obstack, NULL);
 	unpack_free(unpack);

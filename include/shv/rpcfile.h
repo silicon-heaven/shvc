@@ -51,12 +51,16 @@ enum rpcfile_stat_keys {
 	RPCFILE_STAT_KEY_ACCESSTIME = 3,
 	RPCFILE_STAT_KEY_MODTIME = 4,
 	RPCFILE_STAT_KEY_MAXWRITE = 5,
+	RPCFILE_STAT_KEY_MAXREAD = 6,
+	RPCFILE_STAT_KEY_ERASESIZE = 7,
 };
 
 /** Supported types of file */
 enum rpcfile_stat_type {
 	/** Regular file. */
 	RPCFILE_STAT_TYPE_REGULAR = 0,
+	/** MTD layer */
+	RPCFILE_STAT_TYPE_MTD,
 };
 
 /** The representation of file node statistics. */
@@ -70,6 +74,12 @@ struct rpcfile_stat_s {
 	int page_size;
 	/** Optional maximal size in bytes of a single write that is accepted. */
 	int max_write;
+	/** Optional maximal size in bytes of a single read that the device can
+	 * return.
+	 */
+	int max_read;
+	/** Optional size of erase page (this is used only for MTD file types) */
+	int erase_size;
 	/** Optional time of latest data access. */
 	struct cpdatetime access_time;
 	/** Optional time of latest data modification. */
