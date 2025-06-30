@@ -16,10 +16,6 @@ they provide complete SHV RPC toolkit.
   be done without `malloc()`.
 * **libshvrpc** provides a complete facilities to receive and send SHV RPC
   messages as well as more advanced constructs to manage them (`rpchandler`).
-* **libshvcaller** is an extention library to the **libshvrpc** that provides
-  dedicated tools for for client applications.
-* **libshvcallee** is an extention library to the **libshvrpc** that provides
-  dedicated tools for for device applications.
 * **libshvbroker** is a library that implements SHV RPC Broker and thus broker's
   functionality can be combined with other to create combined and custom
   applications providing SHV RPC broker functionality.
