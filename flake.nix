@@ -73,14 +73,8 @@
   in
     {
       overlays = {
-        pkgs = final: prev: {
+        pkgs = final: _: {
           template-c = final.callPackage template-c {};
-          pythonPackagesExtensions =
-            prev.pythonPackagesExtensions
-            ++ [self.overlays.pythonPackagesExtension];
-        };
-        pythonPackagesExtension = final: _: {
-          hawkmoth = final.callPackage ./hawkmoth.nix {};
         };
         default = composeManyExtensions [
           check-suite.overlays.default
