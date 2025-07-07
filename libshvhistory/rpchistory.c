@@ -55,7 +55,7 @@ const struct rpcdir rpchistory_lastsync = {
 };
 
 bool rpchistory_getlog_response_pack_begin(
-	cp_pack_t pack, struct rpchistory_record_head *head, int ref) {
+	cp_pack_t pack, struct rpchistory_record_head *head) {
 	cp_pack_imap_begin(pack);
 
 	if (head->datetime.msecs != INT64_MAX) {
@@ -63,24 +63,24 @@ bool rpchistory_getlog_response_pack_begin(
 		cp_pack_datetime(pack, head->datetime);
 	}
 
-	if (ref >= 0) {
+	if (head->ref >= 0) {
 		cp_pack_int(pack, RPCHISTORY_GETLOG_KEY_REF);
-		cp_pack_int(pack, ref);
-	}
+		cp_pack_int(pack, head->ref);
+	} else {
+		if (head->path && *head->path != '\0') {
+			cp_pack_int(pack, RPCHISTORY_GETLOG_KEY_PATH);
+			cp_pack_str(pack, head->path);
+		}
 
-	if (head->path && *head->path != '\0') {
-		cp_pack_int(pack, RPCHISTORY_GETLOG_KEY_PATH);
-		cp_pack_str(pack, head->path);
-	}
+		if (head->signal && *head->signal != '\0') {
+			cp_pack_int(pack, RPCHISTORY_GETLOG_KEY_SIGNAL);
+			cp_pack_str(pack, head->signal);
+		}
 
-	if (head->signal && *head->signal != '\0') {
-		cp_pack_int(pack, RPCHISTORY_GETLOG_KEY_SIGNAL);
-		cp_pack_str(pack, head->signal);
-	}
-
-	if (head->source && *head->source != '\0') {
-		cp_pack_int(pack, RPCHISTORY_GETLOG_KEY_SOURCE);
-		cp_pack_str(pack, head->source);
+		if (head->source && *head->source != '\0') {
+			cp_pack_int(pack, RPCHISTORY_GETLOG_KEY_SOURCE);
+			cp_pack_str(pack, head->source);
+		}
 	}
 
 	if (head->userid) {
@@ -203,19 +203,24 @@ bool rpchistory_record_pack_begin(
 
 	if (head->type == RPCHISTORY_RECORD_NORMAL ||
 		head->type == RPCHISTORY_RECORD_KEEP) {
-		if (head->path && *head->path != '\0') {
-			cp_pack_int(pack, RPCHISTORY_FETCH_KEY_PATH);
-			cp_pack_str(pack, head->path);
-		}
+		if (head->ref >= 0) {
+			cp_pack_int(pack, RPCHISTORY_FETCH_KEY_REF);
+			cp_pack_int(pack, head->ref);
+		} else {
+			if (head->path && *head->path != '\0') {
+				cp_pack_int(pack, RPCHISTORY_FETCH_KEY_PATH);
+				cp_pack_str(pack, head->path);
+			}
 
-		if (head->signal && *head->signal != '\0') {
-			cp_pack_int(pack, RPCHISTORY_FETCH_KEY_SIGNAL);
-			cp_pack_str(pack, head->signal);
-		}
+			if (head->signal && *head->signal != '\0') {
+				cp_pack_int(pack, RPCHISTORY_FETCH_KEY_SIGNAL);
+				cp_pack_str(pack, head->signal);
+			}
 
-		if (head->source && *head->source != '\0') {
-			cp_pack_int(pack, RPCHISTORY_FETCH_KEY_SOURCE);
-			cp_pack_str(pack, head->source);
+			if (head->source && *head->source != '\0') {
+				cp_pack_int(pack, RPCHISTORY_FETCH_KEY_SOURCE);
+				cp_pack_str(pack, head->source);
+			}
 		}
 
 		if (head->access > RPCACCESS_NONE) {
@@ -233,11 +238,22 @@ bool rpchistory_record_pack_begin(
 			cp_pack_bool(pack, head->repeat);
 		}
 
+		if (head->id >= 0) {
+			cp_pack_int(pack, RPCHISTORY_FETCH_KEY_ID);
+			cp_pack_int(pack, head->id);
+		}
+
 		res = cp_pack_int(pack, RPCHISTORY_FETCH_KEY_VALUE);
 	} else if (head->type == RPCHISTORY_RECORD_TIMEJUMP) {
 		cp_pack_int(pack, RPCHISTORY_FETCH_KEY_TIMEJUMP);
 		res = cp_pack_int(pack, head->timejump);
+
+		if (head->id >= 0) {
+			cp_pack_int(pack, RPCHISTORY_FETCH_KEY_ID);
+			res = cp_pack_int(pack, head->id);
+		}
 	}
+
 
 	return res;
 }

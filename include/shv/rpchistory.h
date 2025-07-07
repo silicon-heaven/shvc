@@ -45,6 +45,8 @@ enum rpchistory_fetch_keys {
 	RPCHISTORY_FETCH_KEY_ACCESSLEVEL = 6,
 	RPCHISTORY_FETCH_KEY_USERID = 7,
 	RPCHISTORY_FETCH_KEY_REPEAT = 8,
+	RPCHISTORY_FETCH_KEY_ID = 9,
+	RPCHISTORY_FETCH_KEY_REF = 10,
 	RPCHISTORY_FETCH_KEY_TIMEJUMP = 60,
 };
 
@@ -120,6 +122,23 @@ struct rpchistory_record_head {
 	int timejump;
 	/** Repeat carried by signal message. */
 	bool repeat;
+	/** Record's ID. This ID is unique for this record and
+	 * fetch will always provide this record unmodified for this ID.
+	 *
+	 * Passing negative value means the ID is not provided.
+	 *
+	 *  .. NOTE::
+	 *		This field is used only for fetch responses, not getLog.
+	 */
+	int id;
+	/** This provides a way to reference the previous record to use it as
+	 * the default for path, signal and source of the record. Zero references
+	 * the record right before this one in the list. The offset must always be
+	 * to the most closest record that specifies desired default.
+	 *
+	 * Passing negative value means this field is not provided.
+	 */
+	int ref;
 	/** SHV path to the node relative to the .history parrent. */
 	const char *path;
 	/** Signal name. */
@@ -198,15 +217,10 @@ extern const struct rpcdir rpchistory_lastsync;
  *
  * :param pack: The generic packer where it is about to be packed.
  * :param head: The pointer to :c:struct:`rpchistory_record_head` structure.
- * :param ref: This provides a way to reference the previous record to use it as
- *   the default for path, signal and source instead of obtaining them from
- *   :c:struct:`rpchistory_record_head` structure. It is Int where 0 is record
- *   right before this one in the list. The offset must always be to the most
- *   closest record that specifies desired default.
  * :return: ``false`` if packing encounters failure and ``true`` otherwise.
  */
 bool rpchistory_getlog_response_pack_begin(
-	cp_pack_t pack, struct rpchistory_record_head *head, int ref);
+	cp_pack_t pack, struct rpchistory_record_head *head);
 
 /** Finish iMap packing of getLog method response..
  *

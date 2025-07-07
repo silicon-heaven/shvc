@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `cpitem_extract_decimal_int`, `cp_pack_decimal_int`, and
   `cp_unpack_decimal_int` to simplify working with decimals represented in the
   code as plain integers with fixed multiplication.
+- Fields `ref` and `id` to `.history/**/.records/*:fetch` method's response.
 
 ### Changed
 - Snapshot is removed from `getLog` call and provided in a separate

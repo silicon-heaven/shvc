@@ -22,6 +22,8 @@ static const struct rpchistory_record_head heads[] = {
 		.type = RPCHISTORY_RECORD_NORMAL,
 		.path = "node0/subnode/2",
 		.datetime = {.msecs = 150000, .offutc = 0},
+		.id = 2,
+		.ref = -1,
 	},
 	(struct rpchistory_record_head){
 		.type = RPCHISTORY_RECORD_NORMAL,
@@ -31,12 +33,15 @@ static const struct rpchistory_record_head heads[] = {
 		.source = "src",
 		.userid = "elluser",
 		.datetime = {.msecs = 500000, .offutc = 0},
+		.id = 3,
+		.ref = -1,
 	},
 	(struct rpchistory_record_head){
 		.type = RPCHISTORY_RECORD_TIMEJUMP,
 		.access = RPCACCESS_READ,
 		.timejump = 18000000,
 		.datetime = {.msecs = 500000, .offutc = 0},
+		.id = 4,
 	},
 	(struct rpchistory_record_head){
 		.type = RPCHISTORY_RECORD_NORMAL,
@@ -44,6 +49,8 @@ static const struct rpchistory_record_head heads[] = {
 		.path = "node1/subnode",
 		.userid = "elluser_wifi",
 		.datetime = {.msecs = 600000, .offutc = 0},
+		.id = 5,
+		.ref = -1,
 	},
 	(struct rpchistory_record_head){
 		.type = RPCHISTORY_RECORD_NORMAL,
@@ -51,6 +58,8 @@ static const struct rpchistory_record_head heads[] = {
 		.path = "node0/subnode/1",
 		.userid = "elluser_local",
 		.datetime = {.msecs = 800000, .offutc = 0},
+		.id = 6,
+		.ref = -1,
 	},
 };
 
@@ -101,12 +110,12 @@ static bool log_pack_getlog(struct rpchandler_history_facilities *facilities,
 
 	struct rpchistory_record_head head;
 	memcpy(&head, &heads[0], sizeof(struct rpchistory_record_head));
-	rpchistory_getlog_response_pack_begin(pack, &head, -1);
+	rpchistory_getlog_response_pack_begin(pack, &head);
 	cp_pack_null(pack);
 	rpchistory_getlog_response_pack_end(pack);
 	memcpy(&head, &heads[4], sizeof(struct rpchistory_record_head));
 
-	rpchistory_getlog_response_pack_begin(pack, &head, -1);
+	rpchistory_getlog_response_pack_begin(pack, &head);
 	cp_pack_null(pack);
 	rpchistory_getlog_response_pack_end(pack);
 	return true;

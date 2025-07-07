@@ -367,6 +367,7 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                     1: datetime.datetime(1970, 1, 1, 0, 2, 30, tzinfo=datetime.UTC),
                     2: "node0/subnode/2",
                     5: 2,
+                    9: 2,
                 },
                 {
                     0: 1,
@@ -377,10 +378,12 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                     5: 3,
                     6: 1,
                     7: "elluser",
+                    9: 3,
                 },
                 {
                     0: 3,
                     1: datetime.datetime(1970, 1, 1, 0, 8, 20, tzinfo=datetime.UTC),
+                    9: 4,
                     60: 18000000,
                 },
                 {
@@ -390,6 +393,7 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                     5: 5,
                     6: 16,
                     7: "elluser_wifi",
+                    9: 5,
                 },
                 {
                     0: 1,
@@ -398,6 +402,7 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                     5: 6,
                     6: 40,
                     7: "elluser_local",
+                    9: 6,
                 },
             ],
         ),

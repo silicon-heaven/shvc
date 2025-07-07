@@ -21,7 +21,9 @@ static struct cpondir {
 		 .source = NULL,
 		 .access = 0,
 		 .userid = NULL,
-		 .repeat = false},
+		 .repeat = false,
+		 .id = -1,
+		 .ref = -1},
 		(struct rpchistory_record_head){.type = RPCHISTORY_RECORD_NORMAL,
 			.datetime = {.msecs = 150000, .offutc = 60},
 			.path = "",
@@ -29,7 +31,9 @@ static struct cpondir {
 			.source = "get",
 			.access = 0,
 			.userid = NULL,
-			.repeat = false},
+			.repeat = false,
+			.id = -1,
+			.ref = -1},
 		"i{0:1,1:d\"1970-01-01T00:02:30.000+01:00\",5:1u}"},
 	{(struct rpchistory_record_head){.type = RPCHISTORY_RECORD_NORMAL,
 		 .datetime = {.msecs = 150000, .offutc = 60},
@@ -38,7 +42,9 @@ static struct cpondir {
 		 .source = "t_src",
 		 .access = RPCACCESS_WRITE,
 		 .userid = "0123",
-		 .repeat = true},
+		 .repeat = true,
+		 .id = 5,
+		 .ref = -1},
 		(struct rpchistory_record_head){.type = RPCHISTORY_RECORD_NORMAL,
 			.datetime = {.msecs = 150000, .offutc = 60},
 			.path = "t_path",
@@ -46,8 +52,10 @@ static struct cpondir {
 			.source = "t_src",
 			.access = RPCACCESS_WRITE,
 			.userid = "0123",
-			.repeat = true},
-		"i{0:1,1:d\"1970-01-01T00:02:30.000+01:00\",2:\"t_path\",3:\"t_sig\",4:\"t_src\",6:16,7:\"0123\",8:true,5:1u}"},
+			.repeat = true,
+			.id = 5,
+			.ref = -1},
+		"i{0:1,1:d\"1970-01-01T00:02:30.000+01:00\",2:\"t_path\",3:\"t_sig\",4:\"t_src\",6:16,7:\"0123\",8:true,9:5,5:1u}"},
 	{(struct rpchistory_record_head){.type = RPCHISTORY_RECORD_KEEP,
 		 .datetime = {.msecs = 150000, .offutc = 60},
 		 .path = NULL,
@@ -55,7 +63,8 @@ static struct cpondir {
 		 .source = NULL,
 		 .access = 0,
 		 .userid = NULL,
-		 .repeat = false},
+		 .repeat = false,
+		 .ref = -1},
 		(struct rpchistory_record_head){.type = RPCHISTORY_RECORD_KEEP,
 			.datetime = {.msecs = 150000, .offutc = 60},
 			.path = "",
@@ -63,72 +72,78 @@ static struct cpondir {
 			.source = "get",
 			.access = 0,
 			.userid = NULL,
-			.repeat = false},
-		"i{0:2,1:d\"1970-01-01T00:02:30.000+01:00\",5:1u}"},
+			.repeat = false,
+			.ref = -1},
+		"i{0:2,1:d\"1970-01-01T00:02:30.000+01:00\",9:0,5:1u}"},
 	{(struct rpchistory_record_head){.type = RPCHISTORY_RECORD_TIMEJUMP,
 		 .datetime = {.msecs = 150000, .offutc = 60},
-		 .timejump = 1500},
+		 .timejump = 1500,
+		 .id = -1},
 		(struct rpchistory_record_head){.type = RPCHISTORY_RECORD_TIMEJUMP,
 			.datetime = {.msecs = 150000, .offutc = 60},
-			.timejump = 1500},
+			.timejump = 1500,
+			.id = -1},
 		"i{0:3,1:d\"1970-01-01T00:02:30.000+01:00\",60:1500}"},
 	{(struct rpchistory_record_head){.type = RPCHISTORY_RECORD_TIMEABIG,
-		 .datetime = {.msecs = 150000, .offutc = 60}},
+		 .datetime = {.msecs = 150000, .offutc = 60},
+		 .id = -1},
 		(struct rpchistory_record_head){.type = RPCHISTORY_RECORD_TIMEABIG,
-			.datetime = {.msecs = 150000, .offutc = 60}},
+			.datetime = {.msecs = 150000, .offutc = 60},
+			.id = -1},
 		"i{0:4,1:d\"1970-01-01T00:02:30.000+01:00\"}"},
 };
 
 static struct cpongetlog {
-	int ref;
 	struct rpchistory_record_head head;
 	struct rpchistory_record_head head_unpack;
 	const char *cpon;
 } getlog_response_pairs_d[] = {
 	{
-		-1,
 		(struct rpchistory_record_head){.datetime = {.msecs = 150000, .offutc = 60},
 			.path = NULL,
 			.signal = NULL,
 			.source = NULL,
 			.userid = NULL,
-			.repeat = false},
+			.repeat = false,
+			.ref = -1},
 		(struct rpchistory_record_head){.datetime = {.msecs = 150000, .offutc = 60},
 			.path = "",
 			.signal = "chng",
 			.source = "get",
 			.userid = NULL,
-			.repeat = false},
+			.repeat = false,
+			.ref = -1},
 		"i{1:d\"1970-01-01T00:02:30.000+01:00\",6:1u}",
 	},
 	{
-		-1,
 		(struct rpchistory_record_head){.datetime = {.msecs = 150000, .offutc = 60},
 			.path = "t_path",
 			.signal = "t_sig",
 			.source = "t_src",
 			.userid = "0123",
-			.repeat = true},
+			.repeat = true,
+			.ref = -1},
 		(struct rpchistory_record_head){.datetime = {.msecs = 150000, .offutc = 60},
 			.path = "t_path",
 			.signal = "t_sig",
 			.source = "t_src",
 			.userid = "0123",
-			.repeat = true},
+			.repeat = true,
+			.ref = -1},
 		"i{1:d\"1970-01-01T00:02:30.000+01:00\",3:\"t_path\",4:\"t_sig\",5:\"t_src\",7:\"0123\",8:true,6:1u}",
 	},
 	{
-		0,
-		(struct rpchistory_record_head){.datetime = {.msecs = 150000, .offutc = 60}},
-		(struct rpchistory_record_head){.datetime = {.msecs = 150000, .offutc = 60}},
+		(struct rpchistory_record_head){
+			.datetime = {.msecs = 150000, .offutc = 60}, .ref = 0},
+		(struct rpchistory_record_head){
+			.datetime = {.msecs = 150000, .offutc = 60}, .ref = 0},
 		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:0,6:1u}",
 	},
 	{
-		-1,
 		(struct rpchistory_record_head){
-			.datetime = {.msecs = INT64_MAX, .offutc = 60}},
+			.datetime = {.msecs = INT64_MAX, .offutc = 60}, .ref = -1},
 		(struct rpchistory_record_head){
-			.datetime = {.msecs = INT64_MAX, .offutc = 60}},
+			.datetime = {.msecs = INT64_MAX, .offutc = 60}, .ref = -1},
 		"i{6:1u}",
 	},
 };
@@ -250,7 +265,7 @@ ARRAY_TEST(pack, record_packer, record_pairs_d) {
 }
 
 ARRAY_TEST(pack, getlog_packer, getlog_response_pairs_d) {
-	rpchistory_getlog_response_pack_begin(packstream_pack, &_d.head, _d.ref);
+	rpchistory_getlog_response_pack_begin(packstream_pack, &_d.head);
 	cp_pack_uint(packstream_pack, 1);
 	rpchistory_getlog_response_pack_end(packstream_pack);
 	ck_assert_packstr(_d.cpon);
