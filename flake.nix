@@ -91,7 +91,7 @@
       devShells.default = pkgs.mkShell {
         packages = with pkgs; [
           # Linters and formatters
-          clang-tools_18
+          clang-tools_19
           editorconfig-checker
           muon
           shellcheck
