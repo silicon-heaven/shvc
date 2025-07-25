@@ -3,6 +3,7 @@
 import asyncio
 import asyncio.subprocess
 import dataclasses
+import os
 
 import pytest
 
@@ -24,6 +25,13 @@ async def fixture_device(broker, url):
     await dev.disconnect()
 
 
+valgrindenv = os.getenv("VALGRIND") or ""
+
+
+@pytest.mark.skipif(
+    "helgrind" in valgrindenv,
+    reason="Helgrind somehow causes poll not to be notified on signal delivery.",
+)
 async def test_valid(shvcs_exec, url, broker, device):
     proc = await asyncio.create_subprocess_exec(
         *shvcs_exec, "-du", str(url), stdout=asyncio.subprocess.PIPE

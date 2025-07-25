@@ -6,7 +6,7 @@ import datetime
 import logging
 
 import pytest
-import shv
+from shv.rpcdef import RpcInvalidParamError, RpcMethodNotFoundError
 
 from .__version__ import version
 from .utils import subproc
@@ -103,10 +103,10 @@ async def test_call(demo_device, client, path, method, result):
 @pytest.mark.parametrize(
     "path,method,param,error",
     (
-        ("test/device/track/none", "ls", None, shv.RpcMethodNotFoundError),
-        ("test/device/track/none", "dir", None, shv.RpcMethodNotFoundError),
-        ("test/device/track/none", "set", None, shv.RpcMethodNotFoundError),
-        ("test/device/track/1", "set", None, shv.RpcInvalidParamError),
+        ("test/device/track/none", "ls", None, RpcMethodNotFoundError),
+        ("test/device/track/none", "dir", None, RpcMethodNotFoundError),
+        ("test/device/track/none", "set", None, RpcMethodNotFoundError),
+        ("test/device/track/1", "set", None, RpcInvalidParamError),
     ),
 )
 async def test_call_error(demo_device, client, path, method, param, error):
@@ -416,25 +416,15 @@ async def test_call_history(demo_history, client, path, method, param, result):
 @pytest.mark.parametrize(
     "path,method,param,error",
     (
-        ("test/.history/node0/subnode1", "ls", None, shv.RpcMethodNotFoundError),
-        ("test/.history/node0/subnode1", "dir", None, shv.RpcMethodNotFoundError),
-        ("test/.history/node0/subnode1", "getLog", None, shv.RpcMethodNotFoundError),
-        ("test/.history/node/subnode1", "getLog", None, shv.RpcMethodNotFoundError),
-        ("test/.history/node0/subnode", "getLog", None, shv.RpcInvalidParamError),
-        ("test/.history/.records", "getLog", None, shv.RpcMethodNotFoundError),
-        ("test/.history/.records/records_log", "fetch", None, shv.RpcInvalidParamError),
-        (
-            "test/.history/.records/records_log",
-            "fetch",
-            ["a", 1],
-            shv.RpcInvalidParamError,
-        ),
-        (
-            "test/.history/.records/records_log",
-            "fetch",
-            [1, "a"],
-            shv.RpcInvalidParamError,
-        ),
+        ("test/.history/node0/subnode1", "ls", None, RpcMethodNotFoundError),
+        ("test/.history/node0/subnode1", "dir", None, RpcMethodNotFoundError),
+        ("test/.history/node0/subnode1", "getLog", None, RpcMethodNotFoundError),
+        ("test/.history/node/subnode1", "getLog", None, RpcMethodNotFoundError),
+        ("test/.history/node0/subnode", "getLog", None, RpcInvalidParamError),
+        ("test/.history/.records", "getLog", None, RpcMethodNotFoundError),
+        ("test/.history/.records/records_log", "fetch", None, RpcInvalidParamError),
+        ("test/.history/.records/records_log", "fetch", ["a", 1], RpcInvalidParamError),
+        ("test/.history/.records/records_log", "fetch", [1, "a"], RpcInvalidParamError),
     ),
 )
 async def test_call_error_history(demo_history, client, path, method, param, error):

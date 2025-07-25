@@ -7,7 +7,15 @@ import logging
 import socket
 
 import pytest
-import shv
+from shv.cpon import Cpon
+from shv.rpcapi.client import SHVClient
+from shv.rpcapi.valueclient import SHVValueClient
+from shv.rpcdef import (
+    RpcAccess,
+    RpcDir,
+    RpcMethodCallExceptionError,
+    RpcMethodNotFoundError,
+)
 
 from .device import Device
 
@@ -20,7 +28,7 @@ async def fixture_shvcbroker(shvcbroker_exec, tmp_path, url):
     conf = tmp_path / "config.cpon"
     with conf.open("w") as file:
         file.write(
-            shv.Cpon.pack({
+            Cpon.pack({
                 "name": "testbroker",
                 "listen": [str(url)],
                 "users": {
@@ -53,7 +61,7 @@ async def fixture_shvcbroker(shvcbroker_exec, tmp_path, url):
 @pytest.fixture(name="client")
 async def fixture_client(shvcbroker, url):
     """SHV RPC Client connected to the Python Broker."""
-    client = await shv.SHVValueClient.connect(url)
+    client = await SHVValueClient.connect(url)
     yield client
     await client.disconnect()
 
@@ -61,7 +69,7 @@ async def fixture_client(shvcbroker, url):
 @pytest.fixture(name="admin_client")
 async def fixture_admin_client(shvcbroker, admin_url):
     """SHV RPC Client with admin rights connected to the Python Broker."""
-    client = await shv.SHVValueClient.connect(admin_url)
+    client = await SHVValueClient.connect(admin_url)
     yield client
     await client.disconnect()
 
@@ -106,77 +114,65 @@ async def test_ls(client, device, path, result):
         (
             ".broker",
             [
-                shv.RpcDir.stddir(),
-                shv.RpcDir.stdls(),
-                shv.RpcDir.getter(
-                    name="name", param="n", result="s", access=shv.RpcAccess.BROWSE
+                RpcDir.stddir(),
+                RpcDir.stdls(),
+                RpcDir.getter(
+                    name="name", param="n", result="s", access=RpcAccess.BROWSE
                 ),
-                shv.RpcDir(
+                RpcDir(
                     name="clientInfo",
                     param="i",
                     result="!clientInfo|n",
-                    access=shv.RpcAccess.SUPER_SERVICE,
+                    access=RpcAccess.SUPER_SERVICE,
                 ),
-                shv.RpcDir(
+                RpcDir(
                     name="mountedClientInfo",
                     param="s",
                     result="!clientInfo|n",
-                    access=shv.RpcAccess.SUPER_SERVICE,
+                    access=RpcAccess.SUPER_SERVICE,
                 ),
-                shv.RpcDir(
+                RpcDir(
                     name="clients",
                     param="n",
                     result="[i]",
-                    access=shv.RpcAccess.SUPER_SERVICE,
+                    access=RpcAccess.SUPER_SERVICE,
                 ),
-                shv.RpcDir(
+                RpcDir(
                     name="mounts",
                     param="n",
                     result="[s]",
-                    access=shv.RpcAccess.SUPER_SERVICE,
+                    access=RpcAccess.SUPER_SERVICE,
                 ),
-                shv.RpcDir(
-                    name="disconnectClient",
-                    param="i",
-                    access=shv.RpcAccess.SUPER_SERVICE,
+                RpcDir(
+                    name="disconnectClient", param="i", access=RpcAccess.SUPER_SERVICE
                 ),
             ],
         ),
         (
             ".broker/client",
-            [
-                shv.RpcDir.stddir(),
-                shv.RpcDir.stdls(),
-            ],
+            [RpcDir.stddir(), RpcDir.stdls()],
         ),
         (
             ".broker/currentClient",
             [
-                shv.RpcDir.stddir(),
-                shv.RpcDir.stdls(),
-                shv.RpcDir.getter(
+                RpcDir.stddir(),
+                RpcDir.stdls(),
+                RpcDir.getter(
                     name="info",
                     param="n",
                     result="!clientInfo",
-                    access=shv.RpcAccess.BROWSE,
+                    access=RpcAccess.BROWSE,
                 ),
-                shv.RpcDir(
+                RpcDir(
                     name="subscribe",
                     param="s|[s:RPCRI,i:TTL]",
                     result="b",
-                    access=shv.RpcAccess.BROWSE,
+                    access=RpcAccess.BROWSE,
                 ),
-                shv.RpcDir(
-                    name="unsubscribe",
-                    param="s",
-                    result="b",
-                    access=shv.RpcAccess.BROWSE,
+                RpcDir(
+                    name="unsubscribe", param="s", result="b", access=RpcAccess.BROWSE
                 ),
-                shv.RpcDir(
-                    name="subscriptions",
-                    result="{i|n}",
-                    access=shv.RpcAccess.BROWSE,
-                ),
+                RpcDir(name="subscriptions", result="{i|n}", access=RpcAccess.BROWSE),
             ],
         ),
     ),
@@ -293,7 +289,7 @@ async def test_admin_call(admin_client, device, path, method, param, result):
 )
 async def test_not_enough_access(client, path, method):
     """Call various methods that exist but test user doesn't have access."""
-    with pytest.raises(shv.RpcMethodNotFoundError):
+    with pytest.raises(RpcMethodNotFoundError):
         assert await client.call(path, method)
 
 
@@ -301,8 +297,8 @@ async def test_invalid_login(shvcbroker, url):
     nurl = dataclasses.replace(
         url, login=dataclasses.replace(url.login, password="invalid")
     )
-    with pytest.raises(shv.RpcMethodCallExceptionError, match=r"Invalid login"):
-        await shv.SHVClient.connect(nurl)
+    with pytest.raises(RpcMethodCallExceptionError, match=r"Invalid login"):
+        await SHVClient.connect(nurl)
 
 
 @pytest.mark.parametrize(
@@ -322,10 +318,8 @@ async def test_invalid_mount(shvcbroker, admin_url, path):
             admin_url.login, options={"device": {"mountPoint": path}}
         ),
     )
-    with pytest.raises(
-        shv.RpcMethodCallExceptionError, match=r"Mount point not allowed"
-    ):
-        await shv.SHVClient.connect(nurl)
+    with pytest.raises(RpcMethodCallExceptionError, match=r"Mount point not allowed"):
+        await SHVClient.connect(nurl)
 
 
 async def test_not_allowed_mount(shvcbroker, url):
@@ -335,10 +329,8 @@ async def test_not_allowed_mount(shvcbroker, url):
             url.login, options={"device": {"mountPoint": "toplevel/device"}}
         ),
     )
-    with pytest.raises(
-        shv.RpcMethodCallExceptionError, match=r"Mount point not allowed"
-    ):
-        await shv.SHVClient.connect(nurl)
+    with pytest.raises(RpcMethodCallExceptionError, match=r"Mount point not allowed"):
+        await SHVClient.connect(nurl)
 
 
 @pytest.mark.parametrize(
@@ -357,9 +349,9 @@ async def test_mount_exists(shvcbroker, device, admin_url, path):
         ),
     )
     with pytest.raises(
-        shv.RpcMethodCallExceptionError, match=r"Mount point already exists"
+        RpcMethodCallExceptionError, match=r"Mount point already exists"
     ):
-        await shv.SHVClient.connect(nurl)
+        await SHVClient.connect(nurl)
 
 
 async def test_client_id(client, device):

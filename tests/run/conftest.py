@@ -3,8 +3,11 @@ import os
 import shlex
 
 import pytest
-import shv
-import shv.broker
+from shv.broker import RpcBroker, RpcBrokerConfig
+from shv.rpcapi.valueclient import SHVValueClient
+from shv.rpcdef import RpcAccess
+from shv.rpclogin import RpcLogin, RpcLoginType
+from shv.rpcurl import RpcUrl
 
 
 @pytest.fixture(name="valgrind_exec", scope="session")
@@ -80,13 +83,13 @@ def fixture_port(unused_tcp_port_factory):
 @pytest.fixture(name="url", scope="module")
 def fixture_url(port):
     """RPC URL for TCP/IP communication."""
-    return shv.RpcUrl(
+    return RpcUrl(
         location="localhost",
         port=port,
-        login=shv.RpcLogin(
+        login=RpcLogin(
             username="test",
             password="test",
-            login_type=shv.RpcLoginType.PLAIN,
+            login_type=RpcLoginType.PLAIN,
         ),
     )
 
@@ -103,16 +106,16 @@ def fixture_admin_url(url):
 @pytest.fixture(name="broker_config", scope="module")
 def fixture_broker_config(url):
     """Provide configuration for SHV RPC Broker."""
-    config = shv.broker.RpcBrokerConfig()
+    config = RpcBrokerConfig()
     config.listen = [url]
     config.roles.add(
         config.Role(
             "tester",
             {"test/*"},
             {
-                shv.RpcAccess.BROWSE: {"**:ls", "**:dir"},
-                shv.RpcAccess.COMMAND: {"test/**:*"},
-                shv.RpcAccess.SERVICE: {"test/.history/**:*"},
+                RpcAccess.BROWSE: {"**:ls", "**:dir"},
+                RpcAccess.COMMAND: {"test/**:*"},
+                RpcAccess.SERVICE: {"test/.history/**:*"},
             },
         )
     )
@@ -123,7 +126,7 @@ def fixture_broker_config(url):
 @pytest.fixture(name="broker")
 async def fixture_broker(broker_config):
     """SHV RPC Broker implemented in Python."""
-    broker = shv.broker.RpcBroker(broker_config)
+    broker = RpcBroker(broker_config)
     await broker.start_serving()
     yield broker
     await broker.terminate()
@@ -132,6 +135,6 @@ async def fixture_broker(broker_config):
 @pytest.fixture(name="client")
 async def fixture_client(broker, url):
     """SHV RPC Client connected to the Python Broker."""
-    client = await shv.SHVValueClient.connect(url)
+    client = await SHVValueClient.connect(url)
     yield client
     await client.disconnect()

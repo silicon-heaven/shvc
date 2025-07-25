@@ -5,6 +5,7 @@ This is communication between pyshv and shvc.
 
 from __future__ import annotations
 
+import asyncio
 import collections.abc
 import contextlib
 import dataclasses
@@ -16,7 +17,8 @@ import select
 import threading
 
 import pytest
-import shv
+from shv.broker import RpcBroker, RpcBrokerConfig
+from shv.rpcurl import RpcProtocol
 
 from .utils import subproc
 
@@ -26,16 +28,17 @@ logger = logging.getLogger(__name__)
 class RPCTransport:
     @pytest.fixture(name="broker")
     async def fixture_broker(self, urls):
-        broker = shv.broker.RpcBroker(
-            shv.broker.RpcBrokerConfig(
+        broker = RpcBroker(
+            RpcBrokerConfig(
                 listen=[urls[0]],
-                roles=[shv.broker.RpcBrokerConfig.Role("tester")],
-                users=[shv.broker.RpcBrokerConfig.User("test", "test", {"tester"})],
+                roles=[RpcBrokerConfig.Role("tester")],
+                users=[RpcBrokerConfig.User("test", "test", {"tester"})],
             )
         )
         await broker.start_serving()
         yield broker
-        await broker.terminate()
+        with contextlib.suppress(asyncio.CancelledError):
+            await broker.terminate()
 
     async def test_ping(self, shvc_exec, broker, urls):
         """Check that shvc can ping python broker over various transport layers."""
@@ -53,7 +56,7 @@ class TestTCP(RPCTransport):
 class TestTCPS(RPCTransport):
     @pytest.fixture(name="urls")
     def fixture_urls(self, url):
-        nurl = dataclasses.replace(url, protocol=shv.RpcProtocol.TCPS)
+        nurl = dataclasses.replace(url, protocol=RpcProtocol.TCPS)
         return nurl, nurl
 
 
@@ -61,7 +64,7 @@ class TestUnix(RPCTransport):
     @pytest.fixture(name="urls")
     def fixture_urls(self, url, tmp_path):
         nurl = dataclasses.replace(
-            url, location=str(tmp_path / "socket"), protocol=shv.RpcProtocol.UNIX
+            url, location=str(tmp_path / "socket"), protocol=RpcProtocol.UNIX
         )
         return nurl, nurl
 
@@ -70,7 +73,7 @@ class TestUnixS(RPCTransport):
     @pytest.fixture(name="urls")
     def fixture_urls(self, url, tmp_path):
         nurl = dataclasses.replace(
-            url, location=str(tmp_path / "socket"), protocol=shv.RpcProtocol.UNIXS
+            url, location=str(tmp_path / "socket"), protocol=RpcProtocol.UNIXS
         )
         return nurl, nurl
 
@@ -130,10 +133,6 @@ class TestTTY(RPCTransport):
     def fixture_urls(self, url):
         with PTYPort.new() as pty:
             yield (
-                dataclasses.replace(
-                    url, location=pty.port1, protocol=shv.RpcProtocol.TTY
-                ),
-                dataclasses.replace(
-                    url, location=pty.port2, protocol=shv.RpcProtocol.TTY
-                ),
+                dataclasses.replace(url, location=pty.port1, protocol=RpcProtocol.TTY),
+                dataclasses.replace(url, location=pty.port2, protocol=RpcProtocol.TTY),
             )

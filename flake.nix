@@ -88,7 +88,7 @@
   in
     {
       overlays = {
-        pkgs = final: prev: {
+        pkgs = final: _: {
           shvc = final.callPackage shvc {};
         };
         default = composeManyExtensions [
