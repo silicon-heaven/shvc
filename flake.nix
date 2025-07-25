@@ -90,12 +90,6 @@
       overlays = {
         pkgs = final: prev: {
           shvc = final.callPackage shvc {};
-          pythonPackagesExtensions =
-            prev.pythonPackagesExtensions
-            ++ [self.overlays.pythonPackages];
-        };
-        pythonPackages = final: _: {
-          hawkmoth = final.callPackage ./hawkmoth.nix {};
         };
         default = composeManyExtensions [
           check-suite.overlays.default
