@@ -55,7 +55,7 @@ static struct cpondir {
 			.repeat = true,
 			.id = 5,
 			.ref = -1},
-		"i{0:1,1:d\"1970-01-01T00:02:30.000+01:00\",2:\"t_path\",3:\"t_sig\",4:\"t_src\",6:16,7:\"0123\",8:true,9:5,5:1u}"},
+		"i{0:1,1:d\"1970-01-01T00:02:30.000+01:00\",9:5,2:\"t_path\",3:\"t_sig\",4:\"t_src\",6:16,7:\"0123\",8:true,5:1u}"},
 	{(struct rpchistory_record_head){.type = RPCHISTORY_RECORD_KEEP,
 		 .datetime = {.msecs = 150000, .offutc = 60},
 		 .path = NULL,

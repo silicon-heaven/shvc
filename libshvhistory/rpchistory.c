@@ -201,6 +201,11 @@ bool rpchistory_record_pack_begin(
 	cp_pack_int(pack, RPCHISTORY_FETCH_KEY_TIMESTAMP);
 	bool res = cp_pack_datetime(pack, head->datetime);
 
+	if (head->id >= 0) {
+		cp_pack_int(pack, RPCHISTORY_FETCH_KEY_ID);
+		res = cp_pack_int(pack, head->id);
+	}
+
 	if (head->type == RPCHISTORY_RECORD_NORMAL ||
 		head->type == RPCHISTORY_RECORD_KEEP) {
 		if (head->ref >= 0) {
@@ -238,22 +243,11 @@ bool rpchistory_record_pack_begin(
 			cp_pack_bool(pack, head->repeat);
 		}
 
-		if (head->id >= 0) {
-			cp_pack_int(pack, RPCHISTORY_FETCH_KEY_ID);
-			cp_pack_int(pack, head->id);
-		}
-
 		res = cp_pack_int(pack, RPCHISTORY_FETCH_KEY_VALUE);
 	} else if (head->type == RPCHISTORY_RECORD_TIMEJUMP) {
 		cp_pack_int(pack, RPCHISTORY_FETCH_KEY_TIMEJUMP);
 		res = cp_pack_int(pack, head->timejump);
-
-		if (head->id >= 0) {
-			cp_pack_int(pack, RPCHISTORY_FETCH_KEY_ID);
-			res = cp_pack_int(pack, head->id);
-		}
 	}
-
 
 	return res;
 }
