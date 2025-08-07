@@ -497,7 +497,8 @@ void rpchandler_dir_exists(struct rpchandler_dir *ctx) {
 bool rpchandler_msg_send_method_not_found(struct rpchandler_msg *ctx) {
 	cp_pack_t pack = rpchandler_msg_new(ctx);
 	rpcmsg_pack_ferror(pack, &ctx->meta, RPCERR_METHOD_NOT_FOUND,
-		"No such method '%s' on path '%s'", ctx->meta.method, ctx->meta.path);
+		"No such method '%s' on path '%s' or not accessible with given access level.",
+		ctx->meta.method, ctx->meta.path);
 	return rpchandler_msg_send(ctx);
 }
 
