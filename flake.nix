@@ -8,19 +8,21 @@
 
   outputs = {
     self,
-    flake-utils,
+    systems,
     nixpkgs,
     semver,
     check-suite,
   }: let
-    inherit (nixpkgs.lib) composeManyExtensions platforms;
-    inherit (flake-utils.lib) eachDefaultSystem;
+    inherit (nixpkgs.lib) genAttrs composeManyExtensions;
     inherit (semver.lib) changelog;
+    forSystems = genAttrs (import systems);
+    withPkgs = func: forSystems (system: func self.legacyPackages.${system});
 
+    name = "template";
     version = changelog.currentRelease ./CHANGELOG.md self.sourceInfo;
     src = ./.;
 
-    template-c = {
+    package = {
       stdenv,
       callPackage,
       gperf,
@@ -35,7 +37,7 @@
       bash,
     }:
       stdenv.mkDerivation {
-        pname = "template-c";
+        pname = name;
         inherit version src;
         GIT_REV = self.shortRev or self.dirtyShortRev;
         outputs = ["out" "doc"];
@@ -70,25 +72,23 @@
         sphinxRoot = "../docs";
         meta.mainProgram = "foo";
       };
-  in
-    {
-      overlays = {
-        pkgs = final: _: {
-          template-c = final.callPackage template-c {};
-        };
-        default = composeManyExtensions [
-          check-suite.overlays.default
-          self.overlays.pkgs
-        ];
+  in {
+    overlays = {
+      pkgs = final: _: {
+        "${name}" = final.callPackage package {};
       };
-    }
-    // eachDefaultSystem (system: let
-      pkgs = nixpkgs.legacyPackages.${system}.extend self.overlays.default;
-    in {
-      packages.default = pkgs.template-c;
-      legacyPackages = pkgs;
+      default = composeManyExtensions [
+        check-suite.overlays.default
+        self.overlays.pkgs
+      ];
+    };
 
-      devShells.default = pkgs.mkShell {
+    packages = withPkgs (pkgs: {
+      default = pkgs."${name}";
+    });
+
+    devShells = withPkgs (pkgs: {
+      default = pkgs.mkShell {
         packages = with pkgs; [
           # Linters and formatters
           clang-tools_19
@@ -105,12 +105,19 @@
           # Documentation
           sphinx-autobuild
         ];
-        inputsFrom = [self.packages.${system}.default];
-        meta.platforms = platforms.linux;
+        inputsFrom = [
+          self.packages.${pkgs.hostPlatform.system}.default
+        ];
       };
-
-      checks.default = self.packages.${system}.default;
-
-      formatter = pkgs.alejandra;
     });
+
+    checks = forSystems (system: {
+      inherit (self.packages.${system}) default;
+    });
+    formatter = withPkgs (pkgs: pkgs.alejandra);
+
+    legacyPackages =
+      forSystems (system:
+        nixpkgs.legacyPackages.${system}.extend self.overlays.default);
+  };
 }
