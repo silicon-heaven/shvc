@@ -104,6 +104,7 @@ static const struct {
 		(struct rpcurl){
 			.protocol = RPC_PROTOCOL_TTY,
 			.location = "/dev/ttyUSB0",
+			.tty.baudrate = 115200,
 		}},
 	{"tcp://localhost",
 		(struct rpcurl){
@@ -117,6 +118,22 @@ static const struct {
 			.location = "localhost",
 			.port = 3755,
 			.login.device_id = "foo",
+		}},
+	{"can://vcan",
+		(struct rpcurl){
+			.protocol = RPC_PROTOCOL_CAN,
+			.location = "vcan",
+			.port = 255,
+			.can.local_address = 255,
+		}},
+	{"can://someone@vcan:40?caddr=80&password=test",
+		(struct rpcurl){
+			.protocol = RPC_PROTOCOL_CAN,
+			.location = "vcan",
+			.port = 40,
+			.can.local_address = 80,
+			.login.username = "someone",
+			.login.password = "test",
 		}},
 };
 ARRAY_TEST(parse, parse) {

@@ -127,9 +127,27 @@ typedef struct rpcclient *rpcclient_t;
 
 /** The value returned from :c:macro:`rpcclient_nextmsg`. */
 enum rpcclient_msg_type {
-	/** No new message is available for the reading. */
+	/** No new message is available for the reading.
+	 *
+	 * This is to be returned in case polling on :macro:`rpcclient_pollfd`
+	 * hinted non-blocking read but no message was actually available for what
+	 * ever reason (such as invalid encoding, corrupted data, or unknown type).
+	 *
+	 * You must expect this to happen even if you are not using polling (thus if
+	 * you are using :macro:`rpcclient_nextmsg` as blocking call). In such case
+	 * just call :macro:`rpcclient_nextmsg` again.
+	 *
+	 * This pattern ensures that both polling and blocking usage is possible.
+	 * Technically any call to :macro:`rpcclient_nextmsg` when file descriptor
+	 * would block on read will block and this enumerator is returned in the
+	 * opposite situation.
+	 */
 	RPCC_NOTHING = 0,
-	/** The new message is ready to read. Use :c:func:`rpcclient_unpack`. */
+	/** The new message is ready to read. Use macro:`rpcclient_unpack`.
+	 *
+	 * :macro:`rpcclient_nextmsg` should not be called again before either
+	 * :macro:`rpcclient_validmsg` or :macro:`rpcclient_ignoremsg` is called!
+	 */
 	RPCC_MESSAGE,
 	/** Reset received. Reset application state and continue. */
 	RPCC_RESET,
@@ -137,7 +155,10 @@ enum rpcclient_msg_type {
 	RPCC_ERROR,
 };
 
-/** Seek to the next message to read.
+/** Get the next message.
+ *
+ * The call will block until some message is available or error is detected. See
+ * :enumerator:`RPCC_NOTHING` for more advanced explanation.
  *
  * :param CLIENT: The RPC client object.
  * :return: :c:enum:`rpcclient_msg_type` that signals if message is ready to be

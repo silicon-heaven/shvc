@@ -44,8 +44,8 @@ rpcclient_t rpcclient_unix_new(const char *location, enum rpcstream_proto proto)
 
 /** Create a new Unix server.
  *
- * :return location: Location of Unix socket server binds itself to.
- * :return proto: Stream protocol to be used (commonly
+ * :param location: Location of Unix socket server binds itself to.
+ * :param proto: Stream protocol to be used (commonly
  *   :c:enumerator`RPCSTREAM_P_SERIAL`) :return: SHV RPC server handle.
  */
 [[gnu::nonnull, gnu::malloc]]
@@ -91,7 +91,26 @@ rpcserver_t rpcserver_tty_new(
  * :param proto: Stream protocol to be used (commonly
  *   :c:enumerator:`RPCSTREAM_P_SERIAL`) :return: SHV RPC client handle.
  */
-[[gnu::nonnull]]
+[[gnu::nonnull, gnu::malloc]]
 rpcclient_t rpcclient_pipe_new(int pipes[2], enum rpcstream_proto proto);
+
+/** Create a new CAN client.
+ *
+ * :param interface: CAN interface name to be used (without ``/dev/`` on NuttX)
+ * :param address: The address on the SHVCAN to connect to.
+ * :param local_address: The local address to be used. You can use ``-1`` for
+ *   dynamic client address.
+ */
+[[gnu::nonnull, gnu::malloc]]
+rpcclient_t rpcclient_can_new(
+	const char *interface, uint8_t address, uint8_t local_address);
+
+/** Create a new CAN server.
+ *
+ * :param interface: CAN interface name to be used (without ``/dev/`` on NuttX)
+ * :param address: Address used for server to listen on.
+ */
+[[gnu::nonnull, gnu::malloc]]
+rpcserver_t rpcserver_can_new(const char *interface, uint8_t address);
 
 #endif

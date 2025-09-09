@@ -24,18 +24,6 @@ rpcserver_t rpcserver_tcp_new(
 #else
 
 
-struct client {
-	const char *location;
-	int port;
-};
-
-struct server {
-	struct rpcserver pub;
-	int fd;
-	enum rpcstream_proto proto;
-};
-
-
 static struct addrinfo *tcp_addrinfo(const char *location, int port) {
 	struct addrinfo hints;
 	hints.ai_family = AF_UNSPEC;
@@ -61,6 +49,11 @@ void tcp_flush(void *cookie, int fd) {
 }
 
 /* Client *********************************************************************/
+
+struct client {
+	const char *location;
+	int port;
+};
 
 static bool tcp_client_connect(void *cookie, int fd[2]) {
 	struct client *c = cookie;
@@ -115,6 +108,12 @@ rpcclient_t rpcclient_tcp_new(
 }
 
 /* Server *********************************************************************/
+
+struct server {
+	struct rpcserver pub;
+	int fd;
+	enum rpcstream_proto proto;
+};
 
 void tcp_server_disconnect(void *cookie, int fd[2], bool destroy) {
 	struct client *c = cookie;

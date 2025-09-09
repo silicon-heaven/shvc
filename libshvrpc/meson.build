@@ -6,6 +6,7 @@ libshvrpc_sources = [
     'rpchandler/login.c',
     'rpchandler/responses.c',
     'rpchandler/signals.c',
+    'rpctransport/can.c',
     'rpctransport/pipe.c',
     'rpctransport/tcp.c',
     'rpctransport/tty.c',

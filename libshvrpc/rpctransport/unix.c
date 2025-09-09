@@ -5,12 +5,6 @@
 #include <sys/un.h>
 #include <shv/rpctransport.h>
 
-struct server {
-	struct rpcserver pub;
-	int fd;
-	enum rpcstream_proto proto;
-};
-
 static size_t unix_peername(char *buf, size_t size, const char *location) {
 	const char *prefix = "unix:";
 	char *b = stpncpy(buf, prefix, size);
@@ -72,6 +66,12 @@ rpcclient_t rpcclient_unix_new(const char *location, enum rpcstream_proto proto)
 }
 
 /* Server *********************************************************************/
+
+struct server {
+	struct rpcserver pub;
+	int fd;
+	enum rpcstream_proto proto;
+};
 
 static size_t unix_server_peername(void *cookie, int fd[2], char *buf, size_t size) {
 	struct sockaddr_un addr;

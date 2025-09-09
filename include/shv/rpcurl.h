@@ -38,6 +38,8 @@ enum rpc_protocol {
 	RPC_PROTOCOL_UNIXS,
 	/** Serial port with SHV RPC Stream link layer used to protocol messages. */
 	RPC_PROTOCOL_TTY,
+	/** SHVCAN RPC link layer used to protocol messages. */
+	RPC_PROTOCOL_CAN,
 };
 
 
@@ -64,6 +66,20 @@ struct rpcurl {
 		 * :c:enumerator:`RPC_PROTOCOL_TTY`.
 		 */
 		tty;
+		/** Additional options available only for the
+		 * :c:enumerator:`RPC_PROTOCOL_CAN`.
+		 */
+		struct rpcurl_can {
+			/** Local address to be used.
+			 * Any value between 128-255 requests usage of dynamic address and
+			 * some random address will be used instead of the provided one.
+			 */
+			uint8_t local_address;
+		}
+		/** Use this to access additional options for
+		 * :c:enumerator:`RPC_PROTOCOL_CAN`.
+		 */
+		can;
 		/** SHV RPC URL SSL specific options. */
 		struct rpcurl_ssl {
 			/** Path to the file with CA certificates. */

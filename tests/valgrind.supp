@@ -28,3 +28,17 @@
    fun:srunner_run_tagged
    fun:main
 }
+{
+   <glib_syslog>
+   Helgrind:Race
+   ...
+   fun:syslog
+   ...
+}
+{
+   <glib_syslog>
+   drd:ConflictingAccess
+   ...
+   fun:syslog
+   ...
+}

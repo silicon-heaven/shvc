@@ -16,6 +16,9 @@ rpcclient_t rpcurl_new_client(const struct rpcurl *url) {
 		case RPC_PROTOCOL_TTY:
 			return rpcclient_tty_new(
 				url->location, url->tty.baudrate, RPCSTREAM_P_SERIAL_CRC);
+		case RPC_PROTOCOL_CAN:
+			return rpcclient_can_new(
+				url->location, url->port, url->can.local_address);
 		default:
 			abort(); // GCOVR_EXCL_LINE
 	}
@@ -34,6 +37,8 @@ rpcserver_t rpcurl_new_server(const struct rpcurl *url) {
 		case RPC_PROTOCOL_TTY:
 			return rpcserver_tty_new(
 				url->location, url->tty.baudrate, RPCSTREAM_P_SERIAL_CRC);
+		case RPC_PROTOCOL_CAN:
+			return rpcserver_can_new(url->location, url->port);
 		default:
 			abort(); // GCOVR_EXCL_LINE
 	}

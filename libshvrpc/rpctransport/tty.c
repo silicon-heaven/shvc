@@ -11,20 +11,6 @@
 #include <termios.h>
 #include <shv/rpctransport.h>
 
-struct client {
-	const char *location;
-	unsigned baudrate;
-};
-
-struct server {
-	struct rpcserver pub;
-	const char *location;
-	unsigned baudrate;
-	enum rpcstream_proto proto;
-	int evfd;
-	pthread_t thread;
-};
-
 static int tty_connect(const char *location, unsigned baudrate) {
 	int fd = open(location, O_RDWR);
 	if (fd == -1)
@@ -55,6 +41,11 @@ static int tty_connect(const char *location, unsigned baudrate) {
 }
 
 /* Client *********************************************************************/
+
+struct client {
+	const char *location;
+	unsigned baudrate;
+};
 
 static bool tty_client_connect(void *cookie, int fd[2]) {
 	struct client *c = (struct client *)cookie;
@@ -100,6 +91,15 @@ rpcclient_t rpcclient_tty_new(
 /* Server *********************************************************************/
 
 // TODO on platforms that support inotify we can use that to wait for TTY.
+
+struct server {
+	struct rpcserver pub;
+	const char *location;
+	unsigned baudrate;
+	enum rpcstream_proto proto;
+	int evfd;
+	pthread_t thread;
+};
 
 static const struct rpcclient_stream_funcs sserver;
 

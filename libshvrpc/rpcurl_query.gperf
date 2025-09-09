@@ -26,6 +26,8 @@ enum gperf_rpcurl_query {
 	GPERF_RPCURL_QUERY_VERIFY,
 	/* TTY */
 	GPERF_RPCURL_QUERY_BAUDRATE,
+	/* CAN */
+	GPERF_RPCURL_QUERY_CADDR,
 };
 struct gperf_rpcurl_query_match {
 	int offset;
@@ -47,4 +49,5 @@ key, GPERF_RPCURL_QUERY_KEY
 crl, GPERF_RPCURL_QUERY_CRL
 verify, GPERF_RPCURL_QUERY_VERIFY
 baudrate, GPERF_RPCURL_QUERY_BAUDRATE
+caddr, GPERF_RPCURL_QUERY_CADDR
 %%

@@ -25,6 +25,14 @@ from .utils import subproc
 logger = logging.getLogger(__name__)
 
 
+@pytest.fixture(name="lurl", scope="module")
+def fixture_lurl(url):
+    return dataclasses.replace(
+        url,
+        login=dataclasses.replace(url.login, options={"device": {"deviceId": "foo"}}),
+    )
+
+
 class RPCTransport:
     @pytest.fixture(name="broker")
     async def fixture_broker(self, urls):
@@ -33,6 +41,14 @@ class RPCTransport:
                 listen=[urls[0]],
                 roles=[RpcBrokerConfig.Role("tester")],
                 users=[RpcBrokerConfig.User("test", "test", {"tester"})],
+                autosetups=[
+                    RpcBrokerConfig.Autosetup(
+                        {"foo"},
+                        {"tester"},
+                        None,
+                        {"test/**:*:*chng", "**:*:chng", "test/**:ls:lsmod"},
+                    )
+                ],
             )
         )
         await broker.start_serving()
@@ -46,34 +62,58 @@ class RPCTransport:
         assert stdout == [b"null", b""]
         assert stderr == [b""]
 
+    async def test_ls(self, shvc_exec, broker, urls):
+        """Check that shvc can ping python broker over various transport layers."""
+        stdout, stderr = await subproc(
+            *shvc_exec, "-u", str(urls[1]), ".broker/currentClient:subscriptions"
+        )
+        assert stdout == [
+            b'{"**:*:chng":null,"test/**:ls:lsmod":null,"test/**:*:*chng":null}',
+            b"",
+        ]
+        assert stderr == [b""]
+
 
 class TestTCP(RPCTransport):
     @pytest.fixture(name="urls")
-    def fixture_urls(self, url):
-        yield url, url
+    def fixture_urls(self, lurl):
+        yield lurl, lurl
 
 
 class TestTCPS(RPCTransport):
     @pytest.fixture(name="urls")
-    def fixture_urls(self, url):
-        nurl = dataclasses.replace(url, protocol=RpcProtocol.TCPS)
+    def fixture_urls(self, lurl):
+        nurl = dataclasses.replace(lurl, protocol=RpcProtocol.TCPS)
         return nurl, nurl
 
 
 class TestUnix(RPCTransport):
     @pytest.fixture(name="urls")
-    def fixture_urls(self, url, tmp_path):
+    def fixture_urls(self, lurl, tmp_path):
         nurl = dataclasses.replace(
-            url, location=str(tmp_path / "socket"), protocol=RpcProtocol.UNIX
+            lurl, location=str(tmp_path / "socket"), protocol=RpcProtocol.UNIX
         )
         return nurl, nurl
 
 
 class TestUnixS(RPCTransport):
     @pytest.fixture(name="urls")
-    def fixture_urls(self, url, tmp_path):
+    def fixture_urls(self, lurl, tmp_path):
         nurl = dataclasses.replace(
-            url, location=str(tmp_path / "socket"), protocol=RpcProtocol.UNIXS
+            lurl, location=str(tmp_path / "socket"), protocol=RpcProtocol.UNIXS
+        )
+        return nurl, nurl
+
+
+class TestCAN(RPCTransport):
+    @pytest.fixture(name="urls")
+    def fixture_urls(self, lurl):
+        iface = os.getenv("SHVC_TEST_CANIF")
+        if iface is None:
+            pytest.skip("Missing SHVC_TEST_CANIF environment variable")
+        # TODO remove can_address when dynamic address is supported
+        nurl = dataclasses.replace(
+            lurl, location=iface, port=84, protocol=RpcProtocol.CAN, can_address=120
         )
         return nurl, nurl
 
@@ -130,9 +170,9 @@ class PTYPort:
 
 class TestTTY(RPCTransport):
     @pytest.fixture(name="urls")
-    def fixture_urls(self, url):
+    def fixture_urls(self, lurl):
         with PTYPort.new() as pty:
             yield (
-                dataclasses.replace(url, location=pty.port1, protocol=RpcProtocol.TTY),
-                dataclasses.replace(url, location=pty.port2, protocol=RpcProtocol.TTY),
+                dataclasses.replace(lurl, location=pty.port1, protocol=RpcProtocol.TTY),
+                dataclasses.replace(lurl, location=pty.port2, protocol=RpcProtocol.TTY),
             )

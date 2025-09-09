@@ -77,12 +77,14 @@
         ];
         nativeCheckInputs = [
           (python3.withPackages (pypkgs:
-            with pypkgs; [
-              pytest
-              pytest-tap
-              pytest-asyncio
-              pypkgs.pyshv
-            ]))
+            with pypkgs;
+              [
+                pytest
+                pytest-tap
+                pytest-asyncio
+                pypkgs.pyshv
+              ]
+              ++ pypkgs.pyshv.optional-dependencies.canbus))
         ];
         doCheck = true;
         meta.mainProgram = "shvc";

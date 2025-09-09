@@ -60,6 +60,8 @@ V0.0 {
 		rpcclient_tty_new;
 		rpcserver_tty_new;
 		rpcclient_pipe_new;
+		rpcclient_can_new;
+		rpcserver_can_new;
 
 		# shv/rpclogger.h
 		rpclogger_new;

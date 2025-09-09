@@ -46,8 +46,8 @@ inline static size_t uri_segment_len(const UriTextRangeA *segment) {
  */
 inline static bool protocol_contains_authority(const struct rpcurl *res) {
 	return (res->protocol == RPC_PROTOCOL_TCP ||
-		res->protocol == RPC_PROTOCOL_TCPS ||
-		res->protocol == RPC_PROTOCOL_SSL || res->protocol == RPC_PROTOCOL_SSLS);
+		res->protocol == RPC_PROTOCOL_TCPS || res->protocol == RPC_PROTOCOL_SSL ||
+		res->protocol == RPC_PROTOCOL_SSLS || res->protocol == RPC_PROTOCOL_CAN);
 }
 
 inline static bool protocol_must_contain_path(const struct rpcurl *res) {
@@ -71,6 +71,8 @@ static int default_port(enum rpc_protocol protocol) {
 			return RPCURL_SSL_PORT;
 		case RPC_PROTOCOL_SSLS:
 			return RPCURL_SSLS_PORT;
+		case RPC_PROTOCOL_CAN:
+			return 255;
 		default:
 			return 0;
 	}
@@ -167,6 +169,18 @@ static bool parse_query(const UriUriA *uri, struct rpcurl *res,
 				if (*end != '\0')
 					PARSE_ERR(uri->query.first);
 				break;
+			case GPERF_RPCURL_QUERY_CADDR:
+				if (res->protocol != RPC_PROTOCOL_CAN) {
+					uriFreeQueryListA(querylist);
+					PARSE_ERR(uri->query.first);
+				}
+				int i = strtol(q->value, &end, 10);
+				if (*end != '\0')
+					PARSE_ERR(uri->query.first);
+				if (i < 0 || i > 256)
+					PARSE_ERR(uri->query.first);
+				res->can.local_address = i;
+				break;
 		}
 		q = q->next;
 	}
@@ -208,6 +222,8 @@ struct rpcurl *rpcurl_parse(
 	res->port = default_port(res->protocol);
 	if (res->protocol == RPC_PROTOCOL_TTY)
 		res->tty.baudrate = DEFAULT_BAUDRATE;
+	if (res->protocol == RPC_PROTOCOL_CAN)
+		res->can.local_address = 255;
 
 	if (is_uri_segment_present(&uri.userInfo)) {
 		res->login.username = obstack_copy0(
@@ -272,6 +288,7 @@ static UriTextRangeA protocol_str(enum rpc_protocol protocol) {
 		[RPC_PROTOCOL_UNIX] = "unix",
 		[RPC_PROTOCOL_UNIXS] = "unixs",
 		[RPC_PROTOCOL_TTY] = "tty",
+		[RPC_PROTOCOL_CAN] = "can",
 	};
 	return uri_range(rpcurl_scheme[protocol]);
 }
@@ -335,6 +352,8 @@ size_t rpcurl_str(const struct rpcurl *rpcurl, char *buf, size_t size) {
 	}
 	if (rpcurl->protocol == RPC_PROTOCOL_TTY)
 		QUERY_ADD("baudrate", aprintf("%d", rpcurl->tty.baudrate));
+	if (rpcurl->protocol == RPC_PROTOCOL_CAN && rpcurl->can.local_address > 127)
+		QUERY_ADD("caddr", aprintf("%d", rpcurl->can.local_address));
 
 	if (fquery) {
 		int query_chars;

@@ -4,7 +4,7 @@
 #include "common.h"
 
 #ifndef __BYTE_ORDER__
-#error We use __BYTE_ORDER__ macro and we need it to be defined
+# error We use __BYTE_ORDER__ macro and we need it to be defined
 #endif
 
 

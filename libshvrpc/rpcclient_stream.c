@@ -382,7 +382,7 @@ static bool stream_pack(void *ptr, const struct cpitem *item) {
 	rpclogger_log_item(c->pub.logger_out, item);
 	if ((c->proto == RPCSTREAM_P_BLOCK && c->block.wbuflen == 0) ||
 		(c->proto != RPCSTREAM_P_BLOCK && c->serial.wmsg == WMSG_NO)) {
-		putc(1, c->fw); /* Chainpack identifier */
+		putc_unlocked(1, c->fw); /* Chainpack identifier */
 		if (c->proto != RPCSTREAM_P_BLOCK)
 			c->serial.wmsg = WMSG_ST;
 	}
@@ -441,7 +441,7 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 				if (!sendrst || c->rfd < 0)
 					return c->rfd >= 0;
 			}
-			putc(0, c->fw);
+			putc_unlocked(0, c->fw);
 			rpclogger_log_reset(c->pub.logger_out);
 			return stream_ctrl(client, RPCC_CTRLOP_SENDMSG);
 		case RPCC_CTRLOP_ERRNO:
@@ -559,12 +559,12 @@ rpcclient_t rpcclient_stream_new(const struct rpcclient_stream_funcs *sclient,
 		.rfd = rfd,
 		.wfd = wfd,
 		.errnum = 0,
-		.fr = fopencookie(res, "r+",
+		.fr = fopencookie(res, "r",
 			(cookie_io_functions_t){
 				.read = proto == RPCSTREAM_P_BLOCK ? cookie_read_block
 												   : cookie_read_serial,
 			}),
-		.fw = fopencookie(res, "r+",
+		.fw = fopencookie(res, "w",
 			(cookie_io_functions_t){
 				.write = proto == RPCSTREAM_P_BLOCK ? cookie_write_block
 													: cookie_write_serial,
