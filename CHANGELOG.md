@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Snapshot is removed from `getLog` call and provided in a separate
   `getSnapshot` method.
+- `RPCDIR_F_CLIENTID_REQUIRED` renamed to `RPDIR_F_USERID_REQUIRED` to be
+  consistent with SHV standard
 
 ### Fixed
 - Invalid memory access in Broker caused by wrong bits count calculation.

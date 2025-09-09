@@ -39,14 +39,14 @@
  * in time.
  */
 #define RPCDIR_F_NOT_IDEMPOTENT (1 << 4)
-/** RPC Dir flag signaling that method requires ClientID.
+/** RPC Dir flag signaling that method requires UserID.
  *
- * ClientID is optional field that is filled in by SHV RPC Brokers only if
- * clients initiate. Most of the methods do not need it and thus it is desirable
- * to include it only if method really needs it. That is what this flag signals
- * for the method.
+ * UserID is optional field that is filled in by SHV RPC Brokers only if clients
+ * provides it initially. Most of the methods do not need it and thus it is
+ * desirable to include it only if method really needs it. That is what this
+ * flag signals for the method.
  */
-#define RPCDIR_F_CLIENTID_REQ (1 << 5)
+#define RPCDIR_F_USERID_REQUIRED (1 << 5)
 
 /** Keys for the dir's method description IMap. */
 enum rpcdir_keys {
