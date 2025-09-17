@@ -47,14 +47,16 @@
  * flag signals for the method.
  */
 #define RPCDIR_F_USERID_REQUIRED (1 << 5)
-/** RPC Dir flag signalling that fields in parameter are optional.
+/** RPC Dir flag signaling that fields in parameter are optional.
  *
  * This should be used alongside with :macro:`RPCDIR_F_SETTER` and specifies
  * that list, map or imap parameters are merged with existing value and thus
  * not all fields defined in type hint have to be provided when method is
  * called.
  */
-#define RPCDIR_F_ISUPDATABLE
+#define RPCDIR_F_ISUPDATABLE (1 << 6)
+/** RPC Dir flag signaling that result will not be sent immediately. */
+#define RPCDIR_F_LONG_EXECUTION (1 << 7)
 
 /** Keys for the dir's method description IMap. */
 enum rpcdir_keys {

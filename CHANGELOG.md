@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   code as plain integers with fixed multiplication.
 - Fields `ref` and `id` to `.history/**/.records/*:fetch` method's response.
 - `RPCDIR_F_ISUPDATABLE`
+- `RPCDIR_F_LONG_EXECUTION`
 
 ### Changed
 - Snapshot is removed from `getLog` call and provided in a separate
