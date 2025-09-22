@@ -84,27 +84,10 @@
         "type": "indirect"
       }
     },
-    "flake-utils_3": {
-      "inputs": {
-        "systems": "systems_3"
-      },
-      "locked": {
-        "lastModified": 1731533236,
-        "narHash": "sha256-l0KFg5HjrsfsO/JpG+r7fRrqm12kzFHyUHqHCVpMMbI=",
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "rev": "11707dc2f618dd54ca8739b309ec4fc024de578b",
-        "type": "github"
-      },
-      "original": {
-        "id": "flake-utils",
-        "type": "indirect"
-      }
-    },
     "flakepy": {
       "inputs": {
         "nixpkgs": "nixpkgs_4",
-        "systems": "systems_4"
+        "systems": "systems_3"
       },
       "locked": {
         "lastModified": 1751271815,
@@ -150,11 +133,11 @@
     },
     "nixpkgs_3": {
       "locked": {
-        "lastModified": 1756636162,
-        "narHash": "sha256-mBecwgUTWRgClJYqcF+y4O1bY8PQHqeDpB+zsAn+/zA=",
+        "lastModified": 1758446476,
+        "narHash": "sha256-5rdAi7CTvM/kSs6fHe1bREIva5W3TbImsto+dxG4mBo=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "37ff64b7108517f8b6ba5705ee5085eac636a249",
+        "rev": "a1f79a1770d05af18111fbbe2a3ab2c42c0f6cd0",
         "type": "github"
       },
       "original": {
@@ -210,11 +193,11 @@
         "nixpkgs": "nixpkgs_5"
       },
       "locked": {
-        "lastModified": 1756470394,
-        "narHash": "sha256-ss+azUy8K8X8uWQ1UBmL1dGPBl6QCLa5J+E+VCGkb9o=",
+        "lastModified": 1758549290,
+        "narHash": "sha256-nMOMpPqiDPQtQ50CnR7eM9Em6lw/s35TlxiuBDog9MU=",
         "owner": "silicon-heaven",
         "repo": "pyshv",
-        "rev": "0c4b9d051126072b062e6479a9fd9cbc1ba5c72a",
+        "rev": "1f39387b7ce7ae63124add499550ef9ebb70952b",
         "type": "gitlab"
       },
       "original": {
@@ -226,10 +209,10 @@
     "root": {
       "inputs": {
         "check-suite": "check-suite",
-        "flake-utils": "flake-utils_3",
         "nixpkgs": "nixpkgs_3",
         "pyshv": "pyshv",
-        "semver": "semver_2"
+        "semver": "semver_2",
+        "systems": "systems_4"
       }
     },
     "semver": {
@@ -311,9 +294,8 @@
         "type": "github"
       },
       "original": {
-        "owner": "nix-systems",
-        "repo": "default",
-        "type": "github"
+        "id": "systems",
+        "type": "indirect"
       }
     },
     "systems_4": {

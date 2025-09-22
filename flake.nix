@@ -9,20 +9,22 @@
 
   outputs = {
     self,
-    flake-utils,
+    systems,
     nixpkgs,
     semver,
     check-suite,
     pyshv,
   }: let
-    inherit (nixpkgs.lib) composeManyExtensions platforms;
-    inherit (flake-utils.lib) eachDefaultSystem mkApp;
+    inherit (nixpkgs.lib) genAttrs composeManyExtensions;
     inherit (semver.lib) changelog;
+    forSystems = genAttrs (import systems);
+    withPkgs = func: forSystems (system: func self.legacyPackages.${system});
 
+    name = "shvc";
     version = changelog.currentRelease ./CHANGELOG.md self.sourceInfo;
     src = ./.;
 
-    shvc = {
+    package = {
       stdenv,
       callPackage,
       gperf,
@@ -39,7 +41,7 @@
       python3,
     }:
       stdenv.mkDerivation {
-        pname = "shvc";
+        pname = name;
         inherit version src;
         GIT_REV = self.shortRev or self.dirtyShortRev;
         outputs = ["out" "doc"];
@@ -51,7 +53,7 @@
           (callPackage ./subprojects/.fetch.nix {
             inherit src;
             rev = self.rev or self.dirtyRev or null;
-            hash = "sha256-QVxQpPqYAyOJiGDWLVsYTxYwOdwXOTbJxe05Tg8sJYo=";
+            hash = "sha256-OGVJ5KqNBmaW1cMARy2tI/ySeq0sesjbuBCYGdAzdro=";
           })
           gperf
           meson
@@ -85,36 +87,35 @@
         doCheck = true;
         meta.mainProgram = "shvc";
       };
-  in
-    {
-      overlays = {
-        pkgs = final: _: {
-          shvc = final.callPackage shvc {};
-        };
-        default = composeManyExtensions [
-          check-suite.overlays.default
-          pyshv.overlays.default
-          self.overlays.pkgs
-        ];
+  in {
+    overlays = {
+      pkgs = final: _: {
+        "${name}" = final.callPackage package {};
       };
-    }
-    // eachDefaultSystem (system: let
-      pkgs = nixpkgs.legacyPackages.${system}.extend self.overlays.default;
-    in {
-      packages.default = pkgs.shvc;
-      legacyPackages = pkgs;
+      default = composeManyExtensions [
+        check-suite.overlays.default
+        pyshv.overlays.default
+        self.overlays.pkgs
+      ];
+    };
 
-      apps = {
-        default = mkApp {
-          drv = self.packages.${system}.default;
-        };
-        broker = mkApp {
-          drv = self.packages.${system}.default;
-          name = "shvbroker";
-        };
+    packages = withPkgs (pkgs: {
+      default = pkgs."${name}";
+    });
+
+    apps = forSystems (system: {
+      default = {
+        type = "app";
+        program = "${self.packages.${system}.default}/bin/shvc";
       };
+      broker = {
+        type = "app";
+        program = "${self.packages.${system}.default}/bin/shvbroker";
+      };
+    });
 
-      devShells.default = pkgs.mkShell {
+    devShells = withPkgs (pkgs: {
+      default = pkgs.mkShell {
         packages = with pkgs; [
           # Linters and formatters
           clang-tools
@@ -133,12 +134,19 @@
           # Documentation
           sphinx-autobuild
         ];
-        inputsFrom = [self.packages.${system}.default];
-        meta.platforms = platforms.linux;
+        inputsFrom = [
+          self.packages.${pkgs.hostPlatform.system}.default
+        ];
       };
-
-      checks.default = self.packages.${system}.default;
-
-      formatter = pkgs.alejandra;
     });
+
+    checks = forSystems (system: {
+      inherit (self.packages.${system}) default;
+    });
+    formatter = withPkgs (pkgs: pkgs.alejandra);
+
+    legacyPackages =
+      forSystems (system:
+        nixpkgs.legacyPackages.${system}.extend self.overlays.default);
+  };
 }

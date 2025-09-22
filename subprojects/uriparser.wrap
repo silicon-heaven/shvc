@@ -1,4 +1,4 @@
 [wrap-git]
 url = https://github.com/uriparser/uriparser
-revision = uriparser-0.9.7
+revision = uriparser-0.9.9
 depth = 1
