@@ -141,20 +141,19 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 				cp_unpack(unpack, item);
 				if (item->type == CPITEM_INT) {
 					meta->cids =
-						obstack_copy(obstack, &item->as.Int, sizeof(long long));
+						obstack_copy(obstack, &item->as.Int, sizeof(intmax_t));
 					meta->cids_cnt = 1;
-					break;
-				} else if (item->type != CPITEM_LIST)
+				} else if (item->type == CPITEM_LIST) {
+					meta->cids_cnt = 0;
+					for_cp_unpack_list(unpack, item) {
+						if (item->type != CPITEM_INT)
+							FAILURE; // GCOVR_EXCL_BR_LINE
+						obstack_grow(obstack, &item->as.Int, sizeof(intmax_t));
+						meta->cids_cnt++;
+					}
+					meta->cids = obstack_finish(obstack);
+				} else
 					FAILURE; // GCOVR_EXCL_BR_LINE
-				/* Set to zero just in case key is specified multiple times */
-				meta->cids_cnt = 0;
-				for_cp_unpack_list(unpack, item) {
-					if (item->type != CPITEM_INT)
-						FAILURE; // GCOVR_EXCL_BR_LINE
-					obstack_grow(obstack, &item->as.Int, sizeof(long long));
-					meta->cids_cnt++;
-				}
-				meta->cids = obstack_finish(obstack);
 				break;
 			case RPCMSG_TAG_ACCESS:
 				/* Process only if we haven't seen access level or if extra is

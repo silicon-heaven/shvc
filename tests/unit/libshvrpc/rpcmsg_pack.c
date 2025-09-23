@@ -37,7 +37,7 @@ END_TEST
 TEST(all, resp) {
 	struct rpcmsg_meta meta = {
 		.request_id = 42,
-		.cids = (long long[]){0, 3},
+		.cids = (intmax_t[]){0, 3},
 		.cids_cnt = 2,
 	};
 	rpcmsg_pack_response(packstream_pack, &meta);
@@ -48,7 +48,7 @@ END_TEST
 TEST(all, resp_void) {
 	struct rpcmsg_meta meta = {
 		.request_id = 42,
-		.cids = (long long[]){3},
+		.cids = (intmax_t[]){3},
 		.cids_cnt = 1,
 	};
 	rpcmsg_pack_response_void(packstream_pack, &meta);

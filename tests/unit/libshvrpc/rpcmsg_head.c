@@ -63,7 +63,7 @@ static const struct {
 			.type = RPCMSG_T_RESPONSE,
 			.request_id = 24,
 			.user_id = "user",
-			.cids = (long long[]){0, 3},
+			.cids = (intmax_t[]){0, 3},
 			.cids_cnt = 2,
 		},
 	},
@@ -73,7 +73,7 @@ static const struct {
 			.type = RPCMSG_T_RESPONSE,
 			.request_id = 24,
 			.user_id = "broker:user",
-			.cids = (long long[]){0, 3},
+			.cids = (intmax_t[]){0, 3},
 			.cids_cnt = 2,
 		},
 	},
@@ -83,7 +83,7 @@ static const struct {
 			.type = RPCMSG_T_RESPONSE,
 			.request_id = 24,
 			.user_id = "broker:user",
-			.cids = (long long[]){0, 3},
+			.cids = (intmax_t[]){0, 3},
 			.cids_cnt = 2,
 		},
 	},
@@ -93,7 +93,7 @@ static const struct {
 			.type = RPCMSG_T_RESPONSE,
 			.request_id = 24,
 			.user_id = "user",
-			.cids = (long long[]){0, 3},
+			.cids = (intmax_t[]){0, 3},
 			.cids_cnt = 2,
 		},
 	},
@@ -103,7 +103,7 @@ static const struct {
 			.type = RPCMSG_T_RESPONSE,
 			.request_id = 24,
 			.user_id = "broker",
-			.cids = (long long[]){0, 3},
+			.cids = (intmax_t[]){0, 3},
 			.cids_cnt = 2,
 		},
 	},
@@ -191,7 +191,7 @@ static const struct {
 			.request_id = 175,
 			.path = "",
 			.method = "ls",
-			.cids = (long long[]){4},
+			.cids = (intmax_t[]){4},
 			.cids_cnt = 1,
 			.access = RPCACCESS_DEVEL,
 		},
@@ -218,7 +218,7 @@ ARRAY_TEST(all, unpack) {
 	ck_assert(meta.repeat == _d.meta.repeat);
 	ck_assert_pstr_eq(meta.user_id, _d.meta.user_id);
 	ck_assert_int_eq(meta.cids_cnt, _d.meta.cids_cnt);
-	ck_assert_mem_eq(meta.cids, _d.meta.cids, _d.meta.cids_cnt * sizeof(long long));
+	ck_assert_mem_eq(meta.cids, _d.meta.cids, _d.meta.cids_cnt * sizeof(intmax_t));
 	struct rpcmsg_meta_extra *e = meta.extra;
 	for (struct rpcmsg_meta_extra *re = _d.meta.extra; re; re = re->next) {
 		ck_assert_ptr_nonnull(e);

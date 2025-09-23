@@ -43,7 +43,7 @@ static inline enum rpchandler_msg_res rpc_msg_request(
 
 	struct obstack *obs = rpchandler_obstack(ctx);
 	ctx->meta.path = (char *)rpath;
-	long long *ncids = obstack_alloc(obs, (ctx->meta.cids_cnt + 1) * sizeof *ncids);
+	intmax_t *ncids = obstack_alloc(obs, (ctx->meta.cids_cnt + 1) * sizeof *ncids);
 	memcpy(ncids, ctx->meta.cids, ctx->meta.cids_cnt * sizeof *ncids);
 	ncids[ctx->meta.cids_cnt++] = c->cid;
 	ctx->meta.cids = ncids;

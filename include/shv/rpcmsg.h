@@ -158,7 +158,7 @@ struct rpcmsg_meta {
 	 * Valid for :c:enumerator:`RPCMSG_T_REQUEST`,
 	 * :c:enumerator:`RPCMSG_T_RESPONSE`, and :c:enumerator:`RPCMSG_T_ERROR`.
 	 */
-	long long *cids;
+	intmax_t *cids;
 	/** Length of the ``cids`` array. */
 	size_t cids_cnt;
 
