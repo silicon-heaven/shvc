@@ -195,8 +195,8 @@ static bool handle_ls(struct msg_ctx *ctx) {
 
 	if (!lsctx.located && lsctx.strset.cnt == 0 &&
 		!valid_path(ctx->handler, ctx->ctx.meta.path)) {
-		rpchandler_msg_send_error(
-			&ctx->ctx, RPCERR_METHOD_NOT_FOUND, "No such node");
+		rpchandler_msg_send_ferror(&ctx->ctx, RPCERR_METHOD_NOT_FOUND,
+			"No such node: %s", ctx->ctx.meta.path ?: "");
 		return true;
 	}
 	if (lsctx.ctx.name == NULL) {
@@ -220,8 +220,8 @@ static bool handle_dir(struct msg_ctx *ctx) {
 	if (!common_ls_dir(ctx, &name))
 		return true;
 	if (!valid_path(ctx->handler, ctx->ctx.meta.path)) {
-		rpchandler_msg_send_error(
-			&ctx->ctx, RPCERR_METHOD_NOT_FOUND, "No such node");
+		rpchandler_msg_send_ferror(&ctx->ctx, RPCERR_METHOD_NOT_FOUND,
+			"No such node: %s", ctx->ctx.meta.path ?: "");
 		return true;
 	}
 
