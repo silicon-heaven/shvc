@@ -75,7 +75,6 @@ rpchandler_t rpchandler_new(rpcclient_t client,
 	res->client = client;
 	pthread_mutex_init(&res->lock, NULL);
 	clock_gettime(CLOCK_MONOTONIC, &res->last_send);
-	obstack_init(&res->obstack);
 	pthread_mutex_init(&res->send_lock, NULL);
 	res->send_priority = false;
 	return res;
@@ -84,7 +83,6 @@ rpchandler_t rpchandler_new(rpcclient_t client,
 void rpchandler_destroy(rpchandler_t handler) {
 	if (handler == NULL)
 		return;
-	obstack_free(&handler->obstack, NULL);
 	pthread_mutex_destroy(&handler->lock);
 	pthread_mutex_destroy(&handler->send_lock);
 	free(handler);
@@ -277,7 +275,7 @@ bool rpchandler_next(struct rpchandler *handler) {
 	pthread_mutex_lock(&handler->lock);
 	switch (rpcclient_nextmsg(handler->client)) {
 		case RPCC_MESSAGE:
-			void *obs_base = obstack_base(&handler->obstack);
+			obstack_init(&handler->obstack);
 			struct cpitem item;
 			cpitem_unpack_init(&item);
 			struct msg_ctx ctx;
@@ -285,10 +283,9 @@ bool rpchandler_next(struct rpchandler *handler) {
 			ctx.handler = handler;
 			ctx.ctx.unpack = rpcclient_unpack(handler->client);
 			if (rpcmsg_head_unpack(ctx.ctx.unpack, &item, &ctx.ctx.meta, NULL,
-					&handler->obstack)) {
+					&handler->obstack))
 				res = handle_msg(&ctx);
-			}
-			obstack_free(&handler->obstack, obs_base);
+			obstack_free(&handler->obstack, NULL);
 			break;
 		case RPCC_RESET:
 			for (const struct rpchandler_stage *s = handler->stages; s->funcs; s++)
