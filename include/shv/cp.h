@@ -196,11 +196,10 @@ double cpdectod(const struct cpdecimal v);
 #define cpdtoi(DEC, EXP, DEST) \
 	({ \
 		bool __dec_valid = false; \
-		typeof(DEST) *__dest = &(DEST); \
 		struct cpdecimal __dec = (DEC); \
 		if (cpdecexp(&__dec, (EXP))) { \
-			*__dest = __dec.mantissa; \
-			__dec_valid = __dec.mantissa == *__dest; \
+			(DEST) = __dec.mantissa; \
+			__dec_valid = __dec.mantissa == (typeof(DEST))__dec.mantissa; \
 		} \
 		__dec_valid; \
 	})

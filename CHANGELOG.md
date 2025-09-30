@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+### Fixed
+- `cpdtoi` can now be used if destination has a different storage order
+
+
 ## [0.6.2] - 2025-09-23
 ### Changed
 - Initialize obstack for every message (do not reuse previous instance)
