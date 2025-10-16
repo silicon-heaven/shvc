@@ -483,6 +483,11 @@ static int stream_ctrl(rpcclient_t client, enum rpcclient_ctrlop op) {
 				res ? RPCLOGGER_ET_VALID : RPCLOGGER_ET_INVALID);
 			return res;
 		}
+		case RPCC_CTRLOP_IGNOREMSG:
+			flushmsg(c);
+			if (c->proto == RPCSTREAM_P_BLOCK)
+				rpcclient_stream_serial_validate(c);
+			return 0;
 		case RPCC_CTRLOP_SENDMSG: {
 			bool res;
 			if (c->proto == RPCSTREAM_P_BLOCK) {

@@ -37,6 +37,8 @@ enum rpcclient_ctrlop {
 	RPCC_CTRLOP_NEXTMSG,
 	/** :c:macro:`rpcclient_validmsg` */
 	RPCC_CTRLOP_VALIDMSG,
+	/** :c:macro:`rpcclient_ignoremsg` */
+	RPCC_CTRLOP_IGNOREMSG,
 	/** :c:macro:`rpcclient_sendmsg` */
 	RPCC_CTRLOP_SENDMSG,
 	/** :c:macro:`rpcclient_dropmsg` */
@@ -147,7 +149,7 @@ enum rpcclient_msg_type {
 /** Provides access to the general unpack handle for this client and message.
  *
  * It can be used only between :c:macro:`rpcclient_nextmsg` and
- * :c:macro:`rpcclient_validmsg` calls.
+ * :c:macro:`rpcclient_validmsg` or :c:macro:`rpcclient_ignoremsg calls.
  *
  * Unpack always unpacks only a single message. The :c:enumerator:`CPERR_EOF`
  * error signals end of the message not end of the connection.
@@ -160,12 +162,13 @@ enum rpcclient_msg_type {
 
 /** Finish reading and validate the received message.
  *
- * This should be called every time at the end of the message retrieval to
- * validate the received data. Some protocol layers validate messages only
- * after they receive the complete message, not during the protocol. The
- * received bytes can be invalid but still be a valid packing format, or other
- * side can decide to drop the already almost sent message and thus you should
- * always validate message before you proceed to act on the data received.
+ * This should be called every time (with exception if
+ * :c:func:`rpcclient_ignoremsg` is used) at the end of the message retrieval to
+ * validate the received data. Some protocol layers validate messages only after
+ * they receive the complete message, not during the protocol. The received
+ * bytes can be invalid but still be a valid packing format, or other side can
+ * decide to drop the already almost sent message and thus you should always
+ * validate message before you proceed to act on the data received.
  *
  * You won't be able to unpack any more items from the message after you call
  * this!
@@ -176,6 +179,21 @@ enum rpcclient_msg_type {
  */
 #define rpcclient_validmsg(CLIENT) \
 	((bool)(CLIENT)->ctrl(CLIENT, RPCC_CTRLOP_VALIDMSG))
+
+/** Finish reading the received message by just ignoring it.
+ *
+ * This can be called instead of :c:func:`rpcclient_validmsg` if the message
+ * should be ignored. It is mostly the same such as message validation but
+ * clients are allowed to perform more efficient data flush as they know that
+ * validation is not required.
+ *
+ * You won't be able to unpack any more items from the message after you call
+ * this!
+ *
+ * :param CLIENT: The RPC client object.
+ */
+#define rpcclient_ignoremsg(CLIENT) \
+	((CLIENT)->ctrl(CLIENT, RPCC_CTRLOP_IGNOREMSG))
 
 /** Provides access to the general pack handle for this client.
  *

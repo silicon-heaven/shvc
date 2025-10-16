@@ -283,8 +283,10 @@ bool rpchandler_next(struct rpchandler *handler) {
 			ctx.handler = handler;
 			ctx.ctx.unpack = rpcclient_unpack(handler->client);
 			if (rpcmsg_head_unpack(ctx.ctx.unpack, &item, &ctx.ctx.meta, NULL,
-					&handler->obstack))
+					&handler->obstack)) {
 				res = handle_msg(&ctx);
+			} else
+				rpcclient_ignoremsg(handler->client);
 			obstack_free(&handler->obstack, NULL);
 			break;
 		case RPCC_RESET:
