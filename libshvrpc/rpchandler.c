@@ -254,8 +254,15 @@ static bool handle_msg(struct msg_ctx *ctx) {
 	for (const struct rpchandler_stage *s = ctx->handler->stages; s->funcs; s++)
 		if (s->funcs->msg) {
 			enum rpchandler_msg_res res = s->funcs->msg(s->cookie, &ctx->ctx);
-			if (res != RPCHANDLER_MSG_SKIP)
-				return res == RPCHANDLER_MSG_DONE;
+			if (res != RPCHANDLER_MSG_SKIP) {
+				if (ctx->ctx.unpack == NULL)
+					return res == RPCHANDLER_MSG_DONE;
+				/* Verification wasn't done */
+				if (ctx->ctx.meta.type == RPCMSG_T_REQUEST)
+					goto not_found;
+				rpcclient_ignoremsg(ctx->handler->client);
+				return true;
+			}
 		}
 
 	if (ctx->ctx.meta.type == RPCMSG_T_REQUEST &&
@@ -265,6 +272,7 @@ static bool handle_msg(struct msg_ctx *ctx) {
 		!strcmp(ctx->ctx.meta.method, "dir"))
 		return handle_dir(ctx);
 
+not_found:
 	if (rpchandler_msg_valid(&ctx->ctx) && ctx->ctx.meta.type == RPCMSG_T_REQUEST)
 		rpchandler_msg_send_method_not_found(&ctx->ctx);
 	return true;

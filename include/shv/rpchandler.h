@@ -154,11 +154,14 @@ struct rpchandler_funcs {
 	 *
 	 * The received message needs to be validated after unpack with
 	 * :c:func:`rpchandler_msg_valid` (internally uses
-	 * :c:func:`rpcclient_validmsg`).
+	 * :c:func:`rpcclient_validmsg`). If message is not validated then it is
+	 * handled as if it wasn't handled at all (requests are responded with error
+	 * and other messages are ignored).
 	 *
 	 * If you encounter error on unpack or sending then you need to still
 	 * return :c:enumerator:`RPCHANDLER_MSG_DONE` or
-	 * :c:enumerator:`RPCHANDLER_MSG_STOP`. The invalid messages are dropped
+	 * :c:enumerator:`RPCHANDLER_MSG_STOP`, never
+	 * :c:enumerator:`RPCHANDLER_MSG_SKIP`. The invalid messages are dropped
 	 * this way (unpack error due to the invalid data) and communication error
 	 * is recorded in RPC Client that RPC Handler uses.
 	 */

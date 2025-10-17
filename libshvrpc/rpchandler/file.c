@@ -127,6 +127,19 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 	}
 }
 
+static inline void _write_too_large(struct rpchandler_msg *ctx) {
+	rpchandler_msg_send_ferror(ctx, RPCERR_INVALID_PARAM,
+		"Write exceeds maximum allowed size %d.", SHVC_FILE_MAXWRITE);
+}
+
+static inline int _open_file(struct rpchandler_msg *ctx, const char *path) {
+	int fd = open(path, O_RDWR, S_IRUSR | S_IWUSR);
+	if (fd < 0)
+		rpchandler_msg_send_ferror(ctx, RPCERR_METHOD_CALL_EXCEPTION,
+			"Could not open the file: %s", strerror(errno));
+	return fd;
+}
+
 static void rpc_handle_write(struct rpchandler_msg *ctx, const char *path) {
 	uint8_t buf[SHVC_FILE_MAXWRITE];
 	size_t offset;
@@ -136,86 +149,80 @@ static void rpc_handle_write(struct rpchandler_msg *ctx, const char *path) {
 		cp_unpack_type(ctx->unpack, ctx->item) != CPITEM_LIST ||
 		!cp_unpack_int(ctx->unpack, ctx->item, offset) ||
 		cp_unpack_type(ctx->unpack, ctx->item) != CPITEM_BLOB) {
-		rpchandler_msg_valid(ctx);
-		rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM, "[i,b] expected.");
+		if (rpchandler_msg_valid(ctx))
+			rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM, "[i,b] expected.");
 		return;
 	}
 
-	if (ctx->item->as.Blob.eoff > SHVC_FILE_MAXWRITE) {
-		rpchandler_msg_valid(ctx);
-		rpchandler_msg_send_error(
-			ctx, RPCERR_INVALID_PARAM, "Write exceeds maximum allowed size.");
-		return;
-	}
+	if (ctx->item->as.Blob.flags & CPBI_F_STREAM &&
+		ctx->item->as.Blob.eoff > SHVC_FILE_MAXWRITE)
+		return _write_too_large(ctx);
 
-	cp_unpack_memcpy(ctx->unpack, ctx->item, buf, SHVC_FILE_MAXWRITE);
+	ssize_t siz = cp_unpack_memcpy(ctx->unpack, ctx->item, buf, SHVC_FILE_MAXWRITE);
 
-	if (!rpchandler_msg_valid(ctx))
+	if (siz < 0 || !rpchandler_msg_valid(ctx))
 		return;
 
-	int fd = open(path, O_RDWR, S_IRUSR | S_IWUSR);
-	if (fd < 0) {
-		rpchandler_msg_send_error(
-			ctx, RPCERR_METHOD_CALL_EXCEPTION, "Could not open the file.");
+	if (!(ctx->item->as.Blob.flags & CPBI_F_LAST))
+		return _write_too_large(ctx);
+
+	int fd = _open_file(ctx, path);
+	if (fd < 0)
 		return;
-	}
 
 	lseek(fd, offset, SEEK_SET);
-	int ret = write(fd, (void *)buf, ctx->item->as.Blob.len);
-	if (ret != ctx->item->as.Blob.len) {
-		rpchandler_msg_send_error(
-			ctx, RPCERR_METHOD_CALL_EXCEPTION, "Could not write the file.");
-		close(fd);
-		return;
-	}
+	int ret = write(fd, (void *)buf, siz);
+	if (ret == siz) {
+		rpchandler_msg_send_response_void(ctx);
+	} else if (ret < 0) {
+		rpchandler_msg_send_ferror(ctx, RPCERR_METHOD_CALL_EXCEPTION,
+			"File write failed: %s", strerror(errno));
+	} else
+		rpchandler_msg_send_ferror(ctx, RPCERR_METHOD_CALL_EXCEPTION,
+			"Short file write (%d bytes only)", ret);
 
-	rpchandler_msg_send_response_void(ctx);
 	close(fd);
-	return;
 }
 
 static void rpc_handle_append(struct rpchandler_msg *ctx, const char *path) {
 	uint8_t buf[SHVC_FILE_MAXWRITE];
 	if (!rpcmsg_has_value(ctx->item) ||
 		cp_unpack_type(ctx->unpack, ctx->item) != CPITEM_BLOB) {
-		rpchandler_msg_valid(ctx);
-		rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM, "Blob expected.");
+		if (rpchandler_msg_valid(ctx))
+			rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM, "Blob expected.");
 		return;
 	}
 
-	if (ctx->item->as.Blob.eoff > SHVC_FILE_MAXWRITE) {
-		rpchandler_msg_valid(ctx);
-		rpchandler_msg_send_error(
-			ctx, RPCERR_INVALID_PARAM, "Write exceeds maximum allowed size.");
-		return;
-	}
+	if (ctx->item->as.Blob.flags & CPBI_F_STREAM &&
+		ctx->item->as.Blob.eoff > SHVC_FILE_MAXWRITE)
+		return _write_too_large(ctx);
 
-	cp_unpack_memcpy(ctx->unpack, ctx->item, buf, SHVC_FILE_MAXWRITE);
+	ssize_t siz = cp_unpack_memcpy(ctx->unpack, ctx->item, buf, SHVC_FILE_MAXWRITE);
 
-	if (!rpchandler_msg_valid(ctx))
+	if (siz < 0 || !rpchandler_msg_valid(ctx))
 		return;
 
-	int fd = open(path, O_RDWR | O_APPEND, S_IRUSR | S_IWUSR);
-	if (fd < 0) {
-		rpchandler_msg_send_error(
-			ctx, RPCERR_METHOD_CALL_EXCEPTION, "Could not open the file.");
-		return;
-	}
+	if (!(ctx->item->as.Blob.flags & CPBI_F_LAST))
+		return _write_too_large(ctx);
 
-	int ret = write(fd, (void *)buf, ctx->item->as.Blob.len);
-	if (ret != ctx->item->as.Blob.len) {
-		rpchandler_msg_send_error(
-			ctx, RPCERR_METHOD_CALL_EXCEPTION, "Could not write the file.");
-		close(fd);
+	int fd = _open_file(ctx, path);
+	if (fd < 0)
 		return;
-	}
 
-	rpchandler_msg_send_response_void(ctx);
+	int ret = write(fd, (void *)buf, siz);
+	if (ret == siz) {
+		rpchandler_msg_send_response_void(ctx);
+	} else if (ret < 0) {
+		rpchandler_msg_send_ferror(ctx, RPCERR_METHOD_CALL_EXCEPTION,
+			"File write failed: %s", strerror(errno));
+	} else
+		rpchandler_msg_send_ferror(ctx, RPCERR_METHOD_CALL_EXCEPTION,
+			"Short file write (%d bytes only)", ret);
+
 	close(fd);
-	return;
 }
 
-static bool rpcfile_unpack_validation(
+static bool rpcfile_unpack_validation_param(
 	struct rpchandler_msg *ctx, size_t *offset, ssize_t *len) {
 	*offset = 0;
 	*len = -1;
@@ -252,15 +259,12 @@ static bool rpcfile_unpack_validation(
 static void rpc_handle_crc(struct rpchandler_msg *ctx, const char *path) {
 	size_t offset;
 	ssize_t len;
-	if (!rpcfile_unpack_validation(ctx, &offset, &len))
+	if (!rpcfile_unpack_validation_param(ctx, &offset, &len))
 		return;
 
-	int fd = open(path, O_RDWR, S_IRUSR | S_IWUSR);
-	if (fd < 0) {
-		rpchandler_msg_send_error(
-			ctx, RPCERR_METHOD_CALL_EXCEPTION, "Could not open the file.");
+	int fd = _open_file(ctx, path);
+	if (fd < 0)
 		return;
-	}
 
 	crc32_t crc = crc32_init();
 	char buf[SHVC_FILE_MAXWRITE];
@@ -276,9 +280,9 @@ static void rpc_handle_crc(struct rpchandler_msg *ctx, const char *path) {
 		if (ret == 0)
 			break;
 		if (ret < 0) {
+			rpchandler_msg_send_ferror(ctx, RPCERR_METHOD_CALL_EXCEPTION,
+				"File read failed: %s", strerror(errno));
 			close(fd);
-			rpchandler_msg_send_error(
-				ctx, RPCERR_METHOD_CALL_EXCEPTION, "Failed reading the file.");
 			return;
 		}
 		crc = crc32_update(crc, (uint8_t *)buf, ret);
@@ -294,15 +298,12 @@ static void rpc_handle_crc(struct rpchandler_msg *ctx, const char *path) {
 static void rpc_handle_sha1(struct rpchandler_msg *ctx, const char *path) {
 	size_t offset;
 	ssize_t len;
-	if (!rpcfile_unpack_validation(ctx, &offset, &len))
+	if (!rpcfile_unpack_validation_param(ctx, &offset, &len))
 		return;
 
-	int fd = open(path, O_RDWR, S_IRUSR | S_IWUSR);
-	if (fd < 0) {
-		rpchandler_msg_send_error(
-			ctx, RPCERR_METHOD_CALL_EXCEPTION, "Could not open the file.");
+	int fd = _open_file(ctx, path);
+	if (fd < 0)
 		return;
-	}
 
 	sha1ctx_t sha_ctx = sha1_new();
 	char buf[SHVC_FILE_MAXWRITE];
@@ -317,11 +318,11 @@ static void rpc_handle_sha1(struct rpchandler_msg *ctx, const char *path) {
 		int ret = read(fd, (void *)buf, to_read);
 		if (ret == 0)
 			break;
-		if (ret <= 0) {
+		if (ret < 0) {
 			close(fd);
 			sha1_destroy(sha_ctx);
-			rpchandler_msg_send_error(
-				ctx, RPCERR_METHOD_CALL_EXCEPTION, "Failed reading the file.");
+			rpchandler_msg_send_ferror(ctx, RPCERR_METHOD_CALL_EXCEPTION,
+				"File read failed: %s", strerror(errno));
 			return;
 		}
 		sha1_update(sha_ctx, (uint8_t *)buf, ret);
@@ -347,8 +348,8 @@ static void rpc_handle_read(struct rpchandler_msg *ctx, const char *path) {
 		cp_unpack_type(ctx->unpack, ctx->item) != CPITEM_LIST ||
 		!cp_unpack_int(ctx->unpack, ctx->item, offset) ||
 		!cp_unpack_int(ctx->unpack, ctx->item, len)) {
-		rpchandler_msg_valid(ctx);
-		rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM, "[i,i] expected.");
+		if (rpchandler_msg_valid(ctx))
+			rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM, "[i,i] expected.");
 		return;
 	}
 
@@ -358,12 +359,9 @@ static void rpc_handle_read(struct rpchandler_msg *ctx, const char *path) {
 	stat(path, &st);
 	len = offset + len > st.st_size ? st.st_size - offset : len;
 
-	int fd = open(path, O_RDWR, S_IRUSR | S_IWUSR);
-	if (fd < 0) {
-		rpchandler_msg_send_error(
-			ctx, RPCERR_METHOD_CALL_EXCEPTION, "Could not open the file.");
+	int fd = _open_file(ctx, path);
+	if (fd < 0)
 		return;
-	}
 
 	cp_pack_t pack = rpchandler_msg_new_response(ctx);
 
@@ -374,9 +372,9 @@ static void rpc_handle_read(struct rpchandler_msg *ctx, const char *path) {
 		to_read = len < 256 ? len : 256;
 		int ret = read(fd, buf, to_read);
 		if (ret < 0) {
+			rpchandler_msg_send_ferror(ctx, RPCERR_METHOD_CALL_EXCEPTION,
+				"File read failed: %s", strerror(errno));
 			close(fd);
-			rpchandler_msg_send_error(
-				ctx, RPCERR_METHOD_CALL_EXCEPTION, "Failed reading the file.");
 			return;
 		}
 		cp_pack_blob_data(pack, ctx->item, buf, ret);
@@ -398,9 +396,9 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 		if (handler->cb->update_paths) {
 			if (handler->cb->update_paths(
 					&file->list->file_path, file->list->shv_path) < 0) {
-				rpchandler_msg_valid(ctx);
-				rpchandler_msg_send_error(ctx, RPCERR_METHOD_CALL_EXCEPTION,
-					"Could not obtain file paths.");
+				if (rpchandler_msg_valid(ctx))
+					rpchandler_msg_send_error(ctx, RPCERR_METHOD_CALL_EXCEPTION,
+						"Could not obtain file paths.");
 				return RPCHANDLER_MSG_DONE;
 			}
 		}

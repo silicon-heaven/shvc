@@ -23,7 +23,7 @@
  * :param ctx: Handle context passed to :c:member:`rpchandler_funcs.msg`.
  * :return: ``true`` if message is valid and ``false`` otherwise.
  */
-[[gnu::nonnull]]
+[[gnu::nonnull, gnu::warn_unused_result]]
 bool rpchandler_msg_valid(struct rpchandler_msg *ctx);
 
 /** Add result of ``ls``.

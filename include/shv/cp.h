@@ -347,7 +347,7 @@ struct cpbufinfo {
 	size_t len;
 	/** Number of bytes not yet unpacked or provided in buffer for packing.
 	 *
-	 * Packing: Use this to inform about the full length. The real length of
+	 * Packing: Use this to inform about the expected length. The real length of
 	 * data to be packed is anything that was packed so far, plus ``len`` and
 	 * ``eoff``.
 	 *

@@ -70,7 +70,7 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 		return RPCHANDLER_MSG_DONE;
 	}
 
-	rpchandler_msg_valid(ctx); /* Just ignore anything else */
+	/* Just ignore anything else */
 	return RPCHANDLER_MSG_DONE;
 }
 
