@@ -197,9 +197,10 @@ double cpdectod(const struct cpdecimal v);
 	({ \
 		bool __dec_valid = false; \
 		struct cpdecimal __dec = (DEC); \
-		if (cpdecexp(&__dec, (EXP))) { \
+		if (cpdecexp(&__dec, (EXP)) && \
+			__dec.mantissa == (typeof(DEST))__dec.mantissa) { \
 			(DEST) = __dec.mantissa; \
-			__dec_valid = __dec.mantissa == (typeof(DEST))__dec.mantissa; \
+			__dec_valid = true; \
 		} \
 		__dec_valid; \
 	})
@@ -473,16 +474,17 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  *   directly). It can be unsigned as well as signed and thus it is allowed to
  *   extract signed SHV integer to unsigned variable.
  * :return: ``true`` in case value was :c:enumerator:`CPITEM_INT` and value fits
- *   to the destination, otherwise ``false`` is returned. The destination could
- *   be modified when ``false`` is returned.
+ *   to the destination, otherwise ``false`` is returned. The destination is not
+ *   modified when ``false`` is returned.
  */
 #define cpitem_extract_int(ITEM, DEST) \
 	({ \
 		const struct cpitem *__item = ITEM; \
 		bool __valid = false; \
-		if (__item->type == CPITEM_INT) { \
+		if (__item->type == CPITEM_INT && \
+			__item->as.Int == (typeof(DEST))__item->as.Int) { \
 			(DEST) = __item->as.Int; \
-			__valid = __item->as.Int == (typeof(DEST))__item->as.Int; \
+			__valid = true; \
 		} \
 		__valid; \
 	})
@@ -500,15 +502,16 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  *   extract unsigned SHV integer to signed variable.
  * :return: ``true`` in case value was :c:enumerator:`CPITEM_UINT` and value
  *   fits to the destination, otherwise ``false`` is returned. The destination
- *   could be modified when ``false`` is returned.
+ *   is not modified when ``false`` is returned.
  */
 #define cpitem_extract_uint(ITEM, DEST) \
 	({ \
 		const struct cpitem *__item = ITEM; \
 		bool __valid = false; \
-		if (__item->type == CPITEM_UINT) { \
+		if (__item->type == CPITEM_UINT && \
+			__item->as.UInt == (typeof(DEST))__item->as.UInt) { \
 			(DEST) = __item->as.UInt; \
-			__valid = __item->as.UInt == (typeof(DEST))__item->as.UInt; \
+			__valid = true; \
 		} \
 		__valid; \
 	})
@@ -581,7 +584,7 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
  * :param EXP: The exponent of the destination integer.
  * :return: ``true`` in case value was :c:enumerator:`CPITEM_DECIMAL` and value
  *   fits to the destination, otherwise ``false`` is returned. The destination
- *   could be modified when ``false`` is returned.
+ *   is not modified when ``false`` is returned.
  */
 #define cpitem_extract_decimal_int(ITEM, DEST, EXP) \
 	({ \
@@ -589,6 +592,26 @@ static inline void cpitem_unpack_init(struct cpitem *item) {
 		bool __valid = false; \
 		if (__item->type == CPITEM_DECIMAL) \
 			__valid = cpdtoi(__item->as.Decimal, EXP, DEST); \
+		__valid; \
+	})
+
+/** Extract floating point number from the item.
+ *
+ * :param ITEM: item from which double is extract.
+ * :param DEST: destination float variable (not pointer, the variable directly).
+ * :return: ``true`` in case value was :c:enumerator:`CPITEM_DOUBLE` and value
+ *   fits the destination, otherwise ``false`` is returned. The destination is
+ *   not modified when ``false`` is returned.
+ */
+#define cpitem_extract_double(ITEM, DEST) \
+	({ \
+		const struct cpitem *__item = ITEM; \
+		bool __valid = false; \
+		if (__item->type == CPITEM_DOUBLE && \
+			__item->as.Double == (typeof(DEST))__item->as.Double) { \
+			(DEST) = __item->as.Double; \
+			__valid = true; \
+		} \
 		__valid; \
 	})
 

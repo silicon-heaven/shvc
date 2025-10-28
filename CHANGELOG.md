@@ -5,10 +5,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- `cpitem_extract_double` and `cp_unpack_double`
+
 ### Changed
 - `rpchandler_msg_valid` now has `warn_unused_result` attribute
 - `rpchandler_funcs.msg` is now allowed to not call `rpchandler_msg_valid` even
   if `RPCHANDLER_MSG_DONE` or `RPCHANDLER_MSG_STOP` is returned
+- `cpitem_extract_int`, `cpitem_extract_uint`, `cpdtoi`, and
+  `cpitem_extract_decimal_int` are no longer modifying destination on failure
 
 ### Fixed
 - `rpchandler_file` handling of invalid messages
