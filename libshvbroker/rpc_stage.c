@@ -121,6 +121,12 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 			return rpc_msg_response(c, ctx);
 		case RPCMSG_T_SIGNAL:
 			return rpc_msg_signal(c, ctx);
+		case RPCMSG_T_REQUEST_ABORT:
+			// TODO add support!
+			break;
+		case RPCMSG_T_RESPONSE_DELAY:
+			// TODO add support!
+			break;
 		case RPCMSG_T_INVALID:
 			break;
 	}

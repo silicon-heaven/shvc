@@ -80,6 +80,8 @@ const char *rpcerror_str(rpcerrno_t errnum) {
 		[RPCERR_LOGIN_REQUIRED] = "LoginRequired",
 		[RPCERR_USER_ID_REQUIRED] = "UserIDRequired",
 		[RPCERR_NOT_IMPLEMENTED] = "NotImplemented",
+		[RPCERR_TRY_AGAIN_LATER] = "TryAgainLater",
+		[RPCERR_REQUEST_INVALID] = "RequestInvalid",
 	};
 	return errname[sanitize(errnum)] ?: errname[RPCERR_UNKNOWN];
 }
@@ -102,6 +104,8 @@ const char *rpcerror_desc(rpcerrno_t errnum) {
 			"Method call attempted without previous successful login",
 		[RPCERR_USER_ID_REQUIRED] = "Method call requires UserID to be present",
 		[RPCERR_NOT_IMPLEMENTED] = "Method is valid but not implemented",
+		[RPCERR_TRY_AGAIN_LATER] = "Try again later",
+		[RPCERR_REQUEST_INVALID] = "Request is not known",
 	};
 	return errdesc[sanitize(errnum)] ?: errdesc[RPCERR_UNKNOWN];
 }

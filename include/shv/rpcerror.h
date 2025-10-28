@@ -51,6 +51,13 @@ typedef unsigned rpcerrno_t;
 #define RPCERR_USER_ID_REQUIRED (11)
 /** Can be used if method is valid but not implemented for whatever reason. */
 #define RPCERR_NOT_IMPLEMENTED (12)
+/** Used in cases when request can't be handled now but might be in the future.
+ */
+#define RPCERR_TRY_AGAIN_LATER (13)
+/** Used exclusively for `Abort` request. It doesn't specify if invalidation is
+ * caused by `Abort` just that there is no such request
+ */
+#define RPCERR_REQUEST_INVALID (14)
 /** The first method specific defined error code. The lower values are reserved
  * for the SHV defined errors.
  */

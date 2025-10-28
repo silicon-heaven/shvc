@@ -173,10 +173,10 @@ static bool valid_path(rpchandler_t handler, char *path) {
 	return lsctx.located;
 }
 
-static bool handle_ls(struct msg_ctx *ctx) {
+static void handle_ls(struct msg_ctx *ctx) {
 	char *name;
 	if (!common_ls_dir(ctx, &name))
-		return true;
+		return;
 
 	struct ls_ctx lsctx = (struct ls_ctx){
 		.ctx.path = ctx->ctx.meta.path ?: "",
@@ -195,7 +195,7 @@ static bool handle_ls(struct msg_ctx *ctx) {
 		!valid_path(ctx->handler, ctx->ctx.meta.path)) {
 		rpchandler_msg_send_ferror(&ctx->ctx, RPCERR_METHOD_NOT_FOUND,
 			"No such node: %s", ctx->ctx.meta.path ?: "");
-		return true;
+		return;
 	}
 	if (lsctx.ctx.name == NULL) {
 		if (lsctx.pack == NULL) {
@@ -210,17 +210,16 @@ static bool handle_ls(struct msg_ctx *ctx) {
 	}
 	cp_pack_container_end(lsctx.pack);
 	rpchandler_msg_send(&ctx->ctx);
-	return true;
 }
 
-static bool handle_dir(struct msg_ctx *ctx) {
+static void handle_dir(struct msg_ctx *ctx) {
 	char *name;
 	if (!common_ls_dir(ctx, &name))
-		return true;
+		return;
 	if (!valid_path(ctx->handler, ctx->ctx.meta.path)) {
 		rpchandler_msg_send_ferror(&ctx->ctx, RPCERR_METHOD_NOT_FOUND,
 			"No such node: %s", ctx->ctx.meta.path ?: "");
-		return true;
+		return;
 	}
 
 	cp_pack_t pack = rpchandler_msg_new_response(&ctx->ctx);
@@ -247,7 +246,6 @@ static bool handle_dir(struct msg_ctx *ctx) {
 		cp_pack_container_end(dirctx.pack);
 		rpchandler_msg_send(&ctx->ctx);
 	}
-	return true;
 }
 
 static bool handle_msg(struct msg_ctx *ctx) {
@@ -258,23 +256,34 @@ static bool handle_msg(struct msg_ctx *ctx) {
 				if (ctx->ctx.unpack == NULL)
 					return res == RPCHANDLER_MSG_DONE;
 				/* Verification wasn't done */
-				if (ctx->ctx.meta.type == RPCMSG_T_REQUEST)
-					goto not_found;
-				rpcclient_ignoremsg(ctx->handler->client);
+				if (ctx->ctx.meta.type == RPCMSG_T_REQUEST) {
+					if (rpchandler_msg_valid(&ctx->ctx))
+						rpchandler_msg_send_error(&ctx->ctx,
+							RPCERR_METHOD_CALL_EXCEPTION,
+							"No response was generated");
+				} else
+					rpcclient_ignoremsg(ctx->handler->client);
 				return true;
 			}
 		}
 
-	if (ctx->ctx.meta.type == RPCMSG_T_REQUEST &&
-		!strcmp(ctx->ctx.meta.method, "ls"))
-		return handle_ls(ctx);
-	else if (ctx->ctx.meta.type == RPCMSG_T_REQUEST &&
-		!strcmp(ctx->ctx.meta.method, "dir"))
-		return handle_dir(ctx);
-
-not_found:
-	if (rpchandler_msg_valid(&ctx->ctx) && ctx->ctx.meta.type == RPCMSG_T_REQUEST)
-		rpchandler_msg_send_method_not_found(&ctx->ctx);
+	switch (ctx->ctx.meta.type) {
+		case RPCMSG_T_REQUEST:
+			if (!strcmp(ctx->ctx.meta.method, "ls")) {
+				handle_ls(ctx);
+			} else if (!strcmp(ctx->ctx.meta.method, "dir")) {
+				handle_dir(ctx);
+			} else if (rpchandler_msg_valid(&ctx->ctx))
+				rpchandler_msg_send_method_not_found(&ctx->ctx);
+			break;
+		case RPCMSG_T_REQUEST_ABORT:
+			if (rpchandler_msg_valid(&ctx->ctx))
+				rpchandler_msg_send_error(&ctx->ctx, RPCERR_REQUEST_INVALID, NULL);
+			break;
+		default:
+			rpcclient_ignoremsg(ctx->handler->client);
+			break;
+	}
 	return true;
 }
 
@@ -376,7 +385,9 @@ cp_pack_t _rpchandler_msg_new(rpchandler_t handler) {
 }
 cp_pack_t _rpchandler_impl_msg_new(struct rpchandler_msg *ctx) {
 	struct msg_ctx *mctx = (struct msg_ctx *)ctx;
-	if (ctx->unpack != NULL || ctx->meta.type != RPCMSG_T_REQUEST)
+	if (ctx->unpack != NULL ||
+		(ctx->meta.type != RPCMSG_T_REQUEST &&
+			ctx->meta.type != RPCMSG_T_REQUEST_ABORT))
 		return NULL;
 	priority_send_lock(mctx->handler);
 	return rpcclient_pack(mctx->handler->client);
@@ -397,7 +408,8 @@ bool _rpchandler_msg_send(rpchandler_t handler) {
 }
 bool _rpchandler_impl_msg_send(struct rpchandler_msg *ctx) {
 	struct msg_ctx *mctx = (struct msg_ctx *)ctx;
-	if (ctx->meta.type != RPCMSG_T_REQUEST)
+	if (ctx->meta.type != RPCMSG_T_REQUEST &&
+		ctx->meta.type != RPCMSG_T_REQUEST_ABORT)
 		return false;
 	return _rpchandler_msg_send(mctx->handler);
 }
@@ -418,7 +430,8 @@ bool _rpchandler_msg_drop(rpchandler_t handler) {
 }
 bool _rpchandler_impl_msg_drop(struct rpchandler_msg *ctx) {
 	struct msg_ctx *mctx = (struct msg_ctx *)ctx;
-	if (ctx->meta.type != RPCMSG_T_REQUEST)
+	if (ctx->meta.type != RPCMSG_T_REQUEST &&
+		ctx->meta.type != RPCMSG_T_REQUEST_ABORT)
 		return false;
 	return _rpchandler_msg_drop(mctx->handler);
 }
