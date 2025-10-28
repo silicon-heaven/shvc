@@ -218,9 +218,15 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 	if (has_rid) {
 		if (meta->method) {
 			/* Request */
-			if (key && key != RPCMSG_KEY_PARAM)
+			if (!key || key == RPCMSG_KEY_PARAM) {
+				meta->type = RPCMSG_T_REQUEST;
+			} else if (key == RPCMSG_KEY_ABORT) {
+				meta->type = RPCMSG_T_REQUEST_ABORT;
+				if (!cp_unpack_bool(unpack, item, meta->request_abort) ||
+					cp_unpack_type(unpack, item) != CPITEM_CONTAINER_END)
+					FAILURE; // GCOVR_EXCL_BR_LINE
+			} else
 				FAILURE; // GCOVR_EXCL_BR_LINE
-			meta->type = RPCMSG_T_REQUEST;
 			if (meta->path == NULL)
 				meta->path = "";
 			if (!has_access)
@@ -231,6 +237,11 @@ bool rpcmsg_head_unpack(cp_unpack_t unpack, struct cpitem *item,
 				meta->type = RPCMSG_T_RESPONSE;
 			} else if (key == RPCMSG_KEY_ERROR) {
 				meta->type = RPCMSG_T_ERROR;
+			} else if (key == RPCMSG_KEY_DELAY) {
+				meta->type = RPCMSG_T_RESPONSE_DELAY;
+				if (!cp_unpack_double(unpack, item, meta->request_progress) ||
+					cp_unpack_type(unpack, item) != CPITEM_CONTAINER_END)
+					FAILURE; // GCOVR_EXCL_BR_LINE
 			} else
 				FAILURE; // GCOVR_EXCL_BR_LINE
 		}

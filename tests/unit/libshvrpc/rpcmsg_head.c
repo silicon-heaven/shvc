@@ -196,6 +196,17 @@ static const struct {
 			.access = RPCACCESS_DEVEL,
 		},
 	},
+	{
+		"<8:3,10:\"ls\">i{5:true}",
+		(struct rpcmsg_meta){
+			.type = RPCMSG_T_REQUEST_ABORT,
+			.request_id = 3,
+			.path = "",
+			.method = "ls",
+			.access = RPCACCESS_ADMIN,
+			.request_abort = true,
+		},
+	},
 };
 ARRAY_TEST(all, unpack) {
 	cp_unpack_t unpack = unpack_cpon(_d.str);
@@ -217,6 +228,8 @@ ARRAY_TEST(all, unpack) {
 	ck_assert_pstr_eq(meta.source, _d.meta.source);
 	ck_assert(meta.repeat == _d.meta.repeat);
 	ck_assert_pstr_eq(meta.user_id, _d.meta.user_id);
+	ck_assert(meta.request_abort == _d.meta.request_abort);
+	ck_assert_double_eq(meta.request_progress, _d.meta.request_progress);
 	ck_assert_int_eq(meta.cids_cnt, _d.meta.cids_cnt);
 	ck_assert_mem_eq(meta.cids, _d.meta.cids, _d.meta.cids_cnt * sizeof(intmax_t));
 	struct rpcmsg_meta_extra *e = meta.extra;

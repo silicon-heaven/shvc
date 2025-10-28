@@ -52,6 +52,10 @@ enum rpcmsg_keys {
 	RPCMSG_KEY_RESULT,
 	/** Result used for failed responses. */
 	RPCMSG_KEY_ERROR,
+	/** Result used for delayed response. */
+	RPCMSG_KEY_DELAY,
+	/** Result used for abort requests. */
+	RPCMSG_KEY_ABORT,
 };
 
 /** Identification of the message. */
@@ -64,12 +68,24 @@ enum rpcmsg_type {
 	 * ``true``.
 	 */
 	RPCMSG_T_REQUEST,
+	/** Message is abort request (``request_id`` is valid alongside with
+	 * ``method`` and ``request_abort``).
+	 *
+	 * There is nothing to unpack.
+	 */
+	RPCMSG_T_REQUEST_ABORT,
 	/** Message is response (``request_id`` is valid).
 	 *
 	 * The result can be unpacked if :c:func:`rpcmsg_has_value` signals
 	 * ``true``.
 	 */
 	RPCMSG_T_RESPONSE,
+	/** Message is response delay (``request_id`` is valid alongside with
+	 * ``request_progress``).
+	 *
+	 * There is nothing to unpack.
+	 */
+	RPCMSG_T_RESPONSE_DELAY,
 	/** Message is response with error attached (``request_id`` is valid).
 	 *
 	 * The error can be unpacked (:c:func:`rpcerror_unpack`).
@@ -149,6 +165,16 @@ struct rpcmsg_meta {
 	 * :c:enumerator:`RPCMSG_T_SIGNAL`.
 	 */
 	char *user_id;
+	/** If abort request is only querty for state or an abort request.
+	 *
+	 * Valid for :c:enumerator:`RPCMSG_T_REQUEST_ABORT`.
+	 */
+	bool request_abort;
+	/** Progress of the request.
+	 *
+	 * Valid for :c:enumerator:`RPCMSG_T_RESPONSE_DELAY`.
+	 */
+	double request_progress;
 
 	/** Client IDs if message is request or response.
 	 *
