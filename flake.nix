@@ -91,7 +91,7 @@
       default = pkgs.mkShell {
         packages = with pkgs; [
           # Linters and formatters
-          clang-tools_19
+          llvmPackages.clang-tools
           editorconfig-checker
           muon
           shellcheck
@@ -106,7 +106,7 @@
           sphinx-autobuild
         ];
         inputsFrom = [
-          self.packages.${pkgs.hostPlatform.system}.default
+          self.packages.${pkgs.stdenv.hostPlatform.system}.default
         ];
       };
     });
