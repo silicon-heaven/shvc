@@ -12,40 +12,53 @@
 #include <shv/rpctransport.h>
 #include "shvc_config.h"
 
-#ifdef SHVC_NUTTXCAN
-# include <nuttx/can/can.h>
-# include <nuttx/config.h>
-# define canid(F) (F).cm_hdr.ch_id
-# define candata(F) (F).cm_data
-# ifdef CONFIG_CAN_EXTID
-#  define canexid(F) (F).cm_hdr.ch_extid
-# else
-#  define canexid(F) (false)
-# endif
-# ifdef CONFIG_CAN_ERRORS
-#  define canerr(F) (F).cm_hdr.ch_error
-# else
-#  define canerr(F) (false)
-# endif
-# define canrtr(F) (F).cm_hdr.ch_rtr
-# define wframe_len(C) (C)->wlen
-typedef struct can_msg_s frame_t;
-#else
-# include <linux/can/raw.h>
-# include <linux/if.h>
-# define canid(F) (F).can_id
-# define candata(F) (F).data
-# define canexid(F) ((F).can_id & CAN_EFF_FLAG)
-# define canerr(F) ((F).can_id & CAN_ERR_FLAG)
-# define canrtr(F) ((F).can_id & CAN_RTR_FLAG)
-# define wframe_len(C) (C)->wframe.len
-typedef struct canfd_frame frame_t;
-#endif
+#ifndef SHVC_CAN
 
-#define CANID_SHVCAN 0x400
-#define CANID_UNUSED 0x200
-#define CANID_FIRST_MASK 0x100
-#define CANID_ADDRESS_MASK 0x0FF
+rpcclient_t rpcclient_can_new(
+	const char *interface, uint8_t address, uint8_t local_address) {
+	return NULL;
+}
+
+rpcserver_t rpcserver_can_new(const char *interface, uint8_t address) {
+	return NULL;
+}
+
+#else
+
+# ifdef SHVC_NUTTXCAN
+#  include <nuttx/can/can.h>
+#  include <nuttx/config.h>
+#  define canid(F) (F).cm_hdr.ch_id
+#  define candata(F) (F).cm_data
+#  ifdef CONFIG_CAN_EXTID
+#   define canexid(F) (F).cm_hdr.ch_extid
+#  else
+#   define canexid(F) (false)
+#  endif
+#  ifdef CONFIG_CAN_ERRORS
+#   define canerr(F) (F).cm_hdr.ch_error
+#  else
+#   define canerr(F) (false)
+#  endif
+#  define canrtr(F) (F).cm_hdr.ch_rtr
+#  define wframe_len(C) (C)->wlen
+typedef struct can_msg_s frame_t;
+# else
+#  include <linux/can/raw.h>
+#  include <linux/if.h>
+#  define canid(F) (F).can_id
+#  define candata(F) (F).data
+#  define canexid(F) ((F).can_id & CAN_EFF_FLAG)
+#  define canerr(F) ((F).can_id & CAN_ERR_FLAG)
+#  define canrtr(F) ((F).can_id & CAN_RTR_FLAG)
+#  define wframe_len(C) (C)->wframe.len
+typedef struct canfd_frame frame_t;
+# endif
+
+# define CANID_SHVCAN 0x400
+# define CANID_UNUSED 0x200
+# define CANID_FIRST_MASK 0x100
+# define CANID_ADDRESS_MASK 0x0FF
 
 struct ctx;
 
@@ -83,9 +96,9 @@ struct ctx {
 	pthread_cond_t rcond, rrcond;
 
 	frame_t wframe;
-#ifdef SHVC_NUTTXCAN
+# ifdef SHVC_NUTTXCAN
 	uint8_t wlen;
-#endif
+# endif
 	bool wack;
 	uint8_t wackb;
 	pthread_cond_t wackcond;
@@ -124,7 +137,7 @@ static inline struct ctx *getctx(struct local *local, uint8_t address) {
 
 static bool send_ack(struct ctx *ctx, uint8_t counter) {
 	assert(ctx->local);
-#ifdef SHVC_NUTTXCAN
+# ifdef SHVC_NUTTXCAN
 	frame_t frame = {
 		.cm_hdr.ch_id = ctx->local_address | CANID_SHVCAN | CANID_UNUSED,
 		.cm_hdr.ch_dlc = 2,
@@ -134,7 +147,7 @@ static bool send_ack(struct ctx *ctx, uint8_t counter) {
 		.cm_data[1] = counter,
 	};
 	size_t siz = CAN_MSGLEN(frame.cm_hdr.ch_dlc);
-#else
+# else
 	frame_t frame = {
 		.can_id = ctx->local_address | CANID_SHVCAN | CANID_UNUSED,
 		.flags = CANFD_BRS,
@@ -143,7 +156,7 @@ static bool send_ack(struct ctx *ctx, uint8_t counter) {
 		.data[1] = counter,
 	};
 	const size_t siz = sizeof frame;
-#endif
+# endif
 	return write(ctx->local->fd, &frame, siz) == siz;
 };
 
@@ -158,12 +171,12 @@ static bool send_data_frame(struct ctx *c) {
 			return false;
 		}
 	}
-#ifdef SHVC_NUTTXCAN
+# ifdef SHVC_NUTTXCAN
 	c->wframe.cm_hdr.ch_dlc = can_bytes2dlc(c->wlen);
 	const size_t siz = CAN_MSGLEN(can_dlc2bytes(c->wframe.cm_hdr.ch_dlc));
-#else
+# else
 	const size_t siz = sizeof(frame_t);
-#endif
+# endif
 	ssize_t i = write(c->local->fd, &c->wframe, siz);
 	if (i != siz) {
 		pthread_mutex_unlock(&c->mtx);
@@ -181,20 +194,20 @@ static bool send_data_frame(struct ctx *c) {
 
 static bool send_rtr_frame(struct local *local, uint8_t dlc) {
 	assert(dlc <= 8); /* Not supported for now. Requires decode to len. */
-#ifdef SHVC_NUTTXCAN
+# ifdef SHVC_NUTTXCAN
 	struct can_msg_s frame = {
 		.cm_hdr.ch_id = local->address | CANID_SHVCAN | CANID_UNUSED,
 		.cm_hdr.ch_rtr = 1,
 		.cm_hdr.ch_dlc = dlc,
 	};
 	const size_t siz = CAN_MSGLEN(0);
-#else
+# else
 	struct can_frame frame = {
 		.can_id = CAN_RTR_FLAG | local->address | CANID_SHVCAN | CANID_UNUSED,
 		.len = dlc,
 	};
 	const size_t siz = sizeof frame;
-#endif
+# endif
 	bool res = write(local->fd, &frame, siz) == siz;
 	return res;
 }
@@ -207,30 +220,30 @@ static void *_reader(void *arg) {
 	sigfillset(&sigset);
 	pthread_sigmask(SIG_BLOCK, &sigset, NULL);
 
-#define RTOKEN_PASS \
-	do { \
-		ctx->rtoken = true; \
-		pthread_cond_signal(&ctx->rcond); \
-	} while (false)
-#define RTOKEN_WAIT \
-	while (ctx->rtoken) \
-		pthread_cond_wait(&ctx->rrcond, &ctx->mtx);
-#define REVENTFD_SET \
-	do { \
-		uint64_t _ = 1; \
-		assert(write(ctx->reventfd, &_, sizeof _) == sizeof _); \
-	} while (false)
+# define RTOKEN_PASS \
+	 do { \
+		 ctx->rtoken = true; \
+		 pthread_cond_signal(&ctx->rcond); \
+	 } while (false)
+# define RTOKEN_WAIT \
+	 while (ctx->rtoken) \
+		 pthread_cond_wait(&ctx->rrcond, &ctx->mtx);
+# define REVENTFD_SET \
+	 do { \
+		 uint64_t _ = 1; \
+		 assert(write(ctx->reventfd, &_, sizeof _) == sizeof _); \
+	 } while (false)
 
 	while (true) {
 		frame_t frame;
 		size_t n = read(local->fd, &frame, sizeof frame);
-#ifdef SHVC_NUTTXCAN
+# ifdef SHVC_NUTTXCAN
 		size_t len = can_dlc2bytes(frame.cm_hdr.ch_dlc);
 		if (n < CAN_MSGLEN(0) || n > sizeof frame) {
-#else
+# else
 		size_t len = frame.len;
 		if (n != CANFD_MTU && n != CAN_MTU) {
-#endif
+# endif
 			// TODO should we somehow terminate local object?
 			syslog(LOG_ERR, "CAN frame read error: %s", strerror(errno));
 			return NULL;
@@ -361,35 +374,35 @@ static void *_reader(void *arg) {
 		pthread_mutex_unlock(&local->mtx);
 	}
 
-#undef RTOKEN_WAIT
-#undef RTOKEN_PASS
+# undef RTOKEN_WAIT
+# undef RTOKEN_PASS
 }
 
-#define RTOKEN_PASS \
-	do { \
-		c->rtoken = false; \
-		pthread_cond_signal(&c->rrcond); \
-	} while (false)
+# define RTOKEN_PASS \
+	 do { \
+		 c->rtoken = false; \
+		 pthread_cond_signal(&c->rrcond); \
+	 } while (false)
 /* TODO timeout should be 5 but that is too long for this implementation. */
-#define RTOKEN_WAIT(TIMEOUT) \
-	({ \
-		bool res = true; \
-		while (!c->rtoken && res) { \
-			struct timespec at; \
-			if (TIMEOUT) { \
-				assert(clock_gettime(CLOCK_REALTIME, &at) == 0); \
-				at.tv_sec += 1; \
-			} else \
-				at = (struct timespec){}; \
-			res = pthread_cond_timedwait(&c->rcond, &c->mtx, &at) != ETIMEDOUT; \
-		} \
-		res; \
-	})
+# define RTOKEN_WAIT(TIMEOUT) \
+	 ({ \
+	  bool res = true; \
+	  while (!c->rtoken && res) { \
+		  struct timespec at; \
+		  if (TIMEOUT) { \
+			  assert(clock_gettime(CLOCK_REALTIME, &at) == 0); \
+			  at.tv_sec += 1; \
+		  } else \
+			  at = (struct timespec){}; \
+		  res = pthread_cond_timedwait(&c->rcond, &c->mtx, &at) != ETIMEDOUT; \
+	  } \
+	  res; \
+	 })
 
 
 static bool local_init(
 	struct local *local, const char *interface, uint8_t address, int listenfd) {
-#ifdef SHVC_NUTTXCAN
+# ifdef SHVC_NUTTXCAN
 	char *devpath;
 	asprintf(&devpath, "/dev/%s", interface);
 	int fd = open(devpath, O_RDWR);
@@ -397,7 +410,7 @@ static bool local_init(
 	if (fd < 0)
 		return false;
 	assert(ioctl(fd, CANIOC_SET_MSGALIGN, &(unsigned){0}) == 0);
-#else
+# else
 	int fd = socket(PF_CAN, SOCK_RAW, CAN_RAW);
 	if (fd == -1)
 		return false;
@@ -419,7 +432,7 @@ static bool local_init(
 		close(fd);
 		return false;
 	}
-#endif
+# endif
 
 	*local = (struct local){
 		.interface = strdup(interface),
@@ -532,12 +545,12 @@ static ssize_t cookie_write(void *cookie, const char *buf, size_t size) {
 		if (canid(c->wframe) == 0) {
 			canid(c->wframe) = c->local_address | CANID_SHVCAN | CANID_UNUSED |
 				CANID_FIRST_MASK;
-#ifdef SHVC_NUTTXCAN
+# ifdef SHVC_NUTTXCAN
 			c->wframe.cm_hdr.ch_edl = 1;
 			c->wframe.cm_hdr.ch_brs = 1;
-#else
+# else
 			c->wframe.flags = CANFD_BRS;
-#endif
+# endif
 			candata(c->wframe)[0] = c->address;
 			wframe_len(c) = 2;
 		} else if (wframe_len(c) == 64) {
@@ -852,3 +865,5 @@ rpcserver_t rpcserver_can_new(const char *interface, uint8_t address) {
 
 	return &res->pub;
 }
+
+#endif

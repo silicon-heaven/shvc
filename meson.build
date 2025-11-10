@@ -17,6 +17,7 @@ add_project_arguments('-DPROJECT_VERSION="@0@"'.format(meson.project_version()),
 
 conf = configuration_data()
 conf.set('SHVC_TCP', get_option('tcp'), description:'If TCP/IP should be compiled in.')
+conf.set('SHVC_CAN', get_option('can'), description:'If CAN-FD should be compiled in.')
 conf.set('SHVC_CRYPTORAND', get_option('cryptorand'), description:'If getrandom should be used instead of rand.')
 conf.set_quoted('SHVC_DEFAULT_URL', get_option('default-url'), description:'The default connection URL.')
 conf.set( 'SHVC_FILE_MAXWRITE', get_option('file_maxwrite'), description:'Maximal size in bytes of single write operation for file nodes')

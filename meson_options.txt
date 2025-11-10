@@ -13,6 +13,12 @@ option(
   description: 'Include TCP/IP RPC transport. You might want to disable this if you do not have IP support on your platform.',
 )
 option(
+  'can',
+  type: 'boolean',
+  value: true,
+  description: 'Include CAN-FD RPC transport. You might want to disable if your platform doesn\'t support SocketCAN.',
+)
+option(
   'cryptorand',
   type: 'boolean',
   value: true,
