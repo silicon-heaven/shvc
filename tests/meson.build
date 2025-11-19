@@ -1,4 +1,4 @@
-valgrind = find_program('valgrind')
+valgrind = find_program('valgrind', required: false)
 if valgrind.found()
   bash = find_program('bash')
   valgrind_wrapper = [bash, meson.current_source_dir() + '/valgrind-wrapper.sh', valgrind]

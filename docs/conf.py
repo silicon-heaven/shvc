@@ -4,10 +4,8 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 import os
 import pathlib
-import sys
 import docutils
 
-sys.path.insert(0, str(pathlib.Path("..").absolute()))
 
 project = "Elektroline C project Template"
 copyright = "2023, Elektroline a.s."
@@ -43,6 +41,22 @@ myst_enable_extensions = [
 
 hawkmoth_root = os.path.abspath("../include")
 hawkmoth_source_uri = "https://gitlab.elektroline.cz/emb/template/c/-/blob/master/include/{source}#L{line}"
+
+# hawkmoth_clang: list[str] = []
+# meson_dep_vars = {"obstack"}  # Meson dependency variable names
+# with tempfile.TemporaryDirectory() as tdir:
+#    subprocess.run(
+#        ["meson", "setup", "--wipe", tdir, pathlib.Path(__file__).parents[1]],
+#        check=True,
+#    )
+#    meson_introspect = subprocess.run(
+#        ["meson", "introspect", "--dependencies", tdir],
+#        stdout=subprocess.PIPE,
+#        check=True,
+#    ).stdout
+#    for d in json.loads(meson_introspect):
+#        if any(var in meson_dep_vars for var in d["meson_variables"]):
+#            hawkmoth_clang.extend(f"-I{inc}" for inc in d["include_directories"])
 
 
 def build_finished_gitignore(app, exception):
