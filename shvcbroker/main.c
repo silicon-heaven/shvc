@@ -25,7 +25,7 @@ static volatile sig_atomic_t halt = false;
 struct ctx {
 	struct opts opts;
 	struct config *conf;
-	rpchandler_app_t app_handler;
+	struct rpchandler_app_conf *app_conf;
 };
 
 static void sigint_handler(int status) {
@@ -114,7 +114,7 @@ static int new_client(
 			&rpclogger_stderr_funcs, lout, logsiz, ctx->opts.verbose);
 	}
 	struct rpchandler_stage *stages = malloc(4 * sizeof *stages);
-	stages[1] = rpchandler_app_stage(ctx->app_handler);
+	stages[1] = rpchandler_app_stage(ctx->app_conf);
 	stages[3] = (struct rpchandler_stage){};
 	rpchandler_t handler = rpchandler_new(client, stages, NULL);
 	int cid =
@@ -155,7 +155,8 @@ int main(int argc, char **argv) {
 	bstate.del_client = del_client;
 	bstate.cookie = &ctx;
 
-	ctx.app_handler = rpchandler_app_new("shvcbroker", PROJECT_VERSION);
+	ctx.app_conf = &(struct rpchandler_app_conf){
+		.name = "shvcbroker", .version = PROJECT_VERSION};
 	bstate.broker = rpcbroker_new(ctx.conf->name, login, &ctx, RPCBROKER_F_NOLOCK);
 
 	bstate.servers = calloc(ctx.conf->listen_cnt, sizeof *bstate.servers);
@@ -182,7 +183,6 @@ err_server:
 			rpcserver_destroy(bstate.servers[i]);
 	free(bstate.servers);
 	rpcbroker_destroy(bstate.broker);
-	rpchandler_app_destroy(ctx.app_handler);
 	obstack_free(&obstack, NULL);
 	return ec;
 }

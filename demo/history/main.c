@@ -177,14 +177,14 @@ int main(int argc, char **argv) {
 	};
 
 	rpchandler_login_t login = rpchandler_login_new(&rpcurl->login);
-	rpchandler_app_t app = rpchandler_app_new("shvc-demo-history", PROJECT_VERSION);
 	rpchandler_history_t history = rpchandler_history_new(&facilities,
 		(const char *[]){"node0/subnode/1", "node0/subnode/2", "node1/subnode",
 			"node2", NULL});
 
 	const struct rpchandler_stage stages[] = {
 		rpchandler_login_stage(login),
-		rpchandler_app_stage(app),
+		rpchandler_app_stage(&(struct rpchandler_app_conf){
+			.name = "shvc-demo-history", .version = PROJECT_VERSION}),
 		rpchandler_history_stage(history),
 		{},
 	};
@@ -200,7 +200,6 @@ int main(int argc, char **argv) {
 	printf("Terminating due to: %s\n", strerror(rpcclient_errno(client)));
 
 	rpchandler_destroy(handler);
-	rpchandler_app_destroy(app);
 	rpchandler_login_destroy(login);
 	rpchandler_history_destroy(history);
 	rpclogger_destroy(client->logger_in);

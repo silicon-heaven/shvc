@@ -163,11 +163,11 @@ int main(int argc, char **argv) {
 
 	/* Define a stages for RPC Handler using App and Responses Handler */
 	rpchandler_login_t login = rpchandler_login_new(&url->login);
-	rpchandler_app_t app = rpchandler_app_new("shvc-demo-client", PROJECT_VERSION);
 	rpchandler_responses_t responses = rpchandler_responses_new();
 	const struct rpchandler_stage stages[] = {
 		rpchandler_login_stage(login),
-		rpchandler_app_stage(app),
+		rpchandler_app_stage(&(struct rpchandler_app_conf){
+			.name = "shvc-demo-client", .version = PROJECT_VERSION}),
 		rpchandler_responses_stage(responses),
 		{},
 	};
@@ -235,7 +235,6 @@ cleanup:
 	pthread_join(rpchandler_thread, NULL);
 	rpchandler_destroy(handler);
 	rpchandler_responses_destroy(responses);
-	rpchandler_app_destroy(app);
 	rpchandler_login_destroy(login);
 	rpclogger_destroy(client->logger_in);
 	rpclogger_destroy(client->logger_out);

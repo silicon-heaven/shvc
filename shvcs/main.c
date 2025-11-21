@@ -66,11 +66,11 @@ int main(int argc, char **argv) {
 		rpclogger_new(&rpclogger_stderr_funcs, "=> ", logsiz, conf.verbose);
 
 	rpchandler_login_t login = rpchandler_login_new(&rpcurl->login);
-	rpchandler_app_t app = rpchandler_app_new("shvcsub", PROJECT_VERSION);
 	rpchandler_signals_t signals = rpchandler_signals_new(signalmsg, NULL);
 	const struct rpchandler_stage stages[] = {
 		rpchandler_login_stage(login),
-		rpchandler_app_stage(app),
+		rpchandler_app_stage(&(struct rpchandler_app_conf){
+			.name = "shvcsub", .version = PROJECT_VERSION}),
 		rpchandler_signals_stage(signals),
 		{},
 	};
@@ -101,7 +101,6 @@ int main(int argc, char **argv) {
 	}
 
 	rpchandler_destroy(handler);
-	rpchandler_app_destroy(app);
 	rpchandler_login_destroy(login);
 	rpchandler_signals_destroy(signals);
 	rpclogger_destroy(client->logger_in);

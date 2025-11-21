@@ -82,12 +82,12 @@ int main(int argc, char **argv) {
 	};
 
 	rpchandler_login_t login = rpchandler_login_new(&rpcurl->login);
-	rpchandler_app_t app = rpchandler_app_new("shvc-demo-device", PROJECT_VERSION);
 	rpchandler_file_t file = rpchandler_file_new(&file_cb);
 
 	const struct rpchandler_stage stages[] = {
 		rpchandler_login_stage(login),
-		rpchandler_app_stage(app),
+		rpchandler_app_stage(&(struct rpchandler_app_conf){
+			.name = "shvc-demo-device", .version = PROJECT_VERSION}),
 		rpchandler_file_stage(file),
 		(struct rpchandler_stage){.funcs = &device_handler_funcs, .cookie = state},
 		{},
@@ -117,7 +117,6 @@ int main(int argc, char **argv) {
 
 	rpchandler_destroy(handler);
 	rpchandler_file_destroy(file);
-	rpchandler_app_destroy(app);
 	rpchandler_login_destroy(login);
 	device_state_free(state);
 	rpclogger_destroy(client->logger_in);

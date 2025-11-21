@@ -14,9 +14,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   if `RPCHANDLER_MSG_DONE` or `RPCHANDLER_MSG_STOP` is returned
 - `cpitem_extract_int`, `cpitem_extract_uint`, `cpdtoi`, and
   `cpitem_extract_decimal_int` are no longer modifying destination on failure
+- `rpchandler_app_stage` takes structure arguments `rpchandler_app_conf` that
+  unifies parameters and allows to disable `.app:date` method.
 
 ### Fixed
 - `rpchandler_file` handling of invalid messages
+
+### Removed
+- `rpchandler_app_new` and `rpchandler_app_destroy` as not needed
 
 
 ## [0.6.3] - 2025-11-11

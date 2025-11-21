@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdlib.h>
 #include <shv/rpchandler_app.h>
 #include <shv/rpchandler_impl.h>
@@ -5,24 +6,24 @@
 
 #include "app_method.gperf.h"
 
-struct rpchandler_app {
-	const char *name;
-	const char *version;
-};
-
-
 static void rpc_ls(void *cookie, struct rpchandler_ls *ctx) {
 	if (ctx->path[0] == '\0')
 		rpchandler_ls_result_const(ctx, ".app");
 }
 
 static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
+	struct rpchandler_app_conf *conf = cookie;
 	if (strcmp(ctx->path, ".app"))
 		return;
 
 	if (ctx->name) { /* Faster match against gperf */
-		if (gperf_rpchandler_app_method(ctx->name, strlen(ctx->name)))
+		const struct gperf_rpchandler_app_method_match *match =
+			gperf_rpchandler_app_method(ctx->name, strlen(ctx->name));
+		if (match != NULL) {
+			if (match->method == M_DATE && conf->disable_date)
+				return;
 			rpchandler_dir_exists(ctx);
+		}
 		return;
 	}
 
@@ -59,17 +60,18 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 			.name = "ping",
 			.access = RPCACCESS_BROWSE,
 		});
-	rpchandler_dir_result(ctx,
-		&(const struct rpcdir){
-			.name = "date",
-			.result = "t",
-			.flags = RPCDIR_F_GETTER,
-			.access = RPCACCESS_BROWSE,
-		});
+	if (!conf->disable_date)
+		rpchandler_dir_result(ctx,
+			&(const struct rpcdir){
+				.name = "date",
+				.result = "t",
+				.flags = RPCDIR_F_GETTER,
+				.access = RPCACCESS_BROWSE,
+			});
 }
 
 static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
-	struct rpchandler_app *rpchandler_app = cookie;
+	struct rpchandler_app_conf *conf = cookie;
 	if (ctx->meta.type != RPCMSG_T_REQUEST || strcmp(ctx->meta.path, ".app"))
 		return RPCHANDLER_MSG_SKIP;
 	const struct gperf_rpchandler_app_method_match *match =
@@ -92,13 +94,13 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 			}
 			case M_NAME: {
 				cp_pack_t pack = rpchandler_msg_new_response(ctx);
-				cp_pack_str(pack, rpchandler_app->name ?: "shvc");
+				cp_pack_str(pack, conf->name ?: "shvc");
 				rpchandler_msg_send_response(ctx, pack);
 				break;
 			}
 			case M_VERSION: {
 				cp_pack_t pack = rpchandler_msg_new_response(ctx);
-				cp_pack_str(pack, rpchandler_app->version ?: PROJECT_VERSION);
+				cp_pack_str(pack, conf->version ?: PROJECT_VERSION);
 				rpchandler_msg_send_response(ctx, pack);
 				break;
 			}
@@ -106,6 +108,9 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 				rpchandler_msg_send_response_void(ctx);
 				break;
 			case M_DATE: {
+				if (conf->disable_date)
+					return RPCHANDLER_MSG_SKIP;
+
 				cp_pack_t pack = rpchandler_msg_new_response(ctx);
 				cp_pack_datetime(pack, clock_cpdatetime());
 				rpchandler_msg_send_response(ctx, pack);
@@ -122,19 +127,7 @@ static const struct rpchandler_funcs rpc_funcs = {
 };
 
 
-rpchandler_app_t rpchandler_app_new(const char *name, const char *version) {
-	rpchandler_app_t res = malloc(sizeof *res);
-	*res = (struct rpchandler_app){
-		.name = name,
-		.version = version,
-	};
-	return res;
-}
-
-void rpchandler_app_destroy(rpchandler_app_t rpchandler_app) {
-	free(rpchandler_app);
-}
-
-struct rpchandler_stage rpchandler_app_stage(rpchandler_app_t rpchandler_app) {
-	return (struct rpchandler_stage){.funcs = &rpc_funcs, .cookie = rpchandler_app};
+struct rpchandler_stage rpchandler_app_stage(
+	const struct rpchandler_app_conf *conf) {
+	return (struct rpchandler_stage){.funcs = &rpc_funcs, .cookie = (void *)conf};
 }
