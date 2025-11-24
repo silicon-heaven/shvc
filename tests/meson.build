@@ -9,7 +9,7 @@ python = pymod.find_installation(
 )
 pyshvbroker = find_program('pyshvbroker')
 
-valgrind = find_program('valgrind')
+valgrind = find_program('valgrind', required: false)
 if valgrind.found()
   valgrind_wrapper = [python, meson.current_source_dir() + '/valgrind-wrapper.py', valgrind]
   add_test_setup(

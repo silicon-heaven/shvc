@@ -4,11 +4,8 @@
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 import os
 import pathlib
-import sys
 
 import docutils
-
-sys.path.insert(0, str(pathlib.Path("..").absolute()))
 
 project = "Silicon Heaven in C"
 copyright = "SPDX-License-Identifier: MIT"

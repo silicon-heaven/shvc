@@ -137,7 +137,7 @@
           sphinx-autobuild
         ];
         inputsFrom = [
-          self.packages.${pkgs.hostPlatform.system}.default
+          self.packages.${pkgs.stdenv.hostPlatform.system}.default
         ];
       };
     });
