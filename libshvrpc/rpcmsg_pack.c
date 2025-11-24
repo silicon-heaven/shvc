@@ -136,10 +136,9 @@ bool rpcmsg_pack_vferror(cp_pack_t pack, const struct rpcmsg_meta *meta,
 		return false;
 
 	va_list cargs;
-	va_copy(cargs, args);
-	// https://github.com/llvm/llvm-project/issues/40656
-	int siz = vsnprintf( // NOLINT(clang-analyzer-valist.Uninitialized)
-		NULL, 0, fmt, cargs);
+	// Bug: https://github.com/llvm/llvm-project/issues/40656
+	va_copy(cargs, args); // NOLINT(clang-analyzer-valist.Uninitialized)
+	int siz = vsnprintf(NULL, 0, fmt, cargs);
 	va_end(cargs);
 	char msg[siz + 1];
 	assert(vsnprintf(msg, siz + 1, fmt, args) == siz);

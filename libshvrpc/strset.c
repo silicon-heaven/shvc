@@ -1,6 +1,7 @@
 #include "strset.h"
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 
 static unsigned strhash(const char *str) {
@@ -38,10 +39,14 @@ static bool add(struct strset *set, const char *str, bool dyn) {
 		set->siz = set->siz * 2 ?: 2;
 		set->items = realloc(set->items, set->siz * sizeof(*set->items));
 	}
+	assert(pos < set->siz);
 	if (pos < set->cnt)
 		memmove(set->items + pos + 1, set->items + pos,
 			(set->cnt - pos) * sizeof *set->items);
+	// False-positive invalid access. Assumes size to be 2 but pos to be 2.
+	// NOLINTNEXTLINE(clang-analyzer-security.ArrayBound)
 	set->items[pos] = (struct strset_item){.hash = hsh, .str = str, .dyn = dyn};
+
 	set->cnt++;
 	return true;
 }

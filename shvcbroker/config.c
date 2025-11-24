@@ -112,6 +112,8 @@ static char **unpack_str_list(
 		return res;
 	}
 	if (tp != CPITEM_LIST)
+		// For some reason ignores va_start that is in the macro.
+		// NOLINTNEXTLINE(clang-analyzer-valist.Uninitialized)
 		UNPACK_VERROR(obstack, "Must be String or List of strings");
 
 	size_t cnt = 0;
@@ -120,6 +122,7 @@ static char **unpack_str_list(
 	CLEANUP_FREE char **list = NULL;
 	for_cp_unpack_ilist(unpack, item, i) {
 		if (item->type != CPITEM_STRING)
+			// NOLINTNEXTLINE(clang-analyzer-valist.Uninitialized)
 			UNPACK_VERROR(obstack, "Must be String", "[]", i);
 		list = realloc(list, (cnt + 2) * sizeof *list);
 		list[cnt++] = cp_unpack_strdupo(unpack, item, obstack);
