@@ -11,16 +11,8 @@ struct rpchandler_device_alerts {
 	cp_pack_t pack;
 };
 
-struct rpchandler_device {
-	const char *name;
-	const char *version;
-	const char *serial_number;
-	void (*alerts)(rpchandler_device_alerts_t);
-	void (*reset)(void);
-};
-
 void rpchandler_device_signal_alerts(
-	rpchandler_device_t rpchandler_device, rpchandler_t handler) {
+	const struct rpchandler_device_conf *conf, rpchandler_t handler) {
 	// TODO Right now there is not unified API to send signals (either broker or
 	// handler would have to be used here)
 }
@@ -31,15 +23,15 @@ bool rpchandler_device_alert(
 }
 
 static void rpc_ls(void *cookie, struct rpchandler_ls *ctx) {
-	struct rpchandler_device *rpchandler_device = cookie;
+	struct rpchandler_device_conf *conf = cookie;
 	if (ctx->path[0] == '\0')
 		rpchandler_ls_result_const(ctx, ".device");
-	else if (!strcmp(ctx->path, ".device") && rpchandler_device->alerts)
+	else if (!strcmp(ctx->path, ".device") && conf->alerts)
 		rpchandler_ls_result_const(ctx, "alerts");
 }
 
 static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
-	struct rpchandler_device *rpchandler_device = cookie;
+	struct rpchandler_device_conf *conf = cookie;
 	if (!strcmp(ctx->path, ".device")) {
 		if (ctx->name) { /* Faster match against gperf */
 			if (gperf_rpchandler_device_method(ctx->name, strlen(ctx->name)))
@@ -80,7 +72,7 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 				.name = "reset",
 				.access = RPCACCESS_COMMAND,
 			});
-	} else if (!strcmp(ctx->path, ".device/alerts") && rpchandler_device->alerts) {
+	} else if (!strcmp(ctx->path, ".device/alerts") && conf->alerts) {
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "get",
@@ -95,7 +87,7 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 }
 
 static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx) {
-	struct rpchandler_device *rpchandler_device = cookie;
+	struct rpchandler_device_conf *conf = cookie;
 	if (ctx->meta.type != RPCMSG_T_REQUEST)
 		return RPCHANDLER_MSG_SKIP;
 	if (!strcmp(ctx->meta.path, ".device")) {
@@ -108,7 +100,7 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 					/* No need to check for browse level access */
 					if (rpchandler_msg_valid_nullparam(ctx)) {
 						cp_pack_t pack = rpchandler_msg_new_response(ctx);
-						cp_pack_str(pack, rpchandler_device->name);
+						cp_pack_str(pack, conf->name ?: "UNKNOWN");
 						rpchandler_msg_send_response(ctx, pack);
 					}
 					return RPCHANDLER_MSG_DONE;
@@ -116,7 +108,10 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 					/* No need to check for browse level access */
 					if (rpchandler_msg_valid_nullparam(ctx)) {
 						cp_pack_t pack = rpchandler_msg_new_response(ctx);
-						cp_pack_str(pack, rpchandler_device->version);
+						if (conf->version)
+							cp_pack_str(pack, conf->version);
+						else
+							cp_pack_null(pack);
 						rpchandler_msg_send_response(ctx, pack);
 					}
 					return RPCHANDLER_MSG_DONE;
@@ -124,7 +119,10 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 					/* No need to check for browse level access */
 					if (rpchandler_msg_valid_nullparam(ctx)) {
 						cp_pack_t pack = rpchandler_msg_new_response(ctx);
-						cp_pack_str(pack, rpchandler_device->serial_number);
+						if (conf->serial_number)
+							cp_pack_str(pack, conf->serial_number);
+						else
+							cp_pack_null(pack);
 						rpchandler_msg_send_response(ctx, pack);
 					}
 					return RPCHANDLER_MSG_DONE;
@@ -144,17 +142,16 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 					if (ctx->meta.access < RPCACCESS_COMMAND)
 						break;
 					if (rpchandler_msg_valid_nullparam(ctx)) {
-						if (rpchandler_device->reset) {
+						if (conf->reset) {
 							rpchandler_msg_send_response_void(ctx);
-							rpchandler_device->reset();
+							conf->reset();
 						} else
 							rpchandler_msg_send_error(ctx,
 								RPCERR_NOT_IMPLEMENTED, "Reset is not available");
 					}
 					return RPCHANDLER_MSG_DONE;
 			}
-	} else if (!strcmp(ctx->meta.path, ".device/alerts") &&
-		rpchandler_device->alerts) {
+	} else if (!strcmp(ctx->meta.path, ".device/alerts") && conf->alerts) {
 		if (!strcmp(ctx->meta.method, "get")) {
 			if (ctx->meta.access < RPCACCESS_READ)
 				return RPCHANDLER_MSG_DONE;
@@ -162,7 +159,7 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 				struct rpchandler_device_alerts alerts;
 				alerts.pack = rpchandler_msg_new_response(ctx);
 				cp_pack_list_begin(alerts.pack);
-				rpchandler_device->alerts(&alerts);
+				conf->alerts(&alerts);
 				cp_pack_container_end(alerts.pack);
 				rpchandler_msg_send_response(ctx, alerts.pack);
 			}
@@ -178,26 +175,7 @@ static const struct rpchandler_funcs rpc_funcs = {
 	.msg = rpc_msg,
 };
 
-rpchandler_device_t rpchandler_device_new(const char *name, const char *version,
-	const char *serial_number, void (*alerts)(rpchandler_device_alerts_t),
-	void (*reset)(void)) {
-	rpchandler_device_t res = malloc(sizeof *res);
-	*res = (struct rpchandler_device){
-		.name = name,
-		.version = version,
-		.serial_number = serial_number,
-		.alerts = alerts,
-		.reset = reset,
-	};
-	return res;
-}
-
-void rpchandler_device_destroy(rpchandler_device_t rpchandler_device) {
-	free(rpchandler_device);
-}
-
 struct rpchandler_stage rpchandler_device_stage(
-	rpchandler_device_t rpchandler_device) {
-	return (struct rpchandler_stage){
-		.funcs = &rpc_funcs, .cookie = rpchandler_device};
+	const struct rpchandler_device_conf *conf) {
+	return (struct rpchandler_stage){.funcs = &rpc_funcs, .cookie = (void *)conf};
 }

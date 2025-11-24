@@ -170,7 +170,7 @@ enum rpcclient_msg_type {
 /** Provides access to the general unpack handle for this client and message.
  *
  * It can be used only between :c:macro:`rpcclient_nextmsg` and
- * :c:macro:`rpcclient_validmsg` or :c:macro:`rpcclient_ignoremsg calls.
+ * :c:macro:`rpcclient_validmsg` or :c:macro:`rpcclient_ignoremsg` calls.
  *
  * Unpack always unpacks only a single message. The :c:enumerator:`CPERR_EOF`
  * error signals end of the message not end of the connection.
