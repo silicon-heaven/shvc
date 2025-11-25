@@ -80,6 +80,11 @@ static ssize_t xread(struct ctx *c, char *buf, size_t siz, int timeout) {
 			return -1;
 		} else if (pollres == 0)
 			return -2;
+		if (pfd.revents & POLLHUP) {
+			/* Detect early to prevent SIGPIPE to be triggered. */
+			c->errnum = EPIPE;
+			return -1;
+		}
 		break;
 	}
 
@@ -137,6 +142,11 @@ static bool xwrite(struct ctx *c, const void *buf, size_t siz) {
 			return false;
 		} else if (c->errnum)
 			c->errnum = 0;
+		if (pfd.revents & POLLHUP) {
+			/* Detect early to prevent SIGPIPE to be triggered. */
+			c->errnum = EPIPE;
+			return false;
+		}
 
 		ssize_t i = write(c->wfd, data, siz);
 		if (i == -1) {
