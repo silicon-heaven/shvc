@@ -25,11 +25,8 @@ static void propagate_msg(struct rpchandler_msg *ctx, struct clientctx *client) 
 
 static inline enum rpchandler_msg_res rpc_msg_request(
 	struct clientctx *c, struct rpchandler_msg *ctx) {
-	rpcaccess_t newaccess = c->role
-		? c->role->access(c->role->access_cookie, ctx->meta.path, ctx->meta.method)
-		: RPCACCESS_NONE;
-	ctx->meta.access = ctx->meta.access < newaccess ? ctx->meta.access : newaccess;
-	if (rpcbroker_api_msg(c, ctx))
+	/* Note: The access stage already updated the access level. */
+	if (ctx->meta.type == RPCMSG_T_REQUEST && rpcbroker_api_msg(c, ctx))
 		return RPCHANDLER_MSG_DONE;
 
 	/* Propagate to some mount point if not handled locally */
@@ -115,18 +112,14 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 	struct clientctx *c = cookie;
 	switch (ctx->meta.type) {
 		case RPCMSG_T_REQUEST:
+		case RPCMSG_T_REQUEST_ABORT:
 			return rpc_msg_request(c, ctx);
 		case RPCMSG_T_RESPONSE:
 		case RPCMSG_T_ERROR:
+		case RPCMSG_T_RESPONSE_DELAY:
 			return rpc_msg_response(c, ctx);
 		case RPCMSG_T_SIGNAL:
 			return rpc_msg_signal(c, ctx);
-		case RPCMSG_T_REQUEST_ABORT:
-			// TODO add support!
-			break;
-		case RPCMSG_T_RESPONSE_DELAY:
-			// TODO add support!
-			break;
 		case RPCMSG_T_INVALID:
 			break;
 	}

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Fixed
 - SIGPIPE signal being triggered in some cases with stream transports
+- request aborts and response delays not being propagated through broker
+- access level not being limited for request aborts when passing through broker
 
 
 ## [0.7.0] - 2025-11-24

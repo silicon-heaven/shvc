@@ -14,7 +14,8 @@ static enum rpchandler_msg_res access_msg(void *cookie, struct rpchandler_msg *c
 		return RPCHANDLER_MSG_DONE;
 	}
 
-	if (ctx->meta.type == RPCMSG_T_REQUEST) {
+	if (ctx->meta.type == RPCMSG_T_REQUEST ||
+		ctx->meta.type == RPCMSG_T_REQUEST_ABORT) {
 		rpcaccess_t newaccess = RPCACCESS_NONE;
 		if (c->role)
 			newaccess = c->role->access(
