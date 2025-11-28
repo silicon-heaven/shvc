@@ -8,7 +8,7 @@ import docutils
 
 
 project = "Elektroline C project Template"
-copyright = "2023, Elektroline a.s."
+copyright = "2023-2025, Elektroline a.s."
 author = "Elektroline a.s."
 
 
@@ -19,7 +19,8 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.todo",
     "sphinx_book_theme",
-    "myst_parser",
+    "sphinx_mdinclude",
+    "sphinx_multiversion",
     "hawkmoth",
 ]
 
@@ -33,11 +34,30 @@ html_show_sourcelink = True
 html_show_copyright = False
 html_theme = "sphinx_book_theme"
 # html_static_path = ["_static"]
+html_sidebars = {
+    "**": [
+        "navbar-logo.html",
+        "icon-links.html",
+        "search-button-field.html",
+        "sbt-sidebar-nav.html",
+        "versioning.html",
+    ]
+}
+html_theme_options = {
+    "show_toc_level": 3,
+    "repository_url": "https://gitlab.elektroline.cz/emb/template/python",
+    "repository_branch": "master",
+    "path_to_docs": "docs",
+    "use_source_button": True,
+    "use_repository_button": True,
+    "use_edit_page_button": True,
+    "use_issues_button": True,
+}
 
+smv_tag_whitelist = r"^v.*$"
+smv_branch_whitelist = r"^master$"
+smv_remote_whitelist = r"^.*$"
 
-myst_enable_extensions = [
-    "colon_fence",
-]
 
 hawkmoth_root = os.path.abspath("../include")
 hawkmoth_source_uri = "https://gitlab.elektroline.cz/emb/template/c/-/blob/master/include/{source}#L{line}"

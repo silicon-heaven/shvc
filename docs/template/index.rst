@@ -6,11 +6,10 @@ of the template. It is not intended as comprehensive introduction and a lot is
 left on the reader to get from the code but it should help with some common
 tasks.
 
-```{toctree}
-fork
-gperf
-subprojects
-unittests
-integration_tests
-docs
-```
+.. toctree::
+  using
+  gperf
+  subprojects
+  unittests
+  integration_tests
+  docs

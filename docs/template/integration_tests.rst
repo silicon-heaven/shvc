@@ -11,8 +11,8 @@ applications. The combination of parts of course makes sense in the library as
 well but thanks to library being tested as is we do not need anything else other
 than unit testing framework for that.
 
-We use here
-[Bats](https://bats-core.readthedocs.io/en/stable/tutorial.html#your-first-test),
+We use here `Bats
+<https://bats-core.readthedocs.io/en/stable/tutorial.html#your-first-test>`__,
 the Bash testing framework, to implement integration tests.  The point is to
 have something that spawns and manages processes simply and produces TAP output
 (for integration with other testing frameworks). The shell is probably the

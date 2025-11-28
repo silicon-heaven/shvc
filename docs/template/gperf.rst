@@ -2,7 +2,7 @@ gperf
 =====
 
 GNU gperf is a perfect hash function generator. The online manual is available
-[here](https://www.gnu.org/software/gperf/manual/gperf.html).
+`here <https://www.gnu.org/software/gperf/manual/gperf.html>`__.
 
 The integration to build system is done such a way that gperf is required only
 for development. It is not required for distribution archives as those have
@@ -14,12 +14,12 @@ Usage
 
 To use gperf you have to create gperf file. To include it in the build system
 you have to add source file to your project that is processed by it. The code is
-simply `gperf.process("your.gperf")` for `your.gperf` file. Investigate the
-`libfoo/meson.build` file to see it.
+simply ``gperf.process("your.gperf")`` for ``your.gperf`` file. Investigate the
+``libfoo/meson.build`` file to see it.
 
 
 Removal
 -------
 
-If you do not need gperf then you can remove the `gperf` assignment in the top
-level `meson.build`.
+If you do not need gperf then you can remove the ``gperf`` assignment in the top
+level ``meson.build``.

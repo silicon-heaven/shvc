@@ -6,6 +6,10 @@ description should be changed to the description of your project. Do NOT
 forget to modify it together with the title of this file, board info and other
 resources mentioned in this readme file.
 
+* [📃 Sources](https://gitlab.elektroline.cz/emb/template/c)
+* [⁉️ Issue tracker](https://gitlab.elektroline.cz/emb/template/c/-/issues)
+* [📕 Documentation](https://gitlabpages.elektroline.cz/emb/template/c)
+
 ## Dependencies
 
 * [Meson build system](https://mesonbuild.com/)

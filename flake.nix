@@ -54,7 +54,8 @@
           (sphinxHook.overrideAttrs {
             propagatedBuildInputs = with python3Packages; [
               sphinx-book-theme
-              myst-parser
+              sphinx-mdinclude
+              sphinx-multiversion
               hawkmoth
             ];
           })
