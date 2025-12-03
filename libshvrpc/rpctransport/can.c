@@ -282,6 +282,8 @@ static void *_reader(void *arg) {
 		if (len < 1)
 			continue; /* Invalid frame (at least destination must be present) */
 		uint8_t dest = candata(frame)[0];
+		if (dest != local->address)
+			continue; /* Not for us. */
 		pthread_mutex_lock(&local->mtx);
 		struct ctx *ctx = getctx(local, src);
 		if (ctx == NULL && len > 2 && first && local->listenfd >= 0) {
