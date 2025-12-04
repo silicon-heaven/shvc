@@ -330,7 +330,7 @@ static void *_reader(void *arg) {
 				bool retransmit = ctx->rcounter == candata(frame)[1] &&
 					(!first || !memcmp(ctx->rdata, candata(frame) + 2, len - 2));
 				if (!retransmit && (first || ctx->rstate == RS_MSG)) {
-					bool seq = ((ctx->rcounter + 1) % 0x7f) ==
+					bool seq = ((ctx->rcounter + 1) & 0x7f) ==
 						(candata(frame)[1] & 0x7f);
 					if (first || seq) {
 						if (first) {
