@@ -99,8 +99,7 @@ struct ctx {
 # ifdef SHVC_NUTTXCAN
 	uint8_t wlen;
 # endif
-	bool wack;
-	uint8_t wackb;
+	frame_t wackframe;
 	pthread_cond_t wackcond;
 
 	FILE *fr, *fw;
@@ -160,32 +159,54 @@ static bool send_ack(struct ctx *ctx, uint8_t counter) {
 	return write(ctx->local->fd, &frame, siz) == siz;
 };
 
-static bool send_data_frame(struct ctx *c) {
-	pthread_mutex_lock(&c->mtx);
-	while (!c->wack) {
-		struct timespec at;
-		assert(clock_gettime(CLOCK_REALTIME, &at) == 0);
-		at.tv_sec += 1;
-		if (pthread_cond_timedwait(&c->wackcond, &c->mtx, &at) == ETIMEDOUT) {
-			pthread_mutex_unlock(&c->mtx);
-			return false;
-		}
-	}
+static inline bool _write_frame(int fd, frame_t *frame) {
 # ifdef SHVC_NUTTXCAN
-	c->wframe.cm_hdr.ch_dlc = can_bytes2dlc(c->wlen);
-	const size_t siz = CAN_MSGLEN(can_dlc2bytes(c->wframe.cm_hdr.ch_dlc));
+	const size_t siz = CAN_MSGLEN(can_dlc2bytes(frame->cm_hdr.ch_dlc));
 # else
 	const size_t siz = sizeof(frame_t);
 # endif
-	ssize_t i = write(c->local->fd, &c->wframe, siz);
-	if (i != siz) {
+	ssize_t i = write(fd, frame, siz);
+	return i == siz;
+}
+
+static bool send_data_frame(struct ctx *c) {
+	pthread_mutex_lock(&c->mtx);
+	if (canid(c->wackframe) != 0) { /* We need to wait for acknowledge */
+		struct timespec at;
+		assert(clock_gettime(CLOCK_REALTIME, &at) == 0);
+		for (int i = 0; canid(c->wackframe) != 0 && i < 5; i++) {
+			at.tv_sec += 1;
+			if (pthread_cond_timedwait(&c->wackcond, &c->mtx, &at) == ETIMEDOUT) {
+				/* On timeout repeat the first frame send. */
+				if (!_write_frame(c->local->fd, &c->wackframe)) {
+					pthread_mutex_unlock(&c->mtx);
+					return false;
+				}
+			}
+		}
+		if (canid(c->wackframe) != 0) {
+			/* In case acknowledge wasn't received in c. 5 seconds. */
+			canid(c->wackframe) = 0;
+			if (!(canid(c->wframe) & CANID_FIRST_MASK)) {
+				/* Do not send continuation frame if we failed to receve
+				 * acknowledge for the first frame.
+				 */
+				pthread_mutex_unlock(&c->mtx);
+				return false;
+			}
+		}
+	}
+
+# ifdef SHVC_NUTTXCAN
+	c->wframe.cm_hdr.ch_dlc = can_bytes2dlc(c->wlen);
+# endif
+	if (!_write_frame(c->local->fd, &c->wframe)) {
 		pthread_mutex_unlock(&c->mtx);
 		return false;
 	}
-	if (canid(c->wframe) & CANID_FIRST_MASK) {
-		c->wack = false;
-		c->wackb = candata(c->wframe)[1];
-	}
+
+	if (canid(c->wframe) & CANID_FIRST_MASK)
+		c->wackframe = c->wframe;
 	pthread_mutex_unlock(&c->mtx);
 	candata(c->wframe)[1] = (candata(c->wframe)[1] + 1) & 0x7f;
 	canid(c->wframe) = 0;
@@ -314,8 +335,8 @@ static void *_reader(void *arg) {
 
 			} else if (len == 2) { /* Acknowledgement */
 				pthread_mutex_lock(&ctx->mtx);
-				if (candata(frame)[1] == ctx->wackb) {
-					ctx->wack = true;
+				if (candata(frame)[1] == candata(ctx->wackframe)[1]) {
+					canid(ctx->wackframe) = 0;
 					pthread_cond_signal(&ctx->wackcond);
 				}
 				pthread_mutex_unlock(&ctx->mtx);
@@ -771,7 +792,6 @@ static struct ctx *ctx_new(
 		.rstate = RS_NONE,
 		.rcond = PTHREAD_COND_INITIALIZER,
 
-		.wack = true, /* Initial message is always accepted */
 		.wackcond = PTHREAD_COND_INITIALIZER,
 
 		.fr = fr,
