@@ -17,6 +17,13 @@ struct rid {
 
 static struct rid ri_d[] = {
 	{
+		"**",
+		.path = ".app",
+		.method = "name",
+		.signal = NULL,
+		false,
+	},
+	{
 		"**:*",
 		.path = ".app",
 		.method = "name",
@@ -47,6 +54,48 @@ static struct rid ri_d[] = {
 	{
 		"**:get",
 		.path = "sub/device/track",
+		.method = "get",
+		.signal = NULL,
+		true,
+	},
+	{
+		"test/*:get",
+		.path = "test",
+		.method = "get",
+		.signal = NULL,
+		false,
+	},
+	{
+		"test/**:get",
+		.path = "test",
+		.method = "get",
+		.signal = NULL,
+		true,
+	},
+	{
+		"test/e:get",
+		.path = "teste",
+		.method = "get",
+		.signal = NULL,
+		false,
+	},
+	{
+		"test/e:get",
+		.path = "test",
+		.method = "get",
+		.signal = NULL,
+		false,
+	},
+	{
+		"t?st:get",
+		.path = "test",
+		.method = "get",
+		.signal = NULL,
+		true,
+	},
+	{
+		"test/**/hello:get",
+		.path = "test/aa/bb/hello",
 		.method = "get",
 		.signal = NULL,
 		true,
@@ -260,6 +309,20 @@ static struct rid ri_d[] = {
 		.method = "get",
 		.signal = NULL,
 		true,
+	},
+	{
+		"test/**:ge[!t]",
+		.path = "test/device/track",
+		.method = "get",
+		.signal = NULL,
+		false,
+	},
+	{
+		"test/**:ge[!r-u]",
+		.path = "test/device/track",
+		.method = "get",
+		.signal = NULL,
+		false,
 	},
 };
 

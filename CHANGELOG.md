@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Login no longer requires always to receive nonce with `:hello` method,
   `:login` can now be used immediatelly
+- glob-star `**` now can match zero directories as well, thus `foo/**` can
+  match `foo` itself.
 
 
 ## [0.7.4] - 2025-12-09

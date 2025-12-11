@@ -85,6 +85,11 @@ static bool rpcri_match_one(const char *pattern, const char *string, size_t n) {
 					return true;
 			}
 		}
+		/* foo/\** can also match foo itself. Handle this special case */
+		if (*p == '/' && (n - (p - pattern)) == 3 && *(p + 1) == '*' &&
+			*(p + 2) == '*')
+			return true;
+
 		if (*p != *string)
 			return false;
 	}
