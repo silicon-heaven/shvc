@@ -182,6 +182,8 @@ bool rpclogin_validate_password(const struct rpclogin *login,
 		case RPC_LOGIN_PLAIN:
 			return !strcmp(password, lpassword);
 		case RPC_LOGIN_SHA1:
+			if (nonce == NULL || *nonce == '\0')
+				return false; /* Can't verify without nonce. */
 			sha1ctx_t ctx = sha1_new();
 			sha1_update(ctx, (const uint8_t *)nonce, strlen(nonce));
 			sha1_update(ctx, (const uint8_t *)password, strlen(password));

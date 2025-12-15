@@ -43,7 +43,7 @@ void rpcbroker_api_login_msg(struct clientctx *c, struct rpchandler_msg *ctx) {
 			cp_pack_container_end(pack);
 			rpchandler_msg_send(ctx);
 			return;
-		} else if (c->nonce[0] != '\0' && !strcmp(ctx->meta.method, "login")) {
+		} else if (!strcmp(ctx->meta.method, "login")) {
 			struct rpclogin *l =
 				rpclogin_unpack(ctx->unpack, ctx->item, rpchandler_obstack(ctx));
 			if (!rpchandler_msg_valid(ctx))

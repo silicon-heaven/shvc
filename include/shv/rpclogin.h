@@ -97,7 +97,7 @@ struct rpclogin *rpclogin_unpack(
  * :return: ``true`` in case login matches the authoritation password and
  *   ``false`` otherwise.
  */
-[[gnu::nonnull]]
+[[gnu::nonnull(1, 2)]]
 bool rpclogin_validate_password(const struct rpclogin *login,
 	const char *password, const char *nonce, enum rpclogin_type type);
 
