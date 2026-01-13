@@ -3,10 +3,32 @@
 # * It creates the release commit and tag
 # * It creates Gitlab release from Gitlab CI
 set -eu
-cd "${0%/*}"
+cd "$(dirname "$0")"
 
 # This should be set to the appropriate project name.
 project_name="CHANGE THIS IN release.sh!"
+
+# This function can be modified to provide a different type for different
+# assets. The assets are auto-included based on the .gitlab-ci.yml but their
+# type has to be provided.
+# The possible results are:
+# * runbook
+# * package
+# * image
+# * other
+asset_type() {
+	local file="$1"
+	case "$file" in
+	*.AppImage)
+		echo "image"
+		;;
+	*)
+		echo "other"
+		;;
+	esac
+}
+
+################################################################################
 
 fail() {
 	echo "$@" >&2
@@ -90,30 +112,24 @@ else
 	[[ "$(releases | head -1)" == "$version" ]] \
 		|| fail "The version $version isn't the latest release in CHANGELOG.md "
 
-	changelog="$(latest_changelog)"
-	[[ -n "$changelog" ]] \
-		|| fail "Changelog is empty!"
-
-	declare -a args
-	while read -r dists; do
+	declare -a files
+	while IFS=$'\t' read -r dists; do
 		for dist in $dists; do
 			[ -f "$dist" ] || continue # ignore missing / not built / directories
 			ndist="${CI_PROJECT_NAME}-${dist%%.*}-${version}.${dist#*.}"
-			spec="release/${version}/${ndist}"
-			url="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${spec}"
-			echo "$dist -> $url"
-			curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
-				--upload-file "${dist}" "${url}"
-			args+=("--assets-link" "{\"name\":\"${dist}\",\"url\":\"${url}\"}")
+			mv "$dist" "$ndist"
+			files+=("$ndist#$dist#$(asset_type "$dist")")
 		done
 	done < <(
 		# shellcheck disable=SC2016
-		yq '[. as $root | .release.needs[] | select(.artifacts) | $root[.job].artifacts.paths // $root[$root[.job].extends].artifacts.paths] | flatten | unique' .gitlab-ci.yml
+		yq -r '[. as $root | .release.needs[] | select(.artifacts) | $root[.job].artifacts.paths // $root[$root[.job].extends].artifacts.paths] | flatten | unique | @tsv' .gitlab-ci.yml
 	)
 
-	release-cli create \
+	glab release create "$CI_COMMIT_TAG" \
 		--name "Release $version" \
-		--tag-name "$CI_COMMIT_TAG" \
-		--description "$changelog" \
-		"${args[@]}"
+		--notes - \
+		--use-package-registry \
+		--package-name "release" \
+		"${files[@]}" \
+		<(latest_changelog)
 fi
