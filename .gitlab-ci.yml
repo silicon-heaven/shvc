@@ -236,7 +236,7 @@ release:
     - job: nix-appimage
       artifacts: true
   before_script:
-    - apk update && apk add bash zip curl yq-python
+    - apk update && apk add bash yq-python
   script:
     - ./release.sh
 
