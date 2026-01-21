@@ -104,13 +104,13 @@ if ! in_ci; then
 
 else
 
-	[[ "$CI_COMMIT_TAG" =~ ^v ]] \
-		|| fail "This is not a release tag: $CI_COMMIT_TAG"
+	[[ "$CI_COMMIT_TAG" =~ ^v ]] ||
+		fail "This is not a release tag: $CI_COMMIT_TAG"
 	version="${CI_COMMIT_TAG#v}"
-	is_semver "$version" \
-		|| fail "Version has to be valid semantic version!"
-	[[ "$(releases | head -1)" == "$version" ]] \
-		|| fail "The version $version isn't the latest release in CHANGELOG.md "
+	is_semver "$version" ||
+		fail "Version has to be valid semantic version!"
+	[[ "$(releases | head -1)" == "$version" ]] ||
+		fail "The version $version isn't the latest release in CHANGELOG.md "
 
 	declare -a files
 	while IFS=$'\t' read -r dists; do

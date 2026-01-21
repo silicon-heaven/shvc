@@ -21,8 +21,8 @@ foo() {
 	# failure. Thus we close them for valgrind process. We also have to filter
 	# out the valgrind output to allow easier matching and thus we swap stderr
 	# with stdout, perform filtering and swap them around again.
-	${VALGRIND:-} "${TEST_FOO:-foo}" "$@" 3>&1 2>&1 1>&3 3>&- 4>&- \
-		| while read -r line; do
+	${VALGRIND:-} "${TEST_FOO:-foo}" "$@" 3>&1 2>&1 1>&3 3>&- 4>&- |
+		while read -r line; do
 			if [[ "$line" =~ ^==.*==\ .* || "$line" =~ ^--.*--\ .* ]]; then
 				echo "$line" >&4
 			else
