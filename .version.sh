@@ -25,7 +25,7 @@ while read -r line; do
 		fi
 		break
 	fi
-done <"${0%/*}/CHANGELOG.md"
+done <CHANGELOG.md
 
 if [[ "$unreleased" == y ]] || [[ "${GIT_REV:-}" =~ -dirty$ ]]; then
 	label="${label}${label:+.}${GIT_REV:-}"
