@@ -1,4 +1,4 @@
 *
-!gitignore
-!fetch.nix
+!.gitignore
+!default.nix
 !uriparser.wrap
