@@ -83,7 +83,7 @@ async def fixture_demo_device(demo_device_exec, broker, url):
                 [
                     {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
                     {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
-                    {1: "get", 2: 2, 3: "i(0,)|n", 4: "[i]", 5: 8, 6: {"chng": None}},
+                    {1: "get", 2: 2, 3: "!get", 4: "[i]", 5: 8, 6: {"chng": None}},
                     {1: "set", 2: 4, 3: "[i]", 5: 16},
                 ],
             )

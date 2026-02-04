@@ -33,7 +33,7 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 		rpchandler_dir_result(ctx,
 			&(const struct rpcdir){
 				.name = "get",
-				.param = "i(0,)|n",
+				.param = "!get",
 				.result = "[i]",
 				.flags = RPCDIR_F_GETTER,
 				.access = RPCACCESS_READ,
