@@ -25,6 +25,7 @@
       ...
     }:
       fetchgit {
+        name = "${name}-${revision}";
         inherit hash url;
         rev = revision;
         fetchSubmodules = clone-recursive;
