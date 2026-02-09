@@ -16,7 +16,7 @@
     inherit (nixpkgs.lib) genAttrs composeManyExtensions;
     inherit (semver.lib) changelog;
     forSystems = genAttrs (import systems);
-    withPkgs = func: forSystems (system: func self.legacyPackages.${system});
+    forSystemsPkgs = func: forSystems (system: func system self.legacyPackages.${system});
 
     name = "template";
     version = changelog.currentRelease ./CHANGELOG.md self.sourceInfo;
@@ -35,6 +35,7 @@
       check-suite,
       bats,
       bash,
+      subprojects ? (callPackage ./subprojects {}),
     }:
       stdenv.mkDerivation {
         pname = name;
@@ -42,11 +43,7 @@
         GIT_REV = self.shortRev or self.dirtyShortRev;
         outputs = ["out" "doc"];
         nativeBuildInputs = [
-          (callPackage ./subprojects/.fetch.nix {
-            inherit src;
-            rev = self.rev or self.dirtyRev or null;
-            hash = "sha256-OMlQ2CC1GNE/ZIJgNLu294X3mccCsLrwRRRUd26SDuI=";
-          })
+          subprojects
           gperf
           meson
           ninja
@@ -77,6 +74,7 @@
     overlays = {
       pkgs = final: _: {
         "${name}" = final.callPackage package {};
+        subprojects = final.callPackage ./subprojects {};
       };
       default = composeManyExtensions [
         check-suite.overlays.default
@@ -84,11 +82,11 @@
       ];
     };
 
-    packages = withPkgs (pkgs: {
+    packages = forSystemsPkgs (_: pkgs: {
       default = pkgs."${name}";
     });
 
-    devShells = withPkgs (pkgs: {
+    devShells = forSystemsPkgs (system: pkgs: {
       default = pkgs.mkShell {
         packages = with pkgs; [
           # Linters and formatters
@@ -107,7 +105,10 @@
           sphinx-autobuild
         ];
         inputsFrom = [
-          self.packages.${pkgs.stdenv.hostPlatform.system}.default
+          (self.packages.${system}.default.override {
+            # No need to build this for development shell
+            subprojects = pkgs.emptyFile;
+          })
         ];
       };
     });
@@ -115,7 +116,7 @@
     checks = forSystems (system: {
       inherit (self.packages.${system}) default;
     });
-    formatter = withPkgs (pkgs: pkgs.alejandra);
+    formatter = forSystemsPkgs (_: pkgs: pkgs.alejandra);
 
     legacyPackages =
       forSystems (system:
