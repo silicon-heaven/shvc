@@ -17,6 +17,7 @@
     "wrap-git" = {
       name,
       hash,
+      diff-files ? [],
       # The following keys are from wrap file
       url,
       revision,
@@ -29,6 +30,12 @@
         rev = revision;
         fetchSubmodules = clone-recursive;
         preFetch = "out=\"$out/${name}\"";
+        postFetch = lib.optionalString (diff-files != []) ''
+          for patch in ${lib.escapeShellArgs diff-files}; do
+            echo "Applying patch:" "$patch"
+            patch -d $out -p1 <"$patch"
+          done
+        '';
       };
   };
 
@@ -48,14 +55,18 @@
             match = builtins.match "([[:graph:]]+)[[:space:]]*=[[:space:]]*([[:graph:]]+)[[:space:]]*" line;
           in
             if match == null
-            then (builtins.traceVerbose "Ignoring Wrap line: ${file}: ${line}" null)
+            then (builtins.traceVerbose "Ignoring Wrap line in ${file}: ${line}" null)
             else lib.nameValuePair (lib.elemAt match 0) (lib.elemAt match 1))
           (lib.tail wrapLines))
         );
+        diff-files =
+          lib.optionals (attrs ? diff_files)
+          (map (patch: builtins.path {path = dir + "/packagefiles/${lib.trim patch}";})
+            (lib.splitString "," attrs.diff_files));
         fetcher = fetchers."${type}" or (lib.abort "Unsupported wrap: ${type}");
         repo = fetcher (attrs
           // {
-            inherit name;
+            inherit name diff-files;
             inherit (v) hash;
           });
       in
