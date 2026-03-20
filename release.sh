@@ -125,10 +125,6 @@ else
 		yq -r '[. as $root | .release.needs[] | select(.artifacts) | $root[.job].artifacts.paths // $root[$root[.job].extends].artifacts.paths] | flatten | unique | @tsv' .gitlab-ci.yml
 	)
 
-	glab auth login \
-		--job-token "$CI_JOB_TOKEN" \
-		--hostname "$CI_SERVER_FQDN" \
-		--api-protocol "$CI_SERVER_PROTOCOL"
 	glab release create "$CI_COMMIT_TAG" \
 		--name "Release $version" \
 		--notes "$(latest_changelog)" \

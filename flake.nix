@@ -103,6 +103,8 @@
           gcovr
           # Documentation
           sphinx-autobuild
+          # Release
+          yq
         ];
         inputsFrom = [
           (self.packages.${system}.default.override {
