@@ -69,12 +69,12 @@
         doCheck = true;
         sphinxRoot = "../docs";
         meta.mainProgram = "foo";
+        passthru = {inherit subprojects;};
       };
   in {
     overlays = {
       pkgs = final: _: {
         "${name}" = final.callPackage package {};
-        subprojects = final.callPackage ./subprojects {};
       };
       default = composeManyExtensions [
         check-suite.overlays.default
@@ -84,6 +84,7 @@
 
     packages = forSystemsPkgs (_: pkgs: {
       default = pkgs."${name}";
+      inherit (pkgs."${name}") subprojects; # for an easier hash update
     });
 
     devShells = forSystemsPkgs (system: pkgs: {
