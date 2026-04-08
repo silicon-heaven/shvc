@@ -15,6 +15,7 @@ libfoo = library(
     meson.current_source_dir(),
     'libfoo.version',
   ),
+  link_depends: files('libfoo.version'),
   install: not meson.is_subproject(),
 )
 install_headers(libfoo_headers)
