@@ -48,7 +48,7 @@ html_sidebars = {
 }
 html_theme_options = {
     "show_toc_level": 3,
-    "repository_url": "https://gitlab.elektroline.cz/emb/template/python",
+    "repository_url": "https://gitlab.elektroline.cz/emb/template/c",
     "repository_branch": "master",
     "path_to_docs": "docs",
     "use_source_button": True,
