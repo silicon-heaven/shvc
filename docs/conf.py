@@ -11,6 +11,9 @@ project = "Elektroline C project Template"
 copyright = "2023-2025, Elektroline a.s."
 author = "Elektroline a.s."
 
+primary_domain = "c"
+highlight_language = "c"
+
 
 extensions = [
     "sphinx.ext.doctest",
