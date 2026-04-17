@@ -7,16 +7,18 @@ if valgrind.found()
     exe_wrapper: valgrind_wrapper + 'memcheck',
     timeout_multiplier: 3,
   )
-  add_test_setup(
-    'helgrind',
-    exe_wrapper: valgrind_wrapper + 'helgrind',
-    timeout_multiplier: 3,
-  )
-  add_test_setup(
-    'drd',
-    exe_wrapper: valgrind_wrapper + 'drd',
-    timeout_multiplier: 4,
-  )
+  if not get_option('b_coverage')
+    add_test_setup(
+      'helgrind',
+      exe_wrapper: valgrind_wrapper + 'helgrind',
+      timeout_multiplier: 3,
+    )
+    add_test_setup(
+      'drd',
+      exe_wrapper: valgrind_wrapper + 'drd',
+      timeout_multiplier: 4,
+    )
+  endif
 endif
 
 subdir('unit')
