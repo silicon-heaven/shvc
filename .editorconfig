@@ -7,6 +7,21 @@ end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
+[*.md]
+indent_style = space
+indent_size = 2
+max_line_length = 80
+# Trailing whitespaces have meaning in Markdown
+trim_trailing_whitespace = false
+[CHANGELOG.md]
+max_line_length = 72
+[*.rst]
+indent_style = space
+indent_size = 3
+max_line_length = 80
+# Trailing whitespaces have meaning in RST
+trim_trailing_whitespace = false
+
 [*.{c,h}]
 indent_style = tab
 tab_width = 4
@@ -22,14 +37,17 @@ max_line_length = 80
 
 [*.{sh,bats}]
 indent_style = tab
+tab_width = 4
+indent_size = 4
 max_line_length = 80
 
-[.gitlab-ci.yml]
-indent_style  = space
-indent_size = 2
-
-[*.nix]
+[*.py]
 indent_style = space
+indent_size = 4
+max_line_length = 79
+
+[*.{nix,yml,toml}]
+indent_style  = space
 indent_size = 2
 
 [*.{diff,patch}]
