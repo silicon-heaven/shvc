@@ -74,6 +74,12 @@ nix-appimage:
     paths:
     - '*.AppImage'
 
+docs:
+  extends: .build
+  allow_failure: true
+  script:
+    - nix develop --quiet -c sphinx-build --nitpicky --fail-on-warning docs html
+
 ## Test stage ##################################################################
 .test:
   stage: test
