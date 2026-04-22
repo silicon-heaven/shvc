@@ -17,4 +17,4 @@ to define only test cases and tests.
 .. note::
 
     The C file is not automatically compiled. You have to add it as source to unit test
-    application in the `tests/unit/meson.build` file.
+    application in the ``tests/unit/meson.build`` file.

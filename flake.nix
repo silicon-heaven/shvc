@@ -91,20 +91,21 @@
       default = pkgs.mkShell {
         packages = with pkgs; [
           # Linters and formatters
-          llvmPackages.clang-tools
+          deadnix
+          docstrfmt
           editorconfig-checker
+          gitlint
+          llvmPackages.clang-tools
           muon
           shellcheck
           shfmt
-          docstrfmt
           statix
-          deadnix
-          gitlint
           # Testing and code coverage
           valgrind
           gcovr
           # Documentation
           sphinx-autobuild
+          sphinx-lint
           # Release
           yq
         ];
