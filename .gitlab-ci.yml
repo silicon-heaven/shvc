@@ -183,6 +183,14 @@ shell-format:
   script:
     - git ls-files '**.sh' '**.bats' | xargs nix run --quiet .#shfmt -- -d
 
+docstrfmt:
+  extends: .style
+  script:
+    - |
+      git ls-files '**.rst' '**.py' |
+        xargs nix run --quiet .#docstrfmt -- --no-docstring-trailing-line
+    - git diff --exit-code
+
 nixfmt:
   extends: .style
   script:

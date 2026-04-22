@@ -1,15 +1,16 @@
-Project Template Documentation
-==============================
+################################
+ Project Template Documentation
+################################
 
-This directory contains various documentation snippets to explain various parts
-of the template. It is not intended as comprehensive introduction and a lot is
-left on the reader to get from the code but it should help with some common
-tasks.
+This directory contains various documentation snippets to explain various parts of the
+template. It is not intended as comprehensive introduction and a lot is left on the
+reader to get from the code but it should help with some common tasks.
 
 .. toctree::
-  using
-  gperf
-  subprojects
-  unittests
-  integration_tests
-  docs
+
+    using
+    gperf
+    subprojects
+    unittests
+    integration_tests
+    docs

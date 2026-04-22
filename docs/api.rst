@@ -1,4 +1,5 @@
-API reference
-=============
+###############
+ API reference
+###############
 
 .. c:autodoc:: foo.h

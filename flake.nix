@@ -96,6 +96,7 @@
           muon
           shellcheck
           shfmt
+          docstrfmt
           statix
           deadnix
           gitlint
