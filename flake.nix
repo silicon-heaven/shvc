@@ -52,7 +52,6 @@
             propagatedBuildInputs = with python3Packages; [
               sphinx-book-theme
               sphinx-mdinclude
-              sphinx-multiversion
               hawkmoth
             ];
           })
