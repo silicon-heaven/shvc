@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -eu
+cd "$(dirname "$0")"
 
 if command -v git >/dev/null && git rev-parse --git-dir >/dev/null 2>&1; then
 	GIT_REV="$(git rev-parse --quiet --short HEAD)"
-	git diff-index --quiet HEAD \
-		|| GIT_REV+="-dirty"
+	git diff-index --quiet HEAD ||
+		GIT_REV+="-dirty"
 fi
 
 version=0.0.0
@@ -24,9 +25,9 @@ while read -r line; do
 		fi
 		break
 	fi
-done <"${0%/*}/CHANGELOG.md"
+done <CHANGELOG.md
 
-if [[ "$unreleased" == y ]] || [[ "$GIT_REV" =~ -dirty$ ]]; then
-	label="${label}${label:+.}${GIT_REV}"
+if [[ "$unreleased" == y ]] || [[ "${GIT_REV:-}" =~ -dirty$ ]]; then
+	label="${label}${label:+.}${GIT_REV:-}"
 fi
 echo "$version${label:+-}${label}${build:++}${build}"

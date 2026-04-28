@@ -36,7 +36,7 @@ TEST(nbool, generic) {
 						   // Seems to miss that v must be null to pass
 }
 
-TEST(nbool, or) {
+TEST(nbool, _or) {
 	nbool_t v = NULL;
 	nbool_t o = NULL;
 	nbool_set(&o, 8);

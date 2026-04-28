@@ -1,5 +1,6 @@
-RPC Method Call
-===============
+#################
+ RPC Method Call
+#################
 
 .. code-block:: c
 
@@ -7,8 +8,9 @@ RPC Method Call
 
 .. c:autodoc:: shv/rpccall.h
 
-Stages diagram
---------------
+****************
+ Stages diagram
+****************
 
 .. graphviz::
 

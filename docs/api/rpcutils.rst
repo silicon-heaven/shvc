@@ -1,5 +1,6 @@
-Utilities
-=========
+###########
+ Utilities
+###########
 
 Utilities provided by [libshvrpc](./libshvrpc.md).
 

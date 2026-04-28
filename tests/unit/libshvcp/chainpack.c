@@ -73,12 +73,12 @@ static const struct {
 	{{.type = CPITEM_META}, B(0x8b)},
 	{{.type = CPITEM_CONTAINER_END}, B(0xff)},
 };
-ARRAY_TEST(pack, pack_single, single_d) {
+ARRAY_TEST(pack, single, single_d) {
 	ck_assert_int_eq(chainpack_pack(packstream, &_d.item), _d.cp.len);
 	ck_assert_packbuf(_d.cp.v, _d.cp.len);
 }
 END_TEST
-ARRAY_TEST(unpack, unpack_single, single_d) {
+ARRAY_TEST(unpack, single, single_d) {
 	FILE *f = fmemopen((void *)_d.cp.v, _d.cp.len, "r");
 	uint8_t buf[BUFSIZ];
 	struct cpitem item = {.buf = buf, .bufsiz = BUFSIZ};
@@ -89,7 +89,7 @@ ARRAY_TEST(unpack, unpack_single, single_d) {
 END_TEST
 
 
-static const struct bdata skip_d[] = {
+static const struct bdata unpack_skip_d[] = {
 	B(0x86, 0x03, 'f', 'o', 'o'),					   /* String */
 	B(0x8e, 'f', 'o', 'o', 0x00),					   /* CString */
 	B(0x85, 0x06, 0x61, 0x62, 0xcd, 0x0b, 0x0d, 0x0a), /* Blob */

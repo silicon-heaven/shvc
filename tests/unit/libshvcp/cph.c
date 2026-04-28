@@ -10,7 +10,7 @@ static const struct {
 	struct cpitem item;
 	bool valid;
 	int16_t value;
-} extract_int16_d[] = {
+} all_extract_int16_d[] = {
 	{
 		.item = (struct cpitem){.type = CPITEM_INT, .as.Int = 42},
 		.valid = true,
@@ -51,7 +51,7 @@ static const struct {
 	struct cpitem item;
 	bool valid;
 	uint16_t value;
-} extract_int16u_d[] = {
+} all_extract_int16u_d[] = {
 	{
 		.item = (struct cpitem){.type = CPITEM_INT, .as.Int = 42},
 		.valid = true,
@@ -87,7 +87,7 @@ static const struct {
 	struct cpitem item;
 	bool valid;
 	uint16_t value;
-} extract_uint16_d[] = {
+} all_extract_uint16_d[] = {
 	{
 		.item = (struct cpitem){.type = CPITEM_UINT, .as.UInt = 42},
 		.valid = true,
@@ -123,7 +123,7 @@ static const struct {
 	struct cpitem item;
 	bool valid;
 	int16_t value;
-} extract_uint16i_d[] = {
+} all_extract_uint16i_d[] = {
 	{
 		.item = (struct cpitem){.type = CPITEM_UINT, .as.UInt = 42},
 		.valid = true,
@@ -160,7 +160,7 @@ ARRAY_TEST(all, extract_uint16i) {
 static const struct {
 	struct cpitem item;
 	uint64_t value;
-} extract_uint64_d[] = {
+} all_extract_uint64_d[] = {
 	{
 		.item = (struct cpitem){.type = CPITEM_UINT, .as.UInt = UINT64_MAX},
 		.value = UINT64_MAX,
@@ -181,7 +181,7 @@ static const struct {
 	struct cpitem item;
 	bool valid;
 	bool value;
-} extract_bool_d[] = {
+} all_extract_bool_d[] = {
 	{
 		.item = (struct cpitem){.type = CPITEM_BOOL, .as.Bool = true},
 		.valid = true,
@@ -209,7 +209,7 @@ static const struct {
 	struct cpitem item;
 	bool valid;
 	struct cpdatetime value;
-} extract_datetime_d[] = {
+} all_extract_datetime_d[] = {
 	{
 		.item = (struct cpitem){.type = CPITEM_DATETIME, .as.Datetime = {42, 60}},
 		.valid = true,
@@ -233,7 +233,7 @@ static const struct {
 	struct cpitem item;
 	bool valid;
 	struct cpdecimal value;
-} extract_decimal_d[] = {
+} all_extract_decimal_d[] = {
 	{
 		.item = (struct cpitem){.type = CPITEM_DECIMAL, .as.Decimal = {7, 2}},
 		.valid = true,

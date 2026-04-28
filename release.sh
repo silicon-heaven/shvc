@@ -3,10 +3,12 @@
 # * It creates the release commit and tag
 # * It creates Gitlab release from Gitlab CI
 set -eu
-cd "${0%/*}"
+cd "$(dirname "$0")"
 
 # This should be set to the appropriate project name.
 project_name="SHVC"
+
+################################################################################
 
 fail() {
 	echo "$@" >&2
@@ -82,38 +84,16 @@ if ! in_ci; then
 
 else
 
-	[[ "$CI_COMMIT_TAG" =~ ^v ]] \
-		|| fail "This is not a release tag: $CI_COMMIT_TAG"
+	[[ "$CI_COMMIT_TAG" =~ ^v ]] ||
+		fail "This is not a release tag: $CI_COMMIT_TAG"
 	version="${CI_COMMIT_TAG#v}"
-	is_semver "$version" \
-		|| fail "Version has to be valid semantic version!"
-	[[ "$(releases | head -1)" == "$version" ]] \
-		|| fail "The version $version isn't the latest release in CHANGELOG.md "
+	is_semver "$version" ||
+		fail "Version has to be valid semantic version!"
+	[[ "$(releases | head -1)" == "$version" ]] ||
+		fail "The version $version isn't the latest release in CHANGELOG.md "
 
-	changelog="$(latest_changelog)"
-	[[ -n "$changelog" ]] \
-		|| fail "Changelog is empty!"
-
-	declare -a args
-	while read -r dists; do
-		for dist in $dists; do
-			[ -f "$dist" ] || continue # ignore missing / not built / directories
-			ndist="${CI_PROJECT_NAME}-${dist%%.*}-${version}.${dist#*.}"
-			spec="release/${version}/${ndist}"
-			url="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${spec}"
-			echo "$dist -> $url"
-			curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
-				--upload-file "${dist}" "${url}"
-			args+=("--assets-link" "{\"name\":\"${dist}\",\"url\":\"${url}\"}")
-		done
-	done < <(
-		# shellcheck disable=SC2016
-		yq '[. as $root | .release.needs[] | select(.artifacts) | $root[.job].artifacts.paths // $root[$root[.job].extends].artifacts.paths] | flatten | unique' .gitlab-ci.yml
-	)
-
-	release-cli create \
+	glab release create "$CI_COMMIT_TAG" \
 		--name "Release $version" \
-		--tag-name "$CI_COMMIT_TAG" \
-		--description "$changelog" \
-		"${args[@]}"
+		--notes "$(latest_changelog)" \
+		--use-package-registry
 fi

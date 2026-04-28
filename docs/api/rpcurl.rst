@@ -1,5 +1,6 @@
-RPC URL
-=======
+#########
+ RPC URL
+#########
 
 .. code-block:: c
 

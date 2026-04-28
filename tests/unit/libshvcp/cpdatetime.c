@@ -52,7 +52,7 @@ static const struct {
 	struct cpdatetime dt;
 	struct timespec ts;
 	bool utc;
-} dttots_d[] = {
+} all_dttots_d[] = {
 	{(struct cpdatetime){}, (struct timespec){}, true},
 	{(struct cpdatetime){.msecs = 1024},
 		(struct timespec){.tv_sec = 1, .tv_nsec = 24000000}, true},
@@ -69,7 +69,7 @@ END_TEST
 static const struct {
 	struct cpdatetime dt;
 	struct timespec ts;
-} tstodt_d[] = {
+} all_tstodt_d[] = {
 	{(struct cpdatetime){}, (struct timespec){}},
 	{(struct cpdatetime){.msecs = 1024},
 		(struct timespec){.tv_sec = 1, .tv_nsec = 24000000}},

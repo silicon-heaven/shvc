@@ -8,7 +8,7 @@ TEST_CASE(all) {}
 
 static const struct {
 	struct cpdecimal val, norm;
-} decnorm_d[] = {
+} all_decnorm_d[] = {
 	{{.mantissa = 1}, {.mantissa = 1}},
 	{{.mantissa = 100}, {.mantissa = 1, .exponent = 2}},
 	{{.mantissa = 100, .exponent = -7}, {.mantissa = 1, .exponent = -5}},
@@ -42,7 +42,7 @@ END_TEST
 static const struct {
 	struct cpdecimal in, out;
 	int exponent;
-} decexp_d[] = {
+} all_decexp_d[] = {
 	{{42, 3}, {42, 3}, 3},
 	{{42, 3}, {42000, 0}, 0},
 	{{42, 3}, {420, 2}, 2},
@@ -61,7 +61,7 @@ ARRAY_TEST(all, decexp) {
 static const struct {
 	struct cpdecimal dec;
 	int exponent;
-} decexp_overflow_d[] = {
+} all_decexp_overflow_d[] = {
 	{{42, 3}, -18},
 };
 ARRAY_TEST(all, decexp_overflow) {
@@ -72,7 +72,7 @@ ARRAY_TEST(all, decexp_overflow) {
 static const struct {
 	struct cpdecimal dec;
 	int exp, val;
-} cpdtoi_d[] = {
+} all_cpdtoi_d[] = {
 	{{42, 0}, -3, 42000},
 	{{42, -2}, -3, 420},
 	{{42, -4}, -3, 4},
@@ -86,7 +86,7 @@ ARRAY_TEST(all, cpdtoi) {
 static const struct {
 	int mantissa, exponent;
 	struct cpdecimal dec;
-} cpitod_d[] = {
+} all_cpitod_d[] = {
 	{42, -3, {42, -3}},
 	{4200, -3, {42, -1}},
 };

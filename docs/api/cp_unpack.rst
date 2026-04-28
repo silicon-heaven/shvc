@@ -1,5 +1,6 @@
-Generic unpacker
-================
+##################
+ Generic unpacker
+##################
 
 .. code-block:: c
 

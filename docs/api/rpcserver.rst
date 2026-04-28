@@ -1,5 +1,6 @@
-RPC Server
-==========
+############
+ RPC Server
+############
 
 .. code-block:: c
 

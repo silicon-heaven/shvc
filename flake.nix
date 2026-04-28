@@ -3,7 +3,7 @@
 
   inputs = {
     semver.url = "gitlab:Cynerd/nixsemver";
-    check-suite.url = "github:cynerd/check-suite";
+    check-suite.url = "gitlab:cynerd/check-suite";
     pyshv.url = "gitlab:silicon-heaven/pyshv";
   };
 
@@ -60,14 +60,12 @@
             propagatedBuildInputs = with python3Packages; [
               sphinx-book-theme
               sphinx-mdinclude
-              sphinx-multiversion
               hawkmoth
             ];
           })
           graphviz-nox
         ];
         postUnpack = "patchShebangs --build $sourceRoot";
-        sphinxRoot = "../docs";
         checkInputs = [
           check
           check-suite
@@ -84,7 +82,9 @@
               ++ pypkgs.pyshv.optional-dependencies.canbus))
         ];
         doCheck = true;
+        sphinxRoot = "../docs";
         meta.mainProgram = "shvc";
+        passthru = {inherit subprojects;};
       };
   in {
     overlays = {
@@ -117,10 +117,11 @@
       default = pkgs.mkShell {
         packages = with pkgs; [
           # Linters and formatters
-          clang-tools
           deadnix
+          docstrfmt
           editorconfig-checker
           gitlint
+          llvmPackages.clang-tools
           muon
           mypy
           ruff
@@ -132,6 +133,7 @@
           gcovr
           # Documentation
           sphinx-autobuild
+          sphinx-lint
         ];
         inputsFrom = [
           (self.packages.${system}.default.override {

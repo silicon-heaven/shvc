@@ -1,5 +1,6 @@
-RPC Message
-===========
+#############
+ RPC Message
+#############
 
 .. code-block:: c
 

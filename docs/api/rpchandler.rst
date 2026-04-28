@@ -1,5 +1,6 @@
-RPC Handler
-===========
+#############
+ RPC Handler
+#############
 
 .. code-block:: c
 
@@ -7,8 +8,9 @@ RPC Handler
 
 .. c:autodoc:: shv/rpchandler.h
 
-Additional articles
--------------------
+*********************
+ Additional articles
+*********************
 
 For the RPC Handler there are some prepared handlers you want to use:
 

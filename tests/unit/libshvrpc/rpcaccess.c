@@ -11,7 +11,7 @@ TEST_CASE(all) {}
 static const struct {
 	rpcaccess_t acc;
 	const char *str;
-} acc_str_d[] = {
+} all_acc_str_d[] = {
 	{RPCACCESS_BROWSE, "bws"},
 	{RPCACCESS_READ, "rd"},
 	{RPCACCESS_WRITE, "wr"},
@@ -33,7 +33,7 @@ static const struct {
 	const char *str;
 	rpcaccess_t acc;
 	const char *rest;
-} acc_extract_d[] = {
+} all_acc_extract_d[] = {
 	{"bws", RPCACCESS_BROWSE, ""},
 	{"rd", RPCACCESS_READ, ""},
 	{"wr", RPCACCESS_WRITE, ""},

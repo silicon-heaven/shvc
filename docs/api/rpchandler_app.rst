@@ -1,5 +1,6 @@
-App Handler
-===========
+#############
+ App Handler
+#############
 
 .. code-block:: c
 

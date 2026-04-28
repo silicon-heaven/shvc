@@ -131,9 +131,8 @@ class PTYPort:
     def new(cls) -> collections.abc.Iterator[PTYPort]:
         """Context function that provides PTY based ports.
 
-        :return: Tuple with two strings containing paths to the pty ports and
-          event that can be cleared to pause data exchange and set to resume it
-          again.
+        :returns: Tuple with two strings containing paths to the pty ports and event
+            that can be cleared to pause data exchange and set to resume it again.
         """
         pty1_master, pty1_slave = pty.openpty()
         pty2_master, pty2_slave = pty.openpty()

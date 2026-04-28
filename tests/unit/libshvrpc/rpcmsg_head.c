@@ -15,7 +15,7 @@ TEST_CASE(all) {}
 static const struct {
 	const char *str;
 	const struct rpcmsg_meta meta;
-} unpack_d[] = {
+} all_unpack_d[] = {
 	{
 		"<8:3,10:\"ls\">i{1:null}",
 		(struct rpcmsg_meta){
@@ -252,7 +252,7 @@ ARRAY_TEST(all, unpack) {
 }
 END_TEST
 
-static const char *const unpack_invalid_d[] = {
+static const char *const all_unpack_invalid_d[] = {
 	"<>{}",
 	"<8:\"foo\">i{}",
 	"<8:42>i{1:null}",

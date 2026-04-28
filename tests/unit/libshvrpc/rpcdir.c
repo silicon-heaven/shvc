@@ -32,7 +32,7 @@ static const struct cpondir {
 
 TEST_CASE(pack, setup_packstream_pack_cpon, teardown_packstream_pack) {}
 
-ARRAY_TEST(pack, packer, pairs_d) {
+ARRAY_TEST(pack, pairs, pairs_d) {
 	rpcdir_pack(packstream_pack, &_d.dir);
 	ck_assert_packstr(_d.cpon);
 }
@@ -74,10 +74,10 @@ static void unpacker_test(struct cpondir _d) {
 	unpack_free(unpack);
 }
 
-ARRAY_TEST(unpack, unpacker, pairs_d) {
+ARRAY_TEST(unpack, pairs, pairs_d) {
 	unpacker_test(_d);
 }
-static struct cpondir unpacker_map_d[] = {
+static struct cpondir unpack_map_d[] = {
 	{(struct rpcdir){
 		 .name = "get",
 		 .param = "Int",
@@ -99,7 +99,7 @@ static struct cpondir unpacker_map_d[] = {
 	{(struct rpcdir){.name = "name", .access = RPCACCESS_READ},
 		"i{1:\"name\",5:8,6:{}}"},
 };
-ARRAY_TEST(unpack, unpacker_map) {
+ARRAY_TEST(unpack, map) {
 	unpacker_test(_d);
 }
 
@@ -118,7 +118,7 @@ static const char *const unpack_invalid_d[] = {
 	"i{1:\"ok\",6:[]}",
 	"{\"accessGrant\":\"invalid\"}",
 };
-ARRAY_TEST(unpack, unpack_invalid) {
+ARRAY_TEST(unpack, invalid) {
 	struct cpitem item;
 	cpitem_unpack_init(&item);
 	cp_unpack_t unpack = unpack_cpon(_d);

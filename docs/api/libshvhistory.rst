@@ -1,8 +1,9 @@
-libshvhistory
-=============
+###############
+ libshvhistory
+###############
 
-This is API provided by **libshvhistory** library. It can be used to create
-logging facility that is part of SHV RPC.
+This is API provided by **libshvhistory** library. It can be used to create logging
+facility that is part of SHV RPC.
 
 .. code-block:: c
 
@@ -10,8 +11,9 @@ logging facility that is part of SHV RPC.
 
 .. c:autodoc:: shv/rpchistory.h
 
-Additional articles
--------------------
+*********************
+ Additional articles
+*********************
 
 There are some prepared handlers you may use:
 

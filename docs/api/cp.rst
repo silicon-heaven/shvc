@@ -1,5 +1,6 @@
-Chainpack and CPON packer and unpacker
-======================================
+########################################
+ Chainpack and CPON packer and unpacker
+########################################
 
 .. code-block:: c
 

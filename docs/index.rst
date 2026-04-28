@@ -1,10 +1,11 @@
-.. mdinclude:: ../README.md
+.. include:: ../README.rst
 
-Table of contents
------------------
+###################
+ Table of contents
+###################
 
 .. toctree::
-  :maxdepth: 2
+    :maxdepth: 2
 
-  api/index
-  CHANGELOG
+    api/index
+    CHANGELOG

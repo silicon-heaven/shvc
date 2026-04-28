@@ -13,6 +13,7 @@ libshvhistory = library(
     meson.current_source_dir(),
     'libshvhistory.version',
   ),
+  link_depends: files('libshvhistory.version'),
   install: not meson.is_subproject(),
 )
 install_headers(libshvhistory_headers, preserve_path: true)

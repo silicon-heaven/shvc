@@ -1,5 +1,6 @@
-RPC Login
-=========
+###########
+ RPC Login
+###########
 
 .. code-block:: c
 

@@ -191,7 +191,7 @@ double cpdectod(const struct cpdecimal v);
  *
  * :param DEC: The decimal to be converted (variable not pointer to it).
  * :param EXP: The exponent of the destination integer.
- * :return: ``true`` if value fits :var:`DEST` and ``false`` otherwise.
+ * :return: ``true`` if value fits ``DEST`` and ``false`` otherwise.
  */
 #define cpdtoi(DEC, EXP, DEST) \
 	({ \

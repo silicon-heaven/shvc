@@ -1,5 +1,6 @@
-Signals Handler
-===============
+#################
+ Signals Handler
+#################
 
 .. code-block:: c
 

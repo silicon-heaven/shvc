@@ -1,5 +1,6 @@
-RPC Tree Discovery
-==================
+####################
+ RPC Tree Discovery
+####################
 
 .. code-block:: c
 

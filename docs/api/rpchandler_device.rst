@@ -1,5 +1,6 @@
-Device Handler
-==============
+################
+ Device Handler
+################
 
 .. code-block:: c
 

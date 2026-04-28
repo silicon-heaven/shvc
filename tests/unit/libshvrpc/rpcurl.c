@@ -14,7 +14,7 @@ TEST_CASE(parse){};
 static const struct {
 	const char *str;
 	struct rpcurl url;
-} parse_d[] = {
+} parse_parse_d[] = {
 	{"unix:/dev/null",
 		(struct rpcurl){
 			.protocol = RPC_PROTOCOL_UNIX,
@@ -171,7 +171,7 @@ TEST_CASE(str){};
 static const struct {
 	struct rpcurl url;
 	const char *str;
-} str_d[] = {
+} str_str_d[] = {
 	{(struct rpcurl){
 		 .protocol = RPC_PROTOCOL_TCP,
 		 .location = "localhost",

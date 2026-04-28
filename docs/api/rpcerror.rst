@@ -1,5 +1,6 @@
-RPC Errors
-==========
+############
+ RPC Errors
+############
 
 .. code-block:: c
 

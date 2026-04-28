@@ -1,5 +1,6 @@
-libshvrpc
-=========
+###########
+ libshvrpc
+###########
 
 This is API provided by libshvrpc library. It implements core for the SHV RPC
 communication protocol.

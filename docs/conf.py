@@ -13,6 +13,9 @@ author = "Elektroline a.s."
 primary_domain = "c"
 highlight_language = "c"
 
+primary_domain = "c"
+highlight_language = "c"
+
 
 extensions = [
     "sphinx.ext.doctest",
@@ -23,7 +26,6 @@ extensions = [
     "sphinx.ext.graphviz",
     "sphinx_book_theme",
     "sphinx_mdinclude",
-    "sphinx_multiversion",
     "hawkmoth",
 ]
 
@@ -57,9 +59,6 @@ html_theme_options = {
     "use_issues_button": True,
 }
 
-smv_tag_whitelist = r"^v.*$"
-smv_branch_whitelist = r"^master$"
-smv_remote_whitelist = r"^.*$"
 
 hawkmoth_root = os.path.abspath("../include")
 hawkmoth_clang = [f"-I{hawkmoth_root}"]

@@ -9,7 +9,7 @@ TEST_CASE(all) {}
 static const struct {
 	enum cpitem_type type;
 	const char *name;
-} type_str_d[] = {
+} all_type_str_d[] = {
 	{CPITEM_INVALID, "INVALID"},
 	{CPITEM_INT, "INT"},
 	{-1, "INVALID"},

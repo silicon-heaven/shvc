@@ -1,5 +1,6 @@
-Generic packer
-==============
+################
+ Generic packer
+################
 
 .. code-block:: c
 

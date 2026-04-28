@@ -1,5 +1,6 @@
-Client Login Handler
-====================
+######################
+ Client Login Handler
+######################
 
 .. code-block:: c
 

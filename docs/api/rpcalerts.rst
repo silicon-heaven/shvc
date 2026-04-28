@@ -1,5 +1,6 @@
-RPC Device Alerts
-=================
+###################
+ RPC Device Alerts
+###################
 
 .. code-block:: c
 

@@ -14,7 +14,7 @@ static const struct {
 	struct rpclogin login;
 	bool trusted;
 	const char *cpon;
-} packer_d[] = {
+} pack_valid_d[] = {
 	{(struct rpclogin){
 		 .username = "test",
 		 .password = "test",
@@ -65,7 +65,7 @@ static const struct {
 		false,
 		"{\"login\":{\"user\":\"test\",\"password\":\"a7162d463b28666737f63034db39f03bca59b060\",\"type\":\"SHA1\"}}"},
 };
-ARRAY_TEST(pack, packer) {
+ARRAY_TEST(pack, valid) {
 	rpclogin_pack(packstream_pack, &_d.login, "nonce", _d.trusted);
 	ck_assert_packstr(_d.cpon);
 }
@@ -76,7 +76,7 @@ TEST_CASE(unpack) {}
 static const struct {
 	const char *cpon;
 	struct rpclogin login;
-} unpacker_d[] = {
+} unpack_valid_d[] = {
 	{"{\"login\":{\"user\":\"test\",\"password\":\"test\",\"type\":\"PLAIN\"}}",
 		(struct rpclogin){
 			.username = "test",
@@ -96,7 +96,7 @@ static const struct {
 	{"{\"options\":{\"device\":{\"mountPoint\":\"test/foo\",\"unknown\":[1,2,3]},\"question\":42},\"any\":i{}}",
 		(struct rpclogin){.device_mountpoint = "test/foo"}},
 };
-ARRAY_TEST(unpack, unpacker) {
+ARRAY_TEST(unpack, valid) {
 	struct cpitem item;
 	cpitem_unpack_init(&item);
 	cp_unpack_t unpack = unpack_cpon(_d.cpon);
@@ -130,7 +130,7 @@ static const char *const unpack_invalid_d[] = {
 	"{\"options\":{\"device\":{\"mountPoint\":[]}}}",
 	"{\"options\":{\"idleWatchDogTimeOut\":[]}}",
 };
-ARRAY_TEST(unpack, unpack_invalid) {
+ARRAY_TEST(unpack, invalid) {
 	struct cpitem item;
 	cpitem_unpack_init(&item);
 	cp_unpack_t unpack = unpack_cpon(_d);
@@ -151,7 +151,7 @@ static const struct {
 	const char *password;
 	enum rpclogin_type type;
 	bool result;
-} validation_d[] = {
+} validate_password_validate_d[] = {
 	{(struct rpclogin){.password = "test", .login_type = RPC_LOGIN_PLAIN},
 		"test", RPC_LOGIN_PLAIN, true},
 	{(struct rpclogin){.password = "invalid", .login_type = RPC_LOGIN_PLAIN},
@@ -176,7 +176,7 @@ static const struct {
 	{(struct rpclogin){.password = "invalid", .login_type = RPC_LOGIN_PLAIN},
 		"a94a8fe5ccb19ba61c4c0873d391e987982fbbd3", RPC_LOGIN_SHA1, false},
 };
-ARRAY_TEST(validate_password, validation) {
+ARRAY_TEST(validate_password, validate) {
 	ck_assert(rpclogin_validate_password(
 				  &_d.login, _d.password, "nonce", _d.type) == _d.result);
 }

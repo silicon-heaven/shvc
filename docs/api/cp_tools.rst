@@ -1,5 +1,6 @@
-Utilities
-=========
+###########
+ Utilities
+###########
 
 .. code-block:: c
 

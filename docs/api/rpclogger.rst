@@ -1,5 +1,6 @@
-RPC Logger
-==========
+############
+ RPC Logger
+############
 
 .. code-block:: c
 

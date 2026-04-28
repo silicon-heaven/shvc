@@ -1,5 +1,6 @@
-RPC Access Level
-=================
+##################
+ RPC Access Level
+##################
 
 .. code-block:: c
 

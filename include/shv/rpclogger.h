@@ -28,8 +28,7 @@ struct rpclogger_funcs {
 	void (*log)(const char *line);
 	/**	Informs the logger whether it should log or not.
 	 *
-	 * Logging is performed based on :c:func:`rpclogger_func_t` callback. It is
-	 * possible the current level of logging is not enabled by the system
+	 * It is possible the current level of logging is not enabled by the system
 	 * and we can optimize the code by skipping CPON packing at all. This
 	 * function is called before every logging is performed.
 	 *

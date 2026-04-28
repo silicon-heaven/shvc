@@ -29,6 +29,7 @@ libshvbroker = library(
     meson.current_source_dir(),
     'libshvbroker.version',
   ),
+  link_depends: files('libshvbroker.version'),
   install: not meson.is_subproject(),
 )
 install_headers(libshvbroker_headers, preserve_path: true)

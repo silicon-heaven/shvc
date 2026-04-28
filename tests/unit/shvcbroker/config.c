@@ -31,7 +31,7 @@ TEST_CASE(load, setup_tmpdir, teardown_tmpdir) {}
 static const struct {
 	const char *cpon;
 	const struct config conf;
-} config_d[] = {
+} load_config_d[] = {
 	{"{}", (struct config){}},
 	{"{\"name\":\"myname\"}", (struct config){.name = "myname"}},
 	{"{\"listen\":[]}", (struct config){.listen_cnt = 0}},
@@ -152,7 +152,7 @@ END_TEST
 static const struct {
 	const char *cpon;
 	const char *error;
-} invalid_config_d[] = {
+} load_invalid_config_d[] = {
 	{"42", "Config: Must be Map\n"},
 	{"[]", "Config: Must be Map\n"},
 	{"{\"name\":42}", "Config.name: Must be String\n"},

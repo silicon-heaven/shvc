@@ -25,6 +25,7 @@ libshvcp = library(
     meson.current_source_dir(),
     'libshvcp.version',
   ),
+  link_depends: files('libshvcp.version'),
   install: not meson.is_subproject(),
 )
 install_headers(libshvcp_headers, preserve_path: true)

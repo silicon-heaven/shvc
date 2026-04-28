@@ -1,5 +1,6 @@
-RPC Handler implementation
-==========================
+############################
+ RPC Handler implementation
+############################
 
 .. code-block:: c
 

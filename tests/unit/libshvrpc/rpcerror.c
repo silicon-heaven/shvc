@@ -18,7 +18,7 @@ static const struct cponerr {
 
 TEST_CASE(pack, setup_packstream_pack_cpon, teardown_packstream_pack) {}
 
-ARRAY_TEST(pack, packer, pairs_d) {
+ARRAY_TEST(pack, pairs, pairs_d) {
 	rpcerror_pack(packstream_pack, _d.errnum, _d.errmsg);
 	ck_assert_packstr(_d.cpon);
 }
@@ -41,14 +41,14 @@ static void unpacker_test(struct cponerr _d) {
 	unpack_free(unpack);
 }
 
-ARRAY_TEST(unpack, unpacker, pairs_d) {
+ARRAY_TEST(unpack, pairs, pairs_d) {
 	unpacker_test(_d);
 }
-static struct cponerr unpacker_comp_d[] = {
+static struct cponerr unpack_comp_d[] = {
 	{RPCERR_USR1, NULL, "i{1:6u,63:[]}"},
 	{RPCERR_USR2, "Ups", "i{2:\"Ups\",1:7}"},
 };
-ARRAY_TEST(unpack, unpacker_comp) {
+ARRAY_TEST(unpack, comp) {
 	unpacker_test(_d);
 }
 
@@ -59,7 +59,7 @@ static const char *const unpack_invalid_d[] = {
 	"i{2:\"some\",1:\"foo\"}",
 	"i{2:5}",
 };
-ARRAY_TEST(unpack, unpack_invalid) {
+ARRAY_TEST(unpack, invalid) {
 	struct cpitem item;
 	cpitem_unpack_init(&item);
 	cp_unpack_t unpack = unpack_cpon(_d);

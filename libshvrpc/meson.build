@@ -57,6 +57,7 @@ libshvrpc = library(
     meson.current_source_dir(),
     'libshvrpc.version',
   ),
+  link_depends: files('libshvrpc.version'),
   install: not meson.is_subproject(),
 )
 install_headers(libshvrpc_headers, preserve_path: true)

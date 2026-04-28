@@ -1,5 +1,6 @@
-Responses Handler
-=================
+###################
+ Responses Handler
+###################
 
 .. code-block:: c
 

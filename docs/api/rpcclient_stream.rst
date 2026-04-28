@@ -1,5 +1,6 @@
-RPC Client for Stream transport layer
-=====================================
+#######################################
+ RPC Client for Stream transport layer
+#######################################
 
 .. code-block:: c
 

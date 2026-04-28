@@ -1,5 +1,6 @@
-RPC History Handler implementation
-==================================
+####################################
+ RPC History Handler implementation
+####################################
 
 .. code-block:: c
 
