@@ -4,6 +4,7 @@
 #include <shv/rpchandler_impl.h>
 #include <shv/rpchistory.h>
 
+#define HISTORY_PREFIX ".history/"
 #define RECORDS_PREFIX ".records/"
 #define FILES_PREFIX ".files/"
 
@@ -14,13 +15,27 @@ struct rpchandler_history {
 	bool has_records;
 	bool has_files;
 	bool has_getlog;
+	bool add_prefix;
 	const char **signals;
 	struct rpchandler_history_facilities *facilities;
 };
 
 static void rpc_ls(void *cookie, struct rpchandler_ls *ctx) {
 	struct rpchandler_history *history = cookie;
-	if (!ctx->path || (ctx->path[0] == '\0')) {
+
+	int offset = 0;
+	if (history->add_prefix) {
+		if (!ctx->path || ctx->path[0] == '\0') {
+			rpchandler_ls_result(ctx, ".history");
+			return;
+		} else if (strncmp(ctx->path, ".history", strlen(".history"))) {
+			return;
+		}
+		offset = strlen(HISTORY_PREFIX);
+	}
+
+	if ((history->add_prefix && ctx->path && !strcmp(ctx->path, ".history")) ||
+		(!history->add_prefix && (!ctx->path || ctx->path[0] == '\0'))) {
 		if (history->has_records)
 			rpchandler_ls_result(ctx, ".records");
 		if (history->has_files)
@@ -33,12 +48,12 @@ static void rpc_ls(void *cookie, struct rpchandler_ls *ctx) {
 				rpchandler_ls_result_fmt(
 					ctx, "%.*s", (int)(strchrnul(*s, '/') - *s), *s);
 		}
-	} else if (!strcmp(ctx->path, ".records")) {
+	} else if (!strcmp(ctx->path + offset, ".records")) {
 		for (struct rpchandler_history_records **record =
 				 history->facilities->records;
 			record && *record; record++)
 			rpchandler_ls_result(ctx, (*record)->name);
-	} else if (!strcmp(ctx->path, ".files")) {
+	} else if (!strcmp(ctx->path + offset, ".files")) {
 		for (struct rpchandler_history_files **file = history->facilities->files;
 			file && *file; file++)
 			rpchandler_ls_result(ctx, (*file)->name);
@@ -51,8 +66,8 @@ static void rpc_ls(void *cookie, struct rpchandler_ls *ctx) {
 			/* Continue if ctx->path substring does not start at given signal
 			 * path
 			 */
-			size_t len = strlen(ctx->path);
-			if (strncmp(*s, ctx->path, len) || (*s)[len] != '/')
+			size_t len = strlen(ctx->path) - offset;
+			if (strncmp(*s, ctx->path + offset, len) || (*s)[len] != '/')
 				continue;
 
 			/* Get the starting position of path's children. */
@@ -69,28 +84,38 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 	if (!ctx->path)
 		return;
 
-	if (!strncmp(RECORDS_PREFIX, ctx->path, strlen(RECORDS_PREFIX))) {
+	int offset = 0;
+	if (history->add_prefix) {
+		if (strncmp(HISTORY_PREFIX, ctx->path, strlen(HISTORY_PREFIX))) {
+			return;
+		}
+		offset = strlen(HISTORY_PREFIX);
+	}
+
+	if (!strncmp(RECORDS_PREFIX, ctx->path + offset, strlen(RECORDS_PREFIX))) {
 		for (struct rpchandler_history_records **record =
 				 history->facilities->records;
 			record && *record; record++) {
-			if (!strcmp((*record)->name, ctx->path + strlen(RECORDS_PREFIX))) {
+			if (!strcmp((*record)->name,
+					ctx->path + offset + strlen(RECORDS_PREFIX))) {
 				rpchandler_dir_result(ctx, &rpchistory_fetch);
 				rpchandler_dir_result(ctx, &rpchistory_span);
 			}
 		}
-	} else if (!strncmp(FILES_PREFIX, ctx->path, strlen(FILES_PREFIX))) {
+	} else if (!strncmp(FILES_PREFIX, ctx->path + offset, strlen(FILES_PREFIX))) {
 		for (struct rpchandler_history_files **file = history->facilities->files;
 			file && *file; file++) {
 			// TODO: files based logging
 		}
 	} else if (history->has_getlog) {
 		for (const char **s = history->signals; s && *s; s++) {
-			size_t len = strlen(ctx->path);
-			if ((ctx->path[0] == '\0') ||
-				(!strncmp(*s, ctx->path, len) &&
+			size_t len = strlen(ctx->path) - offset;
+			if ((ctx->path[offset] == '\0') ||
+				(!strncmp(*s, ctx->path + offset, len) &&
 					((*s)[len] == '\0' || (*s)[len] == '/'))) {
-				/* add getLog method if *s starts with ctx->path and is either
-				 * entire ctx->path or whole path until '/' character.
+				/* add getLog method if *s starts with ctx->path and is
+				 * either entire ctx->path or whole path until '/'
+				 * character.
 				 */
 				rpchandler_dir_result(ctx, &rpchistory_getlog);
 				rpchandler_dir_result(ctx, &rpchistory_getsnapshot);
@@ -203,27 +228,37 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 	if (ctx->meta.type != RPCMSG_T_REQUEST)
 		return RPCHANDLER_MSG_SKIP;
 
+	int offset = 0;
+	if (history->add_prefix) {
+		if (strncmp(HISTORY_PREFIX, ctx->meta.path, strlen(HISTORY_PREFIX))) {
+			return RPCHANDLER_MSG_SKIP;
+		}
+		offset = strlen(HISTORY_PREFIX);
+	}
+
 	if (history->has_records &&
-		!strncmp(ctx->meta.path, RECORDS_PREFIX, strlen(RECORDS_PREFIX))) {
+		!strncmp(ctx->meta.path + offset, RECORDS_PREFIX, strlen(RECORDS_PREFIX))) {
 		for (struct rpchandler_history_records **record =
 				 history->facilities->records;
 			record && *record; record++) {
-			if (!strcmp(ctx->meta.path + strlen(RECORDS_PREFIX), (*record)->name))
+			if (!strcmp(ctx->meta.path + offset + strlen(RECORDS_PREFIX),
+					(*record)->name))
 				return handle_records_history(ctx, *record);
 		}
 	} else if (history->has_files &&
-		!strncmp(ctx->meta.path, FILES_PREFIX, strlen(FILES_PREFIX))) {
+		!strncmp(ctx->meta.path + offset, FILES_PREFIX, strlen(FILES_PREFIX))) {
 		for (struct rpchandler_history_files **file = history->facilities->files;
 			file && *file; file++) {
-			if (!strcmp(ctx->meta.path + strlen(FILES_PREFIX), (*file)->name))
+			if (!strcmp(ctx->meta.path + offset + strlen(FILES_PREFIX),
+					(*file)->name))
 				return handle_files_history();
 		}
 	} else if (!strcmp(ctx->meta.method, "getLog") && history->has_getlog) {
 		for (const char **s = history->signals; s && *s; s++) {
-			if ((ctx->meta.path[0] != '\0') &&
-				(strncmp(*s, ctx->meta.path, strlen(ctx->meta.path)) ||
-					!((*s)[strlen(ctx->meta.path)] == '\0' ||
-						(*s)[strlen(ctx->meta.path)] == '/')))
+			if ((ctx->meta.path[offset] != '\0') &&
+				(strncmp(*s, ctx->meta.path + offset, strlen(ctx->meta.path)) ||
+					!((*s)[strlen(ctx->meta.path) - offset] == '\0' ||
+						(*s)[strlen(ctx->meta.path) - offset] == '/')))
 				continue;
 
 			struct rpchistory_getlog_request *request =
@@ -241,10 +276,10 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 		}
 	} else if (!strcmp(ctx->meta.method, "getSnapshot") && history->has_getlog) {
 		for (const char **s = history->signals; s && *s; s++) {
-			if ((ctx->meta.path[0] != '\0') &&
-				(strncmp(*s, ctx->meta.path, strlen(ctx->meta.path)) ||
-					!((*s)[strlen(ctx->meta.path)] == '\0' ||
-						(*s)[strlen(ctx->meta.path)] == '/')))
+			if ((ctx->meta.path[offset] != '\0') &&
+				(strncmp(*s, ctx->meta.path + offset, strlen(ctx->meta.path)) ||
+					!((*s)[strlen(ctx->meta.path) - offset] == '\0' ||
+						(*s)[strlen(ctx->meta.path) - offset] == '/')))
 				continue;
 
 			struct rpchistory_getsnapshot_request *request =
@@ -273,7 +308,8 @@ static const struct rpchandler_funcs rpc_funcs = {
 };
 
 rpchandler_history_t rpchandler_history_new(
-	struct rpchandler_history_facilities *facilities, const char **signals) {
+	struct rpchandler_history_facilities *facilities, bool add_prefix,
+	const char **signals) {
 	rpchandler_history_t res = malloc(sizeof *res);
 	if (!res)
 		return NULL;
@@ -282,8 +318,9 @@ rpchandler_history_t rpchandler_history_new(
 	res->signals = signals;
 	res->has_records = facilities->records;
 	res->has_files = facilities->files;
-	res->has_getlog = facilities->funcs->pack_getlog &&
+	res->has_getlog = facilities->funcs && facilities->funcs->pack_getlog &&
 		facilities->funcs->pack_getsnapshot;
+	res->add_prefix = add_prefix;
 
 	return res;
 }

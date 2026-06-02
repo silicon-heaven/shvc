@@ -173,14 +173,19 @@ typedef struct rpchandler_history *rpchandler_history_t;
  * :param facilities: The pointer to :c:struct:`rpchandler_history_facilities`
  *   structure. This provides the information about histories to be used in the
  *   framework, it is an array terminated by ``NULL``.
+ * :param add_prefix: History can be either provided by an application mounted
+ *   to ``.history`` path in SHV tree or as a part of the broker. The latter
+ *   option requires to add ``.history`` prefix to record paths manually. Set
+ *   this parameter to ``True`` if history handler is part of the broker.
  * :param signals: Null terminated array with the paths to signals being
  *   recorded by all facilities. These paths are present in the virtual tree
- *   under ``./history`` node and contains getLog method.
- * :return: RPC Records Handler object.
+ *   under ``.history`` node and contains getLog method. :return: RPC Records
+ *   Handler object.
  */
 [[gnu::malloc, gnu::nonnull]]
 rpchandler_history_t rpchandler_history_new(
-	struct rpchandler_history_facilities *facilities, const char **signals);
+	struct rpchandler_history_facilities *facilities, bool add_prefix,
+	const char **signals);
 
 /** Get RPC Handler stage for this History Handler.
  *

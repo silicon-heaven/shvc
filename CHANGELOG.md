@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - CPON Decimal unpack for `x.` scheme
 
+### Changed
+- RPC History handler can be set to add `.history` prefix in SHV tree
+  and is usable directly from broekr.
+
 
 ## [0.8.1] - 2026-02-05
 ### Fixed

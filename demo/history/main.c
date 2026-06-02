@@ -177,7 +177,7 @@ int main(int argc, char **argv) {
 	};
 
 	rpchandler_login_t login = rpchandler_login_new(&rpcurl->login);
-	rpchandler_history_t history = rpchandler_history_new(&facilities,
+	rpchandler_history_t history = rpchandler_history_new(&facilities, false,
 		(const char *[]){"node0/subnode/1", "node0/subnode/2", "node1/subnode",
 			"node2", NULL});
 
