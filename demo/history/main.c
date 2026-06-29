@@ -95,6 +95,14 @@ static bool log_get_index_range(
 	return true;
 }
 
+static bool log_get_date_span(void *log, struct rpchistory_datespan_request *req,
+	struct rpchistory_datespan_response *res) {
+	res->since = 1;
+	res->until = 6;
+	res->until_date = heads[4].datetime;
+	return true;
+}
+
 static bool log_pack_getlog(struct rpchandler_history_facilities *facilities,
 	struct rpchistory_getlog_request *request, cp_pack_t pack,
 	struct obstack *obstack, const char *path) {
@@ -160,10 +168,13 @@ int main(int argc, char **argv) {
 		rpclogger_new(&rpclogger_stderr_funcs, "=> ", logsiz, conf.verbose);
 
 	struct rpchandler_history_records *records[2] = {
-		&(struct rpchandler_history_records){.name = "records_log",
+		&(struct rpchandler_history_records){
+			.name = "records_log",
 			.cookie = NULL,
 			.get_index_range = log_get_index_range,
-			.pack_records = log_pack_records},
+			.pack_records = log_pack_records,
+			.get_datespan = log_get_date_span,
+		},
 		NULL};
 
 	struct rpchandler_history_facilities facilities = {

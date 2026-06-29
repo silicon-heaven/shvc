@@ -78,6 +78,16 @@ struct rpchandler_history_records {
 	 */
 	bool (*get_index_range)(
 		void *cookie, uint64_t *min, uint64_t *max, uint64_t *span);
+	/** Obtains the dateSpan based on givern request parameters.
+	 *
+	 * :param cookie: Logging framework specific cookie, refer to
+	 *   :c:member:`cookie`.
+	 * :param req: Date span request parameters.
+	 * :param resp: Response filled by the logging facility.
+	 * :return: ``false`` on failure and ``true`` otherwise.
+	 */
+	bool (*get_datespan)(void *cookie, struct rpchistory_datespan_request *req,
+		struct rpchistory_datespan_response *res);
 };
 
 struct rpchandler_history_facilities;

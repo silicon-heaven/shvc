@@ -21,6 +21,14 @@ const struct rpcdir rpchistory_span = {
 	.signals_cnt = 0,
 };
 
+const struct rpcdir rpchistory_datespan = {
+	.name = "dateSpan",
+	.param = "!historyDateSpanP",
+	.result = "!historyDateSpanR",
+	.access = RPCACCESS_SERVICE,
+	.signals_cnt = 0,
+};
+
 const struct rpcdir rpchistory_getlog = {
 	.name = "getLog",
 	.param = "!getLogP",
@@ -300,4 +308,66 @@ bool rpchistory_file_record_pack_begin(
 
 bool rpchistory_file_record_pack_end(cp_pack_t pack) {
 	return cp_pack_container_end(pack);
+}
+
+bool rpchistory_datespan_response_pack(
+	cp_pack_t pack, struct rpchistory_datespan_response *res) {
+	cp_pack_list_begin(pack);
+	cp_pack_int(pack, res->since);
+	cp_pack_int(pack, res->until);
+	cp_pack_datetime(pack, res->until_date);
+	return cp_pack_container_end(pack);
+}
+
+struct rpchistory_datespan_request *rpchistory_datespan_request_unpack(
+	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack) {
+	if (cp_unpack_type(unpack, item) != CPITEM_IMAP)
+		return NULL;
+
+	struct rpchistory_datespan_request *res = obstack_alloc(obstack, sizeof *res);
+	struct timespec ts, mon;
+	clock_gettime(CLOCK_REALTIME, &ts);
+	clock_gettime(CLOCK_MONOTONIC, &mon);
+	*res = (struct rpchistory_datespan_request){
+		.since = {.msecs = 0},
+		.until = {.msecs = INT64_MAX},
+		.now = {.msecs = INT64_MAX},
+	};
+
+	for_cp_unpack_imap(unpack, item, key) {
+		switch (key) {
+			case RPCHISTORY_DATESPAN_REQ_KEY_SINCE:
+				if (!cp_unpack_datetime(unpack, item, res->since))
+					goto datespan_err;
+				break;
+			case RPCHISTORY_DATESPAN_REQ_KEY_UNTIL:
+				if (!cp_unpack_datetime(unpack, item, res->until))
+					goto datespan_err;
+				break;
+			case RPCHISTORY_DATESPAN_REQ_KEY_NOW:
+				if (!cp_unpack_datetime(unpack, item, res->now))
+					goto datespan_err;
+				break;
+			default:
+				goto datespan_err;
+		}
+	}
+
+	if (res->now.msecs != INT64_MAX && res->until.msecs == INT64_MAX) {
+		res->until = res->now;
+	}
+
+	if (res->until.msecs == INT64_MAX) {
+		res->until.msecs = (ts.tv_sec * 1000) + (ts.tv_nsec / 1000000);
+	}
+
+	if (res->until.msecs < res->since.msecs) {
+		goto datespan_err;
+	}
+
+	return res;
+
+datespan_err:
+	obstack_free(obstack, res);
+	return NULL;
 }

@@ -253,6 +253,86 @@ static struct cpongetsnapshot_request {
 	{(struct rpchistory_getsnapshot_request){}, "152u", 1},
 };
 
+static struct datespan_request {
+	struct rpchistory_datespan_request req;
+	const char *cpon;
+	int error;
+} datespan_request_pairs_d[] = {
+	{(struct rpchistory_datespan_request){
+		 .since = {.msecs = 150000, .offutc = 60},
+		 .until = {.msecs = 151000, .offutc = 60},
+		 .now = {.msecs = 152000, .offutc = 60},
+	 },
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:d\"1970-01-01T00:02:31.000+01:00\",3:d\"1970-01-01T00:02:32.000+01:00\"}"},
+	{(struct rpchistory_datespan_request){
+		 .since = {.msecs = 150000, .offutc = 60},
+		 .until = {.msecs = 152000, .offutc = 60},
+		 .now = {.msecs = 152000, .offutc = 60},
+	 },
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",3:d\"1970-01-01T00:02:32.000+01:00\"}"},
+	{(struct rpchistory_datespan_request){
+		 .since = {.msecs = 0, .offutc = 0},
+		 .until = {.msecs = 152000, .offutc = 60},
+		 .now = {.msecs = 152000, .offutc = 60},
+	 },
+		"i{3:d\"1970-01-01T00:02:32.000+01:00\"}"},
+	{(struct rpchistory_datespan_request){
+		 .since = {.msecs = 150000, .offutc = 60},
+		 .until = {.msecs = 151000, .offutc = 60},
+		 .now = {.msecs = 152000, .offutc = 60},
+	 },
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:d\"1970-01-01T00:02:31.000+01:00\",3:d\"1970-01-01T00:02:32.000+01:00\", 5:55}",
+		1},
+	{(struct rpchistory_datespan_request){
+		 .since = {.msecs = 150000, .offutc = 60},
+		 .until = {.msecs = 151000, .offutc = 60},
+		 .now = {.msecs = 152000, .offutc = 60},
+	 },
+		"i{1:42,2:d\"1970-01-01T00:02:31.000+01:00\",3:d\"1970-01-01T00:02:32.000+01:00\"}",
+		1},
+	{(struct rpchistory_datespan_request){
+		 .since = {.msecs = 150000, .offutc = 60},
+		 .until = {.msecs = 151000, .offutc = 60},
+		 .now = {.msecs = 152000, .offutc = 60},
+	 },
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:42,3:d\"1970-01-01T00:02:32.000+01:00\"}",
+		1},
+	{(struct rpchistory_datespan_request){
+		 .since = {.msecs = 150000, .offutc = 60},
+		 .until = {.msecs = 151000, .offutc = 60},
+		 .now = {.msecs = 152000, .offutc = 60},
+	 },
+		"i{1:d\"1970-01-01T00:02:30.000+01:00\",2:d\"1970-01-01T00:02:31.000+01:00\",3:42}",
+		1},
+	{(struct rpchistory_datespan_request){
+		 .since = {.msecs = 150000, .offutc = 60},
+		 .until = {.msecs = 151000, .offutc = 60},
+		 .now = {.msecs = 152000, .offutc = 60},
+	 },
+		"42", 1},
+	{(struct rpchistory_datespan_request){
+		 .since = {.msecs = 150000, .offutc = 60},
+		 .until = {.msecs = 151000, .offutc = 60},
+		 .now = {.msecs = 152000, .offutc = 60},
+	 },
+		"i{1:d\"1975-01-01T00:02:30.000+01:00\",2:d\"1970-01-01T00:02:31.000+01:00\"}",
+		1},
+};
+
+static struct datespan_response {
+	struct rpchistory_datespan_response res;
+	const char *cpon;
+} datespan_response_pairs_d[] = {
+	{
+		(struct rpchistory_datespan_response){
+			.since = 42,
+			.until = 84,
+			.until_date = (struct cpdatetime){.msecs = 150000, .offutc = 60},
+		},
+		"[42,84,d\"1970-01-01T00:02:30.000+01:00\"]",
+	},
+};
+
 TEST_CASE(pack, setup_packstream_pack_cpon, teardown_packstream_pack) {}
 
 ARRAY_TEST(pack, record_packer, record_pairs_d) {
@@ -338,4 +418,38 @@ test_end:
 
 ARRAY_TEST(unpack, getsnapshot_unpacker, getsnapshot_request_pairs_d) {
 	getsnapshot_request_unpack(_d);
+}
+
+static void datespan_request_unpack(struct datespan_request _d) {
+	struct cpitem item;
+	cpitem_unpack_init(&item);
+	cp_unpack_t unpack = unpack_cpon(_d.cpon);
+	struct obstack obstack;
+	obstack_init(&obstack);
+
+	struct rpchistory_datespan_request *datespan =
+		rpchistory_datespan_request_unpack(unpack, &item, &obstack);
+	if (_d.error) {
+		ck_assert_ptr_null(datespan);
+		goto test_end;
+	}
+
+	ck_assert_ptr_nonnull(datespan);
+
+	ck_assert_int_eq(datespan->since.msecs, _d.req.since.msecs);
+	ck_assert_int_eq(datespan->until.msecs, _d.req.until.msecs);
+	ck_assert_int_eq(datespan->now.msecs, _d.req.now.msecs);
+
+test_end:
+	obstack_free(&obstack, NULL);
+	unpack_free(unpack);
+}
+
+ARRAY_TEST(unpack, datespan_unpacker, datespan_request_pairs_d) {
+	datespan_request_unpack(_d);
+}
+
+ARRAY_TEST(pack, datespan_packer, datespan_response_pairs_d) {
+	rpchistory_datespan_response_pack(packstream_pack, &_d.res);
+	ck_assert_packstr(_d.cpon);
 }
