@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - `dateSpan` method support in RPC History facility
+- `.history/**/.records/*:fetch` now returns `ref` field for `timeJump`
+  and `timeAbig` records
 
 ### Changed
 - RPC History handler can be set to add `.history` prefix in SHV tree

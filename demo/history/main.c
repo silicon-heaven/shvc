@@ -42,6 +42,7 @@ static const struct rpchistory_record_head heads[] = {
 		.timejump = 18000000,
 		.datetime = {.msecs = 500000, .offutc = 0},
 		.id = 4,
+		.ref = -1,
 	},
 	(struct rpchistory_record_head){
 		.type = RPCHISTORY_RECORD_NORMAL,

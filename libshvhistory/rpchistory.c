@@ -214,12 +214,14 @@ bool rpchistory_record_pack_begin(
 		res = cp_pack_int(pack, head->id);
 	}
 
+	if (head->ref >= 0) {
+		cp_pack_int(pack, RPCHISTORY_FETCH_KEY_REF);
+		cp_pack_int(pack, head->ref);
+	}
+
 	if (head->type == RPCHISTORY_RECORD_NORMAL ||
 		head->type == RPCHISTORY_RECORD_KEEP) {
-		if (head->ref >= 0) {
-			cp_pack_int(pack, RPCHISTORY_FETCH_KEY_REF);
-			cp_pack_int(pack, head->ref);
-		} else {
+		if (head->ref < 0) {
 			if (head->path && *head->path != '\0') {
 				cp_pack_int(pack, RPCHISTORY_FETCH_KEY_PATH);
 				cp_pack_str(pack, head->path);
