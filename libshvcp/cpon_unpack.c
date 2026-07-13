@@ -141,6 +141,7 @@ size_t cpon_unpack(FILE *f, struct cpon_state *state, struct cpitem *item) {
 			} else if (c == '.') {
 				item->type = CPITEM_DECIMAL;
 				item->as.Decimal.mantissa = item->as.Int;
+				item->as.Decimal.exponent = 0;
 				uintmax_t dec;
 				ssize_t rres = res;
 				if (SCANF("%ju", &dec) == 1) {
