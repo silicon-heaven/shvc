@@ -93,11 +93,11 @@ static bool log_pack_records(
 	return true;
 }
 
-static bool log_get_index_range(
-	void *log, uint64_t *min, uint64_t *max, uint64_t *span) {
-	*min = 1;
-	*max = 6;
-	*span = 6;
+static bool log_get_index_range(void *log, struct rpchistory_span_response *res) {
+	res->min = 1;
+	res->max = 6;
+	res->span = 6;
+	res->newest_time_rec = 2;
 	return true;
 }
 

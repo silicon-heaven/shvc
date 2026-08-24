@@ -353,7 +353,7 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                     4: "!historyRecords",
                     5: 40,
                 },
-                {1: "span", 2: 2, 4: "[i:smallest,i:biggest,i(1,):span]", 5: 40},
+                {1: "span", 2: 2, 4: "!historySpan", 5: 40},
                 {
                     1: "dateSpan",
                     3: "!historyDateSpanP",
@@ -362,7 +362,7 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                 },
             ],
         ),
-        ("test/.history/.records/records_log", "span", None, [1, 6, 6]),
+        ("test/.history/.records/records_log", "span", None, [1, 6, 6, 2]),
         (
             "test/.history/.records/records_log",
             "dateSpan",

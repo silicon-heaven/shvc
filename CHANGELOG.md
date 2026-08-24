@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.history/**/.records/*:fetch` now returns `ref` field for `timeJump`
   and `timeAbig` records
 - `idref` field to `.history/**/.records/*:fetch` method response
+- `.history/**/.records/*:span` now returns `newestTimeRecord` field
 
 ### Changed
 - RPC History handler can be set to add `.history` prefix in SHV tree

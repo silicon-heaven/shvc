@@ -15,7 +15,7 @@ const struct rpcdir rpchistory_fetch = {
 
 const struct rpcdir rpchistory_span = {
 	.name = "span",
-	.result = "[i:smallest,i:biggest,i(1,):span]",
+	.result = "!historySpan",
 	.flags = RPCDIR_F_GETTER,
 	.access = RPCACCESS_SERVICE,
 	.signals_cnt = 0,

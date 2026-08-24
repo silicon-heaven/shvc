@@ -71,13 +71,10 @@ struct rpchandler_history_records {
 	 *
 	 * :param cookie: Logging framework specific cookie, refer to
 	 *   :c:member:`cookie`.
-	 * :param min: The lowest valid record index.
-	 * :param max: The highest valid record index.
-	 * :param span: Record keep span.
+	 * :param res: Pointer to the filled structure providing span response.
 	 * :return: ``false`` on failure and ``true`` otherwise.
 	 */
-	bool (*get_index_range)(
-		void *cookie, uint64_t *min, uint64_t *max, uint64_t *span);
+	bool (*get_index_range)(void *cookie, struct rpchistory_span_response *res);
 	/** Obtains the dateSpan based on givern request parameters.
 	 *
 	 * :param cookie: Logging framework specific cookie, refer to

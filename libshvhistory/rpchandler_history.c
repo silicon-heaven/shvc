@@ -127,12 +127,13 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 }
 
 static void rpcspan_result(
-	struct rpchandler_msg *ctx, uint64_t min, uint64_t max, uint64_t span) {
+	struct rpchandler_msg *ctx, struct rpchistory_span_response *res) {
 	cp_pack_t pack = rpchandler_msg_new_response(ctx);
 	cp_pack_list_begin(pack);
-	cp_pack_int(pack, min);
-	cp_pack_int(pack, max);
-	cp_pack_int(pack, span);
+	cp_pack_int(pack, res->min);
+	cp_pack_int(pack, res->max);
+	cp_pack_int(pack, res->span);
+	cp_pack_int(pack, res->newest_time_rec);
 	cp_pack_container_end(pack);
 	rpchandler_msg_send_response(ctx, pack);
 }
@@ -183,9 +184,9 @@ static enum rpchandler_msg_res handle_records_history(
 	} else if (!strcmp(ctx->meta.method, "span") &&
 		ctx->meta.access >= RPCACCESS_SERVICE) {
 		if (rpchandler_msg_valid_nullparam(ctx)) {
-			uint64_t min, max, span;
-			if (record->get_index_range(record->cookie, &min, &max, &span)) {
-				rpcspan_result(ctx, min, max, span);
+			struct rpchistory_span_response res;
+			if (record->get_index_range(record->cookie, &res)) {
+				rpcspan_result(ctx, &res);
 			} else
 				rpchandler_msg_send_error(ctx, RPCERR_METHOD_CALL_EXCEPTION,
 					"Could not retrieve information from the log.");

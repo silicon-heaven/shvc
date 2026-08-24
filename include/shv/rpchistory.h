@@ -269,6 +269,23 @@ struct rpchistory_datespan_response {
 	struct cpdatetime until_date;
 };
 
+/** This structure provides fields for span method response */
+struct rpchistory_span_response {
+	/** This provides the lowest (oldest) valid record index. */
+	intmax_t min;
+	/** This provides the highest (newest) valid record index. */
+	intmax_t max;
+	/** This provides the history span value, It is the number of records
+	 * after which the the record is repeated. Fetching a span number of
+	 * records should provide the state of the device.
+	 */
+	intmax_t span;
+	/* This provides an index of the newest (most recent) time record (either
+	 * timeJump or timeAbig type).
+	 */
+	intmax_t newest_time_rec;
+};
+
 /** Description for fetch method. */
 extern const struct rpcdir rpchistory_fetch;
 /** Description for span method. */
