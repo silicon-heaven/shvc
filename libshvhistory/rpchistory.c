@@ -219,6 +219,11 @@ bool rpchistory_record_pack_begin(
 		cp_pack_int(pack, head->ref);
 	}
 
+	if (head->idref >= 0) {
+		cp_pack_int(pack, RPCHISTORY_FETCH_KEY_IDREF);
+		cp_pack_int(pack, head->idref);
+	}
+
 	if (head->type == RPCHISTORY_RECORD_NORMAL ||
 		head->type == RPCHISTORY_RECORD_KEEP) {
 		if (head->ref < 0) {

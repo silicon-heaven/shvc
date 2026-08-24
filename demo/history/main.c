@@ -24,6 +24,7 @@ static const struct rpchistory_record_head heads[] = {
 		.datetime = {.msecs = 150000, .offutc = 0},
 		.id = 2,
 		.ref = -1,
+		.idref = -1,
 	},
 	(struct rpchistory_record_head){
 		.type = RPCHISTORY_RECORD_NORMAL,
@@ -35,6 +36,7 @@ static const struct rpchistory_record_head heads[] = {
 		.datetime = {.msecs = 500000, .offutc = 0},
 		.id = 3,
 		.ref = -1,
+		.idref = -1,
 	},
 	(struct rpchistory_record_head){
 		.type = RPCHISTORY_RECORD_TIMEJUMP,
@@ -43,6 +45,7 @@ static const struct rpchistory_record_head heads[] = {
 		.datetime = {.msecs = 500000, .offutc = 0},
 		.id = 4,
 		.ref = -1,
+		.idref = -1,
 	},
 	(struct rpchistory_record_head){
 		.type = RPCHISTORY_RECORD_NORMAL,
@@ -52,6 +55,7 @@ static const struct rpchistory_record_head heads[] = {
 		.datetime = {.msecs = 600000, .offutc = 0},
 		.id = 5,
 		.ref = -1,
+		.idref = -1,
 	},
 	(struct rpchistory_record_head){
 		.type = RPCHISTORY_RECORD_NORMAL,
@@ -61,6 +65,7 @@ static const struct rpchistory_record_head heads[] = {
 		.datetime = {.msecs = 800000, .offutc = 0},
 		.id = 6,
 		.ref = -1,
+		.idref = -1,
 	},
 };
 

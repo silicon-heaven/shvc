@@ -47,6 +47,7 @@ enum rpchistory_fetch_keys {
 	RPCHISTORY_FETCH_KEY_REPEAT = 8,
 	RPCHISTORY_FETCH_KEY_ID = 9,
 	RPCHISTORY_FETCH_KEY_REF = 10,
+	RPCHISTORY_FETCH_KEY_IDREF = 11,
 	RPCHISTORY_FETCH_KEY_TIMEJUMP = 60,
 };
 
@@ -144,8 +145,23 @@ struct rpchistory_record_head {
 	 * to the most closest record that specifies desired default.
 	 *
 	 * Passing negative value means this field is not provided.
+	 *
+	 * 	.. WARNING::
+	 * 		This field is obsolite, idref should be used instead.
 	 */
 	int ref;
+	/** This provides an offset for the id to the older matching record. This
+	 * must always be the closest matching record. For normal and keep records
+	 * this is matching combination of path, signal, source, and accessLevel.
+	 * For timeJump and timeAbiq records, this is the closest older record of
+	 * either type. The value `0` is special (points to itself) and
+	 * can be optionally used to signal that this is the oldest record of this
+	 * type in the log.
+	 *
+	 * The advantage compared to the obsolete ref field is that idref
+	 * allows referencing records outside of the provided list.
+	 */
+	int idref;
 	/** SHV path to the node relative to the .history parrent. */
 	const char *path;
 	/** Signal name. */
