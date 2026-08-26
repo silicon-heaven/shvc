@@ -51,13 +51,6 @@ enum rpchistory_fetch_keys {
 	RPCHISTORY_FETCH_KEY_TIMEJUMP = 60,
 };
 
-/** Keys for the getSpan' method request description Imap. */
-enum rpchistory_datespan_request_keys {
-	RPCHISTORY_DATESPAN_REQ_KEY_SINCE = 1,
-	RPCHISTORY_DATESPAN_REQ_KEY_UNTIL,
-	RPCHISTORY_DATESPAN_REQ_KEY_NOW,
-};
-
 /** Keys for the getLog's method request description IMap. */
 enum rpchistory_getlog_request_keys {
 	RPCHISTORY_GETLOG_REQ_KEY_SINCE = 1,
@@ -219,56 +212,6 @@ struct rpchistory_getsnapshot_request {
 	const char *ri;
 };
 
-/** This structure provides fields for dateSpan method request.
- *
- * This structure is returned as a result of
- * :c:func:`rpchistory_datespan_request_unpack` call.
- */
-struct rpchistory_datespan_request {
-	/** This is a :c:struct:`cpdatetime` that defines point in time since
-	 * when the method should find the record in the log.
-	 *
-	 * Epoch begining time is filled if this field is not specified.
-	 */
-	struct cpdatetime since;
-	/** This is a :c:struct:`cpdatetime` that defines point in time until
-	 * when the method should find the record in the log.
-	 *
-	 * Device's time is filled if this field is not specified. It is
-	 * set to ``now`` value if the request specifies ``now`` field and not
-	 * ``until``.
-	 */
-	struct cpdatetime until;
-	/** This is a :c:struct:`cpdatetime` that defines point in time the
-	 * device making request thinks is correct. This is basically a virtual
-	 * timejump that will be applied when searching for since and until
-	 * records.
-	 *
-	 * ``INT64_MAX`` is filled in :c:member:`cpdatetime.msecs` if this
-	 * parameter is not specified. This means no timejump should be applied.
-	 */
-	struct cpdatetime now;
-};
-
-/** This structure provides fields for dateSpan method response. */
-struct rpchistory_datespan_response {
-	/** This provides the index of the first record at or before the requested
-	 * since time.
-	 */
-	intmax_t since;
-	/** This provides the index of the first record at or before the requested
-	 * until time.
-	 */
-	intmax_t until;
-	/** This is a :c:struct:`cpdatetime` that of the first record at or before
-	 * until time. This field may be omitted if until_date is the same as the
-	 * requested one, i.e. if the record of exactly the same datetime was found
-	 * in the facility. Fill ``INT64_MAX`` in :c:member:`cpdatetime.msecs` to
-	 * avoid packing this field.
-	 */
-	struct cpdatetime until_date;
-};
-
 /** This structure provides fields for span method response */
 struct rpchistory_span_response {
 	/** This provides the lowest (oldest) valid record index. */
@@ -290,8 +233,6 @@ struct rpchistory_span_response {
 extern const struct rpcdir rpchistory_fetch;
 /** Description for span method. */
 extern const struct rpcdir rpchistory_span;
-/** Description for dateSpan method. */
-extern const struct rpcdir rpchistory_datespan;
 /** Description for getLog method. */
 extern const struct rpcdir rpchistory_getlog;
 /** Description for getSnapshot method */
@@ -386,27 +327,5 @@ bool rpchistory_file_record_pack_begin(
  * :return: ``false`` if packing encounters failure, ``true`` otherwise.
  */
 bool rpchistory_file_record_pack_end(cp_pack_t pack);
-
-/** Pack dateSpan method response.
- *
- * :param pack: The generic packer where it is about to be packed.
- * :param res: Pointer to the method's response result.
- * :return: ``false`` if packing encounters failure and ``true`` otherwise.
- */
-bool rpchistory_datespan_response_pack(
-	cp_pack_t pack, struct rpchistory_datespan_response *res);
-
-/** Unpack dateSpan method request.
- *
- * :param unpack: The generic unpacker to be used to unpack items.
- * :param item: The item instance that was used to unpack the previous item.
- * :param obstack: Pointer to the obstack instance to be used to allocate
- *   :c:struct:`rpchistory_datespan_request` structure.
- * :return: Pointer to :c:struct:`rpchistory_datespan_request` or ``NULL`` in
- *   case of an unpack error. You can investigate `item` to identify the failure
- *   cause.
- */
-struct rpchistory_datespan_request *rpchistory_datespan_request_unpack(
-	cp_unpack_t unpack, struct cpitem *item, struct obstack *obstack);
 
 #endif /* _RPCHISTORY_H */

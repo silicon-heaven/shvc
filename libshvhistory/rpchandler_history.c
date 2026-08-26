@@ -100,7 +100,6 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 					ctx->path + offset + strlen(RECORDS_PREFIX))) {
 				rpchandler_dir_result(ctx, &rpchistory_fetch);
 				rpchandler_dir_result(ctx, &rpchistory_span);
-				rpchandler_dir_result(ctx, &rpchistory_datespan);
 			}
 		}
 	} else if (!strncmp(FILES_PREFIX, ctx->path + offset, strlen(FILES_PREFIX))) {
@@ -137,14 +136,6 @@ static void rpcspan_result(
 	cp_pack_container_end(pack);
 	rpchandler_msg_send_response(ctx, pack);
 }
-
-static void rpcdatespan_result(
-	struct rpchandler_msg *ctx, struct rpchistory_datespan_response *res) {
-	cp_pack_t pack = rpchandler_msg_new_response(ctx);
-	rpchistory_datespan_response_pack(pack, res);
-	rpchandler_msg_send_response(ctx, pack);
-}
-
 
 static void rpcfetch_result(struct rpchandler_history_records *record,
 	struct rpchandler_msg *ctx, int start, int num) {
@@ -188,34 +179,8 @@ static enum rpchandler_msg_res handle_records_history(
 			if (record->get_index_range(record->cookie, &res)) {
 				rpcspan_result(ctx, &res);
 			} else
-				rpchandler_msg_send_error(ctx, RPCERR_METHOD_CALL_EXCEPTION,
+				rpchandler_msg_send_error(ctx, RPCERR_INVALID_PARAM,
 					"Could not retrieve information from the log.");
-		}
-		return RPCHANDLER_MSG_DONE;
-	} else if (!strcmp(ctx->meta.method, "dateSpan") &&
-		ctx->meta.access >= RPCACCESS_SERVICE) {
-		bool invalid_param = false;
-		struct rpchistory_datespan_request *req = rpchistory_datespan_request_unpack(
-			ctx->unpack, ctx->item, rpchandler_obstack(ctx));
-		if (!req) {
-			invalid_param = true;
-		}
-
-		if (!rpchandler_msg_valid(ctx)) {
-			return RPCHANDLER_MSG_DONE;
-		}
-
-		if (invalid_param) {
-			rpchandler_msg_send_error(
-				ctx, RPCERR_INVALID_PARAM, "!historyDateSpanP expected.");
-		} else {
-			struct rpchistory_datespan_response res;
-			if (record->get_datespan(record->cookie, req, &res)) {
-				rpcdatespan_result(ctx, &res);
-			} else {
-				rpchandler_msg_send_error(ctx, RPCERR_METHOD_CALL_EXCEPTION,
-					"There are no available records in requested time span.");
-			}
 		}
 		return RPCHANDLER_MSG_DONE;
 	}

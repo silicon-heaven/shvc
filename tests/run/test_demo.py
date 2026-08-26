@@ -354,21 +354,9 @@ async def fixture_demo_history(demo_history_exec, broker, url):
                     5: 40,
                 },
                 {1: "span", 2: 2, 4: "!historySpan", 5: 40},
-                {
-                    1: "dateSpan",
-                    3: "!historyDateSpanP",
-                    4: "!historyDateSpanR",
-                    5: 40,
-                },
             ],
         ),
         ("test/.history/.records/records_log", "span", None, [1, 6, 6, 2]),
-        (
-            "test/.history/.records/records_log",
-            "dateSpan",
-            {},
-            [1, 6, datetime.datetime(1970, 1, 1, 0, 13, 20, tzinfo=datetime.UTC)],
-        ),
         (
             "test/.history/.records/records_log",
             "fetch",
@@ -437,12 +425,6 @@ async def test_call_history(demo_history, client, path, method, param, result):
         ("test/.history/.records/records_log", "fetch", None, RpcInvalidParamError),
         ("test/.history/.records/records_log", "fetch", ["a", 1], RpcInvalidParamError),
         ("test/.history/.records/records_log", "fetch", [1, "a"], RpcInvalidParamError),
-        (
-            "test/.history/.records/records_log",
-            "dateSpan",
-            [1, "a"],
-            RpcInvalidParamError,
-        ),
     ),
 )
 async def test_call_error_history(demo_history, client, path, method, param, error):
