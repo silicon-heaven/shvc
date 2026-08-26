@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - CPON Decimal unpack for `x.` scheme
+- `.history/**/.records/*:fetch` response can have larger record id
+  than standard integer.
 
 
 ## [0.8.1] - 2026-02-05

@@ -138,7 +138,7 @@ struct rpchistory_record_head {
 	 *  .. NOTE::
 	 *		This field is used only for fetch responses, not getLog.
 	 */
-	int id;
+	intmax_t id;
 	/** This provides a way to reference the previous record to use it as
 	 * the default for path, signal and source of the record. Zero references
 	 * the record right before this one in the list. The offset must always be
