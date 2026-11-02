@@ -1,7 +1,10 @@
 #include <stdlib.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <fcntl.h>
+#include <sys/file.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <shv/crc32.h>
 #include <shv/rpcfile.h>
 #include <shv/rpchandler_file.h>
@@ -15,119 +18,167 @@
 #define obstack_chunk_alloc malloc
 #define obstack_chunk_free free
 
-struct rpchandler_file_repr {
-	struct rpcfile_stat_s stat;
-	struct rpchandler_file_list *list;
-};
-
 struct rpchandler_file {
-	int num;
-	struct rpchandler_file_repr *file;
-	struct rpchandler_file_cb *cb;
+	const struct rpchandler_file_node **entries;
 };
-
-static void update_cached_stats(const char *path, struct rpcfile_stat_s *file_stat) {
-	struct stat st;
-	stat(path, &st);
-	file_stat->type = RPCFILE_STAT_TYPE_REGULAR;
-	file_stat->size = st.st_size;
-	file_stat->page_size = st.st_blksize;
-	file_stat->access_time = cptmtodt(*gmtime(&st.st_atime));
-	file_stat->mod_time = cptmtodt(*gmtime(&st.st_mtime));
-}
-
-static bool list_files(rpchandler_file_t handler) {
-	struct rpchandler_file_list *list;
-	int num;
-
-	if (!handler->cb->ls || !(list = handler->cb->ls(&num)))
-		return false;
-
-	handler->file = calloc(num, sizeof *handler->file);
-	if (!handler->file) {
-		free(list);
-		return false;
-	}
-
-	handler->num = num;
-	for (int i = 0; i < num; i++) {
-		struct rpchandler_file_repr *file = handler->file + i;
-		file->list = list + i;
-		update_cached_stats(file->list->file_path, &file->stat);
-		file->stat.max_write = SHVC_FILE_MAXWRITE;
-		if (file->list->access & RPCFILE_ACCESS_READ)
-			file->list->access |= RPCFILE_ACCESS_VALIDATION;
-		if (file->list->access & RPCFILE_ACCESS_TRUNCATE)
-			file->list->access |= RPCFILE_ACCESS_WRITE;
-	}
-
-	return true;
-}
 
 static void rpc_ls(void *cookie, struct rpchandler_ls *ctx) {
 	struct rpchandler_file *handler = cookie;
-	for (int i = 0; i < handler->num; i++) {
-		const struct rpchandler_file_repr *file = handler->file + i;
-		char *l = strrchr(file->list->shv_path, '/');
-		size_t pathlen = l ? file->list->shv_path - l - 1 : 0;
-		if (ctx->path && strlen(ctx->path) == pathlen &&
-			!strncmp(ctx->path, file->list->shv_path, pathlen))
-			rpchandler_ls_result(ctx, l ? l + 1 : file->list->shv_path);
+	size_t len = strlen(ctx->path);
+	for (const struct rpchandler_file_node **e = handler->entries; *e; e++) {
+		const struct rpchandler_file_node *entry = *e;
+
+		if (ctx->name && entry->isdir && !strcmp(ctx->path, entry->shv_path)) {
+			if (strchr(ctx->name, '/'))
+				return;
+
+			char fullpath[strlen(entry->file_path) + strlen(ctx->name) + 2];
+			sprintf(fullpath, "%s/%s", entry->file_path, ctx->name);
+			struct stat sb;
+			if (strstr(fullpath, "..") == NULL && stat(fullpath, &sb) == 0 &&
+				S_ISREG(sb.st_mode)) {
+				rpchandler_ls_exists(ctx);
+				return;
+			}
+		}
+
+		if (*ctx->path != '\0') {
+			if (strncmp(entry->shv_path, ctx->path, len))
+				continue;
+
+			/* Check if this is full path or just subpath. Full path would
+			 * have null byte at the end, subpath will have '/'
+			 *
+			 * If we have full path then we need to check files in the directory
+			 * if the entry is a directory.
+			 */
+			if (entry->shv_path[len] != '/') {
+				if (!entry->isdir)
+					continue;
+
+				struct stat sb;
+				if (stat(entry->file_path, &sb) != 0 || !S_ISDIR(sb.st_mode))
+					continue;
+
+				DIR *d = opendir(entry->file_path);
+				if (d == NULL)
+					continue;
+
+				struct dirent *dirent;
+				while ((dirent = readdir(d))) {
+					if (dirent->d_type != DT_REG)
+						continue;
+
+					rpchandler_ls_result_const(ctx, dirent->d_name);
+				}
+
+				closedir(d);
+				continue;
+			}
+		}
+
+		const char *start = entry->shv_path + len;
+		if (*start == '/') {
+			start++;
+		}
+		const char *end = strchrnul(start, '/');
+		rpchandler_ls_result_fmt(ctx, "%.*s", (int)(end - start), start);
 	}
+}
+
+static bool rpc_dir_has_file(
+	const char *path, const struct rpchandler_file_node *entry) {
+	char *c = strrchr(path, '/');
+	if (!c)
+		return false;
+	size_t offset = strlen(c);
+	if (strncmp(entry->shv_path, path, strlen(path) - offset) ||
+		!strcmp(entry->shv_path, path)) {
+		return false;
+	}
+	char fullpath[strlen(entry->file_path) + offset + 2];
+	sprintf(fullpath, "%s/%s", entry->file_path, c ? c : "");
+	struct stat sb;
+	return strstr(fullpath, "..") == NULL && stat(fullpath, &sb) == 0 &&
+		S_ISREG(sb.st_mode);
+}
+
+static const struct rpchandler_file_node *select_file_node(
+	const struct rpchandler_file_node **entries, const char *path) {
+	const struct rpchandler_file_node *entry;
+	while ((entry = *(entries++))) {
+		if (entry->isdir) {
+			if (rpc_dir_has_file(path, entry))
+				return entry;
+		} else if (!strcmp(path, entry->shv_path))
+			return entry;
+	}
+	return NULL;
 }
 
 static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 	struct rpchandler_file *handler = cookie;
 
-	if (ctx->name) { /* Faster match against gperf */
-		const struct gperf_rpchandler_file_method_match *match =
-			gperf_rpchandler_file_method(ctx->name, strlen(ctx->name));
-		if (match)
-			for (int i = 0; i < handler->num; i++) {
-				struct rpchandler_file_repr *file = handler->file + i;
-				if (ctx->path && !strcmp(ctx->path, file->list->shv_path)) {
-					if (match->method == M_STAT || match->method == M_SIZE ||
-						(match->method == M_WRITE &&
-							file->list->access &
-								(RPCFILE_ACCESS_WRITE | RPCFILE_ACCESS_TRUNCATE)) ||
-						(match->method == M_TRUNCATE &&
-							file->list->access & RPCFILE_ACCESS_TRUNCATE) ||
-						(match->method == M_READ &&
-							file->list->access & RPCFILE_ACCESS_READ) ||
-						(match->method == M_APPEND &&
-							file->list->access & RPCFILE_ACCESS_APPEND) ||
-						((match->method == M_CRC || match->method == M_SHA1) &&
-							file->list->access &
-								(RPCFILE_ACCESS_VALIDATION | RPCFILE_ACCESS_READ)))
-						rpchandler_dir_exists(ctx);
-					break;
-				}
-			}
+	if (*ctx->path == '\0') {
 		return;
 	}
 
-	for (int i = 0; i < handler->num; i++) {
-		struct rpchandler_file_repr *file = handler->file + i;
-		if (ctx->path && !strcmp(ctx->path, file->list->shv_path)) {
-			rpchandler_dir_result(ctx, &rpcfile_stat);
-			rpchandler_dir_result(ctx, &rpcfile_size);
-			if (file->list->access &
-				(RPCFILE_ACCESS_VALIDATION | RPCFILE_ACCESS_READ)) {
-				rpchandler_dir_result(ctx, &rpcfile_crc);
-				rpchandler_dir_result(ctx, &rpcfile_sha1);
+	if (ctx->name) { /* Faster match against gperf */
+		const struct gperf_rpchandler_file_method_match *match =
+			gperf_rpchandler_file_method(ctx->name, strlen(ctx->name));
+		if (match) {
+			const struct rpchandler_file_node *entry =
+				select_file_node(handler->entries, ctx->path);
+			if (entry) {
+				bool exists = false;
+				switch (match->method) {
+					case M_STAT:
+					case M_SIZE:
+						exists = true;
+						break;
+					case M_WRITE:
+						exists = entry->access &
+							(RPCFILE_ACCESS_WRITE | RPCFILE_ACCESS_TRUNCATE);
+						break;
+					case M_TRUNCATE:
+						exists = entry->access & RPCFILE_ACCESS_TRUNCATE;
+						break;
+					case M_READ:
+						exists = entry->access & RPCFILE_ACCESS_READ;
+						break;
+					case M_APPEND:
+						exists = entry->access & RPCFILE_ACCESS_APPEND;
+						break;
+					case M_CRC:
+					case M_SHA1:
+						exists = entry->access &
+							(RPCFILE_ACCESS_VALIDATION | RPCFILE_ACCESS_READ);
+						break;
+				}
+				if (exists)
+					rpchandler_dir_exists(ctx);
 			}
-			if (file->list->access & RPCFILE_ACCESS_READ)
-				rpchandler_dir_result(ctx, &rpcfile_read);
-			if (file->list->access &
-				(RPCFILE_ACCESS_WRITE | RPCFILE_ACCESS_TRUNCATE))
-				rpchandler_dir_result(ctx, &rpcfile_write);
-			if (file->list->access & RPCFILE_ACCESS_TRUNCATE)
-				rpchandler_dir_result(ctx, &rpcfile_truncate);
-			if (file->list->access & RPCFILE_ACCESS_APPEND)
-				rpchandler_dir_result(ctx, &rpcfile_append);
-
-			break;
+			return;
 		}
+	}
+
+	const struct rpchandler_file_node *entry =
+		select_file_node(handler->entries, ctx->path);
+	if (entry) {
+		rpchandler_dir_result(ctx, &rpcfile_stat);
+		rpchandler_dir_result(ctx, &rpcfile_size);
+		if (entry->access & (RPCFILE_ACCESS_VALIDATION | RPCFILE_ACCESS_READ)) {
+			rpchandler_dir_result(ctx, &rpcfile_crc);
+			rpchandler_dir_result(ctx, &rpcfile_sha1);
+		}
+		if (entry->access & RPCFILE_ACCESS_READ)
+			rpchandler_dir_result(ctx, &rpcfile_read);
+		if (entry->access & (RPCFILE_ACCESS_WRITE | RPCFILE_ACCESS_TRUNCATE))
+			rpchandler_dir_result(ctx, &rpcfile_write);
+		if (entry->access & RPCFILE_ACCESS_TRUNCATE)
+			rpchandler_dir_result(ctx, &rpcfile_truncate);
+		if (entry->access & RPCFILE_ACCESS_APPEND)
+			rpchandler_dir_result(ctx, &rpcfile_append);
 	}
 }
 
@@ -213,6 +264,7 @@ static void rpc_handle_append(struct rpchandler_msg *ctx, const char *path) {
 	if (fd < 0)
 		return;
 
+	lseek(fd, 0, SEEK_END);
 	int ret = write(fd, (void *)buf, siz);
 	if (ret == siz) {
 		rpchandler_msg_send_response_void(ctx);
@@ -394,21 +446,29 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 	if (ctx->meta.type != RPCMSG_T_REQUEST)
 		return RPCHANDLER_MSG_SKIP;
 
-	for (int i = 0; i < handler->num; i++) {
-		struct rpchandler_file_repr *file = handler->file + i;
-
-		if (handler->cb->update_paths) {
-			if (handler->cb->update_paths(
-					&file->list->file_path, file->list->shv_path) < 0) {
-				if (rpchandler_msg_valid(ctx))
-					rpchandler_msg_send_error(ctx, RPCERR_METHOD_CALL_EXCEPTION,
-						"Could not obtain file paths.");
-				return RPCHANDLER_MSG_DONE;
+	for (const struct rpchandler_file_node **e = handler->entries; *e; e++) {
+		const struct rpchandler_file_node *entry = *e;
+		char *fullpath = (char *)entry->file_path;
+		if (entry->isdir) {
+			char *c = strrchr(ctx->meta.path, '/');
+			size_t offset = c ? strlen(c) : 0;
+			if (strncmp(entry->shv_path, ctx->meta.path,
+					strlen(ctx->meta.path) - offset) ||
+				!strcmp(entry->shv_path, ctx->meta.path)) {
+				continue;
 			}
+
+			obstack_printf(rpchandler_obstack(ctx), "%s%s%s%c",
+				entry->file_path, c ? "/" : "", c ? c : "", '\0');
+			fullpath = obstack_finish(rpchandler_obstack(ctx));
+
+			if (strstr(fullpath, "..") || access(fullpath, F_OK) != 0) {
+				continue;
+			}
+		} else if (strcmp(ctx->meta.path, entry->shv_path)) {
+			continue;
 		}
 
-		if (!ctx->meta.path || strcmp(ctx->meta.path, file->list->shv_path))
-			continue;
 		const struct gperf_rpchandler_file_method_match *match =
 			gperf_rpchandler_file_method(
 				ctx->meta.method, strlen(ctx->meta.method));
@@ -418,9 +478,17 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 					if (ctx->meta.access < RPCACCESS_READ)
 						break;
 					if (rpchandler_msg_valid_nullparam(ctx)) {
-						update_cached_stats(file->list->file_path, &file->stat);
 						cp_pack_t pack = rpchandler_msg_new_response(ctx);
-						rpcfile_stat_pack(pack, &file->stat);
+						struct stat st;
+						stat(fullpath, &st);
+						struct rpcfile_stat_s stat = {0};
+						stat.type = RPCFILE_STAT_TYPE_REGULAR;
+						stat.size = st.st_size;
+						stat.page_size = st.st_blksize;
+						stat.access_time = cptmtodt(*gmtime(&st.st_atime));
+						stat.mod_time = cptmtodt(*gmtime(&st.st_mtime));
+						stat.max_write = SHVC_FILE_MAXWRITE;
+						rpcfile_stat_pack(pack, &stat);
 						rpchandler_msg_send_response(ctx, pack);
 					}
 					return RPCHANDLER_MSG_DONE;
@@ -429,30 +497,31 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 					if (ctx->meta.access < RPCACCESS_READ)
 						break;
 					if (rpchandler_msg_valid_nullparam(ctx)) {
-						update_cached_stats(file->list->file_path, &file->stat);
+						struct stat st;
+						stat(fullpath, &st);
 						cp_pack_t pack = rpchandler_msg_new_response(ctx);
-						cp_pack_int(pack, file->stat.size);
+						cp_pack_int(pack, st.st_size);
 						cp_pack_container_end(pack);
 						rpchandler_msg_send(ctx);
 					}
 					return RPCHANDLER_MSG_DONE;
 				}
 				case M_WRITE:
-					if (!(file->list->access &
+					if (!(entry->access &
 							(RPCFILE_ACCESS_WRITE | RPCFILE_ACCESS_TRUNCATE)) ||
 						ctx->meta.access < RPCACCESS_WRITE)
 						break;
-					rpc_handle_write(ctx, file->list->file_path);
+					rpc_handle_write(ctx, fullpath);
 					return RPCHANDLER_MSG_DONE;
 				case M_TRUNCATE:
-					if (!(file->list->access & RPCFILE_ACCESS_TRUNCATE) ||
+					if (!(entry->access & RPCFILE_ACCESS_TRUNCATE) ||
 						ctx->meta.access < RPCACCESS_WRITE)
 						break;
 					size_t length;
 					bool valid = cp_unpack_int(ctx->unpack, ctx->item, length);
 					if (rpchandler_msg_valid(ctx)) {
 						if (valid) {
-							if (truncate(file->list->file_path, length) < 0)
+							if (truncate(fullpath, length) < 0)
 								rpchandler_msg_send_error(ctx,
 									RPCERR_METHOD_CALL_EXCEPTION,
 									"truncate failed.");
@@ -464,30 +533,30 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 					}
 					return RPCHANDLER_MSG_DONE;
 				case M_READ:
-					if (!(file->list->access & RPCFILE_ACCESS_READ) ||
+					if (!(entry->access & RPCFILE_ACCESS_READ) ||
 						ctx->meta.access < RPCACCESS_READ)
 						break;
-					rpc_handle_read(ctx, file->list->file_path);
+					rpc_handle_read(ctx, fullpath);
 					return RPCHANDLER_MSG_DONE;
 				case M_APPEND:
-					if (!(file->list->access & RPCFILE_ACCESS_APPEND) ||
+					if (!(entry->access & RPCFILE_ACCESS_APPEND) ||
 						ctx->meta.access < RPCACCESS_READ)
 						break;
-					rpc_handle_append(ctx, file->list->file_path);
+					rpc_handle_append(ctx, fullpath);
 					return RPCHANDLER_MSG_DONE;
 				case M_CRC:
-					if (!(file->list->access &
+					if (!(entry->access &
 							(RPCFILE_ACCESS_VALIDATION | RPCFILE_ACCESS_READ)) ||
 						ctx->meta.access < RPCACCESS_READ)
 						break;
-					rpc_handle_crc(ctx, file->list->file_path);
+					rpc_handle_crc(ctx, fullpath);
 					return RPCHANDLER_MSG_DONE;
 				case M_SHA1:
-					if (!(file->list->access &
+					if (!(entry->access &
 							(RPCFILE_ACCESS_VALIDATION | RPCFILE_ACCESS_READ)) ||
 						ctx->meta.access < RPCACCESS_READ)
 						break;
-					rpc_handle_sha1(ctx, file->list->file_path);
+					rpc_handle_sha1(ctx, fullpath);
 					return RPCHANDLER_MSG_DONE;
 			}
 	}
@@ -500,24 +569,30 @@ static const struct rpchandler_funcs rpc_funcs = {
 	.msg = rpc_msg,
 };
 
-rpchandler_file_t rpchandler_file_new(struct rpchandler_file_cb *cb) {
-	rpchandler_file_t handler = calloc(1, sizeof *handler);
+rpchandler_file_t rpchandler_file_new(const struct rpchandler_file_node **entries) {
+	for (const struct rpchandler_file_node **e = entries; *e; e++) {
+		const struct rpchandler_file_node *entry = *e;
+		if (!entry->file_path || strlen(entry->file_path) > PATH_MAX)
+			return NULL;
+
+		if (!entry->isdir) {
+			struct stat st;
+			stat(entry->file_path, &st);
+			if (!S_ISREG(st.st_mode))
+				return NULL;
+		}
+	}
+
+	struct rpchandler_file *handler = malloc(sizeof *handler);
 	if (!handler) {
 		return NULL;
 	}
 
-	handler->cb = cb;
-	if (!list_files(handler)) {
-		free(handler);
-		return NULL;
-	}
-
+	handler->entries = entries;
 	return handler;
 }
 
 void rpchandler_file_destroy(rpchandler_file_t handler) {
-	free(handler->file->list);
-	free(handler->file);
 	free(handler);
 }
 

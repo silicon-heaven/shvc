@@ -7,7 +7,6 @@
 
 static const char *default_url = SHVC_DEFAULT_URL "&devmount=test/device";
 
-
 static void print_usage(const char *argv0) {
 	fprintf(stderr, "%s [-v] [URL]\n", argv0);
 }

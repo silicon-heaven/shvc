@@ -19,31 +19,16 @@
 
 #define obstack_chunk_alloc malloc
 #define obstack_chunk_free free
-#define DEMO_FILE_PATH "demo_device_shv_file"
+#define DEMO_FILE_PATH "./demo_device_shv_file"
+#define DEMO_DIR_PATH "./demo_device_shv_dir"
+#define DEMO_DIR_FILE(s) (DEMO_DIR_PATH "/" s)
 
 static size_t logsiz = BUFSIZ > 128 ? BUFSIZ : 128;
 
 static volatile sig_atomic_t halt = false;
 
-static struct rpchandler_file_list file_corr[] = {
-	{
-		"file",
-		DEMO_FILE_PATH,
-		RPCFILE_ACCESS_VALIDATION | RPCFILE_ACCESS_READ | RPCFILE_ACCESS_WRITE |
-			RPCFILE_ACCESS_TRUNCATE | RPCFILE_ACCESS_APPEND,
-	},
-};
-
 static void sigint_handler(int status) {
 	halt = true;
-}
-
-static struct rpchandler_file_list *list_files(int *num) {
-	*num = sizeof(file_corr) / sizeof(struct rpchandler_file_list);
-	struct rpchandler_file_list *corr =
-		calloc(*num, sizeof(struct rpchandler_file_list));
-	memcpy(corr, file_corr, *num * sizeof(struct rpchandler_file_list));
-	return corr;
 }
 
 int main(int argc, char **argv) {
@@ -73,16 +58,30 @@ int main(int argc, char **argv) {
 
 	struct device_state *state = device_state_new();
 
-	int fd = open(DEMO_FILE_PATH, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR);
-	close(fd);
-
-	struct rpchandler_file_cb file_cb = {
-		.ls = list_files,
-		.update_paths = NULL,
-	};
+	/* Create files used by file handler */
+	close(open(DEMO_FILE_PATH, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR));
+	mkdir(DEMO_DIR_PATH, S_IRUSR | S_IWUSR | S_IXUSR);
+	close(open(DEMO_DIR_FILE("file1"), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR));
+	close(open(DEMO_DIR_FILE("file2"), O_CREAT | O_RDWR, S_IRUSR | S_IWUSR));
 
 	rpchandler_login_t login = rpchandler_login_new(&rpcurl->login);
-	rpchandler_file_t file = rpchandler_file_new(&file_cb);
+	rpchandler_file_t file = rpchandler_file_new((
+		const struct rpchandler_file_node *[]){
+		&(const struct rpchandler_file_node){
+			.file_path = DEMO_FILE_PATH,
+			.shv_path = "node0/subnode0/file",
+			.access = RPCFILE_ACCESS_VALIDATION | RPCFILE_ACCESS_READ |
+				RPCFILE_ACCESS_WRITE | RPCFILE_ACCESS_TRUNCATE | RPCFILE_ACCESS_APPEND,
+		},
+		&(const struct rpchandler_file_node){
+			.file_path = DEMO_DIR_PATH,
+			.shv_path = "file_dir",
+			.access = RPCFILE_ACCESS_VALIDATION | RPCFILE_ACCESS_READ |
+				RPCFILE_ACCESS_WRITE | RPCFILE_ACCESS_TRUNCATE | RPCFILE_ACCESS_APPEND,
+			.isdir = true,
+		},
+		NULL,
+	});
 
 	const struct rpchandler_stage stages[] = {
 		rpchandler_login_stage(login),

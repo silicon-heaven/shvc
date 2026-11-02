@@ -10,10 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `timeAbig` records
 - `idref` field to `.history/**/.records/*:fetch` method response
 - `.history/**/.records/*:span` now returns `newestTimeRecord` field
+- directory support to RPC File handler - **API Change**
 
 ### Changed
 - RPC History handler can be set to add `.history` prefix in SHV tree
   and is usable directly from broekr.
+- `RPCFILE_ACCESS_*` definitions moved to `rpchandler_file.h` header
 
 ### Fixed
 - CPON Decimal unpack for `x.` scheme

@@ -6,11 +6,10 @@
 
 /**
  * RPC Handler that handles file nodes. This handler operates with all files
- * provided by the user with :c:struct:`rpchandler_file_list` structure and
+ * provided by the user with :c:struct:`rpchandler_file_node` structure and
  * implements read/write/append/truncate and validation operations based on
- * the access level for given file. The listing is done via callback provided
- * by :c:struct:`rpchandler_file_cb` structure. The user should implement these
- * callbacks properly.
+ * the access level for given file. It also supports directories and
+ * provides all files in the given directory.
  *
  * This handles only file nodes and ignore all other nodes. It serves as a
  * simplification for the access to file nodes, allowing the user only to
@@ -19,10 +18,10 @@
  * for standard nodes.
  */
 
-/** Flag enabling read functionality in :var:`rpchandler_file_list.access`. */
+/** Flag enabling read functionality in :var:`rpchandler_file_node.access`. */
 #define RPCFILE_ACCESS_READ (1U << 0)
 /** Flag enabling validation functionality in
- * :var:`rpchandler_file_list.access`.
+ * :var:`rpchandler_file_node.access`.
  *
  * Provides CRC32/SHA1 validation methods.
  *
@@ -30,9 +29,9 @@
  * be used without it as well.
  */
 #define RPCFILE_ACCESS_VALIDATION (1U << 1)
-/** Flag enabling write functionality in :var:`rpchandler_file_list.access`. */
+/** Flag enabling write functionality in :var:`rpchandler_file_node.access`. */
 #define RPCFILE_ACCESS_WRITE (1U << 2)
-/** Flag enabling truncate functionality in :var:`rpchandler_file_list.access`.
+/** Flag enabling truncate functionality in :var:`rpchandler_file_node.access`.
  *
  * This allows write outside of the initial file size boundary and resize the
  * boundary.
@@ -40,7 +39,7 @@
  * This will auto-enable :macro:`RPCFILE_ACCESS_WRITE`.
  */
 #define RPCFILE_ACCESS_TRUNCATE (1U << 3)
-/** Flag enabling append functionality in :var:`rpchandler_file_list.access`.
+/** Flag enabling append functionality in :var:`rpchandler_file_node.access`.
  *
  * This can be enabled regardless of :macro:`RPCFILE_ACCESS_WRITE` and
  * :macro:`RPCFILE_ACCESS_TRUNCATE`. The append is always write after the
@@ -50,51 +49,32 @@
 
 
 /** This structure provides information about one file node. */
-struct rpchandler_file_list {
+struct rpchandler_file_node {
 	/** Path to the SHV node of the file. */
 	const char *shv_path;
 	/** Path to the file. This is a full path used to perform read/write
 	 *  operations on the file.
+	 *
+	 * .. NOTE::
+	 *    Only regular files are supported.
 	 */
 	const char *file_path;
 	/** The access level given to the file. */
 	unsigned access;
-};
-
-/** This structure provides callbacks back to the user code.
- *
- *  The handler needs to know the file names, paths and their accesses
- *  to provide complete support for file node. These correspondences/matches
- *  between SHV nodes and physical files have to be specified by the
- *  user. The handler access these through the callback.
- */
-struct rpchandler_file_cb {
-	/** List all currently present files.
+	/** True if the entry is not a single file but rather a directory.
+	 * In this case the handler will provide all files in this directory
+	 * and will create a directory node based on ``shv_path`` member.
 	 *
-	 * The function is expected to allocate :c:struct:`rpchandler_file_list`
-	 * structure (n * sizeof(rpchandler_file_list) where n is the number of
-	 * files), fill it properly and return the pointer to it. Memory is freed by
-	 * the handler itself during its deletion..
+	 * For example an entry with `shv_path` set as `LOGS` will provide node
+	 * `LOGS` with `ls` and `dir` methods and standard file nodes under SHV
+	 * `LOGS/` path for all files provided in the ``file_path`` directory.
 	 *
-	 * :param num: Number of currently present files.
-	 * :return: The pointer to :c:struct:`rpchandler_file_list` structure.
+	 * Access level set by ``access`` are aplied to all files in the directory.
+	 *
+	 * .. NOTE::
+	 *    Only files with depth 1 are provided.
 	 */
-	struct rpchandler_file_list *(*ls)(int *num);
-	/** Check for path update for currently present files.
-	 *
-	 *  There might be a use case where the file's path changes during the
-	 *  system runtime (mcuboot ota slots switching for example). The callback
-	 *  update_paths is called every time when new rpc message is received and
-	 *  provides the possibility to update file path. This does not have to
-	 *  be defined, the user can pass NULL instead of this callback and then
-	 *  no path update check is performed.
-	 *
-	 * :param file_path: Path to the file. This path might be updated.
-	 * :param shv_path: SHV path to the file. This is not updated, but might
-	 *  be used as a reference to determine correct `file_path`.
-	 * :return: 0 on success, -1 on failure.
-	 */
-	int (*update_paths)(const char **file_path, const char *shv_path);
+	bool isdir;
 };
 
 /** Object representing RPC File Handler. */
@@ -102,11 +82,12 @@ typedef struct rpchandler_file *rpchandler_file_t;
 
 /** Create new RPC File Handler.
  *
- * :param cb: The pointer to :c:struct:`rpchandler_file_cb` structure..
+ * :param entries: ``NULL`` terminated array of :c:struct:`rpchandler_file_node`
+ *  structure providing the files and directories for the handler.
  * :return: RPC File Handler object.
  */
-[[gnu::malloc]]
-rpchandler_file_t rpchandler_file_new(struct rpchandler_file_cb *cb);
+[[gnu::malloc, gnu::nonnull]]
+rpchandler_file_t rpchandler_file_new(const struct rpchandler_file_node **entries);
 
 /** Get RPC Handler stage for this Records Handler.
  *
@@ -120,7 +101,8 @@ struct rpchandler_stage rpchandler_file_stage(rpchandler_file_t handler);
 
 /** Free all resources occupied by :c:type:`rpchandler_file_t`.
  *
- * This is destructor for the object created by :c:func:`rpchandler_file_new`.
+ * This is destructor for the object created by
+ * :c:func:`rpchandler_file_new`.
  *
  * :param handler: RPC File Handler object.
  */

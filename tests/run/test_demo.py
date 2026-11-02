@@ -6,12 +6,27 @@ import datetime
 import logging
 
 import pytest
+from shv import SHVBytes
 from shv.rpcdef import RpcInvalidParamError, RpcMethodNotFoundError
 
 from .__version__ import version
 from .utils import subproc
 
 logger = logging.getLogger(__name__)
+
+
+RPCFILE_DIR = [
+    {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+    {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
+    {1: "stat", 2: 2, 4: "!stat", 5: 8},
+    {1: "size", 2: 2, 4: "i(0,)", 5: 8},
+    {1: "crc", 3: "[i(0,):offset,i(0,)|n:size]|n", 4: "u(>32)", 5: 8},
+    {1: "sha1", 3: "[i(0,):offset,i(0,)|n:size]|n", 4: "b(20)", 5: 8},
+    {1: "read", 2: 8, 3: "[i(0,):offset,i(0,)size]", 4: "b", 5: 8},
+    {1: "write", 3: "[i(0,):offset,b:data]", 5: 16},
+    {1: "truncate", 3: "i(0,)", 5: 16},
+    {1: "append", 3: "b", 5: 16},
+]
 
 
 @pytest.fixture(name="demo_device")
@@ -45,7 +60,7 @@ async def fixture_demo_device(demo_device_exec, broker, url):
                 {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
             ],
         ),
-        ("test/device", "ls", [".app", "file", "track"]),
+        ("test/device", "ls", [".app", "node0", "file_dir", "track"]),
         (
             "test/device/.app",
             "dir",
@@ -66,6 +81,35 @@ async def fixture_demo_device(demo_device_exec, broker, url):
         ("test/device/.app", "name", "shvc-demo-device"),
         ("test/device/.app", "version", version),
         ("test/device/.app", "ping", None),
+        ("test/device/node0", "ls", ["subnode0"]),
+        ("test/device/node0/subnode0", "ls", ["file"]),
+        ("test/device/node0/subnode0/file", "ls", []),
+        (
+            "test/device/node0/subnode0/file",
+            "dir",
+            RPCFILE_DIR,
+        ),
+        ("test/device/file_dir", "ls", ["file1", "file2"]),
+        (
+            "test/device/file_dir",
+            "dir",
+            [
+                {1: "dir", 3: "n|b|s", 4: "[!dir]|b", 5: 1},
+                {1: "ls", 3: "s|n", 4: "[s]|b", 5: 1, 6: {"lsmod": "{b}"}},
+            ],
+        ),
+        ("test/device/file_dir/file1", "ls", []),
+        (
+            "test/device/file_dir/file1",
+            "dir",
+            RPCFILE_DIR,
+        ),
+        ("test/device/file_dir/file2", "ls", []),
+        (
+            "test/device/file_dir/file2",
+            "dir",
+            RPCFILE_DIR,
+        ),
         (
             "test/device/track",
             "dir",
@@ -107,12 +151,47 @@ async def test_call(demo_device, client, path, method, result):
         ("test/device/track/none", "dir", None, RpcMethodNotFoundError),
         ("test/device/track/none", "set", None, RpcMethodNotFoundError),
         ("test/device/track/1", "set", None, RpcInvalidParamError),
+        ("test/device/file1", "dir", None, RpcMethodNotFoundError),
+        ("test/device/file_dir/file3", "dir", None, RpcMethodNotFoundError),
+        ("test/device/file_dir/..", "dir", None, RpcMethodNotFoundError),
+        ("test/device/file_dir/..", "size", None, RpcMethodNotFoundError),
     ),
 )
 async def test_call_error(demo_device, client, path, method, param, error):
     """Call various methods from Python."""
     with pytest.raises(error):
         assert await client.call(path, method, param)
+
+
+@pytest.mark.parametrize(
+    "path",
+    (
+        ("test/device/node0/subnode0/file"),
+        ("test/device/file_dir/file1"),
+        ("test/device/file_dir/file2"),
+    ),
+)
+async def test_call_file(demo_device, client, path):
+    """Call various methods from Python."""
+    assert await client.call(path, "truncate", 0) is None
+    assert await client.call(path, "size") == 0
+    assert await client.call(path, "write", [0, SHVBytes(b"hello")]) is None
+    assert await client.call(path, "read", [0, 10]) == SHVBytes(b"hello")
+    assert await client.call(path, "crc") == 0x3610A686
+    assert (
+        await client.call(path, "sha1")
+        == b"\xaa\xf4\xc6\x1d\xdc\xc5\xe8\xa2\xda\xbe\xde\x0f;H,\xd9\xae\xa9CM"
+    )
+    assert await client.call(path, "append", SHVBytes(b" world")) is None
+    assert await client.call(path, "read", [0, 32]) == SHVBytes(b"hello world")
+    assert await client.call(path, "read", [6, 32]) == SHVBytes(b"world")
+    assert await client.call(path, "crc", [0, 5]) == 0x3610A686
+    assert (
+        await client.call(path, "sha1", [0, 5])
+        == b"\xaa\xf4\xc6\x1d\xdc\xc5\xe8\xa2\xda\xbe\xde\x0f;H,\xd9\xae\xa9CM"
+    )
+    assert await client.call(path, "truncate", 0) is None
+    assert await client.call(path, "size") == 0
 
 
 @pytest.mark.parametrize("i", range(1, 10))
