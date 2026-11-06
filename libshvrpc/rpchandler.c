@@ -179,7 +179,7 @@ static void handle_ls(struct msg_ctx *ctx) {
 		return;
 
 	struct ls_ctx lsctx = (struct ls_ctx){
-		.ctx.path = ctx->ctx.meta.path ?: "",
+		.ctx.path = ctx->ctx.meta.path,
 		.ctx.name = name,
 		.mctx = ctx,
 		.pack = NULL,
@@ -225,8 +225,8 @@ static void handle_dir(struct msg_ctx *ctx) {
 	cp_pack_t pack = rpchandler_msg_new_response(&ctx->ctx);
 	if (pack) {
 		struct dir_ctx dirctx = (struct dir_ctx){
-			.ctx.name = name,
 			.ctx.path = ctx->ctx.meta.path,
+			.ctx.name = name,
 			.mctx = ctx,
 			.pack = pack,
 			.located = false,
