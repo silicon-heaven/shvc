@@ -16,32 +16,6 @@
  */
 #define RPCFILE_SHA1_SIZE (20)
 
-/** File nodes acess levels */
-enum rpcfile_access {
-	/** Allow CRC32/SHA1 validations. Must be implemented allongsize
-	 *  read. This is automatically allowed if
-	 *  :c:enumerator:`RPCFILE_ACCESS_READ` is set.
-	 */
-	RPCFILE_ACCESS_VALIDATION = 1,
-	/** Allow read operations. This sets
-	 * :c:enumerator:`RPCFILE_ACCESS_VALIDATION`.
-	 */
-	RPCFILE_ACCESS_READ = 2,
-	/** Allow write operations. Write outside of file boundary is up to
-	 *  the implementation.
-	 */
-	RPCFILE_ACCESS_WRITE = 4,
-	/** Allow file truncate. This should be allowed only if write outside of
-	 *  file boundary is allowed. If truncate is allowed, then write
-	 *  :c:enumerator:`RPCFILE_ACCESS_WRITE` is allowed as well.
-	 */
-	RPCFILE_ACCESS_TRUNCATE = 8,
-	/** Allow file append. This may be provided even
-	 *  if :c:enumerator:`RPCFILE_ACCESS_WRITE` is not. The write with append is
-	 *  always outside of file boundary.
-	 */
-	RPCFILE_ACCESS_APPEND = 16,
-};
 
 /** Keys for the stat's method description IMap. */
 enum rpcfile_stat_keys {
@@ -59,13 +33,21 @@ enum rpcfile_stat_keys {
 enum rpcfile_stat_type {
 	/** Regular file. */
 	RPCFILE_STAT_TYPE_REGULAR = 0,
-	/** MTD layer */
+	/** MTD layer.
+	 *
+	 * Only sequential writes are supported.
+	 */
 	RPCFILE_STAT_TYPE_MTD,
 };
 
 /** The representation of file node statistics. */
 struct rpcfile_stat_s {
-	/** Type of the file. Currently only 0 is valid. */
+	/** Type of the file.
+	 *
+	 * You can expect one of :enum:`rpcfile_stat_type` enumerators, but be aware
+	 * that newer types can be added in the future and thus cover also default
+	 * case for unknown types.
+	 */
 	int type;
 	/** Size of the file in bytes. */
 	int size;

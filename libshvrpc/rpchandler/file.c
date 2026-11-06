@@ -88,7 +88,8 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 				if (ctx->path && !strcmp(ctx->path, file->list->shv_path)) {
 					if (match->method == M_STAT || match->method == M_SIZE ||
 						(match->method == M_WRITE &&
-							file->list->access & RPCFILE_ACCESS_WRITE) ||
+							file->list->access &
+								(RPCFILE_ACCESS_WRITE | RPCFILE_ACCESS_TRUNCATE)) ||
 						(match->method == M_TRUNCATE &&
 							file->list->access & RPCFILE_ACCESS_TRUNCATE) ||
 						(match->method == M_READ &&
@@ -96,7 +97,8 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 						(match->method == M_APPEND &&
 							file->list->access & RPCFILE_ACCESS_APPEND) ||
 						((match->method == M_CRC || match->method == M_SHA1) &&
-							file->list->access & RPCFILE_ACCESS_VALIDATION))
+							file->list->access &
+								(RPCFILE_ACCESS_VALIDATION | RPCFILE_ACCESS_READ)))
 						rpchandler_dir_exists(ctx);
 					break;
 				}
@@ -109,13 +111,15 @@ static void rpc_dir(void *cookie, struct rpchandler_dir *ctx) {
 		if (ctx->path && !strcmp(ctx->path, file->list->shv_path)) {
 			rpchandler_dir_result(ctx, &rpcfile_stat);
 			rpchandler_dir_result(ctx, &rpcfile_size);
-			if (file->list->access & RPCFILE_ACCESS_VALIDATION) {
+			if (file->list->access &
+				(RPCFILE_ACCESS_VALIDATION | RPCFILE_ACCESS_READ)) {
 				rpchandler_dir_result(ctx, &rpcfile_crc);
 				rpchandler_dir_result(ctx, &rpcfile_sha1);
 			}
 			if (file->list->access & RPCFILE_ACCESS_READ)
 				rpchandler_dir_result(ctx, &rpcfile_read);
-			if (file->list->access & RPCFILE_ACCESS_WRITE)
+			if (file->list->access &
+				(RPCFILE_ACCESS_WRITE | RPCFILE_ACCESS_TRUNCATE))
 				rpchandler_dir_result(ctx, &rpcfile_write);
 			if (file->list->access & RPCFILE_ACCESS_TRUNCATE)
 				rpchandler_dir_result(ctx, &rpcfile_truncate);
@@ -434,7 +438,8 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 					return RPCHANDLER_MSG_DONE;
 				}
 				case M_WRITE:
-					if (!(file->list->access & RPCFILE_ACCESS_WRITE) ||
+					if (!(file->list->access &
+							(RPCFILE_ACCESS_WRITE | RPCFILE_ACCESS_TRUNCATE)) ||
 						ctx->meta.access < RPCACCESS_WRITE)
 						break;
 					rpc_handle_write(ctx, file->list->file_path);
@@ -471,13 +476,15 @@ static enum rpchandler_msg_res rpc_msg(void *cookie, struct rpchandler_msg *ctx)
 					rpc_handle_append(ctx, file->list->file_path);
 					return RPCHANDLER_MSG_DONE;
 				case M_CRC:
-					if (!(file->list->access & RPCFILE_ACCESS_VALIDATION) ||
+					if (!(file->list->access &
+							(RPCFILE_ACCESS_VALIDATION | RPCFILE_ACCESS_READ)) ||
 						ctx->meta.access < RPCACCESS_READ)
 						break;
 					rpc_handle_crc(ctx, file->list->file_path);
 					return RPCHANDLER_MSG_DONE;
 				case M_SHA1:
-					if (!(file->list->access & RPCFILE_ACCESS_VALIDATION) ||
+					if (!(file->list->access &
+							(RPCFILE_ACCESS_VALIDATION | RPCFILE_ACCESS_READ)) ||
 						ctx->meta.access < RPCACCESS_READ)
 						break;
 					rpc_handle_sha1(ctx, file->list->file_path);

@@ -19,6 +19,36 @@
  * for standard nodes.
  */
 
+/** Flag enabling read functionality in :var:`rpchandler_file_list.access`. */
+#define RPCFILE_ACCESS_READ (1U << 0)
+/** Flag enabling validation functionality in
+ * :var:`rpchandler_file_list.access`.
+ *
+ * Provides CRC32/SHA1 validation methods.
+ *
+ * This will be auto-enabled when :macro`RPCFILE_ACCESS_READ` is enabled but can
+ * be used without it as well.
+ */
+#define RPCFILE_ACCESS_VALIDATION (1U << 1)
+/** Flag enabling write functionality in :var:`rpchandler_file_list.access`. */
+#define RPCFILE_ACCESS_WRITE (1U << 2)
+/** Flag enabling truncate functionality in :var:`rpchandler_file_list.access`.
+ *
+ * This allows write outside of the initial file size boundary and resize the
+ * boundary.
+ *
+ * This will auto-enable :macro:`RPCFILE_ACCESS_WRITE`.
+ */
+#define RPCFILE_ACCESS_TRUNCATE (1U << 3)
+/** Flag enabling append functionality in :var:`rpchandler_file_list.access`.
+ *
+ * This can be enabled regardless of :macro:`RPCFILE_ACCESS_WRITE` and
+ * :macro:`RPCFILE_ACCESS_TRUNCATE`. The append is always write after the
+ * current file boundary.
+ */
+#define RPCFILE_ACCESS_APPEND (1U << 4)
+
+
 /** This structure provides information about one file node. */
 struct rpchandler_file_list {
 	/** Path to the SHV node of the file. */
@@ -28,7 +58,7 @@ struct rpchandler_file_list {
 	 */
 	const char *file_path;
 	/** The access level given to the file. */
-	int access;
+	unsigned access;
 };
 
 /** This structure provides callbacks back to the user code.
